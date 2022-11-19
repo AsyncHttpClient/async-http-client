@@ -13,40 +13,39 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ServerSocketFactory;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.get;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Hubert Iwaniuk
  */
 public class MultipleHeaderTest extends AbstractBasicTest {
-    private ExecutorService executorService;
-    private ServerSocket serverSocket;
-    private Future<?> voidFuture;
+    private static ExecutorService executorService;
+    private static ServerSocket serverSocket;
+    private static Future<?> voidFuture;
 
-    @BeforeClass
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
         port1 = serverSocket.getLocalPort();
         executorService = Executors.newFixedThreadPool(1);
@@ -78,33 +77,37 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         });
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
         voidFuture.cancel(true);
         executorService.shutdownNow();
         serverSocket.close();
     }
 
     @Test
-    public void testMultipleOtherHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        final String[] xffHeaders = new String[]{null, null};
+    public void testMultipleOtherHeaders() throws Exception {
+        final String[] xffHeaders = {null, null};
 
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             Request req = get("http://localhost:" + port1 + "/MultiOther").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace(System.out);
                 }
 
+                @Override
                 public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onHeadersReceived(HttpHeaders response) {
                     int i = 0;
                     for (String header : response.getAll("X-Forwarded-For")) {
@@ -114,6 +117,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public Void onCompleted() {
                     return null;
                 }
@@ -135,25 +139,29 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     }
 
     @Test
-    public void testMultipleEntityHeaders() throws IOException, ExecutionException, TimeoutException, InterruptedException {
-        final String[] clHeaders = new String[]{null, null};
+    public void testMultipleEntityHeaders() throws Exception {
+        final String[] clHeaders = {null, null};
 
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             Request req = get("http://localhost:" + port1 + "/MultiEnt").build();
             final CountDownLatch latch = new CountDownLatch(1);
             ahc.executeRequest(req, new AsyncHandler<Void>() {
+                @Override
                 public void onThrowable(Throwable t) {
                     t.printStackTrace(System.out);
                 }
 
+                @Override
                 public State onBodyPartReceived(HttpResponseBodyPart objectHttpResponseBodyPart) {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onStatusReceived(HttpResponseStatus objectHttpResponseStatus) {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onHeadersReceived(HttpHeaders response) {
                     try {
                         int i = 0;
@@ -166,6 +174,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public Void onCompleted() {
                     return null;
                 }

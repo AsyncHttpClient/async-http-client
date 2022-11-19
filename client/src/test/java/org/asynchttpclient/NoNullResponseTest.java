@@ -16,16 +16,16 @@
  */
 package org.asynchttpclient;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.RepeatedTest;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class NoNullResponseTest extends AbstractBasicTest {
     private static final String GOOGLE_HTTPS_URL = "https://www.google.com";
 
-    @Test(groups = "online", invocationCount = 4)
+    @RepeatedTest(4)
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
 
         AsyncHttpClientConfig config = config()

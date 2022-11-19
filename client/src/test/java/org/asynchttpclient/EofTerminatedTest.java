@@ -14,10 +14,10 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -31,12 +31,11 @@ import static org.asynchttpclient.Dsl.config;
 
 public class EofTerminatedTest extends AbstractBasicTest {
 
-    protected String getTargetUrl() {
+    protected static String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         GzipHandler gzipHandler = new GzipHandler();
         gzipHandler.setHandler(new StreamHandler());
         return gzipHandler;

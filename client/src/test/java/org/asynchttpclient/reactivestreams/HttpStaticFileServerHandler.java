@@ -43,8 +43,8 @@ import org.asynchttpclient.test.TestUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -129,11 +129,7 @@ public class HttpStaticFileServerHandler extends SimpleChannelInboundHandler<Ful
 
     private static String sanitizeUri(String uri) {
         // Decode the path.
-        try {
-            uri = URLDecoder.decode(uri, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new Error(e);
-        }
+        uri = URLDecoder.decode(uri, StandardCharsets.UTF_8);
 
         if (uri.isEmpty() || uri.charAt(0) != '/') {
             return null;

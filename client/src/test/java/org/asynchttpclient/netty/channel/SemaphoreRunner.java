@@ -8,9 +8,9 @@ class SemaphoreRunner {
     volatile long acquireTime;
     volatile Exception acquireException;
 
-    public SemaphoreRunner(ConnectionSemaphore semaphore, Object partitionKey) {
+    SemaphoreRunner(ConnectionSemaphore semaphore, Object partitionKey) {
         this.semaphore = semaphore;
-        this.acquireThread = new Thread(() -> {
+        acquireThread = new Thread(() -> {
             long beforeAcquire = System.currentTimeMillis();
             try {
                 semaphore.acquireChannelLock(partitionKey);
@@ -23,23 +23,23 @@ class SemaphoreRunner {
     }
 
     public void acquire() {
-        this.acquireThread.start();
+        acquireThread.start();
     }
 
     public void interrupt() {
-        this.acquireThread.interrupt();
+        acquireThread.interrupt();
     }
 
     public void await() {
         try {
-            this.acquireThread.join();
+            acquireThread.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     public boolean finished() {
-        return !this.acquireThread.isAlive();
+        return !acquireThread.isAlive();
     }
 
     public long getAcquireTime() {

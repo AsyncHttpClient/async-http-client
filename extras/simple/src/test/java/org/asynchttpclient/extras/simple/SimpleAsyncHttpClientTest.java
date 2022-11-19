@@ -19,7 +19,7 @@ import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import org.asynchttpclient.uri.Uri;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,15 +27,19 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
-    private final static String MY_MESSAGE = "my message";
+    private static final String MY_MESSAGE = "my message";
 
     @Test
     public void inputStreamBodyConsumerTest() throws Exception {
@@ -161,6 +165,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
         SimpleAHCTransferListener listener = new SimpleAHCTransferListener() {
 
+            @Override
             public void onStatus(Uri uri, int statusCode, String statusText) {
                 try {
                     assertEquals(statusCode, 200);
@@ -171,11 +176,12 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
+            @Override
             public void onHeaders(Uri uri, HttpHeaders headers) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
                     assertNotNull(headers);
-                    assertTrue(!headers.isEmpty());
+                    assertFalse(headers.isEmpty());
                     assertEquals(headers.get("X-Custom"), "custom");
                 } catch (Error e) {
                     errors.add(e);
@@ -183,6 +189,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
+            @Override
             public void onCompleted(Uri uri, int statusCode, String statusText) {
                 try {
                     assertEquals(statusCode, 200);
@@ -193,6 +200,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
+            @Override
             public void onBytesSent(Uri uri, long amount, long current, long total) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
@@ -205,6 +213,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
                 }
             }
 
+            @Override
             public void onBytesReceived(Uri uri, long amount, long current, long total) {
                 try {
                     assertEquals(uri.toUrl(), getTargetUrl());
@@ -261,20 +270,14 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testCloseMasterInvalidDerived() throws Throwable {
         SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder().setUrl(getTargetUrl()).build();
         try (SimpleAsyncHttpClient derived = client.derive().build()) {
             client.close();
 
-            try {
-                derived.get().get();
-                fail("Expected closed AHC");
-            } catch (ExecutionException e) {
-                throw e.getCause();
-            }
+            assertThrows(IllegalStateException.class, () -> derived.get().get());
         }
-
     }
 
     @Test
@@ -287,7 +290,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
             assertTrue(contentType.contains("multipart/form-data"));
 
-            String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
+            String boundary = contentType.substring(contentType.lastIndexOf('=') + 1);
 
             assertTrue(body.startsWith("--" + boundary));
             assertTrue(body.trim().endsWith("--" + boundary + "--"));
@@ -308,7 +311,7 @@ public class SimpleAsyncHttpClientTest extends AbstractBasicTest {
 
             assertTrue(contentType.contains("multipart/form-data"));
 
-            String boundary = contentType.substring(contentType.lastIndexOf("=") + 1);
+            String boundary = contentType.substring(contentType.lastIndexOf('=') + 1);
 
             assertTrue(body.startsWith("--" + boundary));
             assertTrue(body.trim().endsWith("--" + boundary + "--"));

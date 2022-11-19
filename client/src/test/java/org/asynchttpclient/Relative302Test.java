@@ -16,12 +16,13 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.uri.Uri;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -38,20 +39,23 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Relative302Test extends AbstractBasicTest {
-    private final AtomicBoolean isSet = new AtomicBoolean(false);
+    private static final AtomicBoolean isSet = new AtomicBoolean(false);
 
     private static int getPort(Uri uri) {
         int port = uri.getPort();
-        if (port == -1)
-            port = uri.getScheme().equals("http") ? 80 : 443;
+        if (port == -1) {
+            port = "http".equals(uri.getScheme()) ? 80 : 443;
+        }
         return port;
     }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(new Relative302Handler());
@@ -61,7 +65,7 @@ public class Relative302Test extends AbstractBasicTest {
         port2 = findFreePort();
     }
 
-    @Test(groups = "online")
+    @Test
     public void testAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
         redirected302InvalidTest();
@@ -69,7 +73,8 @@ public class Relative302Test extends AbstractBasicTest {
         relativePathRedirectTest();
     }
 
-    @Test(groups = "online", enabled = false)
+    @Disabled
+    @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
 
@@ -83,7 +88,8 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -101,7 +107,8 @@ public class Relative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -118,7 +125,8 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -135,18 +143,19 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    private String getBaseUrl(Uri uri) {
+    private static String getBaseUrl(Uri uri) {
         String url = uri.toString();
         int port = uri.getPort();
         if (port == -1) {
             port = getPort(uri);
-            url = url.substring(0, url.length() - 1) + ":" + port;
+            url = url.substring(0, url.length() - 1) + ':' + port;
         }
-        return url.substring(0, url.lastIndexOf(":") + String.valueOf(port).length() + 1);
+        return url.substring(0, url.lastIndexOf(':') + String.valueOf(port).length() + 1);
     }
 
-    private class Relative302Handler extends AbstractHandler {
+    private static class Relative302Handler extends AbstractHandler {
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String param;

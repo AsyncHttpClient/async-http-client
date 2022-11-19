@@ -15,113 +15,135 @@ package org.asynchttpclient;
 
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@Test
 public class AsyncHttpClientDefaultsTest {
 
+    @Test
     public void testDefaultMaxTotalConnections() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnections(), -1);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnections(), -1);
         testIntegerSystemProperty("maxConnections", "defaultMaxConnections", "100");
     }
 
+    @Test
     public void testDefaultMaxConnectionPerHost() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnectionsPerHost(), -1);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnectionsPerHost(), -1);
         testIntegerSystemProperty("maxConnectionsPerHost", "defaultMaxConnectionsPerHost", "100");
     }
 
+    @Test
     public void testDefaultConnectTimeOut() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 5 * 1000);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 5 * 1000);
         testIntegerSystemProperty("connectTimeout", "defaultConnectTimeout", "100");
     }
 
+    @Test
     public void testDefaultPooledConnectionIdleTimeout() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), 60 * 1000);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), 60 * 1000);
         testIntegerSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "100");
     }
 
+    @Test
     public void testDefaultReadTimeout() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), 60 * 1000);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), 60 * 1000);
         testIntegerSystemProperty("readTimeout", "defaultReadTimeout", "100");
     }
 
+    @Test
     public void testDefaultRequestTimeout() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultRequestTimeout(), 60 * 1000);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultRequestTimeout(), 60 * 1000);
         testIntegerSystemProperty("requestTimeout", "defaultRequestTimeout", "100");
     }
 
+    @Test
     public void testDefaultConnectionTtl() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), -1);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), -1);
         testIntegerSystemProperty("connectionTtl", "defaultConnectionTtl", "100");
     }
 
+    @Test
     public void testDefaultFollowRedirect() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultFollowRedirect());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultFollowRedirect());
         testBooleanSystemProperty("followRedirect", "defaultFollowRedirect", "true");
     }
 
+    @Test
     public void testDefaultMaxRedirects() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRedirects(), 5);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRedirects(), 5);
         testIntegerSystemProperty("maxRedirects", "defaultMaxRedirects", "100");
     }
 
+    @Test
     public void testDefaultCompressionEnforced() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultCompressionEnforced());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultCompressionEnforced());
         testBooleanSystemProperty("compressionEnforced", "defaultCompressionEnforced", "true");
     }
 
+    @Test
     public void testDefaultUserAgent() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultUserAgent(), "AHC/2.1");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultUserAgent(), "AHC/2.1");
         testStringSystemProperty("userAgent", "defaultUserAgent", "MyAHC");
     }
 
+    @Test
     public void testDefaultUseProxySelector() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxySelector());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxySelector());
         testBooleanSystemProperty("useProxySelector", "defaultUseProxySelector", "true");
     }
 
+    @Test
     public void testDefaultUseProxyProperties() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxyProperties());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxyProperties());
         testBooleanSystemProperty("useProxyProperties", "defaultUseProxyProperties", "true");
     }
 
+    @Test
     public void testDefaultStrict302Handling() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultStrict302Handling());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultStrict302Handling());
         testBooleanSystemProperty("strict302Handling", "defaultStrict302Handling", "true");
     }
 
+    @Test
     public void testDefaultAllowPoolingConnection() {
-        Assert.assertTrue(AsyncHttpClientConfigDefaults.defaultKeepAlive());
+        assertTrue(AsyncHttpClientConfigDefaults.defaultKeepAlive());
         testBooleanSystemProperty("keepAlive", "defaultKeepAlive", "false");
     }
 
+    @Test
     public void testDefaultMaxRequestRetry() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRequestRetry(), 5);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRequestRetry(), 5);
         testIntegerSystemProperty("maxRequestRetry", "defaultMaxRequestRetry", "100");
     }
 
+    @Test
     public void testDefaultDisableUrlEncodingForBoundRequests() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests());
         testBooleanSystemProperty("disableUrlEncodingForBoundRequests", "defaultDisableUrlEncodingForBoundRequests", "true");
     }
 
+    @Test
     public void testDefaultUseInsecureTrustManager() {
-        Assert.assertFalse(AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager());
         testBooleanSystemProperty("useInsecureTrustManager", "defaultUseInsecureTrustManager", "false");
     }
 
+    @Test
     public void testDefaultHashedWheelTimerTickDuration() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration(), 100);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration(), 100);
         testIntegerSystemProperty("hashedWheelTimerTickDuration", "defaultHashedWheelTimerTickDuration", "100");
     }
 
+    @Test
     public void testDefaultHashedWheelTimerSize() {
-        Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize(), 512);
+        assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize(), 512);
         testIntegerSystemProperty("hashedWheelTimerSize", "defaultHashedWheelTimerSize", "512");
     }
 
@@ -131,45 +153,48 @@ public class AsyncHttpClientDefaultsTest {
         AsyncHttpClientConfigHelper.reloadProperties();
         try {
             Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
-            Assert.assertEquals(method.invoke(null), Integer.parseInt(value));
+            assertEquals(method.invoke(null), Integer.parseInt(value));
         } catch (Exception e) {
-            Assert.fail("Couldn't find or execute method : " + methodName, e);
+            fail("Couldn't find or execute method : " + methodName, e);
         }
-        if (previous != null)
+        if (previous != null) {
             System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, previous);
-        else
+        } else {
             System.clearProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        }
     }
 
-    private void testBooleanSystemProperty(String propertyName, String methodName, String value) {
+    private static void testBooleanSystemProperty(String propertyName, String methodName, String value) {
         String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
         System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
         AsyncHttpClientConfigHelper.reloadProperties();
         try {
             Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
-            Assert.assertEquals(method.invoke(null), Boolean.parseBoolean(value));
+            assertEquals(method.invoke(null), Boolean.parseBoolean(value));
         } catch (Exception e) {
-            Assert.fail("Couldn't find or execute method : " + methodName, e);
+            fail("Couldn't find or execute method : " + methodName, e);
         }
-        if (previous != null)
+        if (previous != null) {
             System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, previous);
-        else
+        } else {
             System.clearProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        }
     }
 
-    private void testStringSystemProperty(String propertyName, String methodName, String value) {
+    private static void testStringSystemProperty(String propertyName, String methodName, String value) {
         String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
         System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
         AsyncHttpClientConfigHelper.reloadProperties();
         try {
             Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
-            Assert.assertEquals(method.invoke(null), value);
+            assertEquals(method.invoke(null), value);
         } catch (Exception e) {
-            Assert.fail("Couldn't find or execute method : " + methodName, e);
+            fail("Couldn't find or execute method : " + methodName, e);
         }
-        if (previous != null)
+        if (previous != null) {
             System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, previous);
-        else
+        } else {
             System.clearProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        }
     }
 }

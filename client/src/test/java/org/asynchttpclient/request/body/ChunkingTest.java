@@ -22,20 +22,22 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.generator.UnboundedQueueFeedableBodyGenerator;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.concurrent.ExecutionException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.post;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_FILE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.FileAssert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ChunkingTest extends AbstractBasicTest {
 
@@ -86,7 +88,7 @@ public class ChunkingTest extends AbstractBasicTest {
         }
     }
 
-    private void feed(FeedableBodyGenerator feedableBodyGenerator, InputStream is) throws Exception {
+    private static void feed(FeedableBodyGenerator feedableBodyGenerator, InputStream is) throws Exception {
         try (InputStream inputStream = is) {
             byte[] buffer = new byte[512];
             for (int i; (i = inputStream.read(buffer)) > -1; ) {
@@ -96,10 +98,9 @@ public class ChunkingTest extends AbstractBasicTest {
             }
         }
         feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
-
     }
 
-    private DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
+    private static DefaultAsyncHttpClientConfig.Builder httpClientBuilder() {
         return config()
                 .setKeepAlive(true)
                 .setMaxConnectionsPerHost(1)
@@ -109,18 +110,18 @@ public class ChunkingTest extends AbstractBasicTest {
                 .setFollowRedirect(true);
     }
 
-    private void waitForAndAssertResponse(ListenableFuture<Response> responseFuture) throws InterruptedException, java.util.concurrent.ExecutionException {
+    private static void waitForAndAssertResponse(ListenableFuture<Response> responseFuture) throws InterruptedException, ExecutionException {
         Response response = responseFuture.get();
         if (500 == response.getStatusCode()) {
             logger.debug("==============\n" +
                     "500 response from call\n" +
-                    "Headers:" + response.getHeaders() + "\n" +
+                    "Headers:" + response.getHeaders() + '\n' +
                     "==============\n");
-            assertEquals(response.getStatusCode(), 500, "Should have 500 status code");
+            assertEquals(500, response.getStatusCode(), "Should have 500 status code");
             assertTrue(response.getHeader("X-Exception").contains("invalid.chunk.length"), "Should have failed due to chunking");
             fail("HARD Failing the test due to provided InputStreamBodyGenerator, chunking incorrectly:" + response.getHeader("X-Exception"));
         } else {
-            assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+            assertArrayEquals(LARGE_IMAGE_BYTES, response.getResponseBodyAsBytes());
         }
     }
 }

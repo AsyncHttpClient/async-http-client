@@ -15,7 +15,7 @@ package org.asynchttpclient;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -27,13 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.post;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class PostRedirectGetTest extends AbstractBasicTest {
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new PostRedirectGetHandler();
     }
 
@@ -143,8 +142,8 @@ public class PostRedirectGetTest extends AbstractBasicTest {
         @Override
         public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
-            final boolean expectGet = (httpRequest.getHeader("x-expect-get") != null);
-            final boolean expectPost = (httpRequest.getHeader("x-expect-post") != null);
+            final boolean expectGet = httpRequest.getHeader("x-expect-get") != null;
+            final boolean expectPost = httpRequest.getHeader("x-expect-post") != null;
             if (expectGet) {
                 final String method = request.getMethod();
                 if (!"GET".equals(method)) {
@@ -155,7 +154,8 @@ public class PostRedirectGetTest extends AbstractBasicTest {
                 httpResponse.getOutputStream().write("OK".getBytes());
                 httpResponse.getOutputStream().flush();
                 return;
-            } else if (expectPost) {
+            }
+            if (expectPost) {
                 final String method = request.getMethod();
                 if (!"POST".equals(method)) {
                     httpResponse.sendError(500, "Incorrect method.  Expected POST, received " + method);

@@ -12,8 +12,9 @@
  */
 package org.asynchttpclient;
 
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -24,17 +25,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.eclipse.jetty.server.Request;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ByteBufferCapacityTest extends AbstractBasicTest {
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new BasicHandler();
     }
 
@@ -60,14 +59,14 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
         }
     }
 
-    public String getTargetUrl() {
+    public static String getTargetUrl() {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 
-    private class BasicHandler extends AbstractHandler {
+    private static class BasicHandler extends AbstractHandler {
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
             while (e.hasMoreElements()) {

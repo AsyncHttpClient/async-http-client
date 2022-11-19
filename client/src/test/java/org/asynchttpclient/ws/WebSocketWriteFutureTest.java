@@ -16,18 +16,18 @@ package org.asynchttpclient.ws;
 import org.asynchttpclient.AsyncHttpClient;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
 
-    @Override
-    public WebSocketHandler configureHandler() {
+    public static WebSocketHandler configureHandler() {
         return new WebSocketHandler() {
             @Override
             public void configure(WebSocketServletFactory factory) {
@@ -36,93 +36,103 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         };
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendTextMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             getWebSocket(c).sendTextFrame("TEXT").get(10, TimeUnit.SECONDS);
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = ExecutionException.class)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendTextMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);
             WebSocket websocket = getWebSocket(c, closeLatch);
             websocket.sendCloseFrame();
             closeLatch.await(1, TimeUnit.SECONDS);
-            websocket.sendTextFrame("TEXT").get(10, TimeUnit.SECONDS);
+            assertThrows(Exception.class, () -> websocket.sendTextFrame("TEXT").get(10, TimeUnit.SECONDS));
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendByteMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             getWebSocket(c).sendBinaryFrame("BYTES".getBytes()).get(10, TimeUnit.SECONDS);
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = ExecutionException.class)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendByteMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);
             WebSocket websocket = getWebSocket(c, closeLatch);
             websocket.sendCloseFrame();
             closeLatch.await(1, TimeUnit.SECONDS);
-            websocket.sendBinaryFrame("BYTES".getBytes()).get(10, TimeUnit.SECONDS);
+            assertThrows(Exception.class, () -> websocket.sendBinaryFrame("BYTES".getBytes()).get(10, TimeUnit.SECONDS));
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPingMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             getWebSocket(c).sendPingFrame("PING".getBytes()).get(10, TimeUnit.SECONDS);
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = ExecutionException.class)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPingMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);
             WebSocket websocket = getWebSocket(c, closeLatch);
             websocket.sendCloseFrame();
             closeLatch.await(1, TimeUnit.SECONDS);
-            websocket.sendPingFrame("PING".getBytes()).get(10, TimeUnit.SECONDS);
+            assertThrows(Exception.class, () -> websocket.sendPingFrame("PING".getBytes()).get(10, TimeUnit.SECONDS));
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPongMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             getWebSocket(c).sendPongFrame("PONG".getBytes()).get(10, TimeUnit.SECONDS);
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = ExecutionException.class)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPongMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);
             WebSocket websocket = getWebSocket(c, closeLatch);
             websocket.sendCloseFrame();
             closeLatch.await(1, TimeUnit.SECONDS);
-            websocket.sendPongFrame("PONG".getBytes()).get(1, TimeUnit.SECONDS);
+            assertThrows(Exception.class, () -> websocket.sendPongFrame("PONG".getBytes()).get(1, TimeUnit.SECONDS));
         }
     }
 
-    @Test(timeOut = 60000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void streamBytes() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             getWebSocket(c).sendBinaryFrame("STREAM".getBytes(), true, 0).get(1, TimeUnit.SECONDS);
         }
     }
 
-    @Test(timeOut = 60000, expectedExceptions = ExecutionException.class)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void streamBytesExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);
             WebSocket websocket = getWebSocket(c, closeLatch);
             websocket.sendCloseFrame();
             closeLatch.await(1, TimeUnit.SECONDS);
-            websocket.sendBinaryFrame("STREAM".getBytes(), true, 0).get(1, TimeUnit.SECONDS);
+            assertThrows(Exception.class, () -> websocket.sendBinaryFrame("STREAM".getBytes(), true, 0).get(1, TimeUnit.SECONDS));
         }
     }
 
@@ -133,14 +143,15 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test(expectedExceptions = ExecutionException.class)
+
+    @Test
     public void streamTextExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);
             WebSocket websocket = getWebSocket(c, closeLatch);
             websocket.sendCloseFrame();
             closeLatch.await(1, TimeUnit.SECONDS);
-            websocket.sendTextFrame("STREAM", true, 0).get(1, TimeUnit.SECONDS);
+            assertThrows(Exception.class, () -> websocket.sendTextFrame("STREAM", true, 0).get(1, TimeUnit.SECONDS));
         }
     }
 

@@ -21,7 +21,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.post;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BodyChunkTest extends AbstractBasicTest {
 
@@ -53,8 +53,8 @@ public class BodyChunkTest extends AbstractBasicTest {
 
             System.out.println("waiting for response");
             Response response = future.get();
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBody(), MY_MESSAGE);
+            assertEquals(200, response.getStatusCode());
+            assertEquals(MY_MESSAGE, response.getResponseBody());
         }
     }
 }

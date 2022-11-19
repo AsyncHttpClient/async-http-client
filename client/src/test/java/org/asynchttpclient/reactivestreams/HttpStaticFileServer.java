@@ -29,8 +29,11 @@ public final class HttpStaticFileServer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpStaticFileServer.class);
 
-    static private EventLoopGroup bossGroup;
-    static private EventLoopGroup workerGroup;
+    private static EventLoopGroup bossGroup;
+    private static EventLoopGroup workerGroup;
+
+    private HttpStaticFileServer() {
+    }
 
     public static void start(int port) throws Exception {
         bossGroup = new NioEventLoopGroup(1);
@@ -42,7 +45,7 @@ public final class HttpStaticFileServer {
                 .childHandler(new HttpStaticFileServerInitializer());
 
         b.bind(port).sync().channel();
-        LOGGER.info("Open your web browser and navigate to " + ("http") + "://localhost:" + port + '/');
+        LOGGER.info("Open your web browser and navigate to " + "http" + "://localhost:" + port + '/');
     }
 
     public static void shutdown() {
@@ -51,8 +54,8 @@ public final class HttpStaticFileServer {
         try {
             bossFuture.await();
             workerFuture.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            // Ignore
         }
     }
 }

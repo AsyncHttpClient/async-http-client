@@ -15,7 +15,7 @@ package org.asynchttpclient.netty;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,8 +24,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NettyAsyncResponseTest {
 
@@ -42,7 +42,7 @@ public class NettyAsyncResponseTest {
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
 
         List<Cookie> cookies = response.getCookies();
-        assertEquals(cookies.size(), 1);
+        assertEquals(1, cookies.size());
 
         Cookie cookie = cookies.get(0);
         assertTrue(cookie.maxAge() >= 58 && cookie.maxAge() <= 60);
@@ -55,10 +55,10 @@ public class NettyAsyncResponseTest {
         HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
         List<Cookie> cookies = response.getCookies();
-        assertEquals(cookies.size(), 1);
+        assertEquals(1, cookies.size());
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.maxAge(), 60);
+        assertEquals(60, cookie.maxAge());
     }
 
     @Test
@@ -68,9 +68,9 @@ public class NettyAsyncResponseTest {
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), responseHeaders, null);
 
         List<Cookie> cookies = response.getCookies();
-        assertEquals(cookies.size(), 1);
+        assertEquals(1, cookies.size());
 
         Cookie cookie = cookies.get(0);
-        assertEquals(cookie.maxAge(), Long.MIN_VALUE);
+        assertEquals(Long.MIN_VALUE, cookie.maxAge());
     }
 }

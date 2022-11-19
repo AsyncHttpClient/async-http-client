@@ -15,21 +15,24 @@ package org.asynchttpclient.netty.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.testng.internal.junit.ArrayAsserts;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ByteBufUtilsTests {
+
+    public static final char[] EXPECTED = {};
 
     @Test
     public void testByteBuf2BytesEmptyByteBuf() {
         ByteBuf buf = Unpooled.buffer();
 
         try {
-            ArrayAsserts.assertArrayEquals(new byte[]{},
-                    ByteBufUtils.byteBuf2Bytes(buf));
+            assertArrayEquals(new byte[]{}, ByteBufUtils.byteBuf2Bytes(buf));
         } finally {
             buf.release();
         }
@@ -40,8 +43,7 @@ public class ByteBufUtilsTests {
         ByteBuf byteBuf = Unpooled.wrappedBuffer(new byte[]{'f', 'o', 'o'});
 
         try {
-            ArrayAsserts.assertArrayEquals(new byte[]{'f', 'o', 'o'},
-                    ByteBufUtils.byteBuf2Bytes(byteBuf));
+            assertArrayEquals(new byte[]{'f', 'o', 'o'}, ByteBufUtils.byteBuf2Bytes(byteBuf));
         } finally {
             byteBuf.release();
         }
@@ -50,11 +52,10 @@ public class ByteBufUtilsTests {
     @Test
     public void testByteBuf2String() {
         ByteBuf byteBuf = Unpooled.wrappedBuffer(new byte[]{'f', 'o', 'o'});
-        Charset charset = Charset.forName("US-ASCII");
+        Charset charset = StandardCharsets.US_ASCII;
 
         try {
-            Assert.assertEquals(
-                    ByteBufUtils.byteBuf2String(charset, byteBuf), "foo");
+            assertEquals(ByteBufUtils.byteBuf2String(charset, byteBuf), "foo");
         } finally {
             byteBuf.release();
         }
@@ -66,8 +67,7 @@ public class ByteBufUtilsTests {
         ByteBuf byteBuf2 = Unpooled.wrappedBuffer(new byte[]{'o', 'o'});
 
         try {
-            Assert.assertEquals(ByteBufUtils.byteBuf2String(
-                    Charset.forName("ISO-8859-1"), byteBuf1, byteBuf2), "foo");
+            assertEquals(ByteBufUtils.byteBuf2String(StandardCharsets.ISO_8859_1, byteBuf1, byteBuf2), "foo");
         } finally {
             byteBuf1.release();
             byteBuf2.release();
@@ -80,12 +80,9 @@ public class ByteBufUtilsTests {
         ByteBuf byteBuf2 = Unpooled.wrappedBuffer(new byte[]{'o'});
 
         try {
-            ArrayAsserts.assertArrayEquals(new char[]{}, ByteBufUtils
-                    .byteBuf2Chars(Charset.forName("US-ASCII"), byteBuf1));
-            ArrayAsserts.assertArrayEquals(new char[]{}, ByteBufUtils
-                    .byteBuf2Chars(Charset.forName("ISO-8859-1"), byteBuf1));
-            ArrayAsserts.assertArrayEquals(new char[]{'o'}, ByteBufUtils
-                    .byteBuf2Chars(Charset.forName("ISO-8859-1"), byteBuf2));
+            assertArrayEquals(EXPECTED, ByteBufUtils.byteBuf2Chars(StandardCharsets.US_ASCII, byteBuf1));
+            assertArrayEquals(EXPECTED, ByteBufUtils.byteBuf2Chars(StandardCharsets.ISO_8859_1, byteBuf1));
+            assertArrayEquals(new char[]{'o'}, ByteBufUtils.byteBuf2Chars(StandardCharsets.ISO_8859_1, byteBuf2));
         } finally {
             byteBuf1.release();
             byteBuf2.release();
@@ -98,12 +95,8 @@ public class ByteBufUtilsTests {
         ByteBuf byteBuf2 = Unpooled.wrappedBuffer(new byte[]{'%', '*'});
 
         try {
-            ArrayAsserts.assertArrayEquals(new char[]{'f', 'o', '%', '*'},
-                    ByteBufUtils.byteBuf2Chars(Charset.forName("US-ASCII"),
-                            byteBuf1, byteBuf2));
-            ArrayAsserts.assertArrayEquals(new char[]{'f', 'o', '%', '*'},
-                    ByteBufUtils.byteBuf2Chars(Charset.forName("ISO-8859-1"),
-                            byteBuf1, byteBuf2));
+            assertArrayEquals(new char[]{'f', 'o', '%', '*'}, ByteBufUtils.byteBuf2Chars(StandardCharsets.US_ASCII, byteBuf1, byteBuf2));
+            assertArrayEquals(new char[]{'f', 'o', '%', '*'}, ByteBufUtils.byteBuf2Chars(StandardCharsets.ISO_8859_1, byteBuf1, byteBuf2));
         } finally {
             byteBuf1.release();
             byteBuf2.release();
@@ -116,9 +109,7 @@ public class ByteBufUtilsTests {
         ByteBuf byteBuf2 = Unpooled.wrappedBuffer(new byte[]{'o'});
 
         try {
-            ArrayAsserts.assertArrayEquals(new char[]{'o'}, ByteBufUtils
-                    .byteBuf2Chars(Charset.forName("ISO-8859-1"),
-                            byteBuf1, byteBuf2));
+           assertArrayEquals(new char[]{'o'}, ByteBufUtils.byteBuf2Chars(StandardCharsets.ISO_8859_1, byteBuf1, byteBuf2));
         } finally {
             byteBuf1.release();
             byteBuf2.release();

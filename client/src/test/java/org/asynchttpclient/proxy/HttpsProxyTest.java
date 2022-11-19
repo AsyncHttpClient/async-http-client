@@ -23,9 +23,9 @@ import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -35,21 +35,21 @@ import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Proxy usage tests.
  */
 public class HttpsProxyTest extends AbstractBasicTest {
 
-    private Server server2;
+    private static Server server2;
 
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new ConnectHandler();
     }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
@@ -65,19 +65,18 @@ public class HttpsProxyTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }
 
     @Test
     public void testRequestProxy() throws Exception {
-
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
-            Response r = asyncHttpClient.executeRequest(rb.build()).get();
-            assertEquals(r.getStatusCode(), 200);
+            Response response = client.executeRequest(rb.build()).get();
+            assertEquals(200, response.getStatusCode());
         }
     }
 
@@ -88,9 +87,10 @@ public class HttpsProxyTest extends AbstractBasicTest {
                 .setProxyServer(proxyServer("localhost", port1).build())
                 .setUseInsecureTrustManager(true)
                 .build();
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-            Response r = asyncHttpClient.executeRequest(get(getTargetUrl2())).get();
-            assertEquals(r.getStatusCode(), 200);
+
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
+            Response response = client.executeRequest(get(getTargetUrl2())).get();
+            assertEquals(200, response.getStatusCode());
         }
     }
 
@@ -101,9 +101,10 @@ public class HttpsProxyTest extends AbstractBasicTest {
                 .setProxyServer(proxyServer("localhost", port1).build())
                 .setUseInsecureTrustManager(true)
                 .build();
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-            Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
-            assertEquals(r.getStatusCode(), 200);
+
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
+            Response response = client.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
+            assertEquals(200, response.getStatusCode());
         }
     }
 
@@ -114,13 +115,15 @@ public class HttpsProxyTest extends AbstractBasicTest {
                 .setProxyServer(proxyServer("localhost", port1).build())
                 .setUseInsecureTrustManager(true)
                 .build();
-        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
             String body = "hello world";
-            Response r = asyncHttpClient.executeRequest(post(getTargetUrl2())
+            Response response = client.executeRequest(post(getTargetUrl2())
                     .setHeader("X-COMPRESS", "true")
                     .setBody(body)).get();
-            assertEquals(r.getStatusCode(), 200);
-            assertEquals(r.getResponseBody(), body);
+
+            assertEquals(200, response.getStatusCode());
+            assertEquals(body, response.getResponseBody());
         }
     }
 
@@ -130,11 +133,11 @@ public class HttpsProxyTest extends AbstractBasicTest {
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
 
-            Response r1 = asyncHttpClient.executeRequest(rb.build()).get();
-            assertEquals(r1.getStatusCode(), 200);
+            Response response1 = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(200, response1.getStatusCode());
 
-            Response r2 = asyncHttpClient.executeRequest(rb.build()).get();
-            assertEquals(r2.getStatusCode(), 200);
+            Response response2 = asyncHttpClient.executeRequest(rb.build()).get();
+            assertEquals(200, response2.getStatusCode());
         }
     }
 }

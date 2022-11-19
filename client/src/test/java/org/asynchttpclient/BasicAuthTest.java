@@ -16,25 +16,23 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,19 +45,17 @@ import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
 import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class BasicAuthTest extends AbstractBasicTest {
 
-    private Server server2;
-    private Server serverNoAuth;
-    private int portNoAuth;
+    private static Server server2;
+    private static Server serverNoAuth;
+    private static int portNoAuth;
 
-    @BeforeClass(alwaysRun = true)
-    @Override
-    public void setUpGlobal() throws Exception {
-
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -82,16 +78,15 @@ public class BasicAuthTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
-        super.tearDownGlobal();
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
+        AbstractBasicTest.tearDownGlobal();
         server2.stop();
         serverNoAuth.stop();
     }
 
-    @Override
-    protected String getTargetUrl() {
-        return "http://localhost:" + port1 + "/";
+    protected static String getTargetUrl() {
+        return "http://localhost:" + port1 + '/';
     }
 
     @Override
@@ -99,17 +94,16 @@ public class BasicAuthTest extends AbstractBasicTest {
         return "http://localhost:" + port2 + "/uff";
     }
 
-    private String getTargetUrlNoAuth() {
-        return "http://localhost:" + portNoAuth + "/";
+    private static String getTargetUrlNoAuth() {
+        return "http://localhost:" + portNoAuth + '/';
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
     }
 
     @Test
-    public void basicAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void basicAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())
                     .setRealm(basicAuthRealm(USER, ADMIN).build())
@@ -145,16 +139,19 @@ public class BasicAuthTest extends AbstractBasicTest {
 
                 private HttpResponseStatus status;
 
+                @Override
                 public void onThrowable(Throwable t) {
 
                 }
 
+                @Override
                 public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onStatusReceived(HttpResponseStatus responseStatus) {
-                    this.status = responseStatus;
+                    status = responseStatus;
 
                     if (status.getStatusCode() != 200) {
                         return State.ABORT;
@@ -162,10 +159,12 @@ public class BasicAuthTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onHeadersReceived(HttpHeaders headers) {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public Integer onCompleted() {
                     return status.getStatusCode();
                 }
@@ -177,7 +176,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test
-    public void basicAuthTestPreemptiveTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void basicAuthTestPreemptiveTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // send the request to the no-auth endpoint to be able to verify the
             // auth header is really sent preemptively for the initial call.
@@ -193,7 +192,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test
-    public void basicAuthNegativeTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void basicAuthNegativeTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())
                     .setRealm(basicAuthRealm("fake", ADMIN).build())
@@ -206,7 +205,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test
-    public void basicAuthInputStreamTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void basicAuthInputStreamTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())
                     .setBody(new ByteArrayInputStream("test".getBytes()))
@@ -270,7 +269,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Test
-    public void noneAuthTest() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void noneAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(basicAuthRealm(USER, ADMIN).build());
 
@@ -286,6 +285,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(RedirectHandler.class);
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
             LOGGER.info("request: " + request.getRequestURI());
@@ -312,6 +312,7 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     public static class SimpleHandler extends AbstractHandler {
 
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
             if (request.getHeader("X-401") != null) {

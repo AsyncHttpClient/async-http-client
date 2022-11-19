@@ -15,28 +15,26 @@
  */
 package org.asynchttpclient;
 
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ParamEncodingTest extends AbstractBasicTest {
 
     @Test
-    public void testParameters() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+    public void testParameters() throws Exception {
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -48,12 +46,12 @@ public class ParamEncodingTest extends AbstractBasicTest {
         }
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new ParamEncoding();
     }
 
-    private class ParamEncoding extends AbstractHandler {
+    private static class ParamEncoding extends AbstractHandler {
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 String p = request.getParameter("test");

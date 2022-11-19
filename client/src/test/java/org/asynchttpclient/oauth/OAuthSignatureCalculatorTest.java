@@ -17,11 +17,11 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.util.Utf8UrlEncoder;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.security.InvalidKeyException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.post;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the OAuth signature behavior.
@@ -47,7 +47,7 @@ public class OAuthSignatureCalculatorTest {
     private static final String CONSUMER_SECRET = "kd94hf93k423kf44";
 
     // sample from RFC https://tools.ietf.org/html/rfc5849#section-3.4.1
-    private void testSignatureBaseString(Request request) throws NoSuchAlgorithmException {
+    private static void testSignatureBaseString(Request request) throws NoSuchAlgorithmException {
         String signatureBaseString = new OAuthSignatureCalculatorInstance()
                 .signatureBaseString(//
                         new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET),
@@ -59,7 +59,7 @@ public class OAuthSignatureCalculatorTest {
                         137131201,
                         "7d8f3e4a").toString();
 
-        assertEquals(signatureBaseString, "POST&"
+        assertEquals("POST&"
                 + "http%3A%2F%2Fexample.com%2Frequest"
                 + "&a2%3Dr%2520b%26"
                 + "a3%3D2%2520q%26"
@@ -72,11 +72,11 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_signature_method%3DHMAC-SHA1%26"
                 + "oauth_timestamp%3D137131201%26"
                 + "oauth_token%3Dkkk9d7dh3k39sjv7%26"
-                + "oauth_version%3D1.0");
+                + "oauth_version%3D1.0", signatureBaseString);
     }
 
     // fork above test with an OAuth token that requires encoding
-    private void testSignatureBaseStringWithEncodableOAuthToken(Request request) throws NoSuchAlgorithmException {
+    private static void testSignatureBaseStringWithEncodableOAuthToken(Request request) throws NoSuchAlgorithmException {
         String signatureBaseString = new OAuthSignatureCalculatorInstance()
                 .signatureBaseString(//
                         new ConsumerKey("9djdj82h48djs9d2", CONSUMER_SECRET),
@@ -88,7 +88,7 @@ public class OAuthSignatureCalculatorTest {
                         137131201,
                         Utf8UrlEncoder.percentEncodeQueryElement("ZLc92RAkooZcIO/0cctl0Q==")).toString();
 
-        assertEquals(signatureBaseString, "POST&"
+        assertEquals("POST&"
                 + "http%3A%2F%2Fexample.com%2Frequest"
                 + "&a2%3Dr%2520b%26"
                 + "a3%3D2%2520q%26"
@@ -101,7 +101,7 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_signature_method%3DHMAC-SHA1%26"
                 + "oauth_timestamp%3D137131201%26"
                 + "oauth_token%3Dkkk9d7dh3k39sjv7%26"
-                + "oauth_version%3D1.0");
+                + "oauth_version%3D1.0", signatureBaseString);
     }
 
     @Test
@@ -133,8 +133,7 @@ public class OAuthSignatureCalculatorTest {
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
     @Test
-    public void testGetCalculateSignature() throws NoSuchAlgorithmException, InvalidKeyException {
-
+    public void testGetCalculateSignature() throws Exception {
         Request request = get("http://photos.example.net/photos")
                 .addQueryParam("file", "vacation.jpg")
                 .addQueryParam("size", "original")
@@ -150,7 +149,7 @@ public class OAuthSignatureCalculatorTest {
                         TIMESTAMP,
                         NONCE);
 
-        assertEquals(signature, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
+        assertEquals("tR3+Ty81lMeYAr/Fid0kMTYa/WM=", signature);
     }
 
     @Test
@@ -179,11 +178,11 @@ public class OAuthSignatureCalculatorTest {
 
         String authHeader = req.getHeaders().get(AUTHORIZATION);
         Matcher m = Pattern.compile("oauth_signature=\"(.+?)\"").matcher(authHeader);
-        assertEquals(m.find(), true);
+        assertTrue(m.find());
         String encodedSig = m.group(1);
-        String sig = URLDecoder.decode(encodedSig, "UTF-8");
+        String sig = URLDecoder.decode(encodedSig, StandardCharsets.UTF_8);
 
-        assertEquals(sig, "wPkvxykrw+BTdCcGqKr+3I+PsiM=");
+        assertEquals("wPkvxykrw+BTdCcGqKr+3I+PsiM=", sig);
     }
 
     @Test
@@ -202,7 +201,7 @@ public class OAuthSignatureCalculatorTest {
                 .build();
 
         final List<Param> params = req.getQueryParams();
-        assertEquals(params.size(), 2);
+        assertEquals(2, params.size());
 
         // From the signature tester, the URL should look like:
         // normalized parameters:
@@ -215,9 +214,9 @@ public class OAuthSignatureCalculatorTest {
 
         String authHeader = req.getHeaders().get(AUTHORIZATION);
         Matcher m = Pattern.compile("oauth_signature=\"(.+?)\"").matcher(authHeader);
-        assertEquals(m.find(), true);
+        assertTrue(m.find());
         String encodedSig = m.group(1);
-        String sig = URLDecoder.decode(encodedSig, "UTF-8");
+        String sig = URLDecoder.decode(encodedSig, StandardCharsets.UTF_8);
 
         assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
@@ -252,18 +251,17 @@ public class OAuthSignatureCalculatorTest {
         Matcher m = Pattern.compile("oauth_signature=\"(.+?)\"").matcher(authHeader);
         assertTrue(m.find());
         String encodedSig = m.group(1);
-        String sig = URLDecoder.decode(encodedSig, "UTF-8");
+        String sig = URLDecoder.decode(encodedSig, StandardCharsets.UTF_8);
 
-        assertEquals(sig, "tR3+Ty81lMeYAr/Fid0kMTYa/WM=");
-        assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
+        assertEquals("tR3+Ty81lMeYAr/Fid0kMTYa/WM=", sig);
+        assertEquals("http://photos.example.net/photos?file=vacation.jpg&size=original", req.getUrl());
         assertEquals(
-                authHeader,
-                "OAuth oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
+                "OAuth oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"",
+                authHeader);
     }
 
     @Test
     public void testWithNullRequestToken() throws NoSuchAlgorithmException {
-
         final Request request = get("http://photos.example.net/photos?file=vacation.jpg&size=original").build();
 
         String signatureBaseString = new OAuthSignatureCalculatorInstance()
@@ -277,13 +275,13 @@ public class OAuthSignatureCalculatorTest {
                         137131201,
                         Utf8UrlEncoder.percentEncodeQueryElement("ZLc92RAkooZcIO/0cctl0Q==")).toString();
 
-        assertEquals(signatureBaseString, "GET&" +
+        assertEquals("GET&" +
                 "http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26" +
                 "oauth_consumer_key%3D9djdj82h48djs9d2%26" +
                 "oauth_nonce%3DZLc92RAkooZcIO%252F0cctl0Q%253D%253D%26" +
                 "oauth_signature_method%3DHMAC-SHA1%26" +
                 "oauth_timestamp%3D137131201%26" +
-                "oauth_version%3D1.0%26size%3Doriginal");
+                "oauth_version%3D1.0%26size%3Doriginal", signatureBaseString);
     }
 
     @Test
@@ -301,18 +299,18 @@ public class OAuthSignatureCalculatorTest {
                         1469019732,
                         "6ad17f97334700f3ec2df0631d5b7511").toString();
 
-        assertEquals(signatureBaseString, "GET&" +
+        assertEquals("GET&" +
                 "http%3A%2F%2Fterm.ie%2Foauth%2Fexample%2Frequest_token.php&"
                 + "oauth_consumer_key%3Dkey%26"
                 + "oauth_nonce%3D6ad17f97334700f3ec2df0631d5b7511%26"
                 + "oauth_signature_method%3DHMAC-SHA1%26"
                 + "oauth_timestamp%3D1469019732%26"
                 + "oauth_version%3D1.0%26"
-                + "testvalue%3D%252A");
+                + "testvalue%3D%252A", signatureBaseString);
     }
 
     @Test
-    public void testSignatureGenerationWithAsteriskInPath() throws InvalidKeyException, NoSuchAlgorithmException {
+    public void testSignatureGenerationWithAsteriskInPath() throws Exception {
         ConsumerKey consumerKey = new ConsumerKey("key", "secret");
         RequestToken requestToken = new RequestToken(null, null);
         String nonce = "6ad17f97334700f3ec2df0631d5b7511";
@@ -330,7 +328,7 @@ public class OAuthSignatureCalculatorTest {
                 request.getQueryParams(),
                 timestamp,
                 nonce);
-        assertEquals(actualSignature, expectedSignature);
+        assertEquals(expectedSignature, actualSignature);
 
         String generatedAuthHeader = new OAuthSignatureCalculatorInstance().computeAuthorizationHeader(consumerKey, requestToken, actualSignature, timestamp, nonce);
         assertTrue(generatedAuthHeader.contains("oauth_signature=\"cswi%2Fv3ZqhVkTyy5MGqW841BxDA%3D\""));

@@ -26,9 +26,9 @@ import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpServer.EchoHandler;
 import org.asynchttpclient.testserver.HttpTest;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
 import javax.servlet.ServletException;
@@ -56,7 +56,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.config;
@@ -71,19 +74,27 @@ import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.asynchttpclient.test.TestUtils.writeResponseBody;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class BasicHttpTest extends HttpTest {
 
+    public static final byte[] ACTUAL = {};
     private static HttpServer server;
 
-    @BeforeClass
+    @BeforeAll
     public static void start() throws Throwable {
         server = new HttpServer();
         server.start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() throws Throwable {
         server.close();
     }
@@ -244,12 +255,8 @@ public class BasicHttpTest extends HttpTest {
                         public Response onCompleted(Response response) {
                             assertEquals(response.getStatusCode(), 200);
                             String value;
-                            try {
-                                // headers must be encoded
-                                value = URLDecoder.decode(response.getHeader("X-param"), StandardCharsets.UTF_8.name());
-                            } catch (UnsupportedEncodingException e) {
-                                throw new RuntimeException(e);
-                            }
+                            // headers must be encoded
+                            value = URLDecoder.decode(response.getHeader("X-param"), UTF_8);
                             assertEquals(value, chineseChar);
                             return response;
                         }
@@ -275,9 +282,9 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void nullSchemeThrowsNPE() throws Throwable {
-        withClient().run(client -> client.prepareGet("gatling.io").execute());
+        assertThrows(IllegalAccessException.class, () -> withClient().run(client -> client.prepareGet("gatling.io").execute()));
     }
 
     @Test
@@ -329,7 +336,7 @@ public class BasicHttpTest extends HttpTest {
                     Response response = client.preparePost(getTargetUrl())
                             .setBody("\u017D\u017D\u017D\u017D\u017D\u017D")
                             .execute().get();
-                    assertEquals(response.getResponseBodyAsBytes(), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(UTF_8));
+                    assertArrayEquals(response.getResponseBodyAsBytes(), "\u017D\u017D\u017D\u017D\u017D\u017D".getBytes(UTF_8));
                 }));
     }
 
@@ -342,7 +349,7 @@ public class BasicHttpTest extends HttpTest {
 
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < 5; i++) {
-                        sb.append("param_").append(i).append("=value_").append(i).append("&");
+                        sb.append("param_").append(i).append("=value_").append(i).append('&');
                     }
                     sb.setLength(sb.length() - 1);
 
@@ -373,14 +380,14 @@ public class BasicHttpTest extends HttpTest {
                     h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < 5; i++) {
-                        sb.append("param_").append(i).append("=value_").append(i).append("&");
+                        sb.append("param_").append(i).append("=value_").append(i).append('&');
                     }
                     sb.setLength(sb.length() - 1);
 
                     server.enqueueEcho();
                     client.preparePost(getTargetUrl())
                             .setHeaders(h)
-                            .setBody(new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)))
+                            .setBody(new ByteArrayInputStream(sb.toString().getBytes(UTF_8)))
                             .execute(new AsyncCompletionHandlerAdapter() {
 
                                 @Override
@@ -404,7 +411,7 @@ public class BasicHttpTest extends HttpTest {
                     h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < 5; i++) {
-                        sb.append("param_").append(i).append("=value_").append(i).append("&");
+                        sb.append("param_").append(i).append("=value_").append(i).append('&');
                     }
                     sb.setLength(sb.length() - 1);
                     ByteArrayInputStream is = new ByteArrayInputStream(sb.toString().getBytes());
@@ -438,7 +445,7 @@ public class BasicHttpTest extends HttpTest {
                                 @Override
                                 public Response onCompleted(Response response) {
                                     String requestContentType = response.getHeader("X-" + CONTENT_TYPE);
-                                    String boundary = requestContentType.substring((requestContentType.indexOf("boundary") + "boundary".length() + 1));
+                                    String boundary = requestContentType.substring(requestContentType.indexOf("boundary") + "boundary".length() + 1);
                                     assertTrue(response.getResponseBody().regionMatches(false, "--".length(), boundary, 0, boundary.length()));
                                     return response;
                                 }
@@ -481,55 +488,63 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test(expectedExceptions = CancellationException.class)
+    @Test
     public void cancelledFutureThrowsCancellationException() throws Throwable {
-        withClient().run(client ->
-                withServer(server).run(server -> {
-                    HttpHeaders headers = new DefaultHttpHeaders();
-                    headers.add("X-Delay", 5_000);
-                    server.enqueueEcho();
+        assertThrows(CancellationException.class, () -> {
+            withClient().run(client ->
+                    withServer(server).run(server -> {
+                        HttpHeaders headers = new DefaultHttpHeaders();
+                        headers.add("X-Delay", 5_000);
+                        server.enqueueEcho();
 
-                    Future<Response> future = client.prepareGet(getTargetUrl()).setHeaders(headers).execute(new AsyncCompletionHandlerAdapter() {
-                        @Override
-                        public void onThrowable(Throwable t) {
-                        }
-                    });
-                    future.cancel(true);
-                    future.get(TIMEOUT, SECONDS);
-                }));
+                        Future<Response> future = client.prepareGet(getTargetUrl()).setHeaders(headers).execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                            }
+                        });
+                        future.cancel(true);
+                        future.get(TIMEOUT, SECONDS);
+                    }));
+        });
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void futureTimeOutThrowsTimeoutException() throws Throwable {
-        withClient().run(client ->
-                withServer(server).run(server -> {
-                    HttpHeaders headers = new DefaultHttpHeaders();
-                    headers.add("X-Delay", 5_000);
+        assertThrows(TimeoutException.class, () -> {
+            withClient().run(client ->
+                    withServer(server).run(server -> {
+                        HttpHeaders headers = new DefaultHttpHeaders();
+                        headers.add("X-Delay", 5_000);
 
-                    server.enqueueEcho();
-                    Future<Response> future = client.prepareGet(getTargetUrl()).setHeaders(headers).execute(new AsyncCompletionHandlerAdapter() {
-                        @Override
-                        public void onThrowable(Throwable t) {
-                        }
-                    });
+                        server.enqueueEcho();
+                        Future<Response> future = client.prepareGet(getTargetUrl()).setHeaders(headers).execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                            }
+                        });
 
-                    future.get(2, SECONDS);
-                }));
+                        future.get(2, SECONDS);
+                    }));
+        });
     }
 
-    @Test(expectedExceptions = ConnectException.class)
+    @Test
     public void connectFailureThrowsConnectException() throws Throwable {
-        withClient().run(client -> {
-            int dummyPort = findFreePort();
-            try {
-                client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                    @Override
-                    public void onThrowable(Throwable t) {
+        assertThrows(ConnectException.class, () -> {
+            assertThrows(ConnectException.class, () -> {
+                withClient().run(client -> {
+                    int dummyPort = findFreePort();
+                    try {
+                        client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onThrowable(Throwable t) {
+                            }
+                        }).get(TIMEOUT, SECONDS);
+                    } catch (ExecutionException ex) {
+                        throw ex.getCause();
                     }
-                }).get(TIMEOUT, SECONDS);
-            } catch (ExecutionException ex) {
-                throw ex.getCause();
-            }
+                });
+            });
         });
     }
 
@@ -557,20 +572,22 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test(expectedExceptions = UnknownHostException.class)
+    @Test
     public void unknownHostThrowsUnknownHostException() throws Throwable {
-        withClient().run(client ->
-                withServer(server).run(server -> {
-                    try {
-                        client.prepareGet("http://null.gatling.io").execute(new AsyncCompletionHandlerAdapter() {
-                            @Override
-                            public void onThrowable(Throwable t) {
-                            }
-                        }).get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException e) {
-                        throw e.getCause();
-                    }
-                }));
+        assertThrows(UnknownHostException.class, () -> {
+            withClient().run(client ->
+                    withServer(server).run(server -> {
+                        try {
+                            client.prepareGet("http://null.gatling.io").execute(new AsyncCompletionHandlerAdapter() {
+                                @Override
+                                public void onThrowable(Throwable t) {
+                                }
+                            }).get(TIMEOUT, SECONDS);
+                        } catch (ExecutionException e) {
+                            throw e.getCause();
+                        }
+                    }));
+        });
     }
 
     @Test
@@ -634,91 +651,97 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void exceptionInOnCompletedGetNotifiedToFuture() throws Throwable {
-        withClient().run(client ->
-                withServer(server).run(server -> {
-                    server.enqueueOk();
-                    Future<Response> whenResponse = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
-                        @Override
-                        public Response onCompleted(Response response) {
-                            throw unknownStackTrace(new IllegalStateException("FOO"), BasicHttpTest.class, "exceptionInOnCompletedGetNotifiedToFuture");
-                        }
+        assertThrows(IllegalStateException.class, () -> {
+            withClient().run(client ->
+                    withServer(server).run(server -> {
+                        server.enqueueOk();
+                        Future<Response> whenResponse = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public Response onCompleted(Response response) {
+                                throw unknownStackTrace(new IllegalStateException("FOO"), BasicHttpTest.class, "exceptionInOnCompletedGetNotifiedToFuture");
+                            }
 
-                        @Override
-                        public void onThrowable(Throwable t) {
-                        }
-                    });
+                            @Override
+                            public void onThrowable(Throwable t) {
+                            }
+                        });
 
-                    try {
-                        whenResponse.get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException e) {
-                        throw e.getCause();
-                    }
-                }));
+                        try {
+                            whenResponse.get(TIMEOUT, SECONDS);
+                        } catch (ExecutionException e) {
+                            throw e.getCause();
+                        }
+                    }));
+        });
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void configTimeoutNotifiesOnThrowableAndFuture() throws Throwable {
-        withClient(config().setRequestTimeout(1_000)).run(client ->
-                withServer(server).run(server -> {
-                    HttpHeaders headers = new DefaultHttpHeaders();
-                    headers.add("X-Delay", 5_000); // delay greater than timeout
+        assertThrows(TimeoutException.class, () -> {
+            withClient(config().setRequestTimeout(1_000)).run(client ->
+                    withServer(server).run(server -> {
+                        HttpHeaders headers = new DefaultHttpHeaders();
+                        headers.add("X-Delay", 5_000); // delay greater than timeout
 
-                    final AtomicBoolean onCompletedWasNotified = new AtomicBoolean();
-                    final AtomicBoolean onThrowableWasNotifiedWithTimeoutException = new AtomicBoolean();
-                    final CountDownLatch latch = new CountDownLatch(1);
+                        final AtomicBoolean onCompletedWasNotified = new AtomicBoolean();
+                        final AtomicBoolean onThrowableWasNotifiedWithTimeoutException = new AtomicBoolean();
+                        final CountDownLatch latch = new CountDownLatch(1);
 
-                    server.enqueueEcho();
-                    Future<Response> whenResponse = client.prepareGet(getTargetUrl()).setHeaders(headers).execute(new AsyncCompletionHandlerAdapter() {
+                        server.enqueueEcho();
+                        Future<Response> whenResponse = client.prepareGet(getTargetUrl()).setHeaders(headers).execute(new AsyncCompletionHandlerAdapter() {
 
-                        @Override
-                        public Response onCompleted(Response response) {
-                            onCompletedWasNotified.set(true);
-                            latch.countDown();
-                            return response;
+                            @Override
+                            public Response onCompleted(Response response) {
+                                onCompletedWasNotified.set(true);
+                                latch.countDown();
+                                return response;
+                            }
+
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                onThrowableWasNotifiedWithTimeoutException.set(t instanceof TimeoutException);
+                                latch.countDown();
+                            }
+                        });
+
+                        if (!latch.await(TIMEOUT, SECONDS)) {
+                            fail("Timed out");
                         }
 
-                        @Override
-                        public void onThrowable(Throwable t) {
-                            onThrowableWasNotifiedWithTimeoutException.set(t instanceof TimeoutException);
-                            latch.countDown();
+                        assertFalse(onCompletedWasNotified.get());
+                        assertTrue(onThrowableWasNotifiedWithTimeoutException.get());
+
+                        try {
+                            whenResponse.get(TIMEOUT, SECONDS);
+                        } catch (ExecutionException e) {
+                            throw e.getCause();
                         }
-                    });
-
-                    if (!latch.await(TIMEOUT, SECONDS)) {
-                        fail("Timed out");
-                    }
-
-                    assertFalse(onCompletedWasNotified.get());
-                    assertTrue(onThrowableWasNotifiedWithTimeoutException.get());
-
-                    try {
-                        whenResponse.get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException e) {
-                        throw e.getCause();
-                    }
-                }));
+                    }));
+        });
     }
 
-    @Test(expectedExceptions = TimeoutException.class)
+    @Test
     public void configRequestTimeoutHappensInDueTime() throws Throwable {
-        withClient(config().setRequestTimeout(1_000)).run(client ->
-                withServer(server).run(server -> {
-                    HttpHeaders h = new DefaultHttpHeaders();
-                    h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
-                    h.add("X-Delay", 2_000);
+        assertThrows(TimeoutException.class, () -> {
+            withClient(config().setRequestTimeout(1_000)).run(client ->
+                    withServer(server).run(server -> {
+                        HttpHeaders h = new DefaultHttpHeaders();
+                        h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
+                        h.add("X-Delay", 2_000);
 
-                    server.enqueueEcho();
-                    long start = unpreciseMillisTime();
-                    try {
-                        client.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
-                    } catch (Throwable ex) {
-                        final long elapsedTime = unpreciseMillisTime() - start;
-                        assertTrue(elapsedTime >= 1_000 && elapsedTime <= 1_500);
-                        throw ex.getCause();
-                    }
-                }));
+                        server.enqueueEcho();
+                        long start = unpreciseMillisTime();
+                        try {
+                            client.prepareGet(getTargetUrl()).setHeaders(h).setUrl(getTargetUrl()).execute().get();
+                        } catch (Throwable ex) {
+                            final long elapsedTime = unpreciseMillisTime() - start;
+                            assertTrue(elapsedTime >= 1_000 && elapsedTime <= 1_500);
+                            throw ex.getCause();
+                        }
+                    }));
+        });
     }
 
     @Test
@@ -729,8 +752,8 @@ public class BasicHttpTest extends HttpTest {
                     client.prepareGet(getTargetUrl() + "?foo=bar").execute(new AsyncCompletionHandlerAdapter() {
                         @Override
                         public Response onCompleted(Response response) {
-                            assertTrue(response.getHeader("X-PathInfo") != null);
-                            assertTrue(response.getHeader("X-QueryString") != null);
+                            assertNotNull(response.getHeader("X-PathInfo"));
+                            assertNotNull(response.getHeader("X-QueryString"));
                             return response;
                         }
                     }).get(TIMEOUT, SECONDS);
@@ -776,43 +799,42 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test(expectedExceptions = MaxRedirectException.class)
+    @Test
     public void reachingMaxRedirectThrowsMaxRedirectException() throws Throwable {
-        withClient(config().setMaxRedirects(1).setFollowRedirect(true)).run(client ->
-                withServer(server).run(server -> {
-                    try {
-                        // max redirect is 1, so second redirect will fail
-                        server.enqueueRedirect(301, getTargetUrl());
-                        server.enqueueRedirect(301, getTargetUrl());
-                        client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
-                            @Override
-                            public Response onCompleted(Response response) {
-                                fail("Should not be here");
-                                return response;
-                            }
+        assertThrows(MaxRedirectException.class, () -> {
+            withClient(config().setMaxRedirects(1).setFollowRedirect(true)).run(client ->
+                    withServer(server).run(server -> {
+                        try {
+                            // max redirect is 1, so second redirect will fail
+                            server.enqueueRedirect(301, getTargetUrl());
+                            server.enqueueRedirect(301, getTargetUrl());
+                            client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerAdapter() {
+                                @Override
+                                public Response onCompleted(Response response) {
+                                    fail("Should not be here");
+                                    return response;
+                                }
 
-                            @Override
-                            public void onThrowable(Throwable t) {
-                            }
-                        }).get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException e) {
-                        throw e.getCause();
-                    }
-                }));
+                                @Override
+                                public void onThrowable(Throwable t) {
+                                }
+                            }).get(TIMEOUT, SECONDS);
+                        } catch (ExecutionException e) {
+                            throw e.getCause();
+                        }
+                    }));
+        });
     }
 
     @Test
     public void nonBlockingNestedRequestsFromIoThreadAreFine() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
-
                     final int maxNested = 5;
-
                     final CountDownLatch latch = new CountDownLatch(2);
 
                     final AsyncCompletionHandlerAdapter handler = new AsyncCompletionHandlerAdapter() {
-
-                        private AtomicInteger nestedCount = new AtomicInteger(0);
+                        private final AtomicInteger nestedCount = new AtomicInteger(0);
 
                         @Override
                         public Response onCompleted(Response response) {
@@ -884,10 +906,12 @@ public class BasicHttpTest extends HttpTest {
                         client.prepareGet(getTargetUrl()).setBody("Boo!").execute()));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void malformedUriThrowsException() throws Throwable {
-        withClient().run(client ->
-                withServer(server).run(server -> client.prepareGet(String.format("http:localhost:%d/foo/test", server.getHttpPort())).build()));
+        assertThrows(IllegalArgumentException.class, () -> {
+            withClient().run(client ->
+                    withServer(server).run(server -> client.prepareGet(String.format("http:localhost:%d/foo/test", server.getHttpPort())).build()));
+        });
     }
 
     @Test
@@ -897,7 +921,7 @@ public class BasicHttpTest extends HttpTest {
                     server.enqueueEcho();
                     Response response = client.prepareGet(getTargetUrl()).execute().get();
                     assertEquals(response.getStatusCode(), 200);
-                    assertEquals(response.getResponseBodyAsBytes(), new byte[]{});
+                    assertArrayEquals(response.getResponseBodyAsBytes(), ACTUAL);
                 }));
     }
 
@@ -912,7 +936,7 @@ public class BasicHttpTest extends HttpTest {
                     client.executeRequest(request, handler).get(3, SECONDS);
                     handler.waitForCompletion(3, SECONDS);
 
-                    Object[] expectedEvents = new Object[]{
+                    Object[] expectedEvents = {
                             CONNECTION_POOL_EVENT,
                             HOSTNAME_RESOLUTION_EVENT,
                             HOSTNAME_RESOLUTION_SUCCESS_EVENT,
@@ -925,7 +949,7 @@ public class BasicHttpTest extends HttpTest {
                             CONNECTION_OFFER_EVENT,
                             COMPLETED_EVENT};
 
-                    assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
+                    assertArrayEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
                 }));
     }
 
@@ -951,7 +975,7 @@ public class BasicHttpTest extends HttpTest {
                     HttpHeaders h = new DefaultHttpHeaders();
                     h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
                     server.enqueue(new AbstractHandler() {
-                        EchoHandler chain = new EchoHandler();
+                        final EchoHandler chain = new EchoHandler();
 
                         @Override
                         public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
@@ -984,7 +1008,7 @@ public class BasicHttpTest extends HttpTest {
                     HttpHeaders h = new DefaultHttpHeaders();
                     h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
                     server.enqueue(new AbstractHandler() {
-                        EchoHandler chain = new EchoHandler();
+                        final EchoHandler chain = new EchoHandler();
 
                         @Override
                         public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)

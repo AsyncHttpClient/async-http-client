@@ -27,15 +27,15 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.test.TestUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.reactivestreams.example.unicast.AsyncIterablePublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ReadListener;
@@ -53,7 +53,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,14 +63,16 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES_MD5;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ReactiveStreamsTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsTest.class);
-    private Tomcat tomcat;
-    private int port1;
-    private ExecutorService executor;
+    private static Tomcat tomcat;
+    private static int port1;
+    private static ExecutorService executor;
 
     private static Publisher<ByteBuf> createPublisher(final byte[] bytes, final int chunkSize) {
         return Flowable.fromIterable(new ByteBufIterable(bytes, chunkSize));
@@ -90,8 +91,8 @@ public class ReactiveStreamsTest {
     }
 
     @SuppressWarnings("serial")
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
 
         String path = new File(".").getAbsolutePath() + "/target";
 
@@ -119,7 +120,7 @@ public class ReactiveStreamsTest {
                     httpResponse.setContentType(TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF_8_CHARSET);
                 }
 
-                if (httpRequest.getMethod().equalsIgnoreCase("OPTIONS")) {
+                if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
                     httpResponse.addHeader("Allow", "GET,HEAD,POST,OPTIONS,TRACE");
                 }
 
@@ -130,7 +131,7 @@ public class ReactiveStreamsTest {
                     if (headerName.startsWith("LockThread")) {
                         final int sleepTime = httpRequest.getIntHeader(headerName);
                         try {
-                            Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000);
+                            Thread.sleep(sleepTime == -1 ? 40 : sleepTime * 1000L);
                         } catch (InterruptedException ex) {
                             //
                         }
@@ -144,14 +145,16 @@ public class ReactiveStreamsTest {
                 }
 
                 String pathInfo = httpRequest.getPathInfo();
-                if (pathInfo != null)
+                if (pathInfo != null) {
                     httpResponse.addHeader("X-pathInfo", pathInfo);
+                }
 
                 String queryString = httpRequest.getQueryString();
-                if (queryString != null)
+                if (queryString != null) {
                     httpResponse.addHeader("X-queryString", queryString);
+                }
 
-                httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ":" + httpRequest.getRemotePort());
+                httpResponse.addHeader("X-KEEP-ALIVE", httpRequest.getRemoteAddr() + ':' + httpRequest.getRemotePort());
 
                 Cookie[] cs = httpRequest.getCookies();
                 if (cs != null) {
@@ -167,7 +170,7 @@ public class ReactiveStreamsTest {
                         headerName = i.nextElement();
                         httpResponse.addHeader("X-" + headerName, httpRequest.getParameter(headerName));
                         requestBody.append(headerName);
-                        requestBody.append("_");
+                        requestBody.append('_');
                     }
 
                     if (requestBody.length() > 0) {
@@ -182,7 +185,7 @@ public class ReactiveStreamsTest {
 
                 input.setReadListener(new ReadListener() {
 
-                    byte[] buffer = new byte[5 * 1024];
+                    final byte[] buffer = new byte[5 * 1024];
 
                     @Override
                     public void onError(Throwable t) {
@@ -223,8 +226,8 @@ public class ReactiveStreamsTest {
         executor = Executors.newSingleThreadExecutor();
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
         tomcat.stop();
         executor.shutdown();
     }
@@ -236,10 +239,9 @@ public class ReactiveStreamsTest {
     @Test
     public void testStreamingPutImage() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Response response = client.preparePut(getTargetUrl()).setBody(createAsyncPublisher(LARGE_IMAGE_BYTES, 2342))
-                    .execute().get();
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+            Response response = client.preparePut(getTargetUrl()).setBody(createAsyncPublisher(LARGE_IMAGE_BYTES, 2342)).execute().get();
+            assertEquals(200, response.getStatusCode());
+            assertArrayEquals(LARGE_IMAGE_BYTES, response.getResponseBodyAsBytes());
         }
     }
 
@@ -247,10 +249,9 @@ public class ReactiveStreamsTest {
     public void testAsyncStreamingPutImage() throws Exception {
         // test that streaming works with a publisher that does not invoke onSubscription synchronously from subscribe
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Response response = client.preparePut(getTargetUrl()).setBody(createPublisher(LARGE_IMAGE_BYTES, 2342))
-                    .execute().get();
+            Response response = client.preparePut(getTargetUrl()).setBody(createPublisher(LARGE_IMAGE_BYTES, 2342)).execute().get();
             assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
+            assertArrayEquals(response.getResponseBodyAsBytes(), LARGE_IMAGE_BYTES);
         }
     }
 
@@ -264,88 +265,86 @@ public class ReactiveStreamsTest {
                     .setHeader("X-" + CONTENT_MD5, LARGE_IMAGE_BYTES_MD5);
 
             Response response = requestBuilder.execute().get();
-            assertEquals(response.getStatusCode(), 200, "HTTP response was invalid on first request.");
+            assertEquals(200, response.getStatusCode(), "HTTP response was invalid on first request.");
 
             byte[] responseBody = response.getResponseBodyAsBytes();
-            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
-                    LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
-            assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
-            assertEquals(response.getHeader(CONTENT_MD5), LARGE_IMAGE_BYTES_MD5, "Server side payload MD5 invalid");
-            assertEquals(TestUtils.md5(responseBody), LARGE_IMAGE_BYTES_MD5, "Client side payload MD5 invalid");
-            assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes are not equal on first attempt");
+            assertEquals(LARGE_IMAGE_BYTES.length, Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
+                    "Server side payload length invalid");
+            assertEquals(LARGE_IMAGE_BYTES.length, responseBody.length, "Client side payload length invalid");
+            assertEquals(LARGE_IMAGE_BYTES_MD5, response.getHeader(CONTENT_MD5), "Server side payload MD5 invalid");
+            assertEquals(LARGE_IMAGE_BYTES_MD5, TestUtils.md5(responseBody), "Client side payload MD5 invalid");
+            assertArrayEquals(LARGE_IMAGE_BYTES, responseBody, "Image bytes are not equal on first attempt");
 
             response = requestBuilder.execute().get();
-            assertEquals(response.getStatusCode(), 200);
+            assertEquals(200, response.getStatusCode());
             responseBody = response.getResponseBodyAsBytes();
-            assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
-                    LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
-            assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
+            assertEquals(LARGE_IMAGE_BYTES.length, Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
+                    "Server side payload length invalid");
+            assertEquals(LARGE_IMAGE_BYTES.length, responseBody.length, "Client side payload length invalid");
 
             try {
-                assertEquals(response.getHeader(CONTENT_MD5), LARGE_IMAGE_BYTES_MD5, "Server side payload MD5 invalid");
-                assertEquals(TestUtils.md5(responseBody), LARGE_IMAGE_BYTES_MD5, "Client side payload MD5 invalid");
-                assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes weren't equal on subsequent test");
+                assertEquals(LARGE_IMAGE_BYTES_MD5, response.getHeader(CONTENT_MD5), "Server side payload MD5 invalid");
+                assertEquals(LARGE_IMAGE_BYTES_MD5, TestUtils.md5(responseBody), "Client side payload MD5 invalid");
+                assertArrayEquals(LARGE_IMAGE_BYTES, responseBody, "Image bytes weren't equal on subsequent test");
             } catch (AssertionError e) {
                 e.printStackTrace();
                 for (int i = 0; i < LARGE_IMAGE_BYTES.length; i++) {
-                    assertEquals(responseBody[i], LARGE_IMAGE_BYTES[i], "Invalid response byte at position " + i);
+                    assertEquals(LARGE_IMAGE_BYTES[i], responseBody[i], "Invalid response byte at position " + i);
                 }
                 throw e;
             }
         }
     }
 
-    @Test(expectedExceptions = ExecutionException.class)
+    @Test
     public void testFailingStream() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             Publisher<ByteBuf> failingPublisher = Flowable.error(new FailedStream());
-            client.preparePut(getTargetUrl()).setBody(failingPublisher).execute().get();
+            assertThrows(Exception.class, () -> client.preparePut(getTargetUrl()).setBody(failingPublisher).execute().get());
         }
     }
 
     @Test
     public void streamedResponseTest() throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
 
             SimpleSubscriber<HttpResponseBodyPart> subscriber = new SimpleSubscriber<>();
-            ListenableFuture<Void> future = c.preparePost(getTargetUrl())
-                    .setBody(LARGE_IMAGE_BYTES).execute(new SimpleStreamedAsyncHandler(subscriber));
+            ListenableFuture<Void> future = client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new SimpleStreamedAsyncHandler(subscriber));
 
             // block
             future.get();
-            assertEquals(getBytes(subscriber.getElements()), LARGE_IMAGE_BYTES);
+            assertArrayEquals(LARGE_IMAGE_BYTES, getBytes(subscriber.getElements()));
 
             // Run it again to check that the pipeline is in a good state
             subscriber = new SimpleSubscriber<>();
-            future = c.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new SimpleStreamedAsyncHandler(subscriber));
+            future = client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new SimpleStreamedAsyncHandler(subscriber));
 
             future.get();
-            assertEquals(getBytes(subscriber.getElements()), LARGE_IMAGE_BYTES);
+            assertArrayEquals(LARGE_IMAGE_BYTES, getBytes(subscriber.getElements()));
 
             // Make sure a regular request still works
-            assertEquals(c.preparePost(getTargetUrl()).setBody("Hello").execute().get().getResponseBody(), "Hello");
-
+            assertEquals("Hello", client.preparePost(getTargetUrl()).setBody("Hello").execute().get().getResponseBody());
         }
     }
 
     @Test
     public void cancelStreamedResponseTest() throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
 
             // Cancel immediately
-            c.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new CancellingStreamedAsyncProvider(0))
+            client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new CancellingStreamedAsyncProvider(0))
                     .get();
 
             // Cancel after 1 element
-            c.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new CancellingStreamedAsyncProvider(1))
+            client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new CancellingStreamedAsyncProvider(1))
                     .get();
 
             // Cancel after 10 elements
-            c.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new CancellingStreamedAsyncProvider(10))
+            client.preparePost(getTargetUrl()).setBody(LARGE_IMAGE_BYTES).execute(new CancellingStreamedAsyncProvider(10))
                     .get();
 
             // Make sure a regular request works
-            assertEquals(c.preparePost(getTargetUrl()).setBody("Hello").execute().get().getResponseBody(), "Hello");
+            assertEquals(client.preparePost(getTargetUrl()).setBody("Hello").execute().get().getResponseBody(), "Hello");
         }
     }
 
@@ -425,7 +424,7 @@ public class ReactiveStreamsTest {
             if (error != null) {
                 throw error;
             } else {
-                return elements;
+                return Collections.unmodifiableList(elements);
             }
         }
     }
@@ -475,7 +474,7 @@ public class ReactiveStreamsTest {
     static class CancellingSubscriber<T> implements Subscriber<T> {
         private final int cancelAfter;
         private volatile Subscription subscription;
-        private AtomicInteger count = new AtomicInteger(0);
+        private final AtomicInteger count = new AtomicInteger(0);
 
         CancellingSubscriber(int cancelAfter) {
             this.cancelAfter = cancelAfter;
@@ -521,7 +520,7 @@ public class ReactiveStreamsTest {
         @Override
         public Iterator<ByteBuf> iterator() {
             return new Iterator<ByteBuf>() {
-                private int currentIndex = 0;
+                private int currentIndex;
 
                 @Override
                 public boolean hasNext() {
@@ -545,6 +544,6 @@ public class ReactiveStreamsTest {
     }
 
     @SuppressWarnings("serial")
-    private class FailedStream extends RuntimeException {
+    private static class FailedStream extends RuntimeException {
     }
 }

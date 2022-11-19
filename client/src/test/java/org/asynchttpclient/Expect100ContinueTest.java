@@ -16,9 +16,9 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,23 +30,22 @@ import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test the Expect: 100-Continue.
  */
 public class Expect100ContinueTest extends AbstractBasicTest {
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new ZeroCopyHandler();
     }
 
     @Test
     public void Expect100Continue() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePut("http://localhost:" + port1 + "/")
+            Future<Response> f = client.preparePut("http://localhost:" + port1 + '/')
                     .setHeader(EXPECT, HttpHeaderValues.CONTINUE)
                     .setBody(SIMPLE_TEXT_FILE)
                     .execute();
@@ -58,6 +57,8 @@ public class Expect100ContinueTest extends AbstractBasicTest {
     }
 
     private static class ZeroCopyHandler extends AbstractHandler {
+
+        @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             int size = 10 * 1024;

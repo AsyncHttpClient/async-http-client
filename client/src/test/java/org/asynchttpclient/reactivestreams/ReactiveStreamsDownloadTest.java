@@ -20,14 +20,14 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.test.TestUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -37,50 +37,50 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReactiveStreamsDownloadTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveStreamsDownloadTest.class);
 
-    private final int serverPort = 8080;
-    private File largeFile;
-    private File smallFile;
+    private static final int serverPort = 8080;
+    private static File largeFile;
+    private static File smallFile;
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpBeforeTest() throws Exception {
+    @BeforeAll
+    public static void setUpBeforeTest() throws Exception {
         largeFile = TestUtils.createTempFile(15 * 1024);
         smallFile = TestUtils.createTempFile(20);
         HttpStaticFileServer.start(serverPort);
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         HttpStaticFileServer.shutdown();
     }
 
     @Test
     public void streamedResponseLargeFileTest() throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient()) {
-            String largeFileName = "http://localhost:" + serverPort + "/" + largeFile.getName();
-            ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(largeFileName).execute(new SimpleStreamedAsyncHandler());
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            String largeFileName = "http://localhost:" + serverPort + '/' + largeFile.getName();
+            ListenableFuture<SimpleStreamedAsyncHandler> future = client.prepareGet(largeFileName).execute(new SimpleStreamedAsyncHandler());
             byte[] result = future.get().getBytes();
-            assertEquals(result.length, largeFile.length());
+            assertEquals(largeFile.length(), result.length);
         }
     }
 
     @Test
     public void streamedResponseSmallFileTest() throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient()) {
-            String smallFileName = "http://localhost:" + serverPort + "/" + smallFile.getName();
-            ListenableFuture<SimpleStreamedAsyncHandler> future = c.prepareGet(smallFileName).execute(new SimpleStreamedAsyncHandler());
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            String smallFileName = "http://localhost:" + serverPort + '/' + smallFile.getName();
+            ListenableFuture<SimpleStreamedAsyncHandler> future = client.prepareGet(smallFileName).execute(new SimpleStreamedAsyncHandler());
             byte[] result = future.get().getBytes();
             LOGGER.debug("Result file size: " + result.length);
-            assertEquals(result.length, smallFile.length());
+            assertEquals(smallFile.length(), result.length);
         }
     }
 
-    static protected class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
+    protected static class SimpleStreamedAsyncHandler implements StreamedAsyncHandler<SimpleStreamedAsyncHandler> {
         private final SimpleSubscriber<HttpResponseBodyPart> subscriber;
 
         SimpleStreamedAsyncHandler() {
@@ -138,7 +138,7 @@ public class ReactiveStreamsDownloadTest {
     /**
      * Simple subscriber that requests and buffers one element at a time.
      */
-    static protected class SimpleSubscriber<T> implements Subscriber<T> {
+    protected static class SimpleSubscriber<T> implements Subscriber<T> {
         private final List<T> elements = Collections.synchronizedList(new ArrayList<>());
         private final CountDownLatch latch = new CountDownLatch(1);
         private volatile Subscription subscription;
@@ -176,7 +176,7 @@ public class ReactiveStreamsDownloadTest {
             if (error != null) {
                 throw error;
             } else {
-                return elements;
+                return Collections.unmodifiableList(elements);
             }
         }
     }

@@ -13,9 +13,9 @@
 package org.asynchttpclient;
 
 import org.asynchttpclient.exception.RemotelyClosedException;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -25,16 +25,16 @@ import java.io.OutputStream;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RetryRequestTest extends AbstractBasicTest {
-    protected String getTargetUrl() {
+
+    protected static String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new SlowAndBigHandler();
     }
 
@@ -50,6 +50,7 @@ public class RetryRequestTest extends AbstractBasicTest {
 
     public static class SlowAndBigHandler extends AbstractHandler {
 
+        @Override
         public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             int load = 100;

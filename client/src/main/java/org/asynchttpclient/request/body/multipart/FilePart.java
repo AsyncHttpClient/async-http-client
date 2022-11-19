@@ -15,8 +15,6 @@ package org.asynchttpclient.request.body.multipart;
 import java.io.File;
 import java.nio.charset.Charset;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
-
 public class FilePart extends FileLikePart {
 
     private final File file;
@@ -53,6 +51,10 @@ public class FilePart extends FileLikePart {
         if (!file.canRead())
             throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
         this.file = file;
+    }
+
+    private File assertNotNull(File file, String file1) {
+        return null;
     }
 
     public File getFile() {

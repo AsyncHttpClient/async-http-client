@@ -16,28 +16,29 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.eclipse.jetty.server.Request;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Reverse C1K Problem test.
@@ -48,11 +49,11 @@ public class RC1KTest extends AbstractBasicTest {
     private static final int C1K = 1000;
     private static final String ARG_HEADER = "Arg";
     private static final int SRV_COUNT = 10;
-    private Server[] servers = new Server[SRV_COUNT];
-    private int[] ports = new int[SRV_COUNT];
+    private static final Server[] servers = new Server[SRV_COUNT];
+    private static int[] ports = new int[SRV_COUNT];
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         ports = new int[SRV_COUNT];
         for (int i = 0; i < SRV_COUNT; i++) {
             Server server = new Server();
@@ -65,16 +66,16 @@ public class RC1KTest extends AbstractBasicTest {
         logger.info("Local HTTP servers started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
         for (Server srv : servers) {
             srv.stop();
         }
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
+            @Override
             public void handle(String s, Request r, HttpServletRequest req, HttpServletResponse resp) throws IOException {
                 resp.setContentType("text/pain");
                 String arg = s.substring(1);
@@ -87,8 +88,9 @@ public class RC1KTest extends AbstractBasicTest {
         };
     }
 
-    @Test(timeOut = 10 * 60 * 1000)
-    public void rc10kProblem() throws IOException, ExecutionException, InterruptedException {
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 10 * 60 * 1000)
+    public void rc10kProblem() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C1K).setKeepAlive(true))) {
             List<Future<Integer>> resps = new ArrayList<>(C1K);
             int i = 0;
@@ -104,34 +106,39 @@ public class RC1KTest extends AbstractBasicTest {
         }
     }
 
-    private class MyAsyncHandler implements AsyncHandler<Integer> {
-        private String arg;
-        private AtomicInteger result = new AtomicInteger(-1);
+    private static class MyAsyncHandler implements AsyncHandler<Integer> {
+        private final String arg;
+        private final AtomicInteger result = new AtomicInteger(-1);
 
         MyAsyncHandler(int i) {
             arg = String.format("%d", i);
         }
 
+        @Override
         public void onThrowable(Throwable t) {
             logger.warn("onThrowable called.", t);
         }
 
+        @Override
         public State onBodyPartReceived(HttpResponseBodyPart event) {
             String s = new String(event.getBodyPartBytes());
-            result.compareAndSet(-1, new Integer(s.trim().equals("") ? "-1" : s));
+            result.compareAndSet(-1, Integer.valueOf(s.trim().isEmpty() ? "-1" : s));
             return State.CONTINUE;
         }
 
+        @Override
         public State onStatusReceived(HttpResponseStatus event) {
             assertEquals(event.getStatusCode(), 200);
             return State.CONTINUE;
         }
 
+        @Override
         public State onHeadersReceived(HttpHeaders event) {
             assertEquals(event.get(ARG_HEADER), arg);
             return State.CONTINUE;
         }
 
+        @Override
         public Integer onCompleted() {
             return result.get();
         }

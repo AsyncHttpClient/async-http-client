@@ -20,18 +20,16 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHENTICATE;
@@ -41,6 +39,7 @@ import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test that validates that when having an HTTP proxy and trying to access an HTTP through the proxy the proxy credentials should be passed after it gets a 407 response.
@@ -49,15 +48,14 @@ public class BasicHttpProxyToHttpTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpProxyToHttpTest.class);
 
-    private int httpPort;
-    private int proxyPort;
+    private static int httpPort;
+    private static int proxyPort;
 
-    private Server httpServer;
-    private Server proxy;
+    private static Server httpServer;
+    private static Server proxy;
 
-    @BeforeClass
-    public void setUpGlobal() throws Exception {
-
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         httpServer = new Server();
         ServerConnector connector1 = addHttpConnector(httpServer);
         httpServer.setHandler(new EchoHandler());
@@ -76,8 +74,8 @@ public class BasicHttpProxyToHttpTest {
         LOGGER.info("Local HTTP Server (" + httpPort + "), Proxy (" + proxyPort + ") started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() {
+    @AfterAll
+    public static void tearDownGlobal() {
         if (proxy != null) {
             try {
                 proxy.stop();
@@ -95,7 +93,7 @@ public class BasicHttpProxyToHttpTest {
     }
 
     @Test
-    public void nonPreemptiveProxyAuthWithPlainHttpTarget() throws IOException, InterruptedException, ExecutionException {
+    public void nonPreemptiveProxyAuthWithPlainHttpTarget() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String targetUrl = "http://localhost:" + httpPort + "/foo/bar";
             Request request = get(targetUrl)
@@ -105,8 +103,8 @@ public class BasicHttpProxyToHttpTest {
             Future<Response> responseFuture = client.executeRequest(request);
             Response response = responseFuture.get();
 
-            Assert.assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-            Assert.assertEquals("/foo/bar", response.getHeader("X-pathInfo"));
+            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals("/foo/bar", response.getHeader("X-pathInfo"));
         }
     }
 
@@ -123,7 +121,7 @@ public class BasicHttpProxyToHttpTest {
                 response.setHeader(PROXY_AUTHENTICATE.toString(), "Basic realm=\"Fake Realm\"");
                 response.getOutputStream().flush();
 
-            } else if (authorization.equals("Basic am9obmRvZTpwYXNz")) {
+            } else if ("Basic am9obmRvZTpwYXNz".equals(authorization)) {
                 super.service(request, response);
 
             } else {

@@ -19,7 +19,7 @@ import io.netty.handler.codec.http.HttpMessage;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,35 +28,31 @@ import java.util.function.Consumer;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EventPipelineTest extends AbstractBasicTest {
 
     @Test
     public void asyncPipelineTest() throws Exception {
+        Consumer<Channel> httpAdditionalPipelineInitializer = channel -> channel.pipeline()
+                .addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
 
-        Consumer<Channel> httpAdditionalPipelineInitializer = channel -> channel.pipeline().addBefore("inflater",
-                "copyEncodingHeader", new CopyEncodingHandler());
-
-        try (AsyncHttpClient p = asyncHttpClient(
-                config().setHttpAdditionalChannelInitializer(httpAdditionalPipelineInitializer))) {
-            final CountDownLatch l = new CountDownLatch(1);
-            p.executeRequest(get(getTargetUrl()), new AsyncCompletionHandlerAdapter() {
+        try (AsyncHttpClient client = asyncHttpClient(config().setHttpAdditionalChannelInitializer(httpAdditionalPipelineInitializer))) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            client.executeRequest(get(getTargetUrl()), new AsyncCompletionHandlerAdapter() {
                 @Override
                 public Response onCompleted(Response response) {
                     try {
-                        assertEquals(response.getStatusCode(), 200);
-                        assertEquals(response.getHeader("X-Original-Content-Encoding"), "<original encoding>");
+                        assertEquals(200, response.getStatusCode());
+                        assertEquals("<original encoding>", response.getHeader("X-Original-Content-Encoding"));
                     } finally {
-                        l.countDown();
+                        latch.countDown();
                     }
                     return response;
                 }
             }).get();
-            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                fail("Timeout out");
-            }
+            assertTrue(latch.await(TIMEOUT, TimeUnit.SECONDS));
         }
     }
 

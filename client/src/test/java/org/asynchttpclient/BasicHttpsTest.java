@@ -19,14 +19,16 @@ import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
@@ -37,20 +39,22 @@ import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
 import static org.asynchttpclient.test.TestUtils.TIMEOUT;
 import static org.asynchttpclient.test.TestUtils.createSslEngineFactory;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BasicHttpsTest extends HttpTest {
 
     private static HttpServer server;
 
-    @BeforeClass
+    @BeforeAll
     public static void start() throws Throwable {
         server = new HttpServer();
         server.start();
     }
 
-    @AfterClass
+    @AfterAll
     public static void stop() throws Throwable {
         server.close();
     }
@@ -162,20 +166,22 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< reconnectAfterFailedCertificationPath");
     }
 
-    @Test(timeOut = 2000, expectedExceptions = SSLHandshakeException.class)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 2000)
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
         logger.debug(">>> failInstantlyIfNotAllowedSelfSignedCertificate");
 
-        withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client ->
-                withServer(server).run(server -> {
-                    try {
-                        client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException e) {
-                        throw e.getCause().getCause();
-                    }
-                }));
+        assertThrows(SSLHandshakeException.class, () -> {
+            withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client ->
+                    withServer(server).run(server -> {
+                        try {
+                            client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, SECONDS);
+                        } catch (ExecutionException e) {
+                            throw e.getCause().getCause();
+                        }
+                    }));
+        });
         logger.debug("<<< failInstantlyIfNotAllowedSelfSignedCertificate");
-
     }
 
     @Test
@@ -190,7 +196,7 @@ public class BasicHttpsTest extends HttpTest {
                     client.preparePost(getTargetUrl()).setBody("whatever").execute(handler).get(3, SECONDS);
                     handler.waitForCompletion(3, SECONDS);
 
-                    Object[] expectedEvents = new Object[]{
+                    Object[] expectedEvents = {
                             CONNECTION_POOL_EVENT,
                             HOSTNAME_RESOLUTION_EVENT,
                             HOSTNAME_RESOLUTION_SUCCESS_EVENT,
@@ -205,7 +211,7 @@ public class BasicHttpsTest extends HttpTest {
                             CONNECTION_OFFER_EVENT,
                             COMPLETED_EVENT};
 
-                    assertEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
+                    assertArrayEquals(handler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(handler.firedEvents.toArray()));
                 }));
         logger.debug("<<< testNormalEventsFired");
     }

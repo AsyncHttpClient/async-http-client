@@ -13,8 +13,7 @@
  */
 package org.asynchttpclient;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -23,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests configured client name is used for thread names.
@@ -48,7 +48,7 @@ public class ThreadNameTest extends AbstractBasicTest {
     public void testThreadName() throws Exception {
         String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
         try (AsyncHttpClient client = asyncHttpClient(config().setThreadPoolName(threadPoolName))) {
-            Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/").execute();
+            Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/').execute();
             f.get(3, TimeUnit.SECONDS);
 
             // We cannot assert that all threads are created with specified name,
@@ -61,7 +61,7 @@ public class ThreadNameTest extends AbstractBasicTest {
                 }
             }
 
-            Assert.assertTrue(found, "must found threads starting with random string " + threadPoolName);
+            assertTrue(found, "must found threads starting with random string " + threadPoolName);
         }
     }
 }

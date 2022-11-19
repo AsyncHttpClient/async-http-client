@@ -14,10 +14,10 @@ package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -26,22 +26,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FilterTest extends AbstractBasicTest {
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new BasicHandler();
     }
 
-    public String getTargetUrl() {
+    public static String getTargetUrl() {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 
@@ -50,7 +50,7 @@ public class FilterTest extends AbstractBasicTest {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
+            assertEquals(200, response.getStatusCode());
         }
     }
 
@@ -62,21 +62,18 @@ public class FilterTest extends AbstractBasicTest {
                 futures.add(c.preparePost(getTargetUrl()).execute());
             }
 
-            for (Future<Response> f : futures) {
-                Response r = f.get();
-                assertNotNull(f.get());
-                assertEquals(r.getStatusCode(), 200);
+            for (Future<Response> future : futures) {
+                Response r = future.get();
+                assertNotNull(r);
+                assertEquals(200, r.getStatusCode());
             }
         }
     }
 
     @Test
     public void maxConnectionsText() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
-            c.preparePost(getTargetUrl()).execute().get();
-            fail("Should have timed out");
-        } catch (ExecutionException ex) {
-            assertTrue(ex.getCause() instanceof FilterException);
+        try (AsyncHttpClient client = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
+            assertThrows(Exception.class, () -> client.preparePost(getTargetUrl()).execute().get());
         }
     }
 
@@ -90,83 +87,85 @@ public class FilterTest extends AbstractBasicTest {
             }
         };
 
-        try (AsyncHttpClient c = asyncHttpClient(config().addResponseFilter(responseFilter))) {
-            Response response = c.preparePost(getTargetUrl()).execute().get();
+        try (AsyncHttpClient client = asyncHttpClient(config().addResponseFilter(responseFilter))) {
+            Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
+            assertEquals(200, response.getStatusCode());
         }
     }
 
     @Test
     public void replayResponseFilterTest() throws Exception {
-
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
+
+            @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) {
                 if (replay.getAndSet(false)) {
-                    Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
+                    org.asynchttpclient.Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
                     return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
         };
 
-        try (AsyncHttpClient c = asyncHttpClient(config().addResponseFilter(responseFilter))) {
-            Response response = c.preparePost(getTargetUrl()).execute().get();
+        try (AsyncHttpClient client = asyncHttpClient(config().addResponseFilter(responseFilter))) {
+            Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getHeader("X-Replay"), "true");
+            assertEquals(200, response.getStatusCode());
+            assertEquals("true", response.getHeader("X-X-Replay"));
         }
     }
 
     @Test
     public void replayStatusCodeResponseFilterTest() throws Exception {
-
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
+
+            @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) {
                 if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
-                    Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
+                    org.asynchttpclient.Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
                     return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
         };
 
-        try (AsyncHttpClient c = asyncHttpClient(config().addResponseFilter(responseFilter))) {
-            Response response = c.preparePost(getTargetUrl()).execute().get();
+        try (AsyncHttpClient client = asyncHttpClient(config().addResponseFilter(responseFilter))) {
+            Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getHeader("X-Replay"), "true");
+            assertEquals(200, response.getStatusCode());
+            assertEquals("true", response.getHeader("X-X-Replay"));
         }
     }
 
     @Test
     public void replayHeaderResponseFilterTest() throws Exception {
-
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
+            @Override
             public <T> FilterContext<T> filter(FilterContext<T> ctx) {
-                if (ctx.getResponseHeaders() != null && ctx.getResponseHeaders().get("Ping").equals("Pong") && replay.getAndSet(false)) {
-                    Request request = ctx.getRequest().toBuilder().addHeader("Ping", "Pong").build();
+                if (ctx.getResponseHeaders() != null && "Pong".equals(ctx.getResponseHeaders().get("Ping")) && replay.getAndSet(false)) {
+                    org.asynchttpclient.Request request = ctx.getRequest().toBuilder().addHeader("Ping", "Pong").build();
                     return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
                 }
                 return ctx;
             }
         };
 
-        try (AsyncHttpClient c = asyncHttpClient(config().addResponseFilter(responseFilter))) {
-            Response response = c.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
+        try (AsyncHttpClient client = asyncHttpClient(config().addResponseFilter(responseFilter))) {
+            Response response = client.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 200);
-            assertEquals(response.getHeader("Ping"), "Pong");
+            assertEquals(200, response.getStatusCode());
+            assertEquals("Pong", response.getHeader("X-Ping"));
         }
     }
 
     private static class BasicHandler extends AbstractHandler {
 
-        public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-
+        @Override
+        public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
             Enumeration<?> e = httpRequest.getHeaderNames();
             String param;
             while (e.hasMoreElements()) {

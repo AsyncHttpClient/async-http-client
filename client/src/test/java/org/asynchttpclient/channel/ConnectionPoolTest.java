@@ -26,7 +26,9 @@ import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,7 +53,13 @@ import static org.asynchttpclient.test.EventCollectingHandler.HEADERS_WRITTEN_EV
 import static org.asynchttpclient.test.EventCollectingHandler.REQUEST_SEND_EVENT;
 import static org.asynchttpclient.test.EventCollectingHandler.STATUS_RECEIVED_EVENT;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
 
@@ -59,23 +67,25 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     public void testMaxTotalConnections() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
-            int i;
-            Exception exception = null;
-            for (i = 0; i < 3; i++) {
-                try {
-                    logger.info("{} requesting url [{}]...", i, url);
-                    Response response = client.prepareGet(url).execute().get();
-                    logger.info("{} response [{}].", i, response);
-                } catch (Exception ex) {
-                    exception = ex;
-                }
+
+            for (int i = 0; i < 3; i++) {
+                logger.info("{} requesting url [{}]...", i, url);
+
+                Response response = assertDoesNotThrow(new ThrowingSupplier<Response>() {
+                    @Override
+                    public Response get() throws Throwable {
+                        return client.prepareGet(url).execute().get();
+                    }
+                });
+
+                assertNotNull(response);
+                logger.info("{} response [{}].", i, response);
             }
-            assertNull(exception);
         }
     }
 
-    @Test(expectedExceptions = TooManyConnectionsException.class)
-    public void testMaxTotalConnectionsException() throws Throwable {
+    @Test
+    public void testMaxTotalConnectionsException() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
 
@@ -96,11 +106,11 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             }
 
             assertNotNull(exception);
-            throw exception.getCause();
+            assertInstanceOf(ExecutionException.class, exception);
         }
     }
 
-    @Test(invocationCount = 100)
+    @RepeatedTest(100)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -115,7 +125,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
                 public Response onCompleted(Response response) {
                     logger.debug("ON COMPLETED INVOKED " + response.getHeader("X-KEEP-ALIVE"));
                     try {
-                        assertEquals(response.getStatusCode(), 200);
+                        assertEquals(200, response.getStatusCode());
                         remoteAddresses.put(response.getHeader("X-KEEP-ALIVE"), true);
                     } finally {
                         l.countDown();
@@ -155,27 +165,20 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test(expectedExceptions = TooManyConnectionsException.class)
-    public void multipleMaxConnectionOpenTest() throws Throwable {
-        try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
+    @Test
+    public void multipleMaxConnectionOpenTest() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
 
             // once
-            Response response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-
+            Response response = client.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);
 
             // twice
-            Exception exception = null;
-            try {
-                c.preparePost(String.format("http://localhost:%d/foo/test", port2)).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-                fail("Should throw exception. Too many connections issued.");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNotNull(exception);
-            throw exception.getCause();
+            assertThrows(ExecutionException.class, () -> client.preparePost(String.format("http://localhost:%d/foo/test", port2))
+                    .setBody(body)
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS));
         }
     }
 
@@ -186,18 +189,10 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
             // once
             Response response = c.preparePost(getTargetUrl() + "?foo=bar").setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-
             assertEquals(response.getResponseBody(), "foo_" + body);
 
             // twice
-            Exception exception = null;
-            try {
-                response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                exception = ex;
-            }
-            assertNull(exception);
+            response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
         }
@@ -301,10 +296,10 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             client.executeRequest(request, secondHandler).get(3, TimeUnit.SECONDS);
             secondHandler.waitForCompletion(3, TimeUnit.SECONDS);
 
-            Object[] expectedEvents = new Object[]{CONNECTION_POOL_EVENT, CONNECTION_POOLED_EVENT, REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT,
+            Object[] expectedEvents = {CONNECTION_POOL_EVENT, CONNECTION_POOLED_EVENT, REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT,
                     HEADERS_RECEIVED_EVENT, CONNECTION_OFFER_EVENT, COMPLETED_EVENT};
 
-            assertEquals(secondHandler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
+            assertArrayEquals(secondHandler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
         }
     }
 }

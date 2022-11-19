@@ -2,16 +2,21 @@ package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.testng.AssertJUnit.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SemaphoreTest {
 
@@ -23,7 +28,6 @@ public class SemaphoreTest {
 
     private final Object PK = new Object();
 
-    @DataProvider(name = "permitsAndRunnersCount")
     public Object[][] permitsAndRunnersCount() {
         Object[][] objects = new Object[100][];
         int row = 0;
@@ -35,17 +39,20 @@ public class SemaphoreTest {
         return objects;
     }
 
-    @Test(timeOut = 1000, dataProvider = "permitsAndRunnersCount")
+    @ParameterizedTest(name = "permitsAndRunnersCount")
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void maxConnectionCheckPermitCount(int permitCount, int runnerCount) {
         allSemaphoresCheckPermitCount(new MaxConnectionSemaphore(permitCount, 0), permitCount, runnerCount);
     }
 
-    @Test(timeOut = 1000, dataProvider = "permitsAndRunnersCount")
+    @ParameterizedTest(name = "permitsAndRunnersCount")
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void perHostCheckPermitCount(int permitCount, int runnerCount) {
         allSemaphoresCheckPermitCount(new PerHostConnectionSemaphore(permitCount, 0), permitCount, runnerCount);
     }
 
-    @Test(timeOut = 3000, dataProvider = "permitsAndRunnersCount")
+    @ParameterizedTest(name = "permitsAndRunnersCount")
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void combinedCheckPermitCount(int permitCount, int runnerCount) {
         allSemaphoresCheckPermitCount(new CombinedConnectionSemaphore(permitCount, permitCount, 0), permitCount, runnerCount);
         allSemaphoresCheckPermitCount(new CombinedConnectionSemaphore(0, permitCount, 0), permitCount, runnerCount);
@@ -74,17 +81,20 @@ public class SemaphoreTest {
         assertEquals(runnerCount - acquired, tooManyConnectionsCount);
     }
 
-    @Test(timeOut = 1000, invocationCount = NON_DETERMINISTIC__INVOCATION_COUNT, successPercentage = NON_DETERMINISTIC__SUCCESS_PERCENT)
+    @RepeatedTest(NON_DETERMINISTIC__INVOCATION_COUNT)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void maxConnectionCheckAcquireTime() {
         checkAcquireTime(new MaxConnectionSemaphore(CHECK_ACQUIRE_TIME__PERMITS, CHECK_ACQUIRE_TIME__TIMEOUT));
     }
 
-    @Test(timeOut = 1000, invocationCount = NON_DETERMINISTIC__INVOCATION_COUNT, successPercentage = NON_DETERMINISTIC__SUCCESS_PERCENT)
+    @RepeatedTest(NON_DETERMINISTIC__INVOCATION_COUNT)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void perHostCheckAcquireTime() {
         checkAcquireTime(new PerHostConnectionSemaphore(CHECK_ACQUIRE_TIME__PERMITS, CHECK_ACQUIRE_TIME__TIMEOUT));
     }
 
-    @Test(timeOut = 1000, invocationCount = NON_DETERMINISTIC__INVOCATION_COUNT, successPercentage = NON_DETERMINISTIC__SUCCESS_PERCENT)
+    @RepeatedTest(NON_DETERMINISTIC__INVOCATION_COUNT)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void combinedCheckAcquireTime() {
         checkAcquireTime(new CombinedConnectionSemaphore(CHECK_ACQUIRE_TIME__PERMITS,
                 CHECK_ACQUIRE_TIME__PERMITS,
@@ -100,21 +110,24 @@ public class SemaphoreTest {
         runners.forEach(SemaphoreRunner::await);
         long timeToAcquire = System.currentTimeMillis() - acquireStartTime;
 
-        assertTrue("Semaphore acquired too soon: " + timeToAcquire + " ms", timeToAcquire >= (CHECK_ACQUIRE_TIME__TIMEOUT - 50)); //Lower Bound
-        assertTrue("Semaphore acquired too late: " + timeToAcquire + " ms", timeToAcquire <= (CHECK_ACQUIRE_TIME__TIMEOUT + 300)); //Upper Bound
+        assertTrue(timeToAcquire >= CHECK_ACQUIRE_TIME__TIMEOUT - 50, "Semaphore acquired too soon: " + timeToAcquire + " ms"); //Lower Bound
+        assertTrue(timeToAcquire <= CHECK_ACQUIRE_TIME__TIMEOUT + 300, "Semaphore acquired too late: " + timeToAcquire + " ms"); //Upper Bound
     }
 
-    @Test(timeOut = 1000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void maxConnectionCheckRelease() throws IOException {
         checkRelease(new MaxConnectionSemaphore(1, 0));
     }
 
-    @Test(timeOut = 1000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void perHostCheckRelease() throws IOException {
         checkRelease(new PerHostConnectionSemaphore(1, 0));
     }
 
-    @Test(timeOut = 1000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void combinedCheckRelease() throws IOException {
         checkRelease(new CombinedConnectionSemaphore(1, 1, 0));
     }
@@ -137,7 +150,4 @@ public class SemaphoreTest {
         }
         assertFalse(tooManyCaught);
     }
-
-
 }
-

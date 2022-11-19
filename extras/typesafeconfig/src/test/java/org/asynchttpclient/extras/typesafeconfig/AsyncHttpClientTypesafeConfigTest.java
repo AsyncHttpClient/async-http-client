@@ -15,80 +15,97 @@ package org.asynchttpclient.extras.typesafeconfig;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class AsyncHttpClientTypesafeConfigTest {
 
+    @Test
     public void testThreadPoolName() {
         test(AsyncHttpClientTypesafeConfig::getThreadPoolName, "threadPoolName", "MyHttpClient", "AsyncHttpClient");
     }
 
+    @Test
     public void testMaxTotalConnections() {
         test(AsyncHttpClientTypesafeConfig::getMaxConnections, "maxConnections", 100, -1);
     }
 
+    @Test
     public void testMaxConnectionPerHost() {
         test(AsyncHttpClientTypesafeConfig::getMaxConnectionsPerHost, "maxConnectionsPerHost", 100, -1);
     }
 
+    @Test
     public void testConnectTimeOut() {
         test(AsyncHttpClientTypesafeConfig::getConnectTimeout, "connectTimeout", 100, 5 * 1000);
     }
 
+    @Test
     public void testPooledConnectionIdleTimeout() {
         test(AsyncHttpClientTypesafeConfig::getPooledConnectionIdleTimeout, "pooledConnectionIdleTimeout", 200, 6 * 10000);
     }
 
+    @Test
     public void testReadTimeout() {
         test(AsyncHttpClientTypesafeConfig::getReadTimeout, "readTimeout", 100, 60 * 1000);
     }
 
+    @Test
     public void testRequestTimeout() {
         test(AsyncHttpClientTypesafeConfig::getRequestTimeout, "requestTimeout", 200, 6 * 10000);
     }
 
+    @Test
     public void testConnectionTtl() {
         test(AsyncHttpClientTypesafeConfig::getConnectionTtl, "connectionTtl", 100, -1);
     }
 
+    @Test
     public void testFollowRedirect() {
         test(AsyncHttpClientTypesafeConfig::isFollowRedirect, "followRedirect", true, false);
     }
 
+    @Test
     public void testMaxRedirects() {
         test(AsyncHttpClientTypesafeConfig::getMaxRedirects, "maxRedirects", 100, 5);
     }
 
+    @Test
     public void testCompressionEnforced() {
         test(AsyncHttpClientTypesafeConfig::isCompressionEnforced, "compressionEnforced", true, false);
     }
 
+    @Test
     public void testStrict302Handling() {
         test(AsyncHttpClientTypesafeConfig::isStrict302Handling, "strict302Handling", true, false);
     }
 
+    @Test
     public void testAllowPoolingConnection() {
         test(AsyncHttpClientTypesafeConfig::isKeepAlive, "keepAlive", false, true);
     }
 
+    @Test
     public void testMaxRequestRetry() {
         test(AsyncHttpClientTypesafeConfig::getMaxRequestRetry, "maxRequestRetry", 100, 5);
     }
 
+    @Test
     public void testDisableUrlEncodingForBoundRequests() {
         test(AsyncHttpClientTypesafeConfig::isDisableUrlEncodingForBoundRequests, "disableUrlEncodingForBoundRequests", true, false);
     }
 
+    @Test
     public void testUseInsecureTrustManager() {
         test(AsyncHttpClientTypesafeConfig::isUseInsecureTrustManager, "useInsecureTrustManager", true, false);
     }
 
+    @Test
     public void testEnabledProtocols() {
         test(AsyncHttpClientTypesafeConfig::getEnabledProtocols,
                 "enabledProtocols",
@@ -111,11 +128,11 @@ public class AsyncHttpClientTypesafeConfigTest {
                           T defaultValue,
                           Optional<Function<T, ConfigValue>> toConfigValue) {
         AsyncHttpClientTypesafeConfig defaultConfig = new AsyncHttpClientTypesafeConfig(ConfigFactory.empty());
-        Assert.assertEquals(func.apply(defaultConfig), defaultValue);
+        assertEquals(func.apply(defaultConfig), defaultValue);
 
         AsyncHttpClientTypesafeConfig config = new AsyncHttpClientTypesafeConfig(
                 ConfigFactory.empty().withValue(configKey, toConfigValue.orElse(ConfigValueFactory::fromAnyRef).apply(value))
         );
-        Assert.assertEquals(func.apply(config), value);
+        assertEquals(func.apply(config), value);
     }
 }

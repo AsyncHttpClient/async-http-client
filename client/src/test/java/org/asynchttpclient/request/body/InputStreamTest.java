@@ -23,7 +23,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -35,23 +35,22 @@ import java.util.concurrent.ExecutionException;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class InputStreamTest extends AbstractBasicTest {
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new InputStreamHandler();
     }
 
     @Test
-    public void testInvalidInputStream() throws IOException, ExecutionException, InterruptedException {
+    public void testInvalidInputStream() throws Exception {
 
-        try (AsyncHttpClient c = asyncHttpClient()) {
-            HttpHeaders h = new DefaultHttpHeaders().add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            HttpHeaders httpHeaders = new DefaultHttpHeaders().add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
 
-            InputStream is = new InputStream() {
+            InputStream inputStream = new InputStream() {
 
                 int readAllowed;
 
@@ -64,26 +63,27 @@ public class InputStreamTest extends AbstractBasicTest {
                 public int read() {
                     int fakeCount = readAllowed++;
                     if (fakeCount == 0) {
-                        return (int) 'a';
+                        return 'a';
                     } else if (fakeCount == 1) {
-                        return (int) 'b';
+                        return 'b';
                     } else if (fakeCount == 2) {
-                        return (int) 'c';
+                        return 'c';
                     } else {
                         return -1;
                     }
                 }
             };
 
-            Response resp = c.preparePost(getTargetUrl()).setHeaders(h).setBody(is).execute().get();
+            Response resp = client.preparePost(getTargetUrl()).setHeaders(httpHeaders).setBody(inputStream).execute().get();
             assertNotNull(resp);
             // TODO: 18-11-2022 Revisit
-            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, resp.getStatusCode());
 //            assertEquals(resp.getHeader("X-Param"), "abc");
         }
     }
 
     private static class InputStreamHandler extends AbstractHandler {
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if ("POST".equalsIgnoreCase(request.getMethod())) {
                 byte[] bytes = new byte[3];
@@ -97,7 +97,7 @@ public class InputStreamTest extends AbstractBasicTest {
                 }
 
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.addHeader("X-Param", new String(bos.toByteArray()));
+                response.addHeader("X-Param", bos.toString());
             } else { // this handler is to handle POST request
                 response.sendError(HttpServletResponse.SC_FORBIDDEN);
             }

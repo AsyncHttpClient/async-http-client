@@ -16,10 +16,10 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
@@ -35,10 +35,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests default asynchronous life cycle.
@@ -46,17 +46,15 @@ import static org.testng.Assert.fail;
  * @author Hubert Iwaniuk
  */
 public class AsyncStreamLifecycleTest extends AbstractBasicTest {
-    private final ExecutorService executorService = Executors.newFixedThreadPool(2);
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-    @AfterClass
-    @Override
-    public void tearDownGlobal() throws Exception {
-        super.tearDownGlobal();
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
+        AbstractBasicTest.tearDownGlobal();
         executorService.shutdownNow();
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request request, HttpServletRequest req, final HttpServletResponse resp) throws IOException {
@@ -135,6 +133,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                     return null;
                 }
             });
+
             assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
             assertFalse(err.get());
             assertEquals(queue.size(), 2);

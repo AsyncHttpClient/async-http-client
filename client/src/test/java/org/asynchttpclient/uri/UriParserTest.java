@@ -13,21 +13,21 @@
  */
 package org.asynchttpclient.uri;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UriParserTest {
 
     private static void assertUriEquals(UriParser parser, URI uri) {
-        assertEquals(parser.scheme, uri.getScheme());
-        assertEquals(parser.userInfo, uri.getUserInfo());
-        assertEquals(parser.host, uri.getHost());
-        assertEquals(parser.port, uri.getPort());
-        assertEquals(parser.path, uri.getPath());
-        assertEquals(parser.query, uri.getQuery());
+        assertEquals(uri.getScheme(), parser.scheme);
+        assertEquals(uri.getUserInfo(), parser.userInfo);
+        assertEquals(uri.getHost(), parser.host);
+        assertEquals(uri.getPort(), parser.port);
+        assertEquals(uri.getPath(), parser.path);
+        assertEquals(uri.getQuery(), parser.query);
     }
 
     private static void validateAgainstAbsoluteURI(String url) {

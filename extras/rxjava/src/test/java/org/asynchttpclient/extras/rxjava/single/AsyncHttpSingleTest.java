@@ -20,8 +20,8 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.extras.rxjava.UnsubscribedException;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import org.testng.annotations.Test;
 import rx.Single;
 import rx.exceptions.CompositeException;
 import rx.observers.TestSubscriber;
@@ -36,19 +36,30 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.*;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class AsyncHttpSingleTest {
 
-    @Test(expectedExceptions = {NullPointerException.class})
+    @Test
     public void testFailsOnNullRequest() {
-        AsyncHttpSingle.create((BoundRequestBuilder) null);
+        assertThrows(NullPointerException.class, () -> AsyncHttpSingle.create((BoundRequestBuilder) null));
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
+    @Test
     public void testFailsOnNullHandlerSupplier() {
-        AsyncHttpSingle.create(mock(BoundRequestBuilder.class), null);
+        assertThrows(NullPointerException.class, () -> AsyncHttpSingle.create(mock(BoundRequestBuilder.class), null));
     }
 
     @Test

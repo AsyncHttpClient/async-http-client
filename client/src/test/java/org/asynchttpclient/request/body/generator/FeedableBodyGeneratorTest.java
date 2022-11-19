@@ -17,20 +17,21 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FeedableBodyGeneratorTest {
 
     private UnboundedQueueFeedableBodyGenerator feedableBodyGenerator;
     private TestFeedListener listener;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
         listener = new TestFeedListener();
@@ -41,7 +42,7 @@ public class FeedableBodyGeneratorTest {
     public void feedNotifiesListener() throws Exception {
         feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, false);
         feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
-        assertEquals(listener.getCalls(), 2);
+        assertEquals(2, listener.getCalls());
     }
 
     @Test
@@ -54,7 +55,7 @@ public class FeedableBodyGeneratorTest {
         try {
             feedableBodyGenerator.feed(source, true);
             Body body = feedableBodyGenerator.createBody();
-            assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
+            assertArrayEquals("Test123".getBytes(StandardCharsets.US_ASCII), readFromBody(body));
             assertEquals(body.transferTo(target), BodyState.STOP);
         } finally {
             source.release();
@@ -73,7 +74,7 @@ public class FeedableBodyGeneratorTest {
             feedableBodyGenerator.feed(source, false);
 
             Body body = feedableBodyGenerator.createBody();
-            assertEquals(readFromBody(body), "Test123".getBytes(StandardCharsets.US_ASCII));
+            assertArrayEquals("Test123".getBytes(StandardCharsets.US_ASCII), readFromBody(body));
             assertEquals(body.transferTo(target), BodyState.SUSPEND);
         } finally {
             source.release();
@@ -81,7 +82,7 @@ public class FeedableBodyGeneratorTest {
         }
     }
 
-    private byte[] readFromBody(Body body) throws IOException {
+    private static byte[] readFromBody(Body body) throws IOException {
         ByteBuf byteBuf = Unpooled.buffer(512);
         try {
             body.transferTo(byteBuf);

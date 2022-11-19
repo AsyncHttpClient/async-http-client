@@ -21,10 +21,10 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -37,7 +37,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests case where response doesn't have body.
@@ -45,8 +49,8 @@ import static org.testng.Assert.*;
  * @author Hubert Iwaniuk
  */
 public class EmptyBodyTest extends AbstractBasicTest {
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+
+    public static AbstractHandler configureHandler() throws Exception {
         return new NoBodyResponseHandler();
     }
 
@@ -58,12 +62,16 @@ public class EmptyBodyTest extends AbstractBasicTest {
             final AtomicBoolean status = new AtomicBoolean(false);
             final AtomicInteger headers = new AtomicInteger(0);
             final CountDownLatch latch = new CountDownLatch(1);
+
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build(), new AsyncHandler<Object>() {
+
+                @Override
                 public void onThrowable(Throwable t) {
                     fail("Got throwable.", t);
                     err.set(true);
                 }
 
+                @Override
                 public State onBodyPartReceived(HttpResponseBodyPart e) throws Exception {
                     byte[] bytes = e.getBodyPartBytes();
 
@@ -76,11 +84,13 @@ public class EmptyBodyTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onStatusReceived(HttpResponseStatus e) {
                     status.set(true);
                     return AsyncHandler.State.CONTINUE;
                 }
 
+                @Override
                 public State onHeadersReceived(HttpHeaders e) throws Exception {
                     if (headers.incrementAndGet() == 2) {
                         throw new Exception("Analyze this.");
@@ -88,20 +98,22 @@ public class EmptyBodyTest extends AbstractBasicTest {
                     return State.CONTINUE;
                 }
 
+                @Override
                 public Object onCompleted() {
                     latch.countDown();
                     return null;
                 }
             });
+
             try {
                 assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
             } catch (InterruptedException e) {
                 fail("Interrupted.", e);
             }
             assertFalse(err.get());
-            assertEquals(queue.size(), 0);
+            assertEquals(0, queue.size());
             assertTrue(status.get());
-            assertEquals(headers.get(), 1);
+            assertEquals(1, headers.get());
         }
     }
 
@@ -111,17 +123,19 @@ public class EmptyBodyTest extends AbstractBasicTest {
             Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();
 
             assertNotNull(response);
-            assertEquals(response.getStatusCode(), 204);
-            assertEquals(response.getResponseBody(), "");
+            assertEquals(204, response.getStatusCode());
+            assertEquals("", response.getResponseBody());
             assertNotNull(response.getResponseBodyAsStream());
-            assertEquals(response.getResponseBodyAsStream().read(), -1);
+            assertEquals(-1, response.getResponseBodyAsStream().read());
         }
     }
 
-    private class NoBodyResponseHandler extends AbstractHandler {
-        public void handle(String s, org.eclipse.jetty.server.Request request, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    private static class NoBodyResponseHandler extends AbstractHandler {
 
-            if (!req.getMethod().equalsIgnoreCase("PUT")) {
+        @Override
+        public void handle(String s, Request request, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+
+            if (!"PUT".equalsIgnoreCase(req.getMethod())) {
                 resp.setStatus(HttpServletResponse.SC_OK);
             } else {
                 resp.setStatus(204);

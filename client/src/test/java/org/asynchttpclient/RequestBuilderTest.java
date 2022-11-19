@@ -18,7 +18,7 @@ package org.asynchttpclient;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,17 +29,17 @@ import java.util.Map;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static org.asynchttpclient.Dsl.get;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RequestBuilderTest {
 
-    private final static String SAFE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_*.";
-    private final static String HEX_CHARS = "0123456789ABCDEF";
+    private static final String SAFE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_*.";
+    private static final String HEX_CHARS = "0123456789ABCDEF";
 
     @Test
     public void testEncodesQueryParameters() {
-        String[] values = new String[]{"abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKQLMNOPQRSTUVWXYZ", "1234567890", "1234567890", "`~!@#$%^&*()", "`~!@#$%^&*()", "_+-=,.<>/?",
+        String[] values = {"abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKQLMNOPQRSTUVWXYZ", "1234567890", "1234567890", "`~!@#$%^&*()", "`~!@#$%^&*()", "_+-=,.<>/?",
                 "_+-=,.<>/?", ";:'\"[]{}\\| ", ";:'\"[]{}\\| "};
 
         /*
@@ -61,7 +61,7 @@ public class RequestBuilderTest {
                 if (SAFE_CHARS.indexOf(c) >= 0) {
                     sb.append(c);
                 } else {
-                    int hi = (c >> 4);
+                    int hi = c >> 4;
                     int lo = c & 0xF;
                     sb.append('%').append(HEX_CHARS.charAt(hi)).append(HEX_CHARS.charAt(lo));
                 }
@@ -75,7 +75,6 @@ public class RequestBuilderTest {
     @Test
     public void testChaining() {
         Request request = get("http://foo.com").addQueryParam("x", "value").build();
-
         Request request2 = request.toBuilder().build();
 
         assertEquals(request2.getUri(), request.getUri());

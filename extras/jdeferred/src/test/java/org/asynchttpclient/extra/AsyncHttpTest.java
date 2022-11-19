@@ -30,8 +30,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AsyncHttpTest {
     protected DefaultDeferredManager deferredManager = new DefaultDeferredManager();
@@ -82,9 +82,9 @@ public class AsyncHttpTest {
                 public void onDone(MultipleResults result) {
                     try {
                         assertEquals(result.size(), 3);
-                        assertEquals(Response.class.cast(result.get(0).getResult()).getStatusCode(), 200);
-                        assertEquals(Response.class.cast(result.get(1).getResult()).getStatusCode(), 200);
-                        assertEquals(Response.class.cast(result.get(2).getResult()).getStatusCode(), 200);
+                        assertEquals(((Response) result.get(0).getResult()).getStatusCode(), 200);
+                        assertEquals(((Response) result.get(1).getResult()).getStatusCode(), 200);
+                        assertEquals(((Response) result.get(2).getResult()).getStatusCode(), 200);
                         successCount.incrementAndGet();
                     } finally {
                         latch.countDown();

@@ -14,10 +14,10 @@
 package org.asynchttpclient;
 
 import org.apache.commons.io.IOUtils;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,22 +28,21 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class RedirectBodyTest extends AbstractBasicTest {
 
-    private volatile boolean redirectAlreadyPerformed;
-    private volatile String receivedContentType;
+    private static volatile boolean redirectAlreadyPerformed;
+    private static volatile String receivedContentType;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         redirectAlreadyPerformed = false;
         receivedContentType = null;
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {

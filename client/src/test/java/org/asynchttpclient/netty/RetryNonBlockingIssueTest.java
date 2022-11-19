@@ -23,8 +23,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,19 +36,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 //FIXME there's no retry actually
-public class RetryNonBlockingIssue extends AbstractBasicTest {
+public class RetryNonBlockingIssueTest extends AbstractBasicTest {
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 
@@ -61,21 +60,20 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    protected String getTargetUrl() {
+    protected static String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 
     private ListenableFuture<Response> testMethodRequest(AsyncHttpClient client, int requests, String action, String id) {
         RequestBuilder r = get(getTargetUrl())
                 .addQueryParam(action, "1")
-                .addQueryParam("maxRequests", "" + requests)
+                .addQueryParam("maxRequests", String.valueOf(requests))
                 .addQueryParam("id", id);
         return client.executeRequest(r);
     }
 
     @Test
-    public void testRetryNonBlocking() throws IOException, InterruptedException, ExecutionException {
-
+    public void testRetryNonBlocking() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
                 .setMaxConnections(100)
@@ -93,20 +91,17 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             for (ListenableFuture<Response> r : res) {
                 Response theres = r.get();
                 assertEquals(200, theres.getStatusCode());
-                b.append("==============\r\n")
-                        .append("Response Headers\r\n");
+                b.append("==============\r\n").append("Response Headers\r\n");
                 HttpHeaders heads = theres.getHeaders();
-                b.append(heads).append("\r\n")
-                        .append("==============\r\n");
+                b.append(heads).append("\r\n").append("==============\r\n");
             }
-            System.out.println(b.toString());
+            System.out.println(b);
             System.out.flush();
         }
     }
 
     @Test
-    public void testRetryNonBlockingAsyncConnect() throws IOException, InterruptedException, ExecutionException {
-
+    public void testRetryNonBlockingAsyncConnect() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
                 .setMaxConnections(100)
@@ -124,21 +119,19 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             for (ListenableFuture<Response> r : res) {
                 Response theres = r.get();
                 assertEquals(theres.getStatusCode(), 200);
-                b.append("==============\r\n")
-                        .append("Response Headers\r\n");
+                b.append("==============\r\n").append("Response Headers\r\n");
                 HttpHeaders heads = theres.getHeaders();
-                b.append(heads).append("\r\n")
-                        .append("==============\r\n");
+                b.append(heads).append("\r\n").append("==============\r\n");
             }
-            System.out.println(b.toString());
+            System.out.println(b);
             System.out.flush();
         }
     }
 
     @SuppressWarnings("serial")
-    public class MockExceptionServlet extends HttpServlet {
+    public static class MockExceptionServlet extends HttpServlet {
 
-        private Map<String, Integer> requests = new ConcurrentHashMap<>();
+        private final Map<String, Integer> requests = new ConcurrentHashMap<>();
 
         private synchronized int increment(String id) {
             int val;
@@ -154,6 +147,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             return val;
         }
 
+        @Override
         public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
             String maxRequests = req.getParameter("maxRequests");
             int max;
@@ -162,6 +156,7 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             } catch (NumberFormatException e) {
                 max = 3;
             }
+
             String id = req.getParameter("id");
             int requestNo = increment(id);
             String servlet = req.getParameter("servlet");
@@ -169,14 +164,20 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             String error = req.getParameter("500");
 
             if (requestNo >= max) {
-                res.setHeader("Success-On-Attempt", "" + requestNo);
+                res.setHeader("Success-On-Attempt", String.valueOf(requestNo));
                 res.setHeader("id", id);
-                if (servlet != null && servlet.trim().length() > 0)
+
+                if (servlet != null && servlet.trim().length() > 0) {
                     res.setHeader("type", "servlet");
-                if (error != null && error.trim().length() > 0)
+                }
+
+                if (error != null && error.trim().length() > 0) {
                     res.setHeader("type", "500");
-                if (io != null && io.trim().length() > 0)
+                }
+
+                if (io != null && io.trim().length() > 0) {
                     res.setHeader("type", "io");
+                }
                 res.setStatus(200);
                 res.setContentLength(0);
                 res.flushBuffer();
@@ -189,11 +190,13 @@ public class RetryNonBlockingIssue extends AbstractBasicTest {
             res.flushBuffer();
 
             // error after flushing the status
-            if (servlet != null && servlet.trim().length() > 0)
+            if (servlet != null && servlet.trim().length() > 0) {
                 throw new ServletException("Servlet Exception");
+            }
 
-            if (io != null && io.trim().length() > 0)
+            if (io != null && io.trim().length() > 0) {
                 throw new IOException("IO Exception");
+            }
 
             if (error != null && error.trim().length() > 0) {
                 res.sendError(500, "servlet process was 500");

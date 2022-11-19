@@ -16,11 +16,13 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -32,7 +34,8 @@ public class FollowingThreadTest extends AbstractBasicTest {
 
     private static final int COUNT = 10;
 
-    @Test(groups = "online", timeOut = 30 * 1000)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 30 * 1000)
     public void testFollowRedirect() throws InterruptedException {
 
         final CountDownLatch countDown = new CountDownLatch(COUNT);
@@ -43,30 +46,36 @@ public class FollowingThreadTest extends AbstractBasicTest {
 
                     private int status;
 
+                    @Override
                     public void run() {
                         final CountDownLatch l = new CountDownLatch(1);
                         try (AsyncHttpClient ahc = asyncHttpClient(config().setFollowRedirect(true))) {
                             ahc.prepareGet("http://www.google.com/").execute(new AsyncHandler<Integer>() {
 
+                                @Override
                                 public void onThrowable(Throwable t) {
                                     t.printStackTrace();
                                 }
 
+                                @Override
                                 public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
                                     System.out.println(new String(bodyPart.getBodyPartBytes()));
                                     return State.CONTINUE;
                                 }
 
+                                @Override
                                 public State onStatusReceived(HttpResponseStatus responseStatus) {
                                     status = responseStatus.getStatusCode();
                                     System.out.println(responseStatus.getStatusText());
                                     return State.CONTINUE;
                                 }
 
+                                @Override
                                 public State onHeadersReceived(HttpHeaders headers) {
                                     return State.CONTINUE;
                                 }
 
+                                @Override
                                 public Integer onCompleted() {
                                     l.countDown();
                                     return status;

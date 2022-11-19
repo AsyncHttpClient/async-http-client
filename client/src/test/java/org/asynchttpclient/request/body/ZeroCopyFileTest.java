@@ -21,9 +21,9 @@ import org.asynchttpclient.BasicHttpsTest;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -39,10 +39,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE;
 import static org.asynchttpclient.test.TestUtils.SIMPLE_TEXT_FILE_STRING;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Zero copy test which use FileChannel.transfer under the hood . The same SSL test is also covered in {@link BasicHttpsTest}
@@ -50,18 +50,20 @@ import static org.testng.Assert.assertTrue;
 public class ZeroCopyFileTest extends AbstractBasicTest {
 
     @Test
-    public void zeroCopyPostTest() throws IOException, ExecutionException, InterruptedException {
+    public void zeroCopyPostTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
             final AtomicBoolean operationCompleted = new AtomicBoolean(false);
 
-            Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
+            Response resp = client.preparePost("http://localhost:" + port1 + '/').setBody(SIMPLE_TEXT_FILE).execute(new AsyncCompletionHandler<Response>() {
 
+                @Override
                 public State onHeadersWritten() {
                     headerSent.set(true);
                     return State.CONTINUE;
                 }
 
+                @Override
                 public State onContentWritten() {
                     operationCompleted.set(true);
                     return State.CONTINUE;
@@ -72,18 +74,19 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                     return response;
                 }
             }).get();
+
             assertNotNull(resp);
-            assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
-            assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+            assertEquals(HttpServletResponse.SC_OK, resp.getStatusCode());
+            assertEquals(SIMPLE_TEXT_FILE_STRING, resp.getResponseBody());
             assertTrue(operationCompleted.get());
             assertTrue(headerSent.get());
         }
     }
 
     @Test
-    public void zeroCopyPutTest() throws IOException, ExecutionException, InterruptedException {
+    public void zeroCopyPutTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> f = client.preparePut("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute();
+            Future<Response> f = client.preparePut("http://localhost:" + port1 + '/').setBody(SIMPLE_TEXT_FILE).execute();
             Response resp = f.get();
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
@@ -91,38 +94,44 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new ZeroCopyHandler();
     }
 
     @Test
-    public void zeroCopyFileTest() throws IOException, ExecutionException, InterruptedException {
+    public void zeroCopyFileTest() throws Exception {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
         try (AsyncHttpClient client = asyncHttpClient()) {
             try (OutputStream stream = Files.newOutputStream(tmp.toPath())) {
-                Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+                Response resp = client.preparePost("http://localhost:" + port1 + '/').setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+
+                    @Override
                     public void onThrowable(Throwable t) {
                     }
 
+                    @Override
                     public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                         stream.write(bodyPart.getBodyPartBytes());
                         return State.CONTINUE;
                     }
 
+                    @Override
                     public State onStatusReceived(HttpResponseStatus responseStatus) {
                         return State.CONTINUE;
                     }
 
+                    @Override
                     public State onHeadersReceived(HttpHeaders headers) {
                         return State.CONTINUE;
                     }
 
+                    @Override
                     public Response onCompleted() {
                         return null;
                     }
                 }).get();
+
                 assertNull(resp);
                 assertEquals(SIMPLE_TEXT_FILE.length(), tmp.length());
             }
@@ -130,15 +139,18 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
     }
 
     @Test
-    public void zeroCopyFileWithBodyManipulationTest() throws IOException, ExecutionException, InterruptedException {
+    public void zeroCopyFileWithBodyManipulationTest() throws Exception {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
         try (AsyncHttpClient client = asyncHttpClient()) {
             try (OutputStream stream = Files.newOutputStream(tmp.toPath())) {
-                Response resp = client.preparePost("http://localhost:" + port1 + "/").setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+                Response resp = client.preparePost("http://localhost:" + port1 + '/').setBody(SIMPLE_TEXT_FILE).execute(new AsyncHandler<Response>() {
+
+                    @Override
                     public void onThrowable(Throwable t) {
                     }
 
+                    @Override
                     public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
                         stream.write(bodyPart.getBodyPartBytes());
 
@@ -149,14 +161,17 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
                         return State.CONTINUE;
                     }
 
+                    @Override
                     public State onStatusReceived(HttpResponseStatus responseStatus) {
                         return State.CONTINUE;
                     }
 
+                    @Override
                     public State onHeadersReceived(HttpHeaders headers) {
                         return State.CONTINUE;
                     }
 
+                    @Override
                     public Response onCompleted() {
                         return null;
                     }
@@ -167,7 +182,9 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    private class ZeroCopyHandler extends AbstractHandler {
+    private static class ZeroCopyHandler extends AbstractHandler {
+
+        @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             int size = 10 * 1024;

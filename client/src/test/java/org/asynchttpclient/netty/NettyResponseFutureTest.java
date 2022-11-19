@@ -14,13 +14,19 @@
 package org.asynchttpclient.netty;
 
 import org.asynchttpclient.AsyncHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
-import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class NettyResponseFutureTest {
 
@@ -44,13 +50,13 @@ public class NettyResponseFutureTest {
         assertTrue(nettyResponseFuture.isCancelled(), "isCancelled should return true for a cancelled Future");
     }
 
-    @Test(expectedExceptions = CancellationException.class)
-    public void testGetContentThrowsCancellationExceptionIfCancelled() throws InterruptedException, ExecutionException {
+    @Test
+    public void testGetContentThrowsCancellationExceptionIfCancelled() throws Exception {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         nettyResponseFuture.cancel(false);
-        nettyResponseFuture.get();
-        fail("A CancellationException must have occurred by now as 'cancel' was called before 'get'");
+        assertThrows(CancellationException.class, () -> nettyResponseFuture.get(),
+                "A CancellationException must have occurred by now as 'cancel' was called before 'get'");
     }
 
     @Test
@@ -62,25 +68,25 @@ public class NettyResponseFutureTest {
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         nettyResponseFuture.done();
         Object result = nettyResponseFuture.get();
-        assertEquals(result, value, "The Future should return the value given by asyncHandler#onCompleted");
+        assertEquals(result, "The Future should return the value given by asyncHandler#onCompleted");
     }
 
-    @Test(expectedExceptions = ExecutionException.class)
+    @Test
     public void testGetThrowsExceptionThrownByAsyncHandler() throws Exception {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         when(asyncHandler.onCompleted()).thenThrow(new RuntimeException());
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         nettyResponseFuture.done();
-        nettyResponseFuture.get();
-        fail("An ExecutionException must have occurred by now as asyncHandler threw an exception in 'onCompleted'");
+        assertThrows(ExecutionException.class, () -> nettyResponseFuture.get(),
+                "An ExecutionException must have occurred by now as asyncHandler threw an exception in 'onCompleted'");
     }
 
-    @Test(expectedExceptions = ExecutionException.class)
-    public void testGetThrowsExceptionOnAbort() throws InterruptedException, ExecutionException {
+    @Test
+    public void testGetThrowsExceptionOnAbort() throws Exception {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         nettyResponseFuture.abort(new RuntimeException());
-        nettyResponseFuture.get();
-        fail("An ExecutionException must have occurred by now as 'abort' was called before 'get'");
+        assertThrows(ExecutionException.class, () -> nettyResponseFuture.get(),
+                "An ExecutionException must have occurred by now as 'abort' was called before 'get'");
     }
 }

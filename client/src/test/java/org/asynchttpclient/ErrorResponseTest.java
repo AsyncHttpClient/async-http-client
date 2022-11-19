@@ -16,9 +16,9 @@
  */
 package org.asynchttpclient;
 
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,8 +30,8 @@ import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests to reproduce issues with handling of error responses
@@ -39,14 +39,13 @@ import static org.testng.Assert.assertNotNull;
  * @author Tatu Saloranta
  */
 public class ErrorResponseTest extends AbstractBasicTest {
-    final static String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
+    static final String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
 
-    @Override
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new ErrorHandler();
     }
 
-    @Test(groups = "standalone")
+    @Test
     public void testQueryParameters() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
@@ -58,6 +57,8 @@ public class ErrorResponseTest extends AbstractBasicTest {
     }
 
     private static class ErrorHandler extends AbstractHandler {
+
+        @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             try {
                 Thread.sleep(210L);

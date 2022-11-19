@@ -25,9 +25,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -41,24 +41,24 @@ import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Proxy usage tests.
  */
 public class CustomHeaderProxyTest extends AbstractBasicTest {
 
-    private Server server2;
+    private static Server server2;
 
-    private final String customHeaderName = "Custom-Header";
-    private final String customHeaderValue = "Custom-Value";
+    private static final String customHeaderName = "Custom-Header";
+    private static final String customHeaderValue = "Custom-Value";
 
-    public AbstractHandler configureHandler() throws Exception {
+    public static AbstractHandler configureHandler() throws Exception {
         return new ProxyHandler(customHeaderName, customHeaderValue);
     }
 
-    @BeforeClass(alwaysRun = true)
-    public void setUpGlobal() throws Exception {
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
@@ -74,8 +74,8 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
-    public void tearDownGlobal() throws Exception {
+    @AfterAll
+    public static void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }
@@ -86,14 +86,14 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
                 .setFollowRedirect(true)
                 .setProxyServer(
                         proxyServer("localhost", port1)
-                                .setCustomHeaders((req) -> new DefaultHttpHeaders().add(customHeaderName, customHeaderValue))
+                                .setCustomHeaders(req -> new DefaultHttpHeaders().add(customHeaderName, customHeaderValue))
                                 .build()
                 )
                 .setUseInsecureTrustManager(true)
                 .build();
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
             Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
-            assertEquals(r.getStatusCode(), 200);
+            assertEquals(200, r.getStatusCode());
         }
     }
 

@@ -25,10 +25,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -41,14 +41,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MaxConnectionsInThreads extends AbstractBasicTest {
+public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
+
+    @BeforeAll
+    public static void setUpGlobal() throws Exception {
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server.setHandler(context);
+        context.addServlet(new ServletHolder(new MockTimeoutHttpServlet()), "/timeout/*");
+
+        server.start();
+        port1 = connector.getLocalPort();
+    }
 
     @Test
     public void testMaxConnectionsWithinThreads() throws Exception {
 
-        String[] urls = new String[]{getTargetUrl(), getTargetUrl()};
+        String[] urls = {getTargetUrl(), getTargetUrl()};
 
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(1000)
@@ -64,6 +77,8 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             for (final String url : urls) {
                 Thread t = new Thread() {
+
+                    @Override
                     public void run() {
                         client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
                             @Override
@@ -86,11 +101,11 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
             }
 
             inThreadsLatch.await();
-
             assertEquals(failedCount.get(), 1, "Max Connections should have been reached when launching from concurrent threads");
 
             final CountDownLatch notInThreadsLatch = new CountDownLatch(2);
             failedCount.set(0);
+
             for (final String url : urls) {
                 client.prepareGet(url).execute(new AsyncCompletionHandlerBase() {
                     @Override
@@ -110,26 +125,11 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
             }
 
             notInThreadsLatch.await();
-
             assertEquals(failedCount.get(), 1, "Max Connections should have been reached when launching from main thread");
         }
     }
 
-    @Override
-    @BeforeClass
-    public void setUpGlobal() throws Exception {
-        server = new Server();
-        ServerConnector connector = addHttpConnector(server);
-        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
-        server.setHandler(context);
-        context.addServlet(new ServletHolder(new MockTimeoutHttpServlet()), "/timeout/*");
-
-        server.start();
-        port1 = connector.getLocalPort();
-    }
-
-    public String getTargetUrl() {
+    public static String getTargetUrl() {
         return "http://localhost:" + port1 + "/timeout/";
     }
 
@@ -137,15 +137,16 @@ public class MaxConnectionsInThreads extends AbstractBasicTest {
     public static class MockTimeoutHttpServlet extends HttpServlet {
         private static final Logger LOGGER = LoggerFactory.getLogger(MockTimeoutHttpServlet.class);
         private static final String contentType = "text/plain";
-        static long DEFAULT_TIMEOUT = 2000;
+        private static final long DEFAULT_TIMEOUT = 2000;
 
+        @Override
         public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
             res.setStatus(200);
             res.addHeader("Content-Type", contentType);
-            long sleepTime = DEFAULT_TIMEOUT;
+
+            long sleepTime;
             try {
                 sleepTime = Integer.parseInt(req.getParameter("timeout"));
-
             } catch (NumberFormatException e) {
                 sleepTime = DEFAULT_TIMEOUT;
             }

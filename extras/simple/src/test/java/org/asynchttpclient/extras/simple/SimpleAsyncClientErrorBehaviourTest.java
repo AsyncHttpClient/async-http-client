@@ -15,8 +15,9 @@ package org.asynchttpclient.extras.simple;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.extras.simple.SimpleAsyncHttpClient.ErrorDocumentBehaviour;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,8 +25,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Benjamin Hanzelmann
@@ -64,15 +65,14 @@ public class SimpleAsyncClientErrorBehaviourTest extends AbstractBasicTest {
         }
     }
 
-    @Override
-    public AbstractHandler configureHandler() {
+    public static AbstractHandler configureHandler() {
         return new AbstractHandler() {
 
-            public void handle(String target, org.eclipse.jetty.server.Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
                 response.sendError(404);
                 baseRequest.setHandled(true);
             }
         };
     }
-
 }

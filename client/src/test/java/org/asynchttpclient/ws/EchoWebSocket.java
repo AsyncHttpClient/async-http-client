@@ -58,7 +58,7 @@ public class EchoWebSocket extends WebSocketAdapter {
             return;
         }
 
-        if (message.equals("CLOSE")) {
+        if ("CLOSE".equals(message)) {
             getSession().close();
             return;
         }

@@ -16,12 +16,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Random;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Bryan Davis bpd@keynetics.com
@@ -45,10 +45,10 @@ public class ByteArrayBodyGeneratorTest {
         try {
             // should take 1 read to get through the srcArray
             body.transferTo(chunkBuffer);
-            assertEquals(chunkBuffer.readableBytes(), srcArraySize, "bytes read");
+            assertEquals(srcArraySize, chunkBuffer.readableBytes(), "bytes read");
             chunkBuffer.clear();
 
-            assertEquals(body.transferTo(chunkBuffer), BodyState.STOP, "body at EOF");
+            assertEquals(BodyState.STOP, body.transferTo(chunkBuffer), "body at EOF");
         } finally {
             chunkBuffer.release();
         }
@@ -56,7 +56,7 @@ public class ByteArrayBodyGeneratorTest {
 
     @Test
     public void testMultipleReads() throws IOException {
-        final int srcArraySize = (3 * chunkSize) + 42;
+        final int srcArraySize = 3 * chunkSize + 42;
         final byte[] srcArray = new byte[srcArraySize];
         random.nextBytes(srcArray);
 
@@ -73,8 +73,8 @@ public class ByteArrayBodyGeneratorTest {
                 bytesRead += chunkBuffer.readableBytes();
                 chunkBuffer.clear();
             }
-            assertEquals(reads, 4, "reads to drain generator");
-            assertEquals(bytesRead, srcArraySize, "bytes read");
+            assertEquals(4, reads, "reads to drain generator");
+            assertEquals(srcArraySize, bytesRead, "bytes read");
         } finally {
             chunkBuffer.release();
         }

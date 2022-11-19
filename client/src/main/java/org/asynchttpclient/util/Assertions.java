@@ -27,8 +27,9 @@ public final class Assertions {
 
     public static String assertNotEmpty(String value, String name) {
         assertNotNull(value, name);
-        if (value.length() == 0)
+        if (value.length() == 0) {
             throw new IllegalArgumentException("empty " + name);
+        }
         return value;
     }
 }
