@@ -8,7 +8,7 @@
     <version>2.12.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Asynchronous Http Client Project</name>
+    <name>AHC/Project</name>
     <description>
         The Async Http Client (AHC) library's purpose is to allow Java
         applications to easily execute HTTP requests and
@@ -37,6 +37,31 @@
         </developer>
     </developers>
 
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <netty.version>4.1.85.Final</netty.version>
+        <slf4j.version>2.0.3</slf4j.version>
+        <reactive-streams.version>1.0.3</reactive-streams.version>
+        <activation.version>2.0.1</activation.version>
+        <netty-reactive-streams.version>2.0.4</netty-reactive-streams.version>
+        <rxjava.version>1.3.8</rxjava.version>
+        <rxjava2.version>2.2.19</rxjava2.version>
+        <logback.version>1.2.9</logback.version>
+        <testng.version>7.6.1</testng.version>
+        <jetty.version>9.4.49.v20220914</jetty.version>
+        <tomcat.version>9.0.69</tomcat.version>
+        <commons-io.version>2.7</commons-io.version>
+        <commons-fileupload.version>1.4</commons-fileupload.version>
+        <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
+        <mockito.version>3.4.6</mockito.version>
+        <hamcrest.version>2.2</hamcrest.version>
+        <kerby.version>2.0.0</kerby.version>
+    </properties>
+
     <scm>
         <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
         <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
@@ -63,9 +88,9 @@
     <mailingLists>
         <mailingList>
             <name>asynchttpclient</name>
-            <archive>http://groups.google.com/group/asynchttpclient/topics</archive>
-            <subscribe>http://groups.google.com/group/asynchttpclient/subscribe</subscribe>
-            <unsubscribe>http://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
+            <archive>https://groups.google.com/group/asynchttpclient/topics</archive>
+            <subscribe>https://groups.google.com/group/asynchttpclient/subscribe</subscribe>
+            <unsubscribe>https://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
             <post>asynchttpclient@googlegroups.com</post>
         </mailingList>
     </mailingLists>
@@ -300,28 +325,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <properties>
-        <java.version>11</java.version>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netty.version>4.1.85.Final</netty.version>
-        <slf4j.version>2.0.3</slf4j.version>
-        <reactive-streams.version>1.0.3</reactive-streams.version>
-        <activation.version>2.0.1</activation.version>
-        <netty-reactive-streams.version>2.0.4</netty-reactive-streams.version>
-        <rxjava.version>1.3.8</rxjava.version>
-        <rxjava2.version>2.2.19</rxjava2.version>
-        <logback.version>1.2.9</logback.version>
-        <testng.version>7.6.1</testng.version>
-        <jetty.version>9.4.49.v20220914</jetty.version>
-        <tomcat.version>9.0.69</tomcat.version>
-        <commons-io.version>2.7</commons-io.version>
-        <commons-fileupload.version>1.4</commons-fileupload.version>
-        <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
-        <mockito.version>3.4.6</mockito.version>
-        <hamcrest.version>2.2</hamcrest.version>
-        <kerby.version>2.0.0</kerby.version>
-    </properties>
 </project>

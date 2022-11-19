@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <name>Asynchronous Http Client Bill of Materials (BOM)</name>
     <description>Importing this BOM will provide dependency management for all AsyncHttpClient artifacts.</description>
-    <url>http://github.com/AsyncHttpClient/async-http-client/bom</url>
+    <url>https://github.com/AsyncHttpClient/async-http-client/bom</url>
 
     <dependencyManagement>
         <dependencies>
@@ -78,7 +78,7 @@
     <build>
         <plugins>
             <plugin>
-                <!-- This plugins allows using a parent for this file, so project.version can be resolved.
+                <!-- These plugins allows using a parent for this file, so project.version can be resolved.
                      A clean BOM without a reference to a parent is generated, so that transitive dependencies will
                      not be included and cannot interfere with projects that use this BOM. -->
                 <groupId>org.codehaus.mojo</groupId>

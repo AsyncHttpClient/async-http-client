@@ -7,27 +7,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>async-http-client</artifactId>
-    <name>Asynchronous Http Client</name>
+    <name>AHC/Client</name>
     <description>The Async Http Client (AHC) classes.</description>
 
     <properties>
         <javaModuleName>org.asynchttpclient.client</javaModuleName>
     </properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
     <dependencies>
         <dependency>

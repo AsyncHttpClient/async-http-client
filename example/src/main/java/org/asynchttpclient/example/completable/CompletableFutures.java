@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
-public class CompletableFutures {
+public final class CompletableFutures {
     public static void main(String[] args) throws IOException {
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient()) {
             asyncHttpClient
