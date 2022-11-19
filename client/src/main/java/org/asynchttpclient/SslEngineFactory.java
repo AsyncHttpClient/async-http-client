@@ -16,6 +16,7 @@ package org.asynchttpclient;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 
+@FunctionalInterface
 public interface SslEngineFactory {
 
     /**
@@ -46,5 +47,4 @@ public interface SslEngineFactory {
     default void destroy() {
         // no op
     }
-
 }

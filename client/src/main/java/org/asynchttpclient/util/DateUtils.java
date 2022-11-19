@@ -16,6 +16,7 @@ package org.asynchttpclient.util;
 public final class DateUtils {
 
     private DateUtils() {
+        // Prevent outside initialization
     }
 
     public static long unpreciseMillisTime() {

@@ -27,7 +27,7 @@ public abstract class HttpResponseStatus {
 
     private final Uri uri;
 
-    public HttpResponseStatus(Uri uri) {
+    protected HttpResponseStatus(Uri uri) {
         this.uri = uri;
     }
 

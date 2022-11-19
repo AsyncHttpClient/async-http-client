@@ -12,7 +12,13 @@
  */
 package org.asynchttpclient.extras.retrofit;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Singular;
+import lombok.Value;
+import lombok.val;
 import okhttp3.Call;
 import okhttp3.Request;
 import org.asynchttpclient.AsyncHttpClient;
@@ -51,7 +57,7 @@ public class AsyncHttpClientCallFactory implements Call.Factory {
                 .request(request);
 
         // customize builder before creating a call
-        runConsumers(this.callCustomizers, callBuilder);
+        runConsumers(callCustomizers, callBuilder);
 
         // create a call
         return callBuilder.build();

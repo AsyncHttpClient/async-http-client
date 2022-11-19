@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 /**
- * A {@link org.asynchttpclient.handler.resumable.ResumableListener} which use a {@link RandomAccessFile} for storing the received bytes.
+ * A {@link ResumableListener} which use a {@link RandomAccessFile} for storing the received bytes.
  */
 public class ResumableRandomAccessFileListener implements ResumableListener {
     private final RandomAccessFile file;
@@ -35,6 +35,7 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
      * @param buffer a {@link ByteBuffer}
      * @throws IOException exception while writing into the file
      */
+    @Override
     public void onBytesReceived(ByteBuffer buffer) throws IOException {
         file.seek(file.length());
         if (buffer.hasArray()) {
@@ -48,21 +49,17 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void onAllBytesReceived() {
         closeSilently(file);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public long length() {
         try {
             return file.length();
         } catch (IOException e) {
-            return 0;
+            return -1;
         }
     }
 }

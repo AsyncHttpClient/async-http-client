@@ -14,8 +14,11 @@
 package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelId;
-import io.netty.util.*;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
+import io.netty.util.TimerTask;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.channel.ChannelPool;
 import org.slf4j.Logger;
@@ -40,7 +43,7 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 /**
- * A simple implementation of {@link ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
+ * A simple implementation of {@link ChannelPool} based on a {@link ConcurrentHashMap}
  */
 public final class DefaultChannelPool implements ChannelPool {
 
@@ -64,22 +67,11 @@ public final class DefaultChannelPool implements ChannelPool {
                 config.getConnectionPoolCleanerPeriod());
     }
 
-    public DefaultChannelPool(int maxIdleTime,
-                              int connectionTtl,
-                              Timer nettyTimer,
-                              int cleanerPeriod) {
-        this(maxIdleTime,
-                connectionTtl,
-                PoolLeaseStrategy.LIFO,
-                nettyTimer,
-                cleanerPeriod);
+    public DefaultChannelPool(int maxIdleTime, int connectionTtl, Timer nettyTimer, int cleanerPeriod) {
+        this(maxIdleTime, connectionTtl, PoolLeaseStrategy.LIFO, nettyTimer, cleanerPeriod);
     }
 
-    public DefaultChannelPool(int maxIdleTime,
-                              int connectionTtl,
-                              PoolLeaseStrategy poolLeaseStrategy,
-                              Timer nettyTimer,
-                              int cleanerPeriod) {
+    public DefaultChannelPool(int maxIdleTime, int connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, int cleanerPeriod) {
         this.maxIdleTime = maxIdleTime;
         this.connectionTtl = connectionTtl;
         connectionTtlEnabled = connectionTtl > 0;
@@ -87,10 +79,12 @@ public final class DefaultChannelPool implements ChannelPool {
         maxIdleTimeEnabled = maxIdleTime > 0;
         this.poolLeaseStrategy = poolLeaseStrategy;
 
-        this.cleanerPeriod = Math.min(cleanerPeriod, Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE, maxIdleTimeEnabled ? maxIdleTime : Integer.MAX_VALUE));
+        this.cleanerPeriod = Math.min(cleanerPeriod, Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE,
+                maxIdleTimeEnabled ? maxIdleTime : Integer.MAX_VALUE));
 
-        if (connectionTtlEnabled || maxIdleTimeEnabled)
+        if (connectionTtlEnabled || maxIdleTimeEnabled) {
             scheduleNewIdleChannelDetector(new IdleChannelDetector());
+        }
     }
 
     private void scheduleNewIdleChannelDetector(TimerTask task) {
@@ -98,24 +92,25 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private boolean isTtlExpired(Channel channel, long now) {
-        if (!connectionTtlEnabled)
+        if (!connectionTtlEnabled) {
             return false;
+        }
 
         ChannelCreation creation = channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY).get();
         return creation != null && now - creation.creationTime >= connectionTtl;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean offer(Channel channel, Object partitionKey) {
-        if (isClosed.get())
+        if (isClosed.get()) {
             return false;
+        }
 
         long now = unpreciseMillisTime();
 
-        if (isTtlExpired(channel, now))
+        if (isTtlExpired(channel, now)) {
             return false;
+        }
 
         boolean offered = offer0(channel, partitionKey, now);
         if (connectionTtlEnabled && offered) {
@@ -133,19 +128,15 @@ public final class DefaultChannelPool implements ChannelPool {
         return partition.offerFirst(new IdleChannel(channel, now));
     }
 
-    private void registerChannelCreation(Channel channel, Object partitionKey, long now) {
-        ChannelId id = channel.id();
+    private static void registerChannelCreation(Channel channel, Object partitionKey, long now) {
         Attribute<ChannelCreation> channelCreationAttribute = channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY);
         if (channelCreationAttribute.get() == null) {
             channelCreationAttribute.set(new ChannelCreation(now, partitionKey));
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Channel poll(Object partitionKey) {
-
         IdleChannel idleChannel = null;
         ConcurrentLinkedDeque<IdleChannel> partition = partitions.get(partitionKey);
         if (partition != null) {
@@ -153,9 +144,10 @@ public final class DefaultChannelPool implements ChannelPool {
                 idleChannel = poolLeaseStrategy.lease(partition);
 
                 if (idleChannel == null)
-                    // pool is empty
+                // pool is empty
+                {
                     break;
-                else if (!Channels.isChannelActive(idleChannel.channel)) {
+                } else if (!Channels.isChannelActive(idleChannel.channel)) {
                     idleChannel = null;
                     LOGGER.trace("Channel is inactive, probably remotely closed!");
                 } else if (!idleChannel.takeOwnership()) {
@@ -167,32 +159,27 @@ public final class DefaultChannelPool implements ChannelPool {
         return idleChannel != null ? idleChannel.channel : null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean removeAll(Channel channel) {
         ChannelCreation creation = connectionTtlEnabled ? channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY).get() : null;
         return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(new IdleChannel(channel, Long.MIN_VALUE));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public boolean isOpen() {
         return !isClosed.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void destroy() {
-        if (isClosed.getAndSet(true))
+        if (isClosed.getAndSet(true)) {
             return;
+        }
 
         partitions.clear();
     }
 
-    private void close(Channel channel) {
+    private static void close(Channel channel) {
         // FIXME pity to have to do this here
         Channels.setDiscard(channel);
         Channels.silentlyCloseChannel(channel);
@@ -201,8 +188,9 @@ public final class DefaultChannelPool implements ChannelPool {
     private void flushPartition(Object partitionKey, ConcurrentLinkedDeque<IdleChannel> partition) {
         if (partition != null) {
             partitions.remove(partitionKey);
-            for (IdleChannel idleChannel : partition)
+            for (IdleChannel idleChannel : partition) {
                 close(idleChannel.channel);
+            }
         }
     }
 
@@ -210,8 +198,9 @@ public final class DefaultChannelPool implements ChannelPool {
     public void flushPartitions(Predicate<Object> predicate) {
         for (Map.Entry<Object, ConcurrentLinkedDeque<IdleChannel>> partitionsEntry : partitions.entrySet()) {
             Object partitionKey = partitionsEntry.getKey();
-            if (predicate.test(partitionKey))
+            if (predicate.test(partitionKey)) {
                 flushPartition(partitionKey, partitionsEntry.getValue());
+            }
         }
     }
 
@@ -230,11 +219,13 @@ public final class DefaultChannelPool implements ChannelPool {
 
     public enum PoolLeaseStrategy {
         LIFO {
+            @Override
             public <E> E lease(Deque<E> d) {
                 return d.pollFirst();
             }
         },
         FIFO {
+            @Override
             public <E> E lease(Deque<E> d) {
                 return d.pollLast();
             }
@@ -260,7 +251,7 @@ public final class DefaultChannelPool implements ChannelPool {
         final Channel channel;
         final long start;
         @SuppressWarnings("unused")
-        private volatile int owned = 0;
+        private volatile int owned;
 
         IdleChannel(Channel channel, long start) {
             this.channel = assertNotNull(channel, "channel");
@@ -278,7 +269,7 @@ public final class DefaultChannelPool implements ChannelPool {
         @Override
         // only depends on channel
         public boolean equals(Object o) {
-            return this == o || (o instanceof IdleChannel && channel.equals(IdleChannel.class.cast(o).channel));
+            return this == o || o instanceof IdleChannel && channel.equals(((IdleChannel) o).channel);
         }
 
         @Override
@@ -301,9 +292,13 @@ public final class DefaultChannelPool implements ChannelPool {
                 boolean isRemotelyClosed = !Channels.isChannelActive(idleChannel.channel);
                 boolean isTtlExpired = isTtlExpired(idleChannel.channel, now);
                 if (isIdleTimeoutExpired || isRemotelyClosed || isTtlExpired) {
-                    LOGGER.debug("Adding Candidate expired Channel {} isIdleTimeoutExpired={} isRemotelyClosed={} isTtlExpired={}", idleChannel.channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
-                    if (idleTimeoutChannels == null)
+
+                    LOGGER.debug("Adding Candidate expired Channel {} isIdleTimeoutExpired={} isRemotelyClosed={} isTtlExpired={}",
+                            idleChannel.channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
+
+                    if (idleTimeoutChannels == null) {
                         idleTimeoutChannels = new ArrayList<>(1);
+                    }
                     idleTimeoutChannels.add(idleChannel);
                 }
             }
@@ -312,7 +307,6 @@ public final class DefaultChannelPool implements ChannelPool {
         }
 
         private List<IdleChannel> closeChannels(List<IdleChannel> candidates) {
-
             // lazy create, only if we hit a non-closeable channel
             List<IdleChannel> closedChannels = null;
             for (int i = 0; i < candidates.size(); i++) {
@@ -327,29 +321,33 @@ public final class DefaultChannelPool implements ChannelPool {
                     }
 
                 } else if (closedChannels == null) {
-                    // first non closeable to be skipped, copy all
+                    // first non-closeable to be skipped, copy all
                     // previously skipped closeable channels
                     closedChannels = new ArrayList<>(candidates.size());
-                    for (int j = 0; j < i; j++)
+                    for (int j = 0; j < i; j++) {
                         closedChannels.add(candidates.get(j));
+                    }
                 }
             }
 
             return closedChannels != null ? closedChannels : candidates;
         }
 
+        @Override
         public void run(Timeout timeout) {
 
-            if (isClosed.get())
+            if (isClosed.get()) {
                 return;
+            }
 
-            if (LOGGER.isDebugEnabled())
-                for (Object key : partitions.keySet()) {
-                    int size = partitions.get(key).size();
+            if (LOGGER.isDebugEnabled()) {
+                for (Map.Entry<Object, ConcurrentLinkedDeque<IdleChannel>> entry : partitions.entrySet()) {
+                    int size = entry.getValue().size();
                     if (size > 0) {
-                        LOGGER.debug("Entry count for : {} : {}", key, size);
+                        LOGGER.debug("Entry count for : {} : {}", entry.getKey(), size);
                     }
                 }
+            }
 
             long start = unpreciseMillisTime();
             int closedCount = 0;
@@ -359,8 +357,9 @@ public final class DefaultChannelPool implements ChannelPool {
 
                 // store in intermediate unsynchronized lists to minimize
                 // the impact on the ConcurrentLinkedDeque
-                if (LOGGER.isDebugEnabled())
+                if (LOGGER.isDebugEnabled()) {
                     totalCount += partition.size();
+                }
 
                 List<IdleChannel> closedChannels = closeChannels(expiredChannels(partition, start));
 

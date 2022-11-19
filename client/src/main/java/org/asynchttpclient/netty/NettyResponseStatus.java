@@ -46,6 +46,7 @@ public class NettyResponseStatus extends HttpResponseStatus {
      *
      * @return the response status code
      */
+    @Override
     public int getStatusCode() {
         return response.status().code();
     }
@@ -55,6 +56,7 @@ public class NettyResponseStatus extends HttpResponseStatus {
      *
      * @return the response status text
      */
+    @Override
     public String getStatusText() {
         return response.status().reasonPhrase();
     }

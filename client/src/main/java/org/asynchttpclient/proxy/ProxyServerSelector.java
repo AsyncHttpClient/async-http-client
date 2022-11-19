@@ -5,6 +5,7 @@ import org.asynchttpclient.uri.Uri;
 /**
  * Selector for a proxy server
  */
+@FunctionalInterface
 public interface ProxyServerSelector {
 
     /**

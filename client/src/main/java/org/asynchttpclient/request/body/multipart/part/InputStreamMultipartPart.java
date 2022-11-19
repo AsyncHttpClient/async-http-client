@@ -28,7 +28,7 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamPart> {
 
-    private long position = 0L;
+    private long position;
     private ByteBuffer buffer;
     private ReadableByteChannel channel;
 
@@ -101,5 +101,4 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
         closeSilently(part.getInputStream());
         closeSilently(channel);
     }
-
 }

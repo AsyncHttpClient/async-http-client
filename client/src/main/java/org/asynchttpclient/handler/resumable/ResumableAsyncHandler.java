@@ -37,7 +37,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
 /**
  * An {@link AsyncHandler} which support resumable download, e.g when used with an {@link ResumableIOExceptionFilter},
  * this handler can resume the download operation at the point it was before the interruption occurred. This prevent having to
- * download the entire file again. It's the responsibility of the {@link org.asynchttpclient.handler.resumable.ResumableAsyncHandler}
+ * download the entire file again. It's the responsibility of the {@link ResumableAsyncHandler}
  * to track how many bytes has been transferred and to properly adjust the file's write position.
  * <br>
  * In case of a JVM crash/shutdown, you can create an instance of this class and pass the last valid bytes position.
@@ -45,15 +45,16 @@ import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
  * Beware that it registers a shutdown hook, that will cause a ClassLoader leak when used in an appserver and only redeploying the application.
  */
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
-    private final static Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
-    private final static ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
+    private static final Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
+    private static final ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private static Map<String, Long> resumableIndex;
+
     private final AtomicLong byteTransferred;
     private final ResumableProcessor resumableProcessor;
     private final AsyncHandler<Response> decoratedAsyncHandler;
     private final boolean accumulateBody;
     private String url;
-    private ResponseBuilder responseBuilder = new ResponseBuilder();
+    private final ResponseBuilder responseBuilder = new ResponseBuilder();
     private ResumableListener resumableListener = new NULLResumableListener();
 
     private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableProcessor,
@@ -192,7 +193,6 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      * @return a {@link Request} with the Range header properly set.
      */
     public Request adjustRequestRange(Request request) {
-
         Long ri = resumableIndex.get(request.getUrl());
         if (ri != null) {
             byteTransferred.set(ri);
@@ -205,7 +205,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
 
         RequestBuilder builder = request.toBuilder();
         if (request.getHeaders().get(RANGE) == null && byteTransferred.get() != 0) {
-            builder.setHeader(RANGE, "bytes=" + byteTransferred.get() + "-");
+            builder.setHeader(RANGE, "bytes=" + byteTransferred.get() + '-');
         }
         return builder.build();
     }
@@ -255,14 +255,13 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
          * @return {@link Map} current transfer state
          */
         Map<String, Long> load();
-
     }
 
     private static class ResumableIndexThread extends Thread {
 
         public final ConcurrentLinkedQueue<ResumableProcessor> resumableProcessors = new ConcurrentLinkedQueue<>();
 
-        public ResumableIndexThread() {
+        private ResumableIndexThread() {
             Runtime.getRuntime().addShutdownHook(this);
         }
 
@@ -270,6 +269,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
             resumableProcessors.offer(p);
         }
 
+        @Override
         public void run() {
             for (ResumableProcessor p : resumableProcessors) {
                 p.save(resumableIndex);
@@ -279,15 +279,19 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
 
     private static class NULLResumableHandler implements ResumableProcessor {
 
+        @Override
         public void put(String url, long transferredBytes) {
         }
 
+        @Override
         public void remove(String uri) {
         }
 
+        @Override
         public void save(Map<String, Long> map) {
         }
 
+        @Override
         public Map<String, Long> load() {
             return new HashMap<>();
         }
@@ -295,15 +299,22 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
 
     private static class NULLResumableListener implements ResumableListener {
 
-        private long length = 0L;
+        private long length;
 
+        private NULLResumableListener() {
+            length = 0L;
+        }
+
+        @Override
         public void onBytesReceived(ByteBuffer byteBuffer) {
             length += byteBuffer.remaining();
         }
 
+        @Override
         public void onAllBytesReceived() {
         }
 
+        @Override
         public long length() {
             return length;
         }

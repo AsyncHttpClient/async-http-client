@@ -11,7 +11,11 @@ import java.util.concurrent.Semaphore;
 /**
  * Wrapper for {@link AsyncHandler}s to release a permit on {@link AsyncHandler#onCompleted()}. This is done via a dynamic proxy to preserve all interfaces of the wrapped handler.
  */
-public class ReleasePermitOnComplete {
+public final class ReleasePermitOnComplete {
+
+    private ReleasePermitOnComplete() {
+        // Prevent outside initialization
+    }
 
     /**
      * Wrap handler to release the permit of the semaphore on {@link AsyncHandler#onCompleted()}.

@@ -22,6 +22,7 @@ import org.asynchttpclient.netty.request.NettyRequest;
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.Future;
 
 
 /**
@@ -55,7 +56,7 @@ import java.util.List;
  * There's a chance you might end up in a dead lock.
  * If you really need to perform a blocking operation, execute it in a different dedicated thread pool.
  *
- * @param <T> Type of object returned by the {@link java.util.concurrent.Future#get}
+ * @param <T> Type of object returned by the {@link Future#get}
  */
 public interface AsyncHandler<T> {
 
@@ -111,7 +112,7 @@ public interface AsyncHandler<T> {
      * <br>
      * Gets always invoked as last callback method.
      *
-     * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @return T Value that will be returned by the associated {@link Future}
      * @throws Exception if something wrong happens
      */
     T onCompleted() throws Exception;

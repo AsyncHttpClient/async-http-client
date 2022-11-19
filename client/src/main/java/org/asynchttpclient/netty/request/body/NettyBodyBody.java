@@ -62,7 +62,7 @@ public class NettyBodyBody implements NettyBody {
             BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
             if (bg instanceof FeedableBodyGenerator && !(bg instanceof ReactiveStreamsBodyGenerator)) {
                 final ChunkedWriteHandler chunkedWriteHandler = channel.pipeline().get(ChunkedWriteHandler.class);
-                FeedableBodyGenerator.class.cast(bg).setListener(new FeedListener() {
+                ((FeedableBodyGenerator) bg).setListener(new FeedListener() {
                     @Override
                     public void onContentAdded() {
                         chunkedWriteHandler.resumeTransfer();
@@ -77,6 +77,7 @@ public class NettyBodyBody implements NettyBody {
 
         channel.write(msg, channel.newProgressivePromise())
                 .addListener(new WriteProgressListener(future, false, getContentLength()) {
+                    @Override
                     public void operationComplete(ChannelProgressiveFuture cf) {
                         closeSilently(body);
                         super.operationComplete(cf);

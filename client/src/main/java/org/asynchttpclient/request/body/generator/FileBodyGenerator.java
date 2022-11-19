@@ -49,9 +49,6 @@ public final class FileBodyGenerator implements BodyGenerator {
         return regionSeek;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public RandomAccessBody createBody() {
         throw new UnsupportedOperationException("FileBodyGenerator.createBody isn't used, Netty direclt sends the file");

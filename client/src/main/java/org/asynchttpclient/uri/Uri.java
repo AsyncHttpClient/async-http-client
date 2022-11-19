@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.uri;
 
-import org.asynchttpclient.util.MiscUtils;
 import org.asynchttpclient.util.StringBuilderPool;
 
 import java.net.URI;
@@ -36,17 +35,10 @@ public class Uri {
     private final String path;
     private final String fragment;
     private String url;
-    private boolean secured;
-    private boolean webSocket;
+    private final boolean secured;
+    private final boolean webSocket;
 
-    public Uri(String scheme,
-               String userInfo,
-               String host,
-               int port,
-               String path,
-               String query,
-               String fragment) {
-
+    public Uri(String scheme, String userInfo, String host, int port, String path, String query, String fragment) {
         this.scheme = assertNotEmpty(scheme, "scheme");
         this.userInfo = userInfo;
         this.host = assertNotEmpty(host, "host");
@@ -54,8 +46,8 @@ public class Uri {
         this.path = path;
         this.query = query;
         this.fragment = fragment;
-        this.secured = HTTPS.equals(scheme) || WSS.equals(scheme);
-        this.webSocket = WS.equals(scheme) || WSS.equalsIgnoreCase(scheme);
+        secured = HTTPS.equals(scheme) || WSS.equals(scheme);
+        webSocket = WS.equals(scheme) || WSS.equalsIgnoreCase(scheme);
     }
 
     public static Uri create(String originalUrl) {
@@ -73,13 +65,7 @@ public class Uri {
             throw new IllegalArgumentException(originalUrl + " could not be parsed into a proper Uri, missing host");
         }
 
-        return new Uri(parser.scheme,
-                parser.userInfo,
-                parser.host,
-                parser.port,
-                parser.path,
-                parser.query,
-                parser.fragment);
+        return new Uri(parser.scheme, parser.userInfo, parser.host, parser.port, parser.path, parser.query, parser.fragment);
     }
 
     public String getQuery() {
@@ -134,15 +120,19 @@ public class Uri {
         if (url == null) {
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
             sb.append(scheme).append("://");
-            if (userInfo != null)
+            if (userInfo != null) {
                 sb.append(userInfo).append('@');
+            }
             sb.append(host);
-            if (port != -1)
+            if (port != -1) {
                 sb.append(':').append(port);
-            if (path != null)
+            }
+            if (path != null) {
                 sb.append(path);
-            if (query != null)
+            }
+            if (query != null) {
                 sb.append('?').append(query);
+            }
             url = sb.toString();
             sb.setLength(0);
         }
@@ -166,26 +156,28 @@ public class Uri {
 
     public String toRelativeUrl() {
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
-        if (MiscUtils.isNonEmpty(path))
+        if (isNonEmpty(path)) {
             sb.append(path);
-        else
+        } else {
             sb.append('/');
-        if (query != null)
+        }
+        if (query != null) {
             sb.append('?').append(query);
+        }
 
         return sb.toString();
     }
 
     public String toFullUrl() {
-        return fragment == null ? toUrl() : toUrl() + "#" + fragment;
+        return fragment == null ? toUrl() : toUrl() + '#' + fragment;
     }
 
     public String getBaseUrl() {
-        return scheme + "://" + host + ":" + getExplicitPort();
+        return scheme + "://" + host + ':' + getExplicitPort();
     }
 
     public String getAuthority() {
-        return host + ":" + getExplicitPort();
+        return host + ':' + getExplicitPort();
     }
 
     public boolean isSameBase(Uri other) {
@@ -205,89 +197,88 @@ public class Uri {
     }
 
     public Uri withNewScheme(String newScheme) {
-        return new Uri(newScheme,
-                userInfo,
-                host,
-                port,
-                path,
-                query,
-                fragment);
+        return new Uri(newScheme, userInfo, host, port, path, query, fragment);
     }
 
     public Uri withNewQuery(String newQuery) {
-        return new Uri(scheme,
-                userInfo,
-                host,
-                port,
-                path,
-                newQuery,
-                fragment);
+        return new Uri(scheme, userInfo, host, port, path, newQuery, fragment);
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((host == null) ? 0 : host.hashCode());
-        result = prime * result + ((path == null) ? 0 : path.hashCode());
+        result = prime * result + (host == null ? 0 : host.hashCode());
+        result = prime * result + (path == null ? 0 : path.hashCode());
         result = prime * result + port;
-        result = prime * result + ((query == null) ? 0 : query.hashCode());
-        result = prime * result + ((scheme == null) ? 0 : scheme.hashCode());
-        result = prime * result + ((userInfo == null) ? 0 : userInfo.hashCode());
-        result = prime * result + ((fragment == null) ? 0 : fragment.hashCode());
+        result = prime * result + (query == null ? 0 : query.hashCode());
+        result = prime * result + (scheme == null ? 0 : scheme.hashCode());
+        result = prime * result + (userInfo == null ? 0 : userInfo.hashCode());
+        result = prime * result + (fragment == null ? 0 : fragment.hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         Uri other = (Uri) obj;
         if (host == null) {
-            if (other.host != null)
+            if (other.host != null) {
                 return false;
-        } else if (!host.equals(other.host))
+            }
+        } else if (!host.equals(other.host)) {
             return false;
+        }
         if (path == null) {
-            if (other.path != null)
+            if (other.path != null) {
                 return false;
-        } else if (!path.equals(other.path))
+            }
+        } else if (!path.equals(other.path)) {
             return false;
-        if (port != other.port)
+        }
+        if (port != other.port) {
             return false;
+        }
         if (query == null) {
-            if (other.query != null)
+            if (other.query != null) {
                 return false;
-        } else if (!query.equals(other.query))
+            }
+        } else if (!query.equals(other.query)) {
             return false;
+        }
         if (scheme == null) {
-            if (other.scheme != null)
+            if (other.scheme != null) {
                 return false;
-        } else if (!scheme.equals(other.scheme))
+            }
+        } else if (!scheme.equals(other.scheme)) {
             return false;
+        }
         if (userInfo == null) {
-            if (other.userInfo != null)
+            if (other.userInfo != null) {
                 return false;
-        } else if (!userInfo.equals(other.userInfo))
+            }
+        } else if (!userInfo.equals(other.userInfo)) {
             return false;
+        }
         if (fragment == null) {
-            if (other.fragment != null)
-                return false;
-        } else if (!fragment.equals(other.fragment))
-            return false;
-        return true;
+            return other.fragment == null;
+        } else {
+            return fragment.equals(other.fragment);
+        }
     }
 
     public static void validateSupportedScheme(Uri uri) {
         final String scheme = uri.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase(HTTP) && !scheme.equalsIgnoreCase(HTTPS)
-                && !scheme.equalsIgnoreCase(WS) && !scheme.equalsIgnoreCase(WSS)) {
-            throw new IllegalArgumentException("The URI scheme, of the URI " + uri
-                    + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
+        if (scheme == null || !scheme.equalsIgnoreCase(HTTP) && !scheme.equalsIgnoreCase(HTTPS) && !scheme.equalsIgnoreCase(WS) && !scheme.equalsIgnoreCase(WSS)) {
+            throw new IllegalArgumentException("The URI scheme, of the URI " + uri + ", must be equal (ignoring case) to 'http', 'https', 'ws', or 'wss'");
         }
     }
 }

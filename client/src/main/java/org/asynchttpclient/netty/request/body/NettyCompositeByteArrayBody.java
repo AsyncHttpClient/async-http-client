@@ -27,8 +27,9 @@ public class NettyCompositeByteArrayBody extends NettyDirectBody {
         this.bytes = new byte[bytes.size()][];
         bytes.toArray(this.bytes);
         long l = 0;
-        for (byte[] b : bytes)
+        for (byte[] b : bytes) {
             l += b.length;
+        }
         contentLength = l;
     }
 

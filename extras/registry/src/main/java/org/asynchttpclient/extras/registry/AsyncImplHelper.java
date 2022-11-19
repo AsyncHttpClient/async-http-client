@@ -19,10 +19,14 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-public class AsyncImplHelper {
+public final class AsyncImplHelper {
 
     public static final String ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY = "org.async.http.client.impl";
     public static final String ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY = "org.async.http.client.registry.impl";
+
+    private AsyncImplHelper() {
+        // Prevent outside initialization
+    }
 
     /*
      * Returns the class specified by either a system property or a properties
@@ -33,7 +37,7 @@ public class AsyncImplHelper {
     public static Class<AsyncHttpClient> getAsyncImplClass(String propertyName) {
         String asyncHttpClientImplClassName = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(propertyName);
         if (asyncHttpClientImplClassName != null) {
-            return AsyncImplHelper.getClass(asyncHttpClientImplClassName);
+            return getClass(asyncHttpClientImplClassName);
         }
         return null;
     }
@@ -41,16 +45,18 @@ public class AsyncImplHelper {
     private static Class<AsyncHttpClient> getClass(final String asyncImplClassName) {
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<Class<AsyncHttpClient>>() {
+                @Override
                 @SuppressWarnings("unchecked")
                 public Class<AsyncHttpClient> run() throws ClassNotFoundException {
                     ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    if (cl != null)
+                    if (cl != null) {
                         try {
                             return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);
                         } catch (ClassNotFoundException e) {
-                            AsyncHttpClientFactory.logger.info("Couldn't find class : " + asyncImplClassName + " in thread context classpath " + "checking system class path next",
-                                    e);
+                            AsyncHttpClientFactory.logger
+                                    .info("Couldn't find class : " + asyncImplClassName + " in thread context classpath checking system class path next", e);
                         }
+                    }
 
                     cl = ClassLoader.getSystemClassLoader();
                     return (Class<AsyncHttpClient>) cl.loadClass(asyncImplClassName);

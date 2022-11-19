@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 
 public class DefaultConnectionSemaphoreFactory implements ConnectionSemaphoreFactory {
 
+    @Override
     public ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config) {
         int acquireFreeChannelTimeout = Math.max(0, config.getAcquireFreeChannelTimeout());
         int maxConnections = config.getMaxConnections();

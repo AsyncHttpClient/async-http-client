@@ -13,16 +13,16 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A {@link org.asynchttpclient.filter.RequestFilter} that extends the capability of
+ * A {@link RequestFilter} that extends the capability of
  * {@link ThrottleRequestFilter} by allowing rate limiting per second in addition to the
  * number of concurrent connections.
  * <p>
- * The <code>maxWaitMs</code> argument is respected across both permit acquisitions. For
+ * The {@code maxWaitMs} argument is respected across both permit acquisitions. For
  * example, if 1000 ms is given, and the filter spends 500 ms waiting for a connection,
  * it will only spend another 500 ms waiting for the rate limiter.
  */
 public class RateLimitedThrottleRequestFilter implements RequestFilter {
-    private final static Logger logger = LoggerFactory.getLogger(RateLimitedThrottleRequestFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(RateLimitedThrottleRequestFilter.class);
     private final Semaphore available;
     private final int maxWaitMs;
     private final RateLimiter rateLimiter;
@@ -33,13 +33,10 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
 
     public RateLimitedThrottleRequestFilter(int maxConnections, double rateLimitPerSecond, int maxWaitMs) {
         this.maxWaitMs = maxWaitMs;
-        this.rateLimiter = RateLimiter.create(rateLimitPerSecond);
+        rateLimiter = RateLimiter.create(rateLimitPerSecond);
         available = new Semaphore(maxConnections, true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
         try {

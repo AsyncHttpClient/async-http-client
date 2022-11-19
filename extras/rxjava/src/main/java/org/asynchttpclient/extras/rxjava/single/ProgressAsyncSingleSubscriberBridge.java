@@ -21,7 +21,7 @@ final class ProgressAsyncSingleSubscriberBridge<T> extends AbstractProgressSingl
 
     private final ProgressAsyncHandler<? extends T> delegate;
 
-    public ProgressAsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, ProgressAsyncHandler<? extends T> delegate) {
+    ProgressAsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, ProgressAsyncHandler<? extends T> delegate) {
         super(subscriber);
         this.delegate = requireNonNull(delegate);
     }
@@ -30,5 +30,4 @@ final class ProgressAsyncSingleSubscriberBridge<T> extends AbstractProgressSingl
     protected ProgressAsyncHandler<? extends T> delegate() {
         return delegate;
     }
-
 }

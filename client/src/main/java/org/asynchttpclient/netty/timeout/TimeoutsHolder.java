@@ -36,19 +36,20 @@ public class TimeoutsHolder {
     private final long requestTimeoutMillisTime;
     private final int readTimeoutValue;
     private volatile Timeout readTimeout;
-    private volatile NettyResponseFuture<?> nettyResponseFuture;
+    private final NettyResponseFuture<?> nettyResponseFuture;
     private volatile InetSocketAddress remoteAddress;
 
-    public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
+    public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender,
+                          AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
         this.nettyTimer = nettyTimer;
         this.nettyResponseFuture = nettyResponseFuture;
         this.requestSender = requestSender;
-        this.remoteAddress = originalRemoteAddress;
+        remoteAddress = originalRemoteAddress;
 
         final Request targetRequest = nettyResponseFuture.getTargetRequest();
 
         final int readTimeoutInMs = targetRequest.getReadTimeout();
-        this.readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
+        readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
 
         int requestTimeoutInMs = targetRequest.getRequestTimeout();
         if (requestTimeoutInMs == 0) {
@@ -79,13 +80,13 @@ public class TimeoutsHolder {
     }
 
     void startReadTimeout(ReadTimeoutTimerTask task) {
-        if (requestTimeout == null || (!requestTimeout.isExpired() && readTimeoutValue < (requestTimeoutMillisTime - unpreciseMillisTime()))) {
+        if (requestTimeout == null || !requestTimeout.isExpired() && readTimeoutValue < requestTimeoutMillisTime - unpreciseMillisTime()) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)
                 task = new ReadTimeoutTimerTask(nettyResponseFuture, requestSender, this, readTimeoutValue);
             }
-            this.readTimeout = newTimeout(task, readTimeoutValue);
+            readTimeout = newTimeout(task, readTimeoutValue);
 
         } else if (task != null) {
             // read timeout couldn't re-scheduling itself, clean up
@@ -97,11 +98,11 @@ public class TimeoutsHolder {
         if (cancelled.compareAndSet(false, true)) {
             if (requestTimeout != null) {
                 requestTimeout.cancel();
-                RequestTimeoutTimerTask.class.cast(requestTimeout.task()).clean();
+                ((TimeoutTimerTask) requestTimeout.task()).clean();
             }
             if (readTimeout != null) {
                 readTimeout.cancel();
-                ReadTimeoutTimerTask.class.cast(readTimeout.task()).clean();
+                ((TimeoutTimerTask) readTimeout.task()).clean();
             }
         }
     }

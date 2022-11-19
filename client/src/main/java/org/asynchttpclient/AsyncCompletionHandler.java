@@ -21,15 +21,19 @@ import org.asynchttpclient.handler.ProgressAsyncHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.concurrent.Future;
+
 /**
  * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)}
  * convenience method which gets called when the {@link Response} processing is
  * finished. This class also implements the {@link ProgressAsyncHandler}
  * callback, all doing nothing except returning
- * {@link org.asynchttpclient.AsyncHandler.State#CONTINUE}
+ * {@link AsyncHandler.State#CONTINUE}
  *
  * @param <T> Type of the value that will be returned by the associated
- *            {@link java.util.concurrent.Future}
+ *            {@link Future}
  */
 public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<T> {
 
@@ -76,15 +80,15 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
      *
      * @param response The {@link Response}
      * @return T Value that will be returned by the associated
-     * {@link java.util.concurrent.Future}
+     * {@link Future}
      * @throws Exception if something wrong happens
      */
-    abstract public T onCompleted(Response response) throws Exception;
+    public abstract T onCompleted(Response response) throws Exception;
 
     /**
      * Invoked when the HTTP headers have been fully written on the I/O socket.
      *
-     * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE
+     * @return a {@link AsyncHandler.State} telling to CONTINUE
      * or ABORT the current processing.
      */
     @Override
@@ -93,10 +97,10 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
     }
 
     /**
-     * Invoked when the content (a {@link java.io.File}, {@link String} or
-     * {@link java.io.InputStream} has been fully written on the I/O socket.
+     * Invoked when the content (a {@link File}, {@link String} or
+     * {@link InputStream} has been fully written on the I/O socket.
      *
-     * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE
+     * @return a {@link AsyncHandler.State} telling to CONTINUE
      * or ABORT the current processing.
      */
     @Override
@@ -111,7 +115,7 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
      * @param amount  The amount of bytes to transfer
      * @param current The amount of bytes transferred
      * @param total   The total number of bytes transferred
-     * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE
+     * @return a {@link AsyncHandler.State} telling to CONTINUE
      * or ABORT the current processing.
      */
     @Override

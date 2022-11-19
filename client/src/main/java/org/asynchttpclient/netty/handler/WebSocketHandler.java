@@ -15,7 +15,11 @@ package org.asynchttpclient.netty.handler;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -30,16 +34,17 @@ import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 import java.io.IOException;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_ACCEPT;
+import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_KEY;
+import static io.netty.handler.codec.http.HttpHeaderNames.UPGRADE;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
 
 @Sharable
 public final class WebSocketHandler extends AsyncHttpClientHandler {
 
-    public WebSocketHandler(AsyncHttpClientConfig config,
-                            ChannelManager channelManager,
-                            NettyRequestSender requestSender) {
+    public WebSocketHandler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
     }
 
@@ -51,8 +56,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         return getWebSocketUpgradeHandler(future).onCompleted();
     }
 
-    private void upgrade(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponse response, HttpHeaders responseHeaders)
-            throws Exception {
+    private void upgrade(Channel channel, NettyResponseFuture<?> future, WebSocketUpgradeHandler handler, HttpResponse response, HttpHeaders responseHeaders) throws Exception {
         boolean validStatus = response.status().equals(SWITCHING_PROTOCOLS);
         boolean validUpgrade = response.headers().get(UPGRADE) != null;
         String connection = response.headers().get(CONNECTION);
@@ -110,12 +114,10 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             HttpHeaders responseHeaders = response.headers();
 
             if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-                switch (handler.onStatusReceived(status)) {
-                    case CONTINUE:
-                        upgrade(channel, future, handler, response, responseHeaders);
-                        break;
-                    default:
-                        abort(channel, future, handler, status);
+                if (handler.onStatusReceived(status) == State.CONTINUE) {
+                    upgrade(channel, future, handler, response, responseHeaders);
+                } else {
+                    abort(channel, future, handler, status);
                 }
             }
 

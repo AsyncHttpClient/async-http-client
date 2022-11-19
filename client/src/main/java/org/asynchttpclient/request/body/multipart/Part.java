@@ -29,7 +29,7 @@ public interface Part {
     /**
      * Returns the content type of this part.
      *
-     * @return the content type, or <code>null</code> to exclude the content
+     * @return the content type, or {@code null} to exclude the content
      * type header
      */
     String getContentType();
@@ -37,7 +37,7 @@ public interface Part {
     /**
      * Return the character encoding of this part.
      *
-     * @return the character encoding, or <code>null</code> to exclude the
+     * @return the character encoding, or {@code null} to exclude the
      * character encoding header
      */
     Charset getCharset();
@@ -45,7 +45,7 @@ public interface Part {
     /**
      * Return the transfer encoding of this part.
      *
-     * @return the transfer encoding, or <code>null</code> to exclude the
+     * @return the transfer encoding, or {@code null} to exclude the
      * transfer encoding header
      */
     String getTransferEncoding();
@@ -53,7 +53,7 @@ public interface Part {
     /**
      * Return the content ID of this part.
      *
-     * @return the content ID, or <code>null</code> to exclude the content ID
+     * @return the content ID, or {@code null} to exclude the content ID
      * header
      */
     String getContentId();

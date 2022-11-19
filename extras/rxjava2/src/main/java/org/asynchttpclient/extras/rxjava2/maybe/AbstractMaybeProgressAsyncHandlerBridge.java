@@ -45,5 +45,4 @@ public abstract class AbstractMaybeProgressAsyncHandlerBridge<T> extends Abstrac
 
     @Override
     protected abstract ProgressAsyncHandler<? extends T> delegate();
-
 }

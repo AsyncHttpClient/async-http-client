@@ -12,8 +12,10 @@
  */
 package org.asynchttpclient.filter;
 
+import org.asynchttpclient.AsyncHandler;
+
 /**
- * An exception that can be thrown by an {@link org.asynchttpclient.AsyncHandler} to interrupt invocation of
+ * An exception that can be thrown by an {@link AsyncHandler} to interrupt invocation of
  * the {@link RequestFilter} and {@link ResponseFilter}. It also interrupt the request and response processing.
  */
 @SuppressWarnings("serial")

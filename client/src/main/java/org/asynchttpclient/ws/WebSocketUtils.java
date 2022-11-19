@@ -23,6 +23,10 @@ import static org.asynchttpclient.util.MessageDigestUtils.pooledSha1MessageDiges
 public final class WebSocketUtils {
     private static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
+    private WebSocketUtils() {
+        // Prevent outside initialization
+    }
+
     public static String getWebSocketKey() {
         byte[] nonce = new byte[16];
         ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -33,7 +37,6 @@ public final class WebSocketUtils {
     }
 
     public static String getAcceptKey(String key) {
-        return Base64.getEncoder().encodeToString(pooledSha1MessageDigest().digest(
-                (key + MAGIC_GUID).getBytes(US_ASCII)));
+        return Base64.getEncoder().encodeToString(pooledSha1MessageDigest().digest((key + MAGIC_GUID).getBytes(US_ASCII)));
     }
 }

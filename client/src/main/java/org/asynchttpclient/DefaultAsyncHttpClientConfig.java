@@ -833,7 +833,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
         private ByteBufAllocator allocator;
-        private Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
+        private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
         private EventLoopGroup eventLoopGroup;
         private Timer nettyTimer;
         private ThreadFactory threadFactory;
@@ -961,7 +961,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         public Builder setRealm(Realm.Builder realmBuilder) {
-            this.realm = realmBuilder.build();
+            realm = realmBuilder.build();
             return this;
         }
 
@@ -1001,7 +1001,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         public Builder setProxyServer(ProxyServer proxyServer) {
-            this.proxyServerSelector = uri -> proxyServer;
+            proxyServerSelector = uri -> proxyServer;
             return this;
         }
 
@@ -1345,14 +1345,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         private ProxyServerSelector resolveProxyServerSelector() {
-            if (proxyServerSelector != null)
+            if (proxyServerSelector != null) {
                 return proxyServerSelector;
+            }
 
-            if (useProxySelector)
+            if (useProxySelector) {
                 return ProxyUtils.getJdkDefaultProxyServerSelector();
+            }
 
-            if (useProxyProperties)
+            if (useProxyProperties) {
                 return ProxyUtils.createProxyServerSelector(System.getProperties());
+            }
 
             return ProxyServerSelector.NO_PROXY_SELECTOR;
         }

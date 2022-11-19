@@ -23,6 +23,7 @@ import static org.asynchttpclient.util.Utf8UrlEncoder.encodeAndAppendQuery;
 public enum UriEncoder {
 
     FIXING {
+        @Override
         public String encodePath(String path) {
             return Utf8UrlEncoder.encodePath(path);
         }
@@ -37,10 +38,12 @@ public enum UriEncoder {
         }
 
         private void encodeAndAppendQueryParams(final StringBuilder sb, final List<Param> queryParams) {
-            for (Param param : queryParams)
+            for (Param param : queryParams) {
                 encodeAndAppendQueryParam(sb, param.getName(), param.getValue());
+            }
         }
 
+        @Override
         protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate encoded query + encoded query params
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
@@ -51,6 +54,7 @@ public enum UriEncoder {
             return sb.toString();
         }
 
+        @Override
         protected String withQueryWithoutParams(final String query) {
             // encode query
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
@@ -58,6 +62,7 @@ public enum UriEncoder {
             return sb.toString();
         }
 
+        @Override
         protected String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate encoded query params
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
@@ -68,22 +73,26 @@ public enum UriEncoder {
     },
 
     RAW {
+        @Override
         public String encodePath(String path) {
             return path;
         }
 
         private void appendRawQueryParam(StringBuilder sb, String name, String value) {
             sb.append(name);
-            if (value != null)
+            if (value != null) {
                 sb.append('=').append(value);
+            }
             sb.append('&');
         }
 
         private void appendRawQueryParams(final StringBuilder sb, final List<Param> queryParams) {
-            for (Param param : queryParams)
+            for (Param param : queryParams) {
                 appendRawQueryParam(sb, param.getName(), param.getValue());
+            }
         }
 
+        @Override
         protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate raw query + raw query params
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
@@ -93,11 +102,13 @@ public enum UriEncoder {
             return sb.toString();
         }
 
+        @Override
         protected String withQueryWithoutParams(final String query) {
             // return raw query as is
             return query;
         }
 
+        @Override
         protected String withoutQueryWithParams(final List<Param> queryParams) {
             // concatenate raw queryParams
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
@@ -111,11 +122,11 @@ public enum UriEncoder {
         return disableUrlEncoding ? RAW : FIXING;
     }
 
-    protected abstract String withQueryWithParams(final String query, final List<Param> queryParams);
+    protected abstract String withQueryWithParams(String query, List<Param> queryParams);
 
-    protected abstract String withQueryWithoutParams(final String query);
+    protected abstract String withQueryWithoutParams(String query);
 
-    protected abstract String withoutQueryWithParams(final List<Param> queryParams);
+    protected abstract String withoutQueryWithParams(List<Param> queryParams);
 
     private String withQuery(final String query, final List<Param> queryParams) {
         return isNonEmpty(queryParams) ? withQueryWithParams(query, queryParams) : withQueryWithoutParams(query);

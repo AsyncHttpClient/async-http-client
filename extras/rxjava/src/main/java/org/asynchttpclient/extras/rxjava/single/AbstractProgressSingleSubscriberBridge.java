@@ -38,5 +38,4 @@ abstract class AbstractProgressSingleSubscriberBridge<T> extends AbstractSingleS
 
     @Override
     protected abstract ProgressAsyncHandler<? extends T> delegate();
-
 }

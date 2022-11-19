@@ -1,7 +1,9 @@
 package org.asynchttpclient.util;
 
+import org.asynchttpclient.AsyncHttpClient;
+
 /**
- * An interface that defines useful methods to check how many {@linkplain org.asynchttpclient.AsyncHttpClient}
+ * An interface that defines useful methods to check how many {@linkplain AsyncHttpClient}
  * instances this particular implementation is shared with.
  */
 public interface Counted {

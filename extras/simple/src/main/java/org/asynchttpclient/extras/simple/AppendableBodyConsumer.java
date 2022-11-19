@@ -34,7 +34,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
 
     public AppendableBodyConsumer(Appendable appendable) {
         this.appendable = appendable;
-        this.charset = UTF_8;
+        charset = UTF_8;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class AppendableBodyConsumer implements BodyConsumer {
     @Override
     public void close() throws IOException {
         if (appendable instanceof Closeable) {
-            Closeable.class.cast(appendable).close();
+            ((Closeable) appendable).close();
         }
     }
 }

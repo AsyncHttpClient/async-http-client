@@ -28,13 +28,13 @@ public class AsyncHttpDeferredObject extends DeferredObject<Response, Throwable,
         builder.execute(new AsyncCompletionHandler<Void>() {
             @Override
             public Void onCompleted(Response response) {
-                AsyncHttpDeferredObject.this.resolve(response);
+                resolve(response);
                 return null;
             }
 
             @Override
             public void onThrowable(Throwable t) {
-                AsyncHttpDeferredObject.this.reject(t);
+                reject(t);
             }
 
             @Override

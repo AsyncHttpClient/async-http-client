@@ -23,5 +23,4 @@ public interface ConnectionSemaphore {
     void acquireChannelLock(Object partitionKey) throws IOException;
 
     void releaseChannelLock(Object partitionKey);
-
 }

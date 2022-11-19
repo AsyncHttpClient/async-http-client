@@ -37,10 +37,12 @@ public class WebDavResponse implements Response {
         this.document = document;
     }
 
+    @Override
     public int getStatusCode() {
         return response.getStatusCode();
     }
 
+    @Override
     public String getStatusText() {
         return response.getStatusText();
     }
@@ -50,66 +52,82 @@ public class WebDavResponse implements Response {
         return response.getResponseBodyAsBytes();
     }
 
+    @Override
     public ByteBuffer getResponseBodyAsByteBuffer() {
         return response.getResponseBodyAsByteBuffer();
     }
 
+    @Override
     public InputStream getResponseBodyAsStream() {
         return response.getResponseBodyAsStream();
     }
 
+    @Override
     public String getResponseBody() {
         return response.getResponseBody();
     }
 
+    @Override
     public String getResponseBody(Charset charset) {
         return response.getResponseBody(charset);
     }
 
+    @Override
     public Uri getUri() {
         return response.getUri();
     }
 
+    @Override
     public String getContentType() {
         return response.getContentType();
     }
 
+    @Override
     public String getHeader(CharSequence name) {
         return response.getHeader(name);
     }
 
+    @Override
     public List<String> getHeaders(CharSequence name) {
         return response.getHeaders(name);
     }
 
+    @Override
     public HttpHeaders getHeaders() {
         return response.getHeaders();
     }
 
+    @Override
     public boolean isRedirected() {
         return response.isRedirected();
     }
 
+    @Override
     public List<Cookie> getCookies() {
         return response.getCookies();
     }
 
+    @Override
     public boolean hasResponseStatus() {
         return response.hasResponseStatus();
     }
 
+    @Override
     public boolean hasResponseHeaders() {
         return response.hasResponseHeaders();
     }
 
+    @Override
     public boolean hasResponseBody() {
         return response.hasResponseBody();
     }
 
+    @Override
     public SocketAddress getRemoteAddress() {
         return response.getRemoteAddress();
     }
 
+    @Override
     public SocketAddress getLocalAddress() {
         return response.getLocalAddress();
     }

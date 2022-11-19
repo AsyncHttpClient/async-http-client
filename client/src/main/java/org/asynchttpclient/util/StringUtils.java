@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 public final class StringUtils {
 
     private StringUtils() {
+        // Prevent outside initialization
     }
 
     public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
@@ -49,13 +50,15 @@ public final class StringUtils {
         int base = 16;
         for (byte b : bytes) {
             int bi = 0xff & b;
-            int c = '0' + (bi / base) % base;
-            if (c > '9')
-                c = 'a' + (c - '0' - 10);
+            int c = '0' + bi / base % base;
+            if (c > '9') {
+                c = 'a' + c - '0' - 10;
+            }
             buf.append((char) c);
             c = '0' + bi % base;
-            if (c > '9')
-                c = 'a' + (c - '0' - 10);
+            if (c > '9') {
+                c = 'a' + c - '0' - 10;
+            }
             buf.append((char) c);
         }
     }

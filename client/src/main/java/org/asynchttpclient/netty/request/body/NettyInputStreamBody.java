@@ -57,9 +57,9 @@ public class NettyInputStreamBody implements NettyBody {
         final InputStream is = inputStream;
 
         if (future.isStreamConsumed()) {
-            if (is.markSupported())
+            if (is.markSupported()) {
                 is.reset();
-            else {
+            } else {
                 LOGGER.warn("Stream has already been consumed and cannot be reset");
                 return;
             }
@@ -69,6 +69,7 @@ public class NettyInputStreamBody implements NettyBody {
 
         channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
                 new WriteProgressListener(future, false, getContentLength()) {
+                    @Override
                     public void operationComplete(ChannelProgressiveFuture cf) {
                         closeSilently(is);
                         super.operationComplete(cf);

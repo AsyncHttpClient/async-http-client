@@ -22,9 +22,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
 
-    private static ConcurrentMap<String, AsyncHttpClient> asyncHttpClientMap = new ConcurrentHashMap<>();
-    private static volatile AsyncHttpClientRegistry _instance;
-    private static Lock lock = new ReentrantLock();
+    private static final ConcurrentMap<String, AsyncHttpClient> asyncHttpClientMap = new ConcurrentHashMap<>();
+    private static volatile AsyncHttpClientRegistry instance;
+    private static final Lock lock = new ReentrantLock();
 
     /**
      * Returns a singleton instance of AsyncHttpClientRegistry
@@ -32,16 +32,17 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
      * @return the current instance
      */
     public static AsyncHttpClientRegistry getInstance() {
-        if (_instance == null) {
+        if (instance == null) {
             lock.lock();
             try {
-                if (_instance == null) {
+                if (instance == null) {
                     Class<?> asyncHttpClientRegistryImplClass = AsyncImplHelper
                             .getAsyncImplClass(AsyncImplHelper.ASYNC_HTTP_CLIENT_REGISTRY_SYSTEM_PROPERTY);
-                    if (asyncHttpClientRegistryImplClass != null)
-                        _instance = (AsyncHttpClientRegistry) asyncHttpClientRegistryImplClass.newInstance();
-                    else
-                        _instance = new AsyncHttpClientRegistryImpl();
+                    if (asyncHttpClientRegistryImplClass != null) {
+                        instance = (AsyncHttpClientRegistry) asyncHttpClientRegistryImplClass.newInstance();
+                    } else {
+                        instance = new AsyncHttpClientRegistryImpl();
+                    }
                 }
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new AsyncHttpClientImplException("Couldn't instantiate AsyncHttpClientRegistry : " + e.getMessage(), e);
@@ -49,7 +50,7 @@ public class AsyncHttpClientRegistryImpl implements AsyncHttpClientRegistry {
                 lock.unlock();
             }
         }
-        return _instance;
+        return instance;
     }
 
     /*

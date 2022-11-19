@@ -26,7 +26,7 @@ public class ConsumerKey {
     public ConsumerKey(String key, String secret) {
         this.key = key;
         this.secret = secret;
-        this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
+        percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
     }
 
     public String getKey() {

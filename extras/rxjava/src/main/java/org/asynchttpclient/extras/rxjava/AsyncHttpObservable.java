@@ -25,7 +25,11 @@ import rx.subjects.ReplaySubject;
  *
  * @see <a href="https://github.com/ReactiveX/RxJava">https://github.com/ReactiveX/RxJava</a>
  */
-public class AsyncHttpObservable {
+public final class AsyncHttpObservable {
+
+    private AsyncHttpObservable() {
+        // Prevent outside initialization
+    }
 
     /**
      * Observe a request execution and emit the response to the observer.

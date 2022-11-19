@@ -122,20 +122,15 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
     }
 
     public long transferTo(ByteBuf target) throws IOException {
-
         switch (state) {
             case DONE:
                 return 0L;
-
             case PRE_CONTENT:
                 return transfer(lazyLoadPreContentBuffer(), target, MultipartState.CONTENT);
-
             case CONTENT:
                 return transferContentTo(target);
-
             case POST_CONTENT:
                 return transfer(lazyLoadPostContentBuffer(), target, MultipartState.DONE);
-
             default:
                 throw new IllegalStateException("Unknown state " + state);
         }
@@ -143,43 +138,42 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
 
     public long transferTo(WritableByteChannel target) throws IOException {
         slowTarget = false;
-
         switch (state) {
             case DONE:
                 return 0L;
-
             case PRE_CONTENT:
                 return transfer(lazyLoadPreContentBuffer(), target, MultipartState.CONTENT);
-
             case CONTENT:
                 return transferContentTo(target);
-
             case POST_CONTENT:
                 return transfer(lazyLoadPostContentBuffer(), target, MultipartState.DONE);
-
             default:
                 throw new IllegalStateException("Unknown state " + state);
         }
     }
 
     private ByteBuf lazyLoadPreContentBuffer() {
-        if (preContentBuffer == null)
+        if (preContentBuffer == null) {
             preContentBuffer = computePreContentBytes(preContentLength);
+        }
         return preContentBuffer;
     }
 
     private ByteBuf lazyLoadPostContentBuffer() {
-        if (postContentBuffer == null)
+        if (postContentBuffer == null) {
             postContentBuffer = computePostContentBytes(postContentLength);
+        }
         return postContentBuffer;
     }
 
     @Override
     public void close() {
-        if (preContentBuffer != null)
+        if (preContentBuffer != null) {
             preContentBuffer.release();
-        if (postContentBuffer != null)
+        }
+        if (postContentBuffer != null) {
             postContentBuffer.release();
+        }
     }
 
     protected abstract long getContentLength();

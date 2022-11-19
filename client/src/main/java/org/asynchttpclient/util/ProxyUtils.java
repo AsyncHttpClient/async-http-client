@@ -58,7 +58,7 @@ public final class ProxyUtils {
      * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html">Networking Properties</a>
      */
     public static final String PROXY_NONPROXYHOSTS = "http.nonProxyHosts";
-    private final static Logger logger = LoggerFactory.getLogger(ProxyUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProxyUtils.class);
     private static final String PROPERTY_PREFIX = "org.asynchttpclient.AsyncHttpClientConfig.proxy.";
 
     /**
@@ -72,6 +72,7 @@ public final class ProxyUtils {
     private static final String PROXY_PASSWORD = PROPERTY_PREFIX + "password";
 
     private ProxyUtils() {
+        // Prevent outside initialization
     }
 
     /**

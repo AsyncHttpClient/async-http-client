@@ -33,15 +33,17 @@ final class Parameter implements Comparable<Parameter> {
 
     @Override
     public String toString() {
-        return key + "=" + value;
+        return key + '=' + value;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
         Parameter parameter = (Parameter) o;
         return key.equals(parameter.key) && value.equals(parameter.value);

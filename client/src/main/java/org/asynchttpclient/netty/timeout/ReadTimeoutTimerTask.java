@@ -26,18 +26,16 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long readTimeout;
 
-    ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
-                         NettyRequestSender requestSender,
-                         TimeoutsHolder timeoutsHolder,
-                         int readTimeout) {
+    ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder, int readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
     }
 
+    @Override
     public void run(Timeout timeout) {
-
-        if (done.getAndSet(true) || requestSender.isClosed())
+        if (done.getAndSet(true) || requestSender.isClosed()) {
             return;
+        }
 
         if (nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
@@ -67,7 +65,6 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private boolean isReactiveWithNoOutstandingRequest() {
         Object attribute = Channels.getAttribute(nettyResponseFuture.channel());
-        return attribute instanceof StreamedResponsePublisher &&
-                !((StreamedResponsePublisher) attribute).hasOutstandingRequest();
+        return attribute instanceof StreamedResponsePublisher && !((StreamedResponsePublisher) attribute).hasOutstandingRequest();
     }
 }

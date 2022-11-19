@@ -23,8 +23,7 @@ public class HostStats {
     private final long activeConnectionCount;
     private final long idleConnectionCount;
 
-    public HostStats(long activeConnectionCount,
-                     long idleConnectionCount) {
+    public HostStats(long activeConnectionCount, long idleConnectionCount) {
         this.activeConnectionCount = activeConnectionCount;
         this.idleConnectionCount = idleConnectionCount;
     }
@@ -60,11 +59,14 @@ public class HostStats {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final HostStats hostStats = (HostStats) o;
-        return activeConnectionCount == hostStats.activeConnectionCount &&
-                idleConnectionCount == hostStats.idleConnectionCount;
+        return activeConnectionCount == hostStats.activeConnectionCount && idleConnectionCount == hostStats.idleConnectionCount;
     }
 
     @Override

@@ -17,9 +17,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-public class MiscUtils {
+public final class MiscUtils {
 
     private MiscUtils() {
+        // Prevent outside initialization
     }
 
     public static boolean isNonEmpty(String string) {
@@ -51,12 +52,13 @@ public class MiscUtils {
     }
 
     public static void closeSilently(Closeable closeable) {
-        if (closeable != null)
+        if (closeable != null) {
             try {
                 closeable.close();
             } catch (IOException e) {
                 //
             }
+        }
     }
 
     public static Throwable getCause(Throwable t) {

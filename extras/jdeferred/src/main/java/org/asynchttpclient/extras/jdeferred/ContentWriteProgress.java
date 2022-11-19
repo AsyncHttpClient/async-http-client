@@ -40,6 +40,6 @@ public class ContentWriteProgress implements HttpProgress {
 
     @Override
     public String toString() {
-        return "ContentWriteProgress [amount=" + amount + ", current=" + current + ", total=" + total + "]";
+        return "ContentWriteProgress [amount=" + amount + ", current=" + current + ", total=" + total + ']';
     }
 }

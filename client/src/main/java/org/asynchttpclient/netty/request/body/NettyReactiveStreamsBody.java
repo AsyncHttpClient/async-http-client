@@ -95,16 +95,18 @@ public class NettyReactiveStreamsBody implements NettyBody {
         private static final Logger LOGGER = LoggerFactory.getLogger(NettySubscriber.class);
 
         private static final Subscription DO_NOT_DELAY = new Subscription() {
+            @Override
             public void cancel() {
             }
 
+            @Override
             public void request(long l) {
             }
         };
 
         private final Channel channel;
         private final NettyResponseFuture<?> future;
-        private AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();
+        private final AtomicReference<Subscription> deferredSubscription = new AtomicReference<>();
 
         NettySubscriber(Channel channel, NettyResponseFuture<?> future) {
             super(channel.eventLoop());

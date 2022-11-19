@@ -30,6 +30,6 @@ public class HttpResponseBodyPartProgress implements HttpProgress {
 
     @Override
     public String toString() {
-        return "HttpResponseBodyPartProgress [part=" + part + "]";
+        return "HttpResponseBodyPartProgress [part=" + part + ']';
     }
 }

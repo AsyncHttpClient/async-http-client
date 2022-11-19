@@ -21,7 +21,7 @@ final class AsyncSingleSubscriberBridge<T> extends AbstractSingleSubscriberBridg
 
     private final AsyncHandler<? extends T> delegate;
 
-    public AsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, AsyncHandler<? extends T> delegate) {
+    AsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, AsyncHandler<? extends T> delegate) {
         super(subscriber);
         this.delegate = requireNonNull(delegate);
     }
@@ -30,5 +30,4 @@ final class AsyncSingleSubscriberBridge<T> extends AbstractSingleSubscriberBridg
     protected AsyncHandler<? extends T> delegate() {
         return delegate;
     }
-
 }

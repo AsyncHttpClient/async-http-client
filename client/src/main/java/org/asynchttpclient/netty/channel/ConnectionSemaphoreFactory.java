@@ -15,8 +15,8 @@ package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 
+@FunctionalInterface
 public interface ConnectionSemaphoreFactory {
 
     ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config);
-
 }

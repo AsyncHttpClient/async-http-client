@@ -140,6 +140,18 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
+                <groupId>io.netty.incubator</groupId>
+                <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+                <version>0.0.16.Final</version>
+                <classifier>linux-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty.incubator</groupId>
+                <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+                <version>0.0.16.Final</version>
+                <classifier>linux-aarch_64</classifier>
+            </dependency>
+            <dependency>
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams</artifactId>
                 <version>${reactive-streams.version}</version>

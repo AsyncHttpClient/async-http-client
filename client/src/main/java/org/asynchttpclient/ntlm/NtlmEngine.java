@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.Key;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
@@ -91,12 +92,12 @@ public final class NtlmEngine {
     /**
      * Secure random generator
      */
-    private static final java.security.SecureRandom RND_GEN;
+    private static final SecureRandom RND_GEN;
 
     static {
-        java.security.SecureRandom rnd = null;
+        SecureRandom rnd = null;
         try {
-            rnd = java.security.SecureRandom.getInstance("SHA1PRNG");
+            rnd = SecureRandom.getInstance("SHA1PRNG");
         } catch (final Exception ignore) {
         }
         RND_GEN = rnd;
@@ -111,7 +112,7 @@ public final class NtlmEngine {
         final byte[] bytesWithoutNull = "NTLMSSP".getBytes(US_ASCII);
         SIGNATURE = new byte[bytesWithoutNull.length + 1];
         System.arraycopy(bytesWithoutNull, 0, SIGNATURE, 0, bytesWithoutNull.length);
-        SIGNATURE[bytesWithoutNull.length] = (byte) 0x00;
+        SIGNATURE[bytesWithoutNull.length] = 0x00;
     }
 
     private static final String TYPE_1_MESSAGE = new Type1Message().getResponse();
@@ -142,7 +143,7 @@ public final class NtlmEngine {
         if (value == null) {
             return null;
         }
-        final int index = value.indexOf(".");
+        final int index = value.indexOf('.');
         if (index != -1) {
             return value.substring(0, index);
         }
@@ -167,14 +168,14 @@ public final class NtlmEngine {
         if (src.length < index + 4) {
             throw new NtlmEngineException("NTLM authentication - buffer too small for DWORD");
         }
-        return (src[index] & 0xff) | ((src[index + 1] & 0xff) << 8) | ((src[index + 2] & 0xff) << 16) | ((src[index + 3] & 0xff) << 24);
+        return src[index] & 0xff | (src[index + 1] & 0xff) << 8 | (src[index + 2] & 0xff) << 16 | (src[index + 3] & 0xff) << 24;
     }
 
     private static int readUShort(final byte[] src, final int index) throws NtlmEngineException {
         if (src.length < index + 2) {
             throw new NtlmEngineException("NTLM authentication - buffer too small for WORD");
         }
-        return (src[index] & 0xff) | ((src[index + 1] & 0xff) << 8);
+        return src[index] & 0xff | (src[index + 1] & 0xff) << 8;
     }
 
     private static byte[] readSecurityBuffer(final byte[] src, final int index) throws NtlmEngineException {
@@ -232,22 +233,22 @@ public final class NtlmEngine {
         protected byte[] timestamp;
 
         // Stuff we always generate
-        protected byte[] lmHash = null;
-        protected byte[] lmResponse = null;
-        protected byte[] ntlmHash = null;
-        protected byte[] ntlmResponse = null;
-        protected byte[] ntlmv2Hash = null;
-        protected byte[] lmv2Hash = null;
-        protected byte[] lmv2Response = null;
-        protected byte[] ntlmv2Blob = null;
-        protected byte[] ntlmv2Response = null;
-        protected byte[] ntlm2SessionResponse = null;
-        protected byte[] lm2SessionResponse = null;
-        protected byte[] lmUserSessionKey = null;
-        protected byte[] ntlmUserSessionKey = null;
-        protected byte[] ntlmv2UserSessionKey = null;
-        protected byte[] ntlm2SessionResponseUserSessionKey = null;
-        protected byte[] lanManagerSessionKey = null;
+        protected byte[] lmHash;
+        protected byte[] lmResponse;
+        protected byte[] ntlmHash;
+        protected byte[] ntlmResponse;
+        protected byte[] ntlmv2Hash;
+        protected byte[] lmv2Hash;
+        protected byte[] lmv2Response;
+        protected byte[] ntlmv2Blob;
+        protected byte[] ntlmv2Response;
+        protected byte[] ntlm2SessionResponse;
+        protected byte[] lm2SessionResponse;
+        protected byte[] lmUserSessionKey;
+        protected byte[] ntlmUserSessionKey;
+        protected byte[] ntlmv2UserSessionKey;
+        protected byte[] ntlm2SessionResponseUserSessionKey;
+        protected byte[] lanManagerSessionKey;
 
         public CipherGen(final String domain, final String user, final String password, final byte[] challenge, final String target,
                          final byte[] targetInformation, final byte[] clientChallenge, final byte[] clientChallenge2, final byte[] secondaryKey,
@@ -365,7 +366,7 @@ public final class NtlmEngine {
         public byte[] getTimestamp() {
             if (timestamp == null) {
                 long time = System.currentTimeMillis();
-                time += 11644473600000l; // milliseconds from January 1, 1601 -> epoch.
+                time += 11644473600000L; // milliseconds from January 1, 1601 -> epoch.
                 time *= 10000; // tenths of a microsecond.
                 // convert to little-endian byte array.
                 timestamp = new byte[8];
@@ -718,10 +719,10 @@ public final class NtlmEngine {
      * @return The blob, used in the calculation of the NTLMv2 Response.
      */
     private static byte[] createBlob(final byte[] clientChallenge, final byte[] targetInformation, final byte[] timestamp) {
-        final byte[] blobSignature = new byte[]{(byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00};
-        final byte[] reserved = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        final byte[] unknown1 = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        final byte[] unknown2 = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        final byte[] blobSignature = {(byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00};
+        final byte[] reserved = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        final byte[] unknown1 = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        final byte[] unknown2 = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
         final byte[] blob = new byte[blobSignature.length + reserved.length + timestamp.length + 8 + unknown1.length
                 + targetInformation.length + unknown2.length];
         int offset = 0;
@@ -775,9 +776,9 @@ public final class NtlmEngine {
     private static void oddParity(final byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
             final byte b = bytes[i];
-            final boolean needsParity = (((b >>> 7) ^ (b >>> 6) ^ (b >>> 5) ^ (b >>> 4) ^ (b >>> 3) ^ (b >>> 2) ^ (b >>> 1)) & 0x01) == 0;
+            final boolean needsParity = ((b >>> 7 ^ b >>> 6 ^ b >>> 5 ^ b >>> 4 ^ b >>> 3 ^ b >>> 2 ^ b >>> 1) & 0x01) == 0;
             if (needsParity) {
-                bytes[i] |= (byte) 0x01;
+                bytes[i] |= 0x01;
             } else {
                 bytes[i] &= (byte) 0xfe;
             }
@@ -791,12 +792,12 @@ public final class NtlmEngine {
         /**
          * The current response
          */
-        private byte[] messageContents = null;
+        private byte[] messageContents;
 
         /**
          * The current output position
          */
-        private int currentOutputPosition = 0;
+        private int currentOutputPosition;
 
         /**
          * Constructor to use when message contents are not yet known
@@ -824,8 +825,8 @@ public final class NtlmEngine {
             // Check to be sure there's a type 2 message indicator next
             final int type = readULong(SIGNATURE.length);
             if (type != expectedType) {
-                throw new NtlmEngineException("NTLM type " + Integer.toString(expectedType) + " message expected - instead got type "
-                        + Integer.toString(type));
+                throw new NtlmEngineException("NTLM type " + expectedType + " message expected - instead got type "
+                        + type);
             }
 
             currentOutputPosition = messageContents.length;
@@ -1064,7 +1065,7 @@ public final class NtlmEngine {
             flags = readULong(20);
 
             if ((flags & FLAG_REQUEST_UNICODE_ENCODING) == 0) {
-                throw new NtlmEngineException("NTLM type 2 message indicates no support for Unicode. Flags are: " + Integer.toString(flags));
+                throw new NtlmEngineException("NTLM type 2 message indicates no support for Unicode. Flags are: " + flags);
             }
 
             // Do the target!
@@ -1161,7 +1162,7 @@ public final class NtlmEngine {
             try {
                 // This conditional may not work on Windows Server 2008 R2 and above, where it has not yet
                 // been tested
-                if (((type2Flags & FLAG_TARGETINFO_PRESENT) != 0) && targetInformation != null && target != null) {
+                if ((type2Flags & FLAG_TARGETINFO_PRESENT) != 0 && targetInformation != null && target != null) {
                     // NTLMv2
                     ntResp = gen.getNTLMv2Response();
                     lmResp = gen.getLMv2Response();
@@ -1298,9 +1299,9 @@ public final class NtlmEngine {
                     //FLAG_DOMAIN_PRESENT |
 
                     // Required flags
-                    (type2Flags & FLAG_REQUEST_LAN_MANAGER_KEY)
-                            | (type2Flags & FLAG_REQUEST_NTLMv1)
-                            | (type2Flags & FLAG_REQUEST_NTLM2_SESSION)
+                    type2Flags & FLAG_REQUEST_LAN_MANAGER_KEY
+                            | type2Flags & FLAG_REQUEST_NTLMv1
+                            | type2Flags & FLAG_REQUEST_NTLM2_SESSION
                             |
 
                             // Protocol version request
@@ -1308,16 +1309,16 @@ public final class NtlmEngine {
                             |
 
                             // Recommended privacy settings
-                            (type2Flags & FLAG_REQUEST_ALWAYS_SIGN) | (type2Flags & FLAG_REQUEST_SEAL)
-                            | (type2Flags & FLAG_REQUEST_SIGN)
+                            type2Flags & FLAG_REQUEST_ALWAYS_SIGN | type2Flags & FLAG_REQUEST_SEAL
+                            | type2Flags & FLAG_REQUEST_SIGN
                             |
 
                             // These must be set according to documentation, based on use of SEAL above
-                            (type2Flags & FLAG_REQUEST_128BIT_KEY_EXCH) | (type2Flags & FLAG_REQUEST_56BIT_ENCRYPTION)
-                            | (type2Flags & FLAG_REQUEST_EXPLICIT_KEY_EXCH) |
+                            type2Flags & FLAG_REQUEST_128BIT_KEY_EXCH | type2Flags & FLAG_REQUEST_56BIT_ENCRYPTION
+                            | type2Flags & FLAG_REQUEST_EXPLICIT_KEY_EXCH |
 
-                            (type2Flags & FLAG_TARGETINFO_PRESENT) | (type2Flags & FLAG_REQUEST_UNICODE_ENCODING)
-                            | (type2Flags & FLAG_REQUEST_TARGET));
+                            type2Flags & FLAG_TARGETINFO_PRESENT | type2Flags & FLAG_REQUEST_UNICODE_ENCODING
+                            | type2Flags & FLAG_REQUEST_TARGET);
 
             // Version
             addUShort(0x0105);
@@ -1348,19 +1349,19 @@ public final class NtlmEngine {
     }
 
     static int F(final int x, final int y, final int z) {
-        return ((x & y) | (~x & z));
+        return x & y | ~x & z;
     }
 
     static int G(final int x, final int y, final int z) {
-        return ((x & y) | (x & z) | (y & z));
+        return x & y | x & z | y & z;
     }
 
     static int H(final int x, final int y, final int z) {
-        return (x ^ y ^ z);
+        return x ^ y ^ z;
     }
 
     static int rotintlft(final int val, final int numbits) {
-        return ((val << numbits) | (val >>> (32 - numbits)));
+        return val << numbits | val >>> 32 - numbits;
     }
 
     /**
@@ -1375,7 +1376,7 @@ public final class NtlmEngine {
         protected int B = 0xefcdab89;
         protected int C = 0x98badcfe;
         protected int D = 0x10325476;
-        protected long count = 0L;
+        protected long count;
         protected byte[] dataBuffer = new byte[64];
 
         MD4() {
@@ -1413,14 +1414,14 @@ public final class NtlmEngine {
             // Feed pad/length data into engine. This must round out the input
             // to a multiple of 512 bits.
             final int bufferIndex = (int) (count & 63L);
-            final int padLen = (bufferIndex < 56) ? (56 - bufferIndex) : (120 - bufferIndex);
+            final int padLen = bufferIndex < 56 ? 56 - bufferIndex : 120 - bufferIndex;
             final byte[] postBytes = new byte[padLen + 8];
             // Leading 0x80, specified amount of zero padding, then length in
             // bits.
             postBytes[0] = (byte) 0x80;
             // Fill out the last 8 bytes with the length
             for (int i = 0; i < 8; i++) {
-                postBytes[padLen + i] = (byte) ((count * 8) >>> (8 * i));
+                postBytes[padLen + i] = (byte) (count * 8 >>> 8 * i);
             }
 
             // Update the engine
@@ -1460,70 +1461,70 @@ public final class NtlmEngine {
         }
 
         protected void round1(final int[] d) {
-            A = rotintlft((A + F(B, C, D) + d[0]), 3);
-            D = rotintlft((D + F(A, B, C) + d[1]), 7);
-            C = rotintlft((C + F(D, A, B) + d[2]), 11);
-            B = rotintlft((B + F(C, D, A) + d[3]), 19);
+            A = rotintlft(A + F(B, C, D) + d[0], 3);
+            D = rotintlft(D + F(A, B, C) + d[1], 7);
+            C = rotintlft(C + F(D, A, B) + d[2], 11);
+            B = rotintlft(B + F(C, D, A) + d[3], 19);
 
-            A = rotintlft((A + F(B, C, D) + d[4]), 3);
-            D = rotintlft((D + F(A, B, C) + d[5]), 7);
-            C = rotintlft((C + F(D, A, B) + d[6]), 11);
-            B = rotintlft((B + F(C, D, A) + d[7]), 19);
+            A = rotintlft(A + F(B, C, D) + d[4], 3);
+            D = rotintlft(D + F(A, B, C) + d[5], 7);
+            C = rotintlft(C + F(D, A, B) + d[6], 11);
+            B = rotintlft(B + F(C, D, A) + d[7], 19);
 
-            A = rotintlft((A + F(B, C, D) + d[8]), 3);
-            D = rotintlft((D + F(A, B, C) + d[9]), 7);
-            C = rotintlft((C + F(D, A, B) + d[10]), 11);
-            B = rotintlft((B + F(C, D, A) + d[11]), 19);
+            A = rotintlft(A + F(B, C, D) + d[8], 3);
+            D = rotintlft(D + F(A, B, C) + d[9], 7);
+            C = rotintlft(C + F(D, A, B) + d[10], 11);
+            B = rotintlft(B + F(C, D, A) + d[11], 19);
 
-            A = rotintlft((A + F(B, C, D) + d[12]), 3);
-            D = rotintlft((D + F(A, B, C) + d[13]), 7);
-            C = rotintlft((C + F(D, A, B) + d[14]), 11);
-            B = rotintlft((B + F(C, D, A) + d[15]), 19);
+            A = rotintlft(A + F(B, C, D) + d[12], 3);
+            D = rotintlft(D + F(A, B, C) + d[13], 7);
+            C = rotintlft(C + F(D, A, B) + d[14], 11);
+            B = rotintlft(B + F(C, D, A) + d[15], 19);
         }
 
         protected void round2(final int[] d) {
-            A = rotintlft((A + G(B, C, D) + d[0] + 0x5a827999), 3);
-            D = rotintlft((D + G(A, B, C) + d[4] + 0x5a827999), 5);
-            C = rotintlft((C + G(D, A, B) + d[8] + 0x5a827999), 9);
-            B = rotintlft((B + G(C, D, A) + d[12] + 0x5a827999), 13);
+            A = rotintlft(A + G(B, C, D) + d[0] + 0x5a827999, 3);
+            D = rotintlft(D + G(A, B, C) + d[4] + 0x5a827999, 5);
+            C = rotintlft(C + G(D, A, B) + d[8] + 0x5a827999, 9);
+            B = rotintlft(B + G(C, D, A) + d[12] + 0x5a827999, 13);
 
-            A = rotintlft((A + G(B, C, D) + d[1] + 0x5a827999), 3);
-            D = rotintlft((D + G(A, B, C) + d[5] + 0x5a827999), 5);
-            C = rotintlft((C + G(D, A, B) + d[9] + 0x5a827999), 9);
-            B = rotintlft((B + G(C, D, A) + d[13] + 0x5a827999), 13);
+            A = rotintlft(A + G(B, C, D) + d[1] + 0x5a827999, 3);
+            D = rotintlft(D + G(A, B, C) + d[5] + 0x5a827999, 5);
+            C = rotintlft(C + G(D, A, B) + d[9] + 0x5a827999, 9);
+            B = rotintlft(B + G(C, D, A) + d[13] + 0x5a827999, 13);
 
-            A = rotintlft((A + G(B, C, D) + d[2] + 0x5a827999), 3);
-            D = rotintlft((D + G(A, B, C) + d[6] + 0x5a827999), 5);
-            C = rotintlft((C + G(D, A, B) + d[10] + 0x5a827999), 9);
-            B = rotintlft((B + G(C, D, A) + d[14] + 0x5a827999), 13);
+            A = rotintlft(A + G(B, C, D) + d[2] + 0x5a827999, 3);
+            D = rotintlft(D + G(A, B, C) + d[6] + 0x5a827999, 5);
+            C = rotintlft(C + G(D, A, B) + d[10] + 0x5a827999, 9);
+            B = rotintlft(B + G(C, D, A) + d[14] + 0x5a827999, 13);
 
-            A = rotintlft((A + G(B, C, D) + d[3] + 0x5a827999), 3);
-            D = rotintlft((D + G(A, B, C) + d[7] + 0x5a827999), 5);
-            C = rotintlft((C + G(D, A, B) + d[11] + 0x5a827999), 9);
-            B = rotintlft((B + G(C, D, A) + d[15] + 0x5a827999), 13);
+            A = rotintlft(A + G(B, C, D) + d[3] + 0x5a827999, 3);
+            D = rotintlft(D + G(A, B, C) + d[7] + 0x5a827999, 5);
+            C = rotintlft(C + G(D, A, B) + d[11] + 0x5a827999, 9);
+            B = rotintlft(B + G(C, D, A) + d[15] + 0x5a827999, 13);
 
         }
 
         protected void round3(final int[] d) {
-            A = rotintlft((A + H(B, C, D) + d[0] + 0x6ed9eba1), 3);
-            D = rotintlft((D + H(A, B, C) + d[8] + 0x6ed9eba1), 9);
-            C = rotintlft((C + H(D, A, B) + d[4] + 0x6ed9eba1), 11);
-            B = rotintlft((B + H(C, D, A) + d[12] + 0x6ed9eba1), 15);
+            A = rotintlft(A + H(B, C, D) + d[0] + 0x6ed9eba1, 3);
+            D = rotintlft(D + H(A, B, C) + d[8] + 0x6ed9eba1, 9);
+            C = rotintlft(C + H(D, A, B) + d[4] + 0x6ed9eba1, 11);
+            B = rotintlft(B + H(C, D, A) + d[12] + 0x6ed9eba1, 15);
 
-            A = rotintlft((A + H(B, C, D) + d[2] + 0x6ed9eba1), 3);
-            D = rotintlft((D + H(A, B, C) + d[10] + 0x6ed9eba1), 9);
-            C = rotintlft((C + H(D, A, B) + d[6] + 0x6ed9eba1), 11);
-            B = rotintlft((B + H(C, D, A) + d[14] + 0x6ed9eba1), 15);
+            A = rotintlft(A + H(B, C, D) + d[2] + 0x6ed9eba1, 3);
+            D = rotintlft(D + H(A, B, C) + d[10] + 0x6ed9eba1, 9);
+            C = rotintlft(C + H(D, A, B) + d[6] + 0x6ed9eba1, 11);
+            B = rotintlft(B + H(C, D, A) + d[14] + 0x6ed9eba1, 15);
 
-            A = rotintlft((A + H(B, C, D) + d[1] + 0x6ed9eba1), 3);
-            D = rotintlft((D + H(A, B, C) + d[9] + 0x6ed9eba1), 9);
-            C = rotintlft((C + H(D, A, B) + d[5] + 0x6ed9eba1), 11);
-            B = rotintlft((B + H(C, D, A) + d[13] + 0x6ed9eba1), 15);
+            A = rotintlft(A + H(B, C, D) + d[1] + 0x6ed9eba1, 3);
+            D = rotintlft(D + H(A, B, C) + d[9] + 0x6ed9eba1, 9);
+            C = rotintlft(C + H(D, A, B) + d[5] + 0x6ed9eba1, 11);
+            B = rotintlft(B + H(C, D, A) + d[13] + 0x6ed9eba1, 15);
 
-            A = rotintlft((A + H(B, C, D) + d[3] + 0x6ed9eba1), 3);
-            D = rotintlft((D + H(A, B, C) + d[11] + 0x6ed9eba1), 9);
-            C = rotintlft((C + H(D, A, B) + d[7] + 0x6ed9eba1), 11);
-            B = rotintlft((B + H(C, D, A) + d[15] + 0x6ed9eba1), 15);
+            A = rotintlft(A + H(B, C, D) + d[3] + 0x6ed9eba1, 3);
+            D = rotintlft(D + H(A, B, C) + d[11] + 0x6ed9eba1, 9);
+            C = rotintlft(C + H(D, A, B) + d[7] + 0x6ed9eba1, 11);
+            B = rotintlft(B + H(C, D, A) + d[15] + 0x6ed9eba1, 15);
         }
     }
 
@@ -1564,8 +1565,8 @@ public final class NtlmEngine {
                 i++;
             }
             while (i < 64) {
-                ipad[i] = (byte) 0x36;
-                opad[i] = (byte) 0x5c;
+                ipad[i] = 0x36;
+                opad[i] = 0x5c;
                 i++;
             }
 

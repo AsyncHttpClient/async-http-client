@@ -32,16 +32,18 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
         this.requestTimeout = requestTimeout;
     }
 
+    @Override
     public void run(Timeout timeout) {
-
-        if (done.getAndSet(true) || requestSender.isClosed())
+        if (done.getAndSet(true) || requestSender.isClosed()) {
             return;
+        }
 
         // in any case, cancel possible readTimeout sibling
         timeoutsHolder.cancel();
 
-        if (nettyResponseFuture.isDone())
+        if (nettyResponseFuture.isDone()) {
             return;
+        }
 
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Request timeout to ");
         appendRemoteAddress(sb);

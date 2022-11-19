@@ -36,17 +36,14 @@ import java.net.InetSocketAddress;
  */
 public final class NettyConnectListener<T> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NettyConnectListener.class);
 
     private final NettyRequestSender requestSender;
     private final NettyResponseFuture<T> future;
     private final ChannelManager channelManager;
     private final ConnectionSemaphore connectionSemaphore;
 
-    public NettyConnectListener(NettyResponseFuture<T> future,
-                                NettyRequestSender requestSender,
-                                ChannelManager channelManager,
-                                ConnectionSemaphore connectionSemaphore) {
+    public NettyConnectListener(NettyResponseFuture<T> future, NettyRequestSender requestSender, ChannelManager channelManager, ConnectionSemaphore connectionSemaphore) {
         this.future = future;
         this.requestSender = requestSender;
         this.channelManager = channelManager;
@@ -54,8 +51,8 @@ public final class NettyConnectListener<T> {
     }
 
     private boolean futureIsAlreadyCancelled(Channel channel) {
-        // FIXME should we only check isCancelled?
-        if (future.isDone()) {
+        // If Future is cancelled then we will close the channel silently
+        if (future.isCancelled()) {
             Channels.silentlyCloseChannel(channel);
             return true;
         }
@@ -63,7 +60,6 @@ public final class NettyConnectListener<T> {
     }
 
     private void writeRequest(Channel channel) {
-
         if (futureIsAlreadyCancelled(channel)) {
             return;
         }
@@ -81,7 +77,6 @@ public final class NettyConnectListener<T> {
     }
 
     public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
-
         if (connectionSemaphore != null) {
             // transfer lock from future to channel
             Object partitionKeyLock = future.takePartitionKeyLock();
@@ -92,7 +87,6 @@ public final class NettyConnectListener<T> {
         }
 
         Channels.setActiveToken(channel);
-
         TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
 
         if (futureIsAlreadyCancelled(channel)) {
@@ -101,9 +95,7 @@ public final class NettyConnectListener<T> {
 
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
-
         timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
-
         ProxyServer proxyServer = future.getProxyServer();
 
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request

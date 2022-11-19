@@ -23,9 +23,7 @@ public abstract class SslEngineFactoryBase implements SslEngineFactory {
 
     protected String domain(String hostname) {
         int fqdnLength = hostname.length() - 1;
-        return hostname.charAt(fqdnLength) == '.' ?
-                hostname.substring(0, fqdnLength) :
-                hostname;
+        return hostname.charAt(fqdnLength) == '.' ? hostname.substring(0, fqdnLength) : hostname;
     }
 
     protected void configureSslEngine(SSLEngine sslEngine, AsyncHttpClientConfig config) {

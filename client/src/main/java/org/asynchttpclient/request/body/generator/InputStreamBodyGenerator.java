@@ -24,7 +24,7 @@ import java.io.InputStream;
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
  * <br>
- * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
+ * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
  * resumable download will not works.
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
@@ -50,15 +50,12 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
         return contentLength;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Body createBody() {
         return new InputStreamBody(inputStream, contentLength);
     }
 
-    private class InputStreamBody implements Body {
+    private static class InputStreamBody implements Body {
 
         private final InputStream inputStream;
         private final long contentLength;
@@ -69,10 +66,12 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             this.contentLength = contentLength;
         }
 
+        @Override
         public long getContentLength() {
             return contentLength;
         }
 
+        @Override
         public BodyState transferTo(ByteBuf target) {
 
             // To be safe.
@@ -93,6 +92,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
             return write ? BodyState.CONTINUE : BodyState.STOP;
         }
 
+        @Override
         public void close() throws IOException {
             inputStream.close();
         }

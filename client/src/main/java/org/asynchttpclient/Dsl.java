@@ -114,8 +114,7 @@ public final class Dsl {
     }
 
     public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {
-        return new Realm.Builder(principal, password)
-                .setScheme(scheme);
+        return new Realm.Builder(principal, password).setScheme(scheme);
     }
 
     public static Realm.Builder basicAuthRealm(String principal, String password) {

@@ -31,7 +31,7 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
     private final ChannelManager channelManager;
     private final NettyResponseFuture<?> future;
     private final Channel channel;
-    private volatile boolean hasOutstandingRequest = false;
+    private volatile boolean hasOutstandingRequest;
     private Throwable error;
 
     StreamedResponsePublisher(EventExecutor executor, ChannelManager channelManager, NettyResponseFuture<?> future, Channel channel) {
@@ -82,7 +82,7 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
     }
 
     public void setError(Throwable t) {
-        this.error = t;
+        error = t;
     }
 
     private class ErrorReplacingSubscriber implements Subscriber<HttpResponseBodyPart> {

@@ -37,12 +37,9 @@ public class NettyChannelConnector {
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
     private final AsyncHttpClientState clientState;
-    private volatile int i = 0;
+    private volatile int i;
 
-    public NettyChannelConnector(InetAddress localAddress,
-                                 List<InetSocketAddress> remoteAddresses,
-                                 AsyncHandler<?> asyncHandler,
-                                 AsyncHttpClientState clientState) {
+    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, AsyncHttpClientState clientState) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandler = asyncHandler;
@@ -77,7 +74,6 @@ public class NettyChannelConnector {
     }
 
     private void connect0(Bootstrap bootstrap, final NettyConnectListener<?> connectListener, InetSocketAddress remoteAddress) {
-
         bootstrap.connect(remoteAddress, localAddress)
                 .addListener(new SimpleChannelFutureListener() {
                     @Override
@@ -103,7 +99,7 @@ public class NettyChannelConnector {
                         }
                         boolean retry = pickNextRemoteAddress();
                         if (retry) {
-                            NettyChannelConnector.this.connect(bootstrap, connectListener);
+                            connect(bootstrap, connectListener);
                         } else {
                             connectListener.onFailure(channel, t);
                         }

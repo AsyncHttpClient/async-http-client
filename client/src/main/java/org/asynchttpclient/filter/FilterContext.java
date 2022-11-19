@@ -14,6 +14,7 @@ package org.asynchttpclient.filter;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
 
@@ -28,72 +29,72 @@ import java.io.IOException;
  * <br>
  * Invoking {@link FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
  * that can be used to decide if the response processing should continue or not. You can stop the current response processing
- * and replay the request but creating a {@link FilterContext}. The {@link org.asynchttpclient.AsyncHttpClient}
+ * and replay the request but creating a {@link FilterContext}. The {@link AsyncHttpClient}
  * will interrupt the processing and "replay" the associated {@link Request} instance.
  *
  * @param <T> the handler result type
  */
 public class FilterContext<T> {
 
-    private final FilterContextBuilder<T> b;
+    private final FilterContextBuilder<T> builder;
 
     /**
      * Create a new {@link FilterContext}
      *
-     * @param b a {@link FilterContextBuilder}
+     * @param builder a {@link FilterContextBuilder}
      */
-    private FilterContext(FilterContextBuilder<T> b) {
-        this.b = b;
+    private FilterContext(FilterContextBuilder<T> builder) {
+        this.builder = builder;
     }
 
     /**
      * @return the original or decorated {@link AsyncHandler}
      */
     public AsyncHandler<T> getAsyncHandler() {
-        return b.asyncHandler;
+        return builder.asyncHandler;
     }
 
     /**
      * @return the original or decorated {@link Request}
      */
     public Request getRequest() {
-        return b.request;
+        return builder.request;
     }
 
     /**
      * @return the unprocessed response's {@link HttpResponseStatus}
      */
     public HttpResponseStatus getResponseStatus() {
-        return b.responseStatus;
+        return builder.responseStatus;
     }
 
     /**
      * @return the response {@link HttpHeaders}
      */
     public HttpHeaders getResponseHeaders() {
-        return b.headers;
+        return builder.headers;
     }
 
     /**
      * @return true if the current response's processing needs to be interrupted and a new {@link Request} be executed.
      */
     public boolean replayRequest() {
-        return b.replayRequest;
+        return builder.replayRequest;
     }
 
     /**
      * @return the {@link IOException}
      */
     public IOException getIOException() {
-        return b.ioException;
+        return builder.ioException;
     }
 
     public static class FilterContextBuilder<T> {
-        private AsyncHandler<T> asyncHandler = null;
-        private Request request = null;
-        private HttpResponseStatus responseStatus = null;
-        private boolean replayRequest = false;
-        private IOException ioException = null;
+        private AsyncHandler<T> asyncHandler;
+        private Request request;
+        private HttpResponseStatus responseStatus;
+        private boolean replayRequest;
+        private IOException ioException;
         private HttpHeaders headers;
 
         public FilterContextBuilder() {
@@ -149,5 +150,4 @@ public class FilterContext<T> {
             return new FilterContext<>(this);
         }
     }
-
 }

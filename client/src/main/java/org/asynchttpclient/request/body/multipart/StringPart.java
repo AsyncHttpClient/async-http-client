@@ -50,9 +50,10 @@ public class StringPart extends PartBase {
         super(name, contentType, charsetOrDefault(charset), contentId, transferEncoding);
         assertNotNull(value, "value");
 
-        if (value.indexOf(0) != -1)
-            // See RFC 2048, 2.8. "8bit Data"
+        // See RFC 2048, 2.8. "8bit Data"
+        if (value.indexOf(0) != -1) {
             throw new IllegalArgumentException("NULs may not be present in string parts");
+        }
 
         this.value = value;
     }

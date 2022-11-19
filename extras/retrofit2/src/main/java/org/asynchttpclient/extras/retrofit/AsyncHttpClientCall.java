@@ -13,9 +13,22 @@
 package org.asynchttpclient.extras.retrofit;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Singular;
+import lombok.SneakyThrows;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import lombok.val;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.Buffer;
 import okio.Timeout;
 import org.asynchttpclient.AsyncCompletionHandler;
@@ -33,13 +46,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * {@link AsyncHttpClient} <a href="http://square.github.io/retrofit/">Retrofit2</a> {@link okhttp3.Call}
+ * {@link AsyncHttpClient} <a href="http://square.github.io/retrofit/">Retrofit2</a> {@link Call}
  * implementation.
  */
 @Value
 @Builder(toBuilder = true)
 @Slf4j
-public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
+public class AsyncHttpClientCall implements Call {
     private static final ResponseBody EMPTY_BODY = ResponseBody.create(null, "");
 
     /**
@@ -48,7 +61,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      * @see #isExecuted()
      * @see #isCanceled()
      */
-    private final AtomicReference<CompletableFuture<Response>> futureRef = new AtomicReference<>();
+    AtomicReference<CompletableFuture<Response>> futureRef = new AtomicReference<>();
 
     /**
      * {@link AsyncHttpClient} supplier
@@ -94,7 +107,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      * @param argument consumer argument
      * @param <T>      consumer type.
      */
-    protected static <T> void runConsumer(Consumer<T> consumer, T argument) {
+    private static <T> void runConsumer(Consumer<T> consumer, T argument) {
         try {
             if (consumer != null) {
                 consumer.accept(argument);
@@ -111,7 +124,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      * @param argument  consumer argument
      * @param <T>       consumer type.
      */
-    protected static <T> void runConsumers(Collection<Consumer<T>> consumers, T argument) {
+    static <T> void runConsumers(Collection<Consumer<T>> consumers, T argument) {
         if (consumers == null || consumers.isEmpty()) {
             return;
         }
@@ -173,7 +186,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      *
      * @return request timeout in milliseconds.
      */
-    protected long getRequestTimeoutMillis() {
+    private long getRequestTimeoutMillis() {
         return Math.abs(getHttpClient().getConfig().getRequestTimeout());
     }
 
@@ -182,7 +195,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         return toBuilder().build();
     }
 
-    protected <T> T handleException(Throwable throwable, Callback responseCallback) {
+    private <T> T handleException(Throwable throwable, Callback responseCallback) {
         try {
             if (responseCallback != null) {
                 responseCallback.onFailure(this, toIOException(throwable));
@@ -193,7 +206,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         return null;
     }
 
-    protected Response handleResponse(Response response, Callback responseCallback) {
+    private Response handleResponse(Response response, Callback responseCallback) {
         try {
             if (responseCallback != null) {
                 responseCallback.onResponse(this, response);
@@ -204,7 +217,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         return response;
     }
 
-    protected CompletableFuture<Response> executeHttpRequest() {
+    private CompletableFuture<Response> executeHttpRequest() {
         if (futureRef.get() != null) {
             throwAlreadyExecuted();
         }
@@ -220,7 +233,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
 
         // execute the request.
         val me = this;
-        runConsumers(this.onRequestStart, this.request);
+        runConsumers(onRequestStart, request);
         getHttpClient().executeRequest(asyncHttpClientRequest, new AsyncCompletionHandler<Response>() {
             @Override
             public void onThrowable(Throwable t) {
@@ -246,7 +259,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      * @return http client
      * @throws IllegalArgumentException if {@link #httpClientSupplier} returned {@code null}.
      */
-    protected AsyncHttpClient getHttpClient() {
+    private AsyncHttpClient getHttpClient() {
         val httpClient = httpClientSupplier.get();
         if (httpClient == null) {
             throw new IllegalStateException("Async HTTP client instance supplier " + httpClientSupplier + " returned null.");
@@ -287,11 +300,11 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         return rspBuilder.build();
     }
 
-    protected IOException toIOException(@NonNull Throwable exception) {
+    private IOException toIOException(@NonNull Throwable exception) {
         if (exception instanceof IOException) {
             return (IOException) exception;
         } else {
-            val message = (exception.getMessage() == null) ? exception.toString() : exception.getMessage();
+            val message = exception.getMessage() == null ? exception.toString() : exception.getMessage();
             return new IOException(message, exception);
         }
     }
@@ -303,7 +316,7 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
      * @return async-http-client request.
      */
     @SneakyThrows
-    protected org.asynchttpclient.Request createRequest(@NonNull Request request) {
+    private org.asynchttpclient.Request createRequest(@NonNull Request request) {
         // create async-http-client request builder
         val requestBuilder = new RequestBuilder(request.method());
 
@@ -327,12 +340,12 @@ public class AsyncHttpClientCall implements Cloneable, okhttp3.Call {
         }
 
         // customize the request builder (external customizer can change the request url for example)
-        runConsumers(this.requestCustomizers, requestBuilder);
+        runConsumers(requestCustomizers, requestBuilder);
 
         return requestBuilder.build();
     }
 
-    private void throwAlreadyExecuted() {
+    private static void throwAlreadyExecuted() {
         throw new IllegalStateException("This call has already been executed.");
     }
 }

@@ -27,7 +27,7 @@ final class UriParser {
     public String userInfo;
 
     private String originalUrl;
-    private int start, end, currentIndex = 0;
+    private int start, end, currentIndex;
 
     private void trimLeft() {
         while (start < end && originalUrl.charAt(start) <= ' ') {
@@ -50,11 +50,11 @@ final class UriParser {
         return start < originalUrl.length() && originalUrl.charAt(start) == '#';
     }
 
-    private boolean isValidProtocolChar(char c) {
+    private static boolean isValidProtocolChar(char c) {
         return Character.isLetterOrDigit(c) && c != '.' && c != '+' && c != '-';
     }
 
-    private boolean isValidProtocolChars(String protocol) {
+    private static boolean isValidProtocolChars(String protocol) {
         for (int i = 1; i < protocol.length(); i++) {
             if (!isValidProtocolChar(protocol.charAt(i))) {
                 return false;
@@ -63,7 +63,7 @@ final class UriParser {
         return true;
     }
 
-    private boolean isValidProtocol(String protocol) {
+    private static boolean isValidProtocol(String protocol) {
         return protocol.length() > 0 && Character.isLetter(protocol.charAt(0)) && isValidProtocolChars(protocol);
     }
 
@@ -212,8 +212,9 @@ final class UriParser {
         if (colonPosition >= 0) {
             // see RFC2396: port can be null
             int portPosition = colonPosition + 1;
-            if (host.length() > portPosition)
+            if (host.length() > portPosition) {
                 port = Integer.parseInt(host.substring(portPosition));
+            }
             host = host.substring(0, colonPosition);
         }
     }
@@ -236,7 +237,7 @@ final class UriParser {
                     break;
                 }
             } else {
-                i = i + 3;
+                i += 3;
             }
         }
     }
@@ -269,7 +270,7 @@ final class UriParser {
         String pathEnd = originalUrl.substring(currentIndex, end);
 
         if (lastSlashPosition == -1) {
-            path = authority != null ? "/" + pathEnd : pathEnd;
+            path = authority != null ? '/' + pathEnd : pathEnd;
         } else {
             path = path.substring(0, lastSlashPosition + 1) + pathEnd;
         }
@@ -318,14 +319,14 @@ final class UriParser {
             handleRelativePath();
         } else {
             String pathEnd = originalUrl.substring(currentIndex, end);
-            path = isNonEmpty(pathEnd) && pathEnd.charAt(0) != '/' ? "/" + pathEnd : pathEnd;
+            path = isNonEmpty(pathEnd) && pathEnd.charAt(0) != '/' ? '/' + pathEnd : pathEnd;
         }
         handlePathDots();
     }
 
     private void computeQueryOnlyPath() {
         int lastSlashPosition = path.lastIndexOf('/');
-        path = lastSlashPosition < 0 ? "/" : path.substring(0, lastSlashPosition) + "/";
+        path = lastSlashPosition < 0 ? "/" : path.substring(0, lastSlashPosition) + '/';
     }
 
     private void computePath(boolean queryOnly) {
@@ -343,7 +344,7 @@ final class UriParser {
 
         assertNotNull(originalUrl, "originalUrl");
         this.originalUrl = originalUrl;
-        this.end = originalUrl.length();
+        end = originalUrl.length();
 
         trimLeft();
         trimRight();

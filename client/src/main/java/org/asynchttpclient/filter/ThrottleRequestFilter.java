@@ -19,7 +19,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A {@link org.asynchttpclient.filter.RequestFilter} throttles requests and block when the number of permits is reached,
+ * A {@link RequestFilter} throttles requests and block when the number of permits is reached,
  * waiting for the response to arrives before executing the next request.
  */
 public class ThrottleRequestFilter implements RequestFilter {
@@ -40,9 +40,6 @@ public class ThrottleRequestFilter implements RequestFilter {
         available = new Semaphore(maxConnections, fair);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
         try {
@@ -50,12 +47,10 @@ public class ThrottleRequestFilter implements RequestFilter {
                 logger.debug("Current Throttling Status {}", available.availablePermits());
             }
             if (!available.tryAcquire(maxWait, TimeUnit.MILLISECONDS)) {
-                throw new FilterException(String.format("No slot available for processing Request %s with AsyncHandler %s",
-                        ctx.getRequest(), ctx.getAsyncHandler()));
+                throw new FilterException(String.format("No slot available for processing Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
             }
         } catch (InterruptedException e) {
-            throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s",
-                    ctx.getRequest(), ctx.getAsyncHandler()));
+            throw new FilterException(String.format("Interrupted Request %s with AsyncHandler %s", ctx.getRequest(), ctx.getAsyncHandler()));
         }
 
         return new FilterContext.FilterContextBuilder<>(ctx)

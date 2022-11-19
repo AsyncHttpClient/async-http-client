@@ -24,12 +24,12 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
 
     CombinedConnectionSemaphore(int maxConnections, int maxConnectionsPerHost, int acquireTimeout) {
         super(maxConnectionsPerHost, acquireTimeout);
-        this.globalMaxConnectionSemaphore = new MaxConnectionSemaphore(maxConnections, acquireTimeout);
+        globalMaxConnectionSemaphore = new MaxConnectionSemaphore(maxConnections, acquireTimeout);
     }
 
     @Override
     public void acquireChannelLock(Object partitionKey) throws IOException {
-        long remainingTime = super.acquireTimeout > 0 ? acquireGlobalTimed(partitionKey) : acquireGlobal(partitionKey);
+        long remainingTime = acquireTimeout > 0 ? acquireGlobalTimed(partitionKey) : acquireGlobal(partitionKey);
 
         try {
             if (remainingTime < 0 || !getFreeConnectionsForHost(partitionKey).tryAcquire(remainingTime, TimeUnit.MILLISECONDS)) {
@@ -43,11 +43,11 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
     }
 
     protected void releaseGlobal(Object partitionKey) {
-        this.globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
+        globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
     }
 
     protected long acquireGlobal(Object partitionKey) throws IOException {
-        this.globalMaxConnectionSemaphore.acquireChannelLock(partitionKey);
+        globalMaxConnectionSemaphore.acquireChannelLock(partitionKey);
         return 0;
     }
 
@@ -58,12 +58,12 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
         long beforeGlobalAcquire = System.currentTimeMillis();
         acquireGlobal(partitionKey);
         long lockTime = System.currentTimeMillis() - beforeGlobalAcquire;
-        return this.acquireTimeout - lockTime;
+        return acquireTimeout - lockTime;
     }
 
     @Override
     public void releaseChannelLock(Object partitionKey) {
-        this.globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
+        globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
         super.releaseChannelLock(partitionKey);
     }
 }

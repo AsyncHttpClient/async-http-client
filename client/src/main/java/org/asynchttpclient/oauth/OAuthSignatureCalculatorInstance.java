@@ -62,12 +62,8 @@ public class OAuthSignatureCalculatorInstance {
         mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
     }
 
-    public String computeAuthorizationHeader(ConsumerKey consumerAuth,
-                                             RequestToken userAuth,
-                                             Uri uri,
-                                             String method,
-                                             List<Param> formParams,
-                                             List<Param> queryParams) throws InvalidKeyException {
+    public String computeAuthorizationHeader(ConsumerKey consumerAuth, RequestToken userAuth, Uri uri, String method, List<Param> formParams, List<Param> queryParams)
+            throws InvalidKeyException {
         String nonce = generateNonce();
         long timestamp = generateTimestamp();
         return computeAuthorizationHeader(consumerAuth, userAuth, uri, method, formParams, queryParams, timestamp, nonce);
@@ -83,28 +79,15 @@ public class OAuthSignatureCalculatorInstance {
         return System.currentTimeMillis() / 1000L;
     }
 
-    String computeAuthorizationHeader(ConsumerKey consumerAuth,
-                                      RequestToken userAuth,
-                                      Uri uri,
-                                      String method,
-                                      List<Param> formParams,
-                                      List<Param> queryParams,
-                                      long timestamp,
-                                      String nonce) throws InvalidKeyException {
+    String computeAuthorizationHeader(ConsumerKey consumerAuth, RequestToken userAuth, Uri uri, String method,
+                                      List<Param> formParams, List<Param> queryParams, long timestamp, String nonce) throws InvalidKeyException {
         String percentEncodedNonce = Utf8UrlEncoder.percentEncodeQueryElement(nonce);
         String signature = computeSignature(consumerAuth, userAuth, uri, method, formParams, queryParams, timestamp, percentEncodedNonce);
         return computeAuthorizationHeader(consumerAuth, userAuth, signature, timestamp, percentEncodedNonce);
     }
 
-    String computeSignature(ConsumerKey consumerAuth,
-                            RequestToken userAuth,
-                            Uri uri,
-                            String method,
-                            List<Param> formParams,
-                            List<Param> queryParams,
-                            long oauthTimestamp,
-                            String percentEncodedNonce) throws InvalidKeyException {
-
+    String computeSignature(ConsumerKey consumerAuth, RequestToken userAuth, Uri uri, String method,
+                            List<Param> formParams, List<Param> queryParams, long oauthTimestamp, String percentEncodedNonce) throws InvalidKeyException {
         StringBuilder sb = signatureBaseString(
                 consumerAuth,
                 userAuth,
@@ -121,14 +104,8 @@ public class OAuthSignatureCalculatorInstance {
         return Base64.getEncoder().encodeToString(rawSignature);
     }
 
-    StringBuilder signatureBaseString(ConsumerKey consumerAuth,
-                                      RequestToken userAuth,
-                                      Uri uri,
-                                      String method,
-                                      List<Param> formParams,
-                                      List<Param> queryParams,
-                                      long oauthTimestamp,
-                                      String percentEncodedNonce) {
+    StringBuilder signatureBaseString(ConsumerKey consumerAuth, RequestToken userAuth, Uri uri, String method,
+                                      List<Param> formParams, List<Param> queryParams, long oauthTimestamp, String percentEncodedNonce) {
 
         // beware: must generate first as we're using pooled StringBuilder
         String baseUrl = uri.toBaseUrl();
@@ -145,13 +122,8 @@ public class OAuthSignatureCalculatorInstance {
         return sb;
     }
 
-    private String encodedParams(ConsumerKey consumerAuth,
-                                 RequestToken userAuth,
-                                 long oauthTimestamp,
-                                 String percentEncodedNonce,
-                                 List<Param> formParams,
-                                 List<Param> queryParams) {
-
+    private String encodedParams(ConsumerKey consumerAuth, RequestToken userAuth, long oauthTimestamp, String percentEncodedNonce,
+                                 List<Param> formParams, List<Param> queryParams) {
         parameters.reset();
 
         // List of all query and form parameters added to this request; needed for calculating request signature
@@ -181,7 +153,7 @@ public class OAuthSignatureCalculatorInstance {
         return parameters.sortAndConcat();
     }
 
-    private String percentEncodeAlreadyFormUrlEncoded(String s) {
+    private static String percentEncodeAlreadyFormUrlEncoded(String s) {
         s = STAR_CHAR_PATTERN.matcher(s).replaceAll("%2A");
         s = PLUS_CHAR_PATTERN.matcher(s).replaceAll("%20");
         s = ENCODED_TILDE_PATTERN.matcher(s).replaceAll("~");
@@ -219,7 +191,7 @@ public class OAuthSignatureCalculatorInstance {
 
         sb.append(KEY_OAUTH_NONCE).append("=\"").append(percentEncodedNonce).append("\", ");
 
-        sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append("\"");
+        sb.append(KEY_OAUTH_VERSION).append("=\"").append(OAUTH_VERSION_1_0).append('"');
         return sb.toString();
     }
 }

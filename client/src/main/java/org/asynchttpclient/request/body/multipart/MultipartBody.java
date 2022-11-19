@@ -31,21 +31,21 @@ import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class MultipartBody implements RandomAccessBody {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(MultipartBody.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MultipartBody.class);
 
     private final List<MultipartPart<? extends Part>> parts;
     private final String contentType;
     private final byte[] boundary;
     private final long contentLength;
     private int currentPartIndex;
-    private boolean done = false;
-    private AtomicBoolean closed = new AtomicBoolean();
+    private boolean done;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     public MultipartBody(List<MultipartPart<? extends Part>> parts, String contentType, byte[] boundary) {
         this.boundary = boundary;
         this.contentType = contentType;
         this.parts = assertNotNull(parts, "parts");
-        this.contentLength = computeContentLength();
+        contentLength = computeContentLength();
     }
 
     private long computeContentLength() {
@@ -65,6 +65,7 @@ public class MultipartBody implements RandomAccessBody {
         }
     }
 
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             for (MultipartPart<? extends Part> part : parts) {
@@ -73,6 +74,7 @@ public class MultipartBody implements RandomAccessBody {
         }
     }
 
+    @Override
     public long getContentLength() {
         return contentLength;
     }
@@ -86,10 +88,11 @@ public class MultipartBody implements RandomAccessBody {
     }
 
     // Regular Body API
+    @Override
     public BodyState transferTo(ByteBuf target) throws IOException {
-
-        if (done)
+        if (done) {
             return BodyState.STOP;
+        }
 
         while (target.isWritable() && !done) {
             MultipartPart<? extends Part> currentPart = parts.get(currentPartIndex);
@@ -109,9 +112,9 @@ public class MultipartBody implements RandomAccessBody {
     // RandomAccessBody API, suited for HTTP but not for HTTPS (zero-copy)
     @Override
     public long transferTo(WritableByteChannel target) throws IOException {
-
-        if (done)
+        if (done) {
             return -1L;
+        }
 
         long transferred = 0L;
         boolean slowTarget = false;

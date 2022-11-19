@@ -37,18 +37,23 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
  * neither the system property or the property file exists then it will return
  * the default instance of {@link DefaultAsyncHttpClient}
  */
-public class AsyncHttpClientFactory {
+public final class AsyncHttpClientFactory {
 
     public static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
-    private static Class<AsyncHttpClient> asyncHttpClientImplClass = null;
-    private static volatile boolean instantiated = false;
-    private static Lock lock = new ReentrantLock();
+    private static Class<AsyncHttpClient> asyncHttpClientImplClass;
+    private static volatile boolean instantiated;
+    private static final Lock lock = new ReentrantLock();
+
+    private AsyncHttpClientFactory() {
+        // Prevent outside initialization
+    }
 
     public static AsyncHttpClient getAsyncHttpClient() {
 
         try {
-            if (attemptInstantiation())
+            if (attemptInstantiation()) {
                 return asyncHttpClientImplClass.newInstance();
+            }
         } catch (InstantiationException e) {
             throw new AsyncHttpClientImplException("Unable to create the class specified by system property : "
                     + AsyncImplHelper.ASYNC_HTTP_CLIENT_IMPL_SYSTEM_PROPERTY, e);

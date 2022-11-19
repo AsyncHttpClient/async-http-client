@@ -58,13 +58,13 @@ public abstract class PartBase implements Part {
     /**
      * Constructor.
      *
-     * @param name             The name of the part, or <code>null</code>
-     * @param contentType      The content type, or <code>null</code>
-     * @param charset          The character encoding, or <code>null</code>
-     * @param contentId        The content id, or <code>null</code>
-     * @param transferEncoding The transfer encoding, or <code>null</code>
+     * @param name             The name of the part, or {@code null}
+     * @param contentType      The content type, or {@code null}
+     * @param charset          The character encoding, or {@code null}
+     * @param contentId        The content id, or {@code null}
+     * @param transferEncoding The transfer encoding, or {@code null}
      */
-    public PartBase(String name, String contentType, Charset charset, String contentId, String transferEncoding) {
+    protected PartBase(String name, String contentType, Charset charset, String contentId, String transferEncoding) {
         this.name = name;
         this.contentType = contentType;
         this.charset = charset;
@@ -74,17 +74,17 @@ public abstract class PartBase implements Part {
 
     @Override
     public String getName() {
-        return this.name;
+        return name;
     }
 
     @Override
     public String getContentType() {
-        return this.contentType;
+        return contentType;
     }
 
     @Override
     public Charset getCharset() {
-        return this.charset;
+        return charset;
     }
 
     @Override
@@ -122,6 +122,7 @@ public abstract class PartBase implements Part {
         customHeaders.add(new Param(name, value));
     }
 
+    @Override
     public String toString() {
         return getClass().getSimpleName() +
                 " name=" + getName() +

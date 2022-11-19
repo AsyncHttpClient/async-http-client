@@ -39,6 +39,7 @@ import org.asynchttpclient.uri.Uri;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -101,10 +102,10 @@ public class SimpleAsyncHttpClient implements Closeable {
         this.defaultThrowableHandler = defaultThrowableHandler;
         this.resumeEnabled = resumeEnabled;
         this.errorDocumentBehaviour = errorDocumentBehaviour;
-        this.asyncHttpClient = ahc;
+        asyncHttpClient = ahc;
         this.listener = listener;
 
-        this.derived = ahc != null;
+        derived = ahc != null;
     }
 
     public Future<Response> post(Part... parts) throws IOException {
@@ -289,7 +290,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         return execute(r, bodyConsumer, throwableHandler);
     }
 
-    private RequestBuilder rebuildRequest(Request rb) {
+    private static RequestBuilder rebuildRequest(Request rb) {
         return rb.toBuilder();
     }
 
@@ -302,7 +303,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         ProgressAsyncHandler<Response> handler = new BodyConsumerAsyncHandler(bodyConsumer, throwableHandler, errorDocumentBehaviour,
                 request.getUri(), listener);
 
-        if (resumeEnabled && request.getMethod().equals("GET") && bodyConsumer != null && bodyConsumer instanceof ResumableBodyConsumer) {
+        if (resumeEnabled && "GET".equals(request.getMethod()) && bodyConsumer instanceof ResumableBodyConsumer) {
             ResumableBodyConsumer fileBodyConsumer = (ResumableBodyConsumer) bodyConsumer;
             long length = fileBodyConsumer.getTransferredBytes();
             fileBodyConsumer.resume();
@@ -331,6 +332,7 @@ public class SimpleAsyncHttpClient implements Closeable {
      * @see #derive()
      * @see AsyncHttpClient#close()
      */
+    @Override
     public void close() throws IOException {
         if (!derived && asyncHttpClient != null) {
             asyncHttpClient.close();
@@ -357,7 +359,7 @@ public class SimpleAsyncHttpClient implements Closeable {
     public enum ErrorDocumentBehaviour {
         /**
          * Write error documents as usual via
-         * {@link BodyConsumer#consume(java.nio.ByteBuffer)}.
+         * {@link BodyConsumer#consume(ByteBuffer)}.
          */
         WRITE,
 
@@ -416,95 +418,107 @@ public class SimpleAsyncHttpClient implements Closeable {
         SimpleAsyncHttpClient build();
     }
 
-    public final static class Builder implements DerivedBuilder {
+    public static final class Builder implements DerivedBuilder {
 
         private final RequestBuilder requestBuilder;
         private final DefaultAsyncHttpClientConfig.Builder configBuilder = config();
-        private Realm.Builder realmBuilder = null;
         private Realm.AuthScheme proxyAuthScheme;
-        private String proxyHost = null;
-        private String proxyPrincipal = null;
-        private String proxyPassword = null;
+        private String proxyHost;
+        private String proxyPrincipal;
+        private String proxyPassword;
         private int proxyPort = 80;
-        private ThrowableHandler defaultThrowableHandler = null;
-        private boolean enableResumableDownload = false;
+        private ThrowableHandler defaultThrowableHandler;
+        private boolean enableResumableDownload;
         private ErrorDocumentBehaviour errorDocumentBehaviour = ErrorDocumentBehaviour.WRITE;
-        private AsyncHttpClient ahc = null;
-        private SimpleAHCTransferListener listener = null;
+        private AsyncHttpClient ahc;
+        private SimpleAHCTransferListener listener;
 
         public Builder() {
             requestBuilder = new RequestBuilder("GET", false);
         }
 
         private Builder(SimpleAsyncHttpClient client) {
-            this.requestBuilder = client.requestBuilder.build().toBuilder();
-            this.defaultThrowableHandler = client.defaultThrowableHandler;
-            this.errorDocumentBehaviour = client.errorDocumentBehaviour;
-            this.enableResumableDownload = client.resumeEnabled;
-            this.ahc = client.getAsyncHttpClient();
-            this.listener = client.listener;
+            requestBuilder = client.requestBuilder.build().toBuilder();
+            defaultThrowableHandler = client.defaultThrowableHandler;
+            errorDocumentBehaviour = client.errorDocumentBehaviour;
+            enableResumableDownload = client.resumeEnabled;
+            ahc = client.getAsyncHttpClient();
+            listener = client.listener;
         }
 
+        @Override
         public Builder addBodyPart(Part part) {
             requestBuilder.addBodyPart(part);
             return this;
         }
 
+        @Override
         public Builder addCookie(Cookie cookie) {
             requestBuilder.addCookie(cookie);
             return this;
         }
 
+        @Override
         public Builder addHeader(CharSequence name, Object value) {
             requestBuilder.addHeader(name, value);
             return this;
         }
 
+        @Override
         public Builder addFormParam(String key, String value) {
             requestBuilder.addFormParam(key, value);
             return this;
         }
 
+        @Override
         public Builder addQueryParam(String name, String value) {
             requestBuilder.addQueryParam(name, value);
             return this;
         }
 
+        @Override
         public Builder setHeader(CharSequence name, Object value) {
             requestBuilder.setHeader(name, value);
             return this;
         }
 
+        @Override
         public Builder setHeaders(HttpHeaders headers) {
             requestBuilder.setHeaders(headers);
             return this;
         }
 
+        @Override
         public Builder setHeaders(Map<? extends CharSequence, Collection<?>> headers) {
             requestBuilder.setHeaders(headers);
             return this;
         }
 
+        @Override
         public Builder setFormParams(Map<String, List<String>> parameters) {
             requestBuilder.setFormParams(parameters);
             return this;
         }
 
+        @Override
         public Builder setFormParams(List<Param> params) {
             requestBuilder.setFormParams(params);
             return this;
         }
 
+        @Override
         public Builder setUrl(String url) {
             requestBuilder.setUrl(url);
             return this;
         }
 
+        @Override
         public Builder setVirtualHost(String virtualHost) {
             requestBuilder.setVirtualHost(virtualHost);
             return this;
         }
 
+        @Override
         public Builder setFollowRedirect(boolean followRedirect) {
             requestBuilder.setFollowRedirect(followRedirect);
             return this;
@@ -581,27 +595,27 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         public Builder setProxyHost(String host) {
-            this.proxyHost = host;
+            proxyHost = host;
             return this;
         }
 
         public Builder setProxyPrincipal(String principal) {
-            this.proxyPrincipal = principal;
+            proxyPrincipal = principal;
             return this;
         }
 
         public Builder setProxyPassword(String password) {
-            this.proxyPassword = password;
+            proxyPassword = password;
             return this;
         }
 
         public Builder setProxyPort(int port) {
-            this.proxyPort = port;
+            proxyPort = port;
             return this;
         }
 
         public Builder setDefaultThrowableHandler(ThrowableHandler throwableHandler) {
-            this.defaultThrowableHandler = throwableHandler;
+            defaultThrowableHandler = throwableHandler;
             return this;
         }
 
@@ -614,7 +628,7 @@ public class SimpleAsyncHttpClient implements Closeable {
          * @return this
          */
         public Builder setErrorDocumentBehaviour(ErrorDocumentBehaviour behaviour) {
-            this.errorDocumentBehaviour = behaviour;
+            errorDocumentBehaviour = behaviour;
             return this;
         }
 
@@ -640,7 +654,7 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         /**
-         * Set the number of time a request will be retried when an {@link java.io.IOException} occurs because of a Network exception.
+         * Set the number of time a request will be retried when an {@link IOException} occurs because of a Network exception.
          *
          * @param maxRequestRetry the number of time a request will be retried
          * @return this
@@ -655,54 +669,48 @@ public class SimpleAsyncHttpClient implements Closeable {
             return this;
         }
 
+        @Override
         public SimpleAsyncHttpClient build() {
-
-            if (realmBuilder != null) {
-                configBuilder.setRealm(realmBuilder.build());
-            }
-
             if (proxyHost != null) {
                 Realm realm = null;
                 if (proxyPrincipal != null) {
                     AuthScheme proxyAuthScheme = withDefault(this.proxyAuthScheme, AuthScheme.BASIC);
                     realm = realm(proxyAuthScheme, proxyPrincipal, proxyPassword).build();
                 }
-
                 configBuilder.setProxyServer(proxyServer(proxyHost, proxyPort).setRealm(realm).build());
             }
 
             configBuilder.addIOExceptionFilter(new ResumableIOExceptionFilter());
-
-            SimpleAsyncHttpClient sc = new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler,
-                    errorDocumentBehaviour, enableResumableDownload, ahc, listener);
-
-            return sc;
+            return new SimpleAsyncHttpClient(configBuilder.build(), requestBuilder, defaultThrowableHandler, errorDocumentBehaviour, enableResumableDownload, ahc, listener);
         }
     }
 
-    private final static class ResumableBodyConsumerAsyncHandler extends ResumableAsyncHandler implements ProgressAsyncHandler<Response> {
+    private static final class ResumableBodyConsumerAsyncHandler extends ResumableAsyncHandler implements ProgressAsyncHandler<Response> {
 
         private final ProgressAsyncHandler<Response> delegate;
 
-        public ResumableBodyConsumerAsyncHandler(long byteTransferred, ProgressAsyncHandler<Response> delegate) {
+        private ResumableBodyConsumerAsyncHandler(long byteTransferred, ProgressAsyncHandler<Response> delegate) {
             super(byteTransferred, delegate);
             this.delegate = delegate;
         }
 
+        @Override
         public AsyncHandler.State onHeadersWritten() {
             return delegate.onHeadersWritten();
         }
 
+        @Override
         public AsyncHandler.State onContentWritten() {
             return delegate.onContentWritten();
         }
 
+        @Override
         public AsyncHandler.State onContentWriteProgress(long amount, long current, long total) {
             return delegate.onContentWriteProgress(amount, current, total);
         }
     }
 
-    private final static class BodyConsumerAsyncHandler extends AsyncCompletionHandlerBase {
+    private static final class BodyConsumerAsyncHandler extends AsyncCompletionHandlerBase {
 
         private final BodyConsumer bodyConsumer;
         private final ThrowableHandler exceptionHandler;
@@ -710,13 +718,13 @@ public class SimpleAsyncHttpClient implements Closeable {
         private final Uri uri;
         private final SimpleAHCTransferListener listener;
 
-        private boolean accumulateBody = false;
-        private boolean omitBody = false;
-        private int amount = 0;
+        private boolean accumulateBody;
+        private boolean omitBody;
+        private int amount;
         private long total = -1;
 
-        public BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler,
-                                        ErrorDocumentBehaviour errorDocumentBehaviour, Uri uri, SimpleAHCTransferListener listener) {
+        private BodyConsumerAsyncHandler(BodyConsumer bodyConsumer, ThrowableHandler exceptionHandler,
+                                         ErrorDocumentBehaviour errorDocumentBehaviour, Uri uri, SimpleAHCTransferListener listener) {
             this.bodyConsumer = bodyConsumer;
             this.exceptionHandler = exceptionHandler;
             this.errorDocumentBehaviour = errorDocumentBehaviour;
@@ -737,9 +745,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         */
+        @Override
         public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
             fireReceived(content);
             if (omitBody) {
@@ -754,9 +760,6 @@ public class SimpleAsyncHttpClient implements Closeable {
             return State.CONTINUE;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public Response onCompleted(Response response) throws Exception {
             fireCompleted(response);
@@ -765,8 +768,9 @@ public class SimpleAsyncHttpClient implements Closeable {
         }
 
         private void closeConsumer() {
-            if (bodyConsumer != null)
+            if (bodyConsumer != null) {
                 closeSilently(bodyConsumer);
+            }
         }
 
         @Override
@@ -788,7 +792,7 @@ public class SimpleAsyncHttpClient implements Closeable {
             return super.onStatusReceived(status);
         }
 
-        private boolean isErrorStatus(HttpResponseStatus status) {
+        private static boolean isErrorStatus(HttpResponseStatus status) {
             return status.getStatusCode() >= 400;
         }
 
