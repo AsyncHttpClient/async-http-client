@@ -87,7 +87,7 @@ public class HttpUtilsTest {
 
     @Test
     public void testDefaultFollowRedirect() {
-        Request request = Dsl.get("https://stackoverflow.com/questions/1057564").setVirtualHost("example.com").build();
+        Request request = Dsl.get("https://shieldblaze.com").setVirtualHost("shieldblaze.com").build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertFalse(followRedirect, "Default value of redirect should be false");
