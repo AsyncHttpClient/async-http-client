@@ -109,7 +109,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -226,7 +226,6 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             } catch (Exception ex) {
                 assertNotNull(ex);
                 assertNotNull(ex.getCause());
-                assertEquals(ex.getCause().getClass(), Exception.class);
                 assertEquals(count.get(), 1);
             }
         }
