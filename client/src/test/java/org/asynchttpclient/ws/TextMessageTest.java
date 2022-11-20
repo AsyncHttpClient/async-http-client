@@ -82,10 +82,8 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         try (AsyncHttpClient c = asyncHttpClient()) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
-            String expectedMessage = "No such host is known";
-            assertTrue(e.getCause().toString().contains(expectedMessage));
             if (!(e.getCause() instanceof UnknownHostException || e.getCause() instanceof ConnectException)) {
-                fail("Exception is not UnknownHostException or ConnectException");
+                fail("Exception is not UnknownHostException or ConnectException but rather: " + e);
             }
         }
     }

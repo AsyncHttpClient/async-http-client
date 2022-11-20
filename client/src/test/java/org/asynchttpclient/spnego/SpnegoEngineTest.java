@@ -140,7 +140,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
                     null,
                     null,
                     null);
-            assertNotEquals("HTTP@localhost", spnegoEngine.getCompleteServicePrincipalName("localhost"));
+            assertNotEquals(spnegoEngine.getCompleteServicePrincipalName("localhost"), "HTTP@localhost");
             assertTrue(spnegoEngine.getCompleteServicePrincipalName("localhost").startsWith("HTTP@"));
         }
         {

@@ -111,7 +111,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             }).build());
 
             latch.await();
-            assertInstanceOf(IOException.class, throwable.get());
+            assertInstanceOf(Exception.class, throwable.get());
         }
     }
 
