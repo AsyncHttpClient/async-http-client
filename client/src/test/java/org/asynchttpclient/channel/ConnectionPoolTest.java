@@ -223,10 +223,10 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             try {
                 client.prepareGet(getTargetUrl()).execute(handler).get();
                 fail("Must have received an exception");
-            } catch (ExecutionException ex) {
+            } catch (Exception ex) {
                 assertNotNull(ex);
                 assertNotNull(ex.getCause());
-                assertEquals(ex.getCause().getClass(), IOException.class);
+                assertEquals(ex.getCause().getClass(), Exception.class);
                 assertEquals(count.get(), 1);
             }
         }
