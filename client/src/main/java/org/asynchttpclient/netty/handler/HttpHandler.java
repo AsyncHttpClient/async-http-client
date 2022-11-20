@@ -26,11 +26,9 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.handler.StreamedAsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
@@ -82,7 +80,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         }
 
         ByteBuf buf = chunk.content();
-        if (!abort && !(handler instanceof StreamedAsyncHandler) && (buf.isReadable() || last)) {
+        if (!abort && (buf.isReadable() || last)) {
             HttpResponseBodyPart bodyPart = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
             abort = handler.onBodyPartReceived(bodyPart) == State.ABORT;
         }

@@ -26,7 +26,6 @@ import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.FeedListener;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
-import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
@@ -60,7 +59,7 @@ public class NettyBodyBody implements NettyBody {
             msg = new BodyChunkedInput(body);
 
             BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
-            if (bg instanceof FeedableBodyGenerator && !(bg instanceof ReactiveStreamsBodyGenerator)) {
+            if (bg instanceof FeedableBodyGenerator) {
                 final ChunkedWriteHandler chunkedWriteHandler = channel.pipeline().get(ChunkedWriteHandler.class);
                 ((FeedableBodyGenerator) bg).setListener(new FeedListener() {
                     @Override

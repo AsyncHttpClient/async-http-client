@@ -25,11 +25,9 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
-import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UriEncoder;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -408,14 +406,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         resetBody();
         streamData = stream;
         return asDerivedType();
-    }
-
-    public T setBody(Publisher<ByteBuf> publisher) {
-        return setBody(publisher, -1L);
-    }
-
-    public T setBody(Publisher<ByteBuf> publisher, long contentLength) {
-        return setBody(new ReactiveStreamsBodyGenerator(publisher, contentLength));
     }
 
     public T setBody(BodyGenerator bodyGenerator) {
