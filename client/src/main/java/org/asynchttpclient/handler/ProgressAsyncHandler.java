@@ -15,6 +15,9 @@ package org.asynchttpclient.handler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 
+import java.io.File;
+import java.io.FileInputStream;
+
 /**
  * An extended {@link AsyncHandler} with two extra callback who get invoked during the content upload to a remote server.
  * This {@link AsyncHandler} must be used only with PUT and POST request.
@@ -22,7 +25,7 @@ import org.asynchttpclient.Request;
 public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
 
     /**
-     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * Invoked when the content (a {@link File}, {@link String} or {@link FileInputStream} has been fully
      * written on the I/O socket.
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
@@ -30,7 +33,7 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
     State onHeadersWritten();
 
     /**
-     * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
+     * Invoked when the content (a {@link File}, {@link String} or {@link FileInputStream} has been fully
      * written on the I/O socket.
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.

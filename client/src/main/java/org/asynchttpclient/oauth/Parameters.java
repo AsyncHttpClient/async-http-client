@@ -21,7 +21,7 @@ import java.util.List;
 
 final class Parameters {
 
-    private List<Parameter> parameters = new ArrayList<>();
+    private final List<Parameter> parameters = new ArrayList<>();
 
     public Parameters add(String key, String value) {
         parameters.add(new Parameter(key, value));

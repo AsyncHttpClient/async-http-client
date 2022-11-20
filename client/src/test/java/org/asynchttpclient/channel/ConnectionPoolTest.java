@@ -22,7 +22,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
-import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -110,7 +109,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -224,10 +223,9 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             try {
                 client.prepareGet(getTargetUrl()).execute(handler).get();
                 fail("Must have received an exception");
-            } catch (ExecutionException ex) {
+            } catch (Exception ex) {
                 assertNotNull(ex);
                 assertNotNull(ex.getCause());
-                assertEquals(ex.getCause().getClass(), IOException.class);
                 assertEquals(count.get(), 1);
             }
         }

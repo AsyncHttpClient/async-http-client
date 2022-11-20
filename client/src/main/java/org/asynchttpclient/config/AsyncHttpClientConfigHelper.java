@@ -9,6 +9,9 @@ public class AsyncHttpClientConfigHelper {
 
     private static volatile Config config;
 
+    private AsyncHttpClientConfigHelper() {
+    }
+
     public static Config getAsyncHttpClientConfig() {
         if (config == null) {
             config = new Config();
@@ -22,8 +25,9 @@ public class AsyncHttpClientConfigHelper {
      * getAsyncHttpClientConfig() to get the new property values.
      */
     public static void reloadProperties() {
-        if (config != null)
+        if (config != null) {
             config.reload();
+        }
     }
 
     public static class Config {
@@ -60,10 +64,12 @@ public class AsyncHttpClientConfigHelper {
         public String getString(String key) {
             return propsCache.computeIfAbsent(key, k -> {
                 String value = System.getProperty(k);
-                if (value == null)
+                if (value == null) {
                     value = customProperties.getProperty(k);
-                if (value == null)
+                }
+                if (value == null) {
                     value = defaultProperties.getProperty(k);
+                }
                 return value;
             });
         }
@@ -76,8 +82,9 @@ public class AsyncHttpClientConfigHelper {
             }
             String[] rawArray = s.split(",");
             String[] array = new String[rawArray.length];
-            for (int i = 0; i < rawArray.length; i++)
+            for (int i = 0; i < rawArray.length; i++) {
                 array[i] = rawArray[i].trim();
+            }
             return array;
         }
 

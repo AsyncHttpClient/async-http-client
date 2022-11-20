@@ -16,6 +16,9 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -26,9 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -54,8 +54,9 @@ public class BasicAuthTest extends AbstractBasicTest {
     private static Server serverNoAuth;
     private static int portNoAuth;
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -78,14 +79,16 @@ public class BasicAuthTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
-        AbstractBasicTest.tearDownGlobal();
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
         server2.stop();
         serverNoAuth.stop();
     }
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return "http://localhost:" + port1 + '/';
     }
 
@@ -98,7 +101,8 @@ public class BasicAuthTest extends AbstractBasicTest {
         return "http://localhost:" + portNoAuth + '/';
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
     }
 

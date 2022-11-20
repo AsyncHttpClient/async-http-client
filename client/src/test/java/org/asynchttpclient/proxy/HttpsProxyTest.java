@@ -44,12 +44,14 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
     private static Server server2;
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new ConnectHandler();
     }
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
@@ -65,8 +67,9 @@ public class HttpsProxyTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    public void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }
@@ -129,7 +132,6 @@ public class HttpsProxyTest extends AbstractBasicTest {
 
     @Test
     public void testPooledConnectionsWithProxy() throws Exception {
-
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
 

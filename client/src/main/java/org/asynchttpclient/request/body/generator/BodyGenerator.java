@@ -18,6 +18,7 @@ import org.asynchttpclient.request.body.Body;
 /**
  * Creates a request body.
  */
+@FunctionalInterface
 public interface BodyGenerator {
 
     /**

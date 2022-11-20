@@ -36,21 +36,17 @@ public class ConnectSuccessInterceptor {
         this.requestSender = requestSender;
     }
 
-    public boolean exitAfterHandlingConnect(Channel channel,
-                                            NettyResponseFuture<?> future,
-                                            Request request,
-                                            ProxyServer proxyServer) {
-
-        if (future.isKeepAlive())
+    public boolean exitAfterHandlingConnect(Channel channel, NettyResponseFuture<?> future, Request request, ProxyServer proxyServer) {
+        if (future.isKeepAlive()) {
             future.attachChannel(channel, true);
+        }
 
         Uri requestUri = request.getUri();
         LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
-
-        Future<Channel> whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
-
+        final Future<Channel> whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
         future.setReuseChannel(true);
         future.setConnectAllowed(false);
+
         Request targetRequest = future.getTargetRequest().toBuilder().build();
         if (whenHandshaked == null) {
             requestSender.drainChannelAndExecuteNextRequest(channel, future, targetRequest);

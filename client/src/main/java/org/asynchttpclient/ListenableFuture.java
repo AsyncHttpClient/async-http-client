@@ -62,11 +62,11 @@ public interface ListenableFuture<V> extends Future<V> {
 
     /**
      * Adds a listener and executor to the ListenableFuture.
-     * The listener will be {@linkplain java.util.concurrent.Executor#execute(Runnable) passed
+     * The listener will be {@linkplain Executor#execute(Runnable) passed
      * to the executor} for execution when the {@code Future}'s computation is
      * {@linkplain Future#isDone() complete}.
      * <br>
-     * Executor can be <code>null</code>, in that case executor will be executed
+     * Executor can be {@code null}, in that case executor will be executed
      * in the thread where completion happens.
      * <br>
      * There is no guaranteed ordering of execution of listeners, they may get

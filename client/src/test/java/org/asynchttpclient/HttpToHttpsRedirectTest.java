@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -23,9 +26,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,8 +43,9 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     // FIXME super NOT threadsafe!!!
     private static final AtomicBoolean redirectDone = new AtomicBoolean(false);
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         ServerConnector connector2 = addHttpsConnector(server);
@@ -63,7 +64,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         relativeLocationUrl();
     }
 
-    @Disabled
+//    @Disabled
     @Test
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
@@ -81,7 +82,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
@@ -105,7 +105,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);

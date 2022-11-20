@@ -57,7 +57,7 @@ import static org.asynchttpclient.util.MiscUtils.withDefault;
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
     private static final Uri DEFAULT_REQUEST_URL = Uri.create("http://localhost");
     public static NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
     // builder only fields
@@ -98,8 +98,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding, boolean validateHeaders) {
         this.method = method;
-        this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
-        this.headers = new DefaultHttpHeaders(validateHeaders);
+        uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
+        headers = new DefaultHttpHeaders(validateHeaders);
     }
 
     protected RequestBuilderBase(Request prototype) {
@@ -107,39 +107,39 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     protected RequestBuilderBase(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
-        this.method = prototype.getMethod();
-        this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
-        this.uri = prototype.getUri();
-        this.address = prototype.getAddress();
-        this.localAddress = prototype.getLocalAddress();
-        this.headers = new DefaultHttpHeaders(validateHeaders);
-        this.headers.add(prototype.getHeaders());
+        method = prototype.getMethod();
+        uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
+        uri = prototype.getUri();
+        address = prototype.getAddress();
+        localAddress = prototype.getLocalAddress();
+        headers = new DefaultHttpHeaders(validateHeaders);
+        headers.add(prototype.getHeaders());
         if (isNonEmpty(prototype.getCookies())) {
-            this.cookies = new ArrayList<>(prototype.getCookies());
+            cookies = new ArrayList<>(prototype.getCookies());
         }
-        this.byteData = prototype.getByteData();
-        this.compositeByteData = prototype.getCompositeByteData();
-        this.stringData = prototype.getStringData();
-        this.byteBufferData = prototype.getByteBufferData();
-        this.streamData = prototype.getStreamData();
-        this.bodyGenerator = prototype.getBodyGenerator();
+        byteData = prototype.getByteData();
+        compositeByteData = prototype.getCompositeByteData();
+        stringData = prototype.getStringData();
+        byteBufferData = prototype.getByteBufferData();
+        streamData = prototype.getStreamData();
+        bodyGenerator = prototype.getBodyGenerator();
         if (isNonEmpty(prototype.getFormParams())) {
-            this.formParams = new ArrayList<>(prototype.getFormParams());
+            formParams = new ArrayList<>(prototype.getFormParams());
         }
         if (isNonEmpty(prototype.getBodyParts())) {
-            this.bodyParts = new ArrayList<>(prototype.getBodyParts());
+            bodyParts = new ArrayList<>(prototype.getBodyParts());
         }
-        this.virtualHost = prototype.getVirtualHost();
-        this.proxyServer = prototype.getProxyServer();
-        this.realm = prototype.getRealm();
-        this.file = prototype.getFile();
-        this.followRedirect = prototype.getFollowRedirect();
-        this.requestTimeout = prototype.getRequestTimeout();
-        this.readTimeout = prototype.getReadTimeout();
-        this.rangeOffset = prototype.getRangeOffset();
-        this.charset = prototype.getCharset();
-        this.channelPoolPartitioning = prototype.getChannelPoolPartitioning();
-        this.nameResolver = prototype.getNameResolver();
+        virtualHost = prototype.getVirtualHost();
+        proxyServer = prototype.getProxyServer();
+        realm = prototype.getRealm();
+        file = prototype.getFile();
+        followRedirect = prototype.getFollowRedirect();
+        requestTimeout = prototype.getRequestTimeout();
+        readTimeout = prototype.getReadTimeout();
+        rangeOffset = prototype.getRangeOffset();
+        charset = prototype.getCharset();
+        channelPoolPartitioning = prototype.getChannelPoolPartitioning();
+        nameResolver = prototype.getNameResolver();
     }
 
     @SuppressWarnings("unchecked")
@@ -162,7 +162,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setLocalAddress(InetAddress address) {
-        this.localAddress = address;
+        localAddress = address;
         return asDerivedType();
     }
 
@@ -177,7 +177,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @return {@code this}
      */
     public T clearHeaders() {
-        this.headers.clear();
+        headers.clear();
         return asDerivedType();
     }
 
@@ -199,7 +199,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @return {@code this}
      */
     public T setHeader(CharSequence name, Object value) {
-        this.headers.set(name, value);
+        headers.set(name, value);
         return asDerivedType();
     }
 
@@ -211,7 +211,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @return {@code this}
      */
     public T setHeader(CharSequence name, Iterable<?> values) {
-        this.headers.set(name, values);
+        headers.set(name, values);
         return asDerivedType();
     }
 
@@ -239,7 +239,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             value = "";
         }
 
-        this.headers.add(name, value);
+        headers.add(name, value);
         return asDerivedType();
     }
 
@@ -252,15 +252,16 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @return {@code}
      */
     public T addHeader(CharSequence name, Iterable<?> values) {
-        this.headers.add(name, values);
+        headers.add(name, values);
         return asDerivedType();
     }
 
     public T setHeaders(HttpHeaders headers) {
-        if (headers == null)
+        if (headers == null) {
             this.headers.clear();
-        else
+        } else {
             this.headers = headers;
+        }
         return asDerivedType();
     }
 
@@ -295,8 +296,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private void lazyInitCookies() {
-        if (this.cookies == null)
-            this.cookies = new ArrayList<>(3);
+        if (cookies == null) {
+            cookies = new ArrayList<>(3);
+        }
     }
 
     public T setCookies(Collection<Cookie> cookies) {
@@ -306,7 +308,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T addCookie(Cookie cookie) {
         lazyInitCookies();
-        this.cookies.add(cookie);
+        cookies.add(cookie);
         return asDerivedType();
     }
 
@@ -321,7 +323,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         boolean replace = false;
         int index = 0;
         lazyInitCookies();
-        for (Cookie c : this.cookies) {
+        for (Cookie c : cookies) {
             if (c.name().equals(cookieKey)) {
                 replace = true;
                 break;
@@ -329,39 +331,42 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             index++;
         }
-        if (replace)
-            this.cookies.set(index, cookie);
-        else
-            this.cookies.add(cookie);
+        if (replace) {
+            cookies.set(index, cookie);
+        } else {
+            cookies.add(cookie);
+        }
         return asDerivedType();
     }
 
     public void resetCookies() {
-        if (this.cookies != null)
-            this.cookies.clear();
+        if (cookies != null) {
+            cookies.clear();
+        }
     }
 
     public void resetQuery() {
         queryParams = null;
-        if (this.uri != null)
-            this.uri = this.uri.withNewQuery(null);
+        if (uri != null) {
+            uri = uri.withNewQuery(null);
+        }
     }
 
     public void resetFormParams() {
-        this.formParams = null;
+        formParams = null;
     }
 
     public void resetNonMultipartData() {
-        this.byteData = null;
-        this.compositeByteData = null;
-        this.byteBufferData = null;
-        this.stringData = null;
-        this.streamData = null;
-        this.bodyGenerator = null;
+        byteData = null;
+        compositeByteData = null;
+        byteBufferData = null;
+        stringData = null;
+        streamData = null;
+        bodyGenerator = null;
     }
 
     public void resetMultipartData() {
-        this.bodyParts = null;
+        bodyParts = null;
     }
 
     public T setBody(File file) {
@@ -377,31 +382,31 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setBody(byte[] data) {
         resetBody();
-        this.byteData = data;
+        byteData = data;
         return asDerivedType();
     }
 
     public T setBody(List<byte[]> data) {
         resetBody();
-        this.compositeByteData = data;
+        compositeByteData = data;
         return asDerivedType();
     }
 
     public T setBody(String data) {
         resetBody();
-        this.stringData = data;
+        stringData = data;
         return asDerivedType();
     }
 
     public T setBody(ByteBuffer data) {
         resetBody();
-        this.byteBufferData = data;
+        byteBufferData = data;
         return asDerivedType();
     }
 
     public T setBody(InputStream stream) {
         resetBody();
-        this.streamData = stream;
+        streamData = stream;
         return asDerivedType();
     }
 
@@ -419,17 +424,19 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T addQueryParam(String name, String value) {
-        if (queryParams == null)
+        if (queryParams == null) {
             queryParams = new ArrayList<>(1);
+        }
         queryParams.add(new Param(name, value));
         return asDerivedType();
     }
 
     public T addQueryParams(List<Param> params) {
-        if (queryParams == null)
+        if (queryParams == null) {
             queryParams = params;
-        else
+        } else {
             queryParams.addAll(params);
+        }
         return asDerivedType();
     }
 
@@ -439,8 +446,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     public T setQueryParams(List<Param> params) {
         // reset existing query
-        if (this.uri != null && isNonEmpty(this.uri.getQuery()))
-            this.uri = this.uri.withNewQuery(null);
+        if (uri != null && isNonEmpty(uri.getQuery())) {
+            uri = uri.withNewQuery(null);
+        }
         queryParams = params;
         return asDerivedType();
     }
@@ -448,9 +456,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T addFormParam(String name, String value) {
         resetNonMultipartData();
         resetMultipartData();
-        if (this.formParams == null)
-            this.formParams = new ArrayList<>(1);
-        this.formParams.add(new Param(name, value));
+        if (formParams == null) {
+            formParams = new ArrayList<>(1);
+        }
+        formParams.add(new Param(name, value));
         return asDerivedType();
     }
 
@@ -461,16 +470,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setFormParams(List<Param> params) {
         resetNonMultipartData();
         resetMultipartData();
-        this.formParams = params;
+        formParams = params;
         return asDerivedType();
     }
 
     public T addBodyPart(Part bodyPart) {
         resetFormParams();
         resetNonMultipartData();
-        if (this.bodyParts == null)
-            this.bodyParts = new ArrayList<>();
-        this.bodyParts.add(bodyPart);
+        if (bodyParts == null) {
+            bodyParts = new ArrayList<>();
+        }
+        bodyParts.add(bodyPart);
         return asDerivedType();
     }
 
@@ -485,7 +495,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     public T setProxyServer(ProxyServer.Builder proxyServerBuilder) {
-        this.proxyServer = proxyServerBuilder.build();
+        proxyServer = proxyServerBuilder.build();
         return asDerivedType();
     }
 
@@ -545,46 +555,51 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     private RequestBuilderBase<?> executeSignatureCalculator() {
-        if (signatureCalculator == null)
+        if (signatureCalculator == null) {
             return this;
+        }
 
         // build a first version of the request, without signatureCalculator in play
-        RequestBuilder rb = new RequestBuilder(this.method);
+        RequestBuilder rb = new RequestBuilder(method);
         // make copy of mutable collections so we don't risk affecting
         // original RequestBuilder
         // call setFormParams first as it resets other fields
-        if (this.formParams != null)
-            rb.setFormParams(this.formParams);
-        if (this.headers != null)
-            rb.headers.add(this.headers);
-        if (this.cookies != null)
-            rb.setCookies(this.cookies);
-        if (this.bodyParts != null)
-            rb.setBodyParts(this.bodyParts);
+        if (formParams != null) {
+            rb.setFormParams(formParams);
+        }
+        if (headers != null) {
+            rb.headers.add(headers);
+        }
+        if (cookies != null) {
+            rb.setCookies(cookies);
+        }
+        if (bodyParts != null) {
+            rb.setBodyParts(bodyParts);
+        }
 
         // copy all other fields
         // but rb.signatureCalculator, that's the whole point here
-        rb.uriEncoder = this.uriEncoder;
-        rb.queryParams = this.queryParams;
-        rb.uri = this.uri;
-        rb.address = this.address;
-        rb.localAddress = this.localAddress;
-        rb.byteData = this.byteData;
-        rb.compositeByteData = this.compositeByteData;
-        rb.stringData = this.stringData;
-        rb.byteBufferData = this.byteBufferData;
-        rb.streamData = this.streamData;
-        rb.bodyGenerator = this.bodyGenerator;
-        rb.virtualHost = this.virtualHost;
-        rb.proxyServer = this.proxyServer;
-        rb.realm = this.realm;
-        rb.file = this.file;
-        rb.followRedirect = this.followRedirect;
-        rb.requestTimeout = this.requestTimeout;
-        rb.rangeOffset = this.rangeOffset;
-        rb.charset = this.charset;
-        rb.channelPoolPartitioning = this.channelPoolPartitioning;
-        rb.nameResolver = this.nameResolver;
+        rb.uriEncoder = uriEncoder;
+        rb.queryParams = queryParams;
+        rb.uri = uri;
+        rb.address = address;
+        rb.localAddress = localAddress;
+        rb.byteData = byteData;
+        rb.compositeByteData = compositeByteData;
+        rb.stringData = stringData;
+        rb.byteBufferData = byteBufferData;
+        rb.streamData = streamData;
+        rb.bodyGenerator = bodyGenerator;
+        rb.virtualHost = virtualHost;
+        rb.proxyServer = proxyServer;
+        rb.realm = realm;
+        rb.file = file;
+        rb.followRedirect = followRedirect;
+        rb.requestTimeout = requestTimeout;
+        rb.rangeOffset = rangeOffset;
+        rb.charset = charset;
+        rb.channelPoolPartitioning = channelPoolPartitioning;
+        rb.nameResolver = nameResolver;
         Request unsignedRequest = rb.build();
         signatureCalculator.calculateAndAddSignature(unsignedRequest, rb);
         return rb;
@@ -602,7 +617,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private Uri computeUri() {
 
-        Uri tempUri = this.uri;
+        Uri tempUri = uri;
         if (tempUri == null) {
             LOGGER.debug("setUrl hasn't been invoked. Using {}", DEFAULT_REQUEST_URL);
             tempUri = DEFAULT_REQUEST_URL;

@@ -14,32 +14,38 @@
 package org.asynchttpclient.netty.ws;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.util.Utf8ByteBufCharsetDecoder;
 import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 
 public final class NettyWebSocket implements WebSocket {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyWebSocket.class);
 
-    protected final Channel channel;
+    private final Channel channel;
     private final HttpHeaders upgradeHeaders;
     private final Collection<WebSocketListener> listeners;
     private FragmentedFrameType expectedFragmentedFrameType;
@@ -254,11 +260,11 @@ public final class NettyWebSocket implements WebSocket {
 
     public void onClose(int code, String reason) {
         try {
-            for (WebSocketListener l : listeners) {
+            for (WebSocketListener listener : listeners) {
                 try {
-                    l.onClose(this, code, reason);
+                    listener.onClose(this, code, reason);
                 } catch (Throwable t) {
-                    l.onError(t);
+                    listener.onError(t);
                 }
             }
             listeners.clear();
@@ -280,7 +286,7 @@ public final class NettyWebSocket implements WebSocket {
     }
 
     private void onBinaryFrame0(WebSocketFrame frame) {
-        byte[] bytes = byteBuf2Bytes(frame.content());
+        byte[] bytes = ByteBufUtil.getBytes(frame.content());
         for (WebSocketListener listener : listeners) {
             listener.onBinaryFrame(bytes, frame.isFinalFragment(), frame.rsv());
         }
@@ -294,12 +300,8 @@ public final class NettyWebSocket implements WebSocket {
     }
 
     private void onTextFrame0(WebSocketFrame frame) {
-        // faster than frame.text();
-        String text = Utf8ByteBufCharsetDecoder.decodeUtf8(frame.content());
-        frame.isFinalFragment();
-        frame.rsv();
         for (WebSocketListener listener : listeners) {
-            listener.onTextFrame(text, frame.isFinalFragment(), frame.rsv());
+            listener.onTextFrame(frame.content().toString(StandardCharsets.UTF_8), frame.isFinalFragment(), frame.rsv());
         }
     }
 
@@ -327,14 +329,14 @@ public final class NettyWebSocket implements WebSocket {
     }
 
     private void onPingFrame(PingWebSocketFrame frame) {
-        byte[] bytes = byteBuf2Bytes(frame.content());
+        byte[] bytes = ByteBufUtil.getBytes(frame.content());
         for (WebSocketListener listener : listeners) {
             listener.onPingFrame(bytes);
         }
     }
 
     private void onPongFrame(PongWebSocketFrame frame) {
-        byte[] bytes = byteBuf2Bytes(frame.content());
+        byte[] bytes = ByteBufUtil.getBytes(frame.content());
         for (WebSocketListener listener : listeners) {
             listener.onPongFrame(bytes);
         }

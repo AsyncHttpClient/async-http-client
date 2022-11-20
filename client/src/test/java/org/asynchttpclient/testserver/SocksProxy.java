@@ -22,7 +22,7 @@ import java.util.Set;
 
 public class SocksProxy {
 
-    private static ArrayList<SocksClient> clients = new ArrayList<>();
+    private static final ArrayList<SocksClient> clients = new ArrayList<>();
 
     public SocksProxy(int runningTime) throws IOException {
         ServerSocketChannel socks = ServerSocketChannel.open();

@@ -271,7 +271,7 @@ public class Realm {
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
         private Charset charset = UTF_8;
         private String ntlmHost = "localhost";
-        private boolean useAbsoluteURI = false;
+        private boolean useAbsoluteURI;
         private boolean omitQuery;
         /**
          * Kerberos/Spnego properties
@@ -282,8 +282,8 @@ public class Realm {
         private String loginContextName;
 
         public Builder() {
-            this.principal = null;
-            this.password = null;
+            principal = null;
+            password = null;
         }
 
         public Builder(String principal, String password) {
@@ -297,7 +297,7 @@ public class Realm {
         }
 
         public Builder setNtlmHost(String host) {
-            this.ntlmHost = host;
+            ntlmHost = host;
             return this;
         }
 
@@ -354,7 +354,7 @@ public class Realm {
         }
 
         public Builder setUsePreemptiveAuth(boolean usePreemptiveAuth) {
-            this.usePreemptive = usePreemptiveAuth;
+            usePreemptive = usePreemptiveAuth;
             return this;
         }
 
@@ -393,7 +393,7 @@ public class Realm {
             return this;
         }
 
-        private String parseRawQop(String rawQop) {
+        private static String parseRawQop(String rawQop) {
             String[] rawServerSupportedQops = rawQop.split(",");
             String[] serverSupportedQops = new String[rawServerSupportedQops.length];
             for (int i = 0; i < rawServerSupportedQops.length; i++) {
@@ -402,13 +402,15 @@ public class Realm {
 
             // prefer auth over auth-int
             for (String rawServerSupportedQop : serverSupportedQops) {
-                if (rawServerSupportedQop.equals("auth"))
+                if ("auth".equals(rawServerSupportedQop)) {
                     return rawServerSupportedQop;
+                }
             }
 
             for (String rawServerSupportedQop : serverSupportedQops) {
-                if (rawServerSupportedQop.equals("auth-int"))
+                if ("auth-int".equals(rawServerSupportedQop)) {
                     return rawServerSupportedQop;
+                }
             }
 
             return null;
@@ -458,18 +460,19 @@ public class Realm {
         /**
          * TODO: A Pattern/Matcher may be better.
          */
-        private String match(String headerLine, String token) {
+        private static String match(String headerLine, String token) {
             if (headerLine == null) {
                 return null;
             }
 
             int match = headerLine.indexOf(token);
-            if (match <= 0)
+            if (match <= 0) {
                 return null;
+            }
 
             // = to skip
             match += token.length() + 1;
-            int trailingComa = headerLine.indexOf(",", match);
+            int trailingComa = headerLine.indexOf(',', match);
             String value = headerLine.substring(match, trailingComa > 0 ? trailingComa : headerLine.length());
             value = value.length() > 0 && value.charAt(value.length() - 1) == '"'
                     ? value.substring(0, value.length() - 1)
@@ -477,7 +480,7 @@ public class Realm {
             return value.charAt(0) == '"' ? value.substring(1) : value;
         }
 
-        private byte[] md5FromRecycledStringBuilder(StringBuilder sb, MessageDigest md) {
+        private static byte[] md5FromRecycledStringBuilder(StringBuilder sb, MessageDigest md) {
             md.update(StringUtils.charSequence2ByteBuffer(sb, ISO_8859_1));
             sb.setLength(0);
             return md.digest();
@@ -492,10 +495,11 @@ public class Realm {
             sb.append(principal).append(':').append(realmName).append(':').append(password);
             byte[] core = md5FromRecycledStringBuilder(sb, md);
 
-            if (algorithm == null || algorithm.equals("MD5")) {
+            if (algorithm == null || "MD5".equals(algorithm)) {
                 // A1 = username ":" realm-value ":" passwd
                 return core;
-            } else if ("MD5-sess".equals(algorithm)) {
+            }
+            if ("MD5-sess".equals(algorithm)) {
                 // A1 = MD5(username ":" realm-value ":" passwd ) ":" nonce ":" cnonce
                 appendBase16(sb, core);
                 sb.append(':').append(nonce).append(':').append(cnonce);
@@ -516,7 +520,7 @@ public class Realm {
                 // we would need a new API
                 sb.append(':').append(EMPTY_ENTITY_MD5);
 
-            } else if (qop != null && !qop.equals("auth")) {
+            } else if (qop != null && !"auth".equals(qop)) {
                 throw new UnsupportedOperationException("Digest qop not supported: " + qop);
             }
 

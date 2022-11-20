@@ -14,7 +14,11 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
@@ -50,13 +54,7 @@ public class Unauthorized401Interceptor {
         this.requestSender = requestSender;
     }
 
-    public boolean exitAfterHandling401(final Channel channel,
-                                        final NettyResponseFuture<?> future,
-                                        HttpResponse response,
-                                        final Request request,
-                                        Realm realm,
-                                        HttpRequest httpRequest) {
-
+    public boolean exitAfterHandling401(Channel channel, NettyResponseFuture<?> future, HttpResponse response, Request request, Realm realm, HttpRequest httpRequest) {
         if (realm == null) {
             LOGGER.debug("Can't handle 401 as there's no realm");
             return false;
@@ -164,9 +162,7 @@ public class Unauthorized401Interceptor {
         final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
 
         LOGGER.debug("Sending authentication to {}", request.getUri());
-        if (future.isKeepAlive()
-                && !HttpUtil.isTransferEncodingChunked(httpRequest)
-                && !HttpUtil.isTransferEncodingChunked(response)) {
+        if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(httpRequest) && !HttpUtil.isTransferEncodingChunked(response)) {
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
         } else {
@@ -177,12 +173,12 @@ public class Unauthorized401Interceptor {
         return true;
     }
 
-    private void ntlmChallenge(String authenticateHeader,
-                               HttpHeaders requestHeaders,
-                               Realm realm,
-                               NettyResponseFuture<?> future) {
+    private static void ntlmChallenge(String authenticateHeader,
+                                      HttpHeaders requestHeaders,
+                                      Realm realm,
+                                      NettyResponseFuture<?> future) {
 
-        if (authenticateHeader.equals("NTLM")) {
+        if ("NTLM".equals(authenticateHeader)) {
             // server replied bare NTLM => we didn't preemptively sent Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
@@ -192,17 +188,15 @@ public class Unauthorized401Interceptor {
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
-            String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(realm.getPrincipal(), realm.getPassword(), realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
+            String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(realm.getPrincipal(), realm.getPassword(),
+                    realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             requestHeaders.set(AUTHORIZATION, "NTLM " + challengeHeader);
         }
     }
 
-    private void kerberosChallenge(Realm realm,
-                                   Request request,
-                                   HttpHeaders headers) throws SpnegoEngineException {
-
+    private static void kerberosChallenge(Realm realm, Request request, HttpHeaders headers) throws SpnegoEngineException {
         Uri uri = request.getUri();
         String host = withDefault(request.getVirtualHost(), uri.getHost());
         String challengeHeader = SpnegoEngine.instance(realm.getPrincipal(),
@@ -212,6 +206,6 @@ public class Unauthorized401Interceptor {
                 realm.isUseCanonicalHostname(),
                 realm.getCustomLoginConfig(),
                 realm.getLoginContextName()).generateToken(host);
-        headers.set(AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
+        headers.set(AUTHORIZATION, NEGOTIATE + ' ' + challengeHeader);
     }
 }

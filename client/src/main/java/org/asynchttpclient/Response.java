@@ -124,6 +124,7 @@ public interface Response {
      *
      * @return the textual representation
      */
+    @Override
     String toString();
 
     /**
@@ -190,8 +191,9 @@ public interface Response {
          * @param bodyPart a body part (possibly empty, but will be filtered out)
          */
         public void accumulate(HttpResponseBodyPart bodyPart) {
-            if (bodyPart.length() > 0)
+            if (bodyPart.length() > 0) {
                 bodyParts.add(bodyPart);
+            }
         }
 
         /**

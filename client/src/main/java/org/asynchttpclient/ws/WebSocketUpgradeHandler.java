@@ -109,9 +109,9 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
     /**
      * Build a {@link WebSocketUpgradeHandler}
      */
-    public final static class Builder {
+    public static final class Builder {
 
-        private List<WebSocketListener> listeners = new ArrayList<>(1);
+        private final List<WebSocketListener> listeners = new ArrayList<>(1);
 
         /**
          * Add a {@link WebSocketListener} that will be added to the {@link WebSocket}

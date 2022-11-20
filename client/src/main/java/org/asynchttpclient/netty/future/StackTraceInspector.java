@@ -15,13 +15,18 @@ package org.asynchttpclient.netty.future;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
-public class StackTraceInspector {
+public final class StackTraceInspector {
+
+    private StackTraceInspector() {
+        // Prevent outside initialization
+    }
 
     private static boolean exceptionInMethod(Throwable t, String className, String methodName) {
         try {
             for (StackTraceElement element : t.getStackTrace()) {
-                if (element.getClassName().equals(className) && element.getMethodName().equals(methodName))
+                if (element.getClassName().equals(className) && element.getMethodName().equals(methodName)) {
                     return true;
+                }
             }
         } catch (Throwable ignore) {
         }
@@ -30,26 +35,27 @@ public class StackTraceInspector {
 
     private static boolean recoverOnConnectCloseException(Throwable t) {
         return exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
-                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
+                || t.getCause() != null && recoverOnConnectCloseException(t.getCause());
     }
 
     public static boolean recoverOnNettyDisconnectException(Throwable t) {
         return t instanceof ClosedChannelException
                 || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
-                || (t.getCause() != null && recoverOnConnectCloseException(t.getCause()));
+                || t.getCause() != null && recoverOnConnectCloseException(t.getCause());
     }
 
     public static boolean recoverOnReadOrWriteException(Throwable t) {
-
-        if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage()))
+        if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage())) {
             return true;
+        }
 
         try {
             for (StackTraceElement element : t.getStackTrace()) {
                 String className = element.getClassName();
                 String methodName = element.getMethodName();
-                if (className.equals("sun.nio.ch.SocketDispatcher") && (methodName.equals("read") || methodName.equals("write")))
+                if ("sun.nio.ch.SocketDispatcher".equals(className) && ("read".equals(methodName) || "write".equals(methodName))) {
                     return true;
+                }
             }
         } catch (Throwable ignore) {
         }

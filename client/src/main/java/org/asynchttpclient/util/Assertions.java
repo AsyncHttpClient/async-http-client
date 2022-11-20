@@ -19,8 +19,9 @@ public final class Assertions {
     }
 
     public static <T> T assertNotNull(T value, String name) {
-        if (value == null)
+        if (value == null) {
             throw new NullPointerException(name);
+        }
         return value;
 
     }

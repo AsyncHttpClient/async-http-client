@@ -51,15 +51,13 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
     @Override
     public List<Cookie> getAll() {
-        List<Cookie> result = cookieJar
+        return cookieJar
                 .values()
                 .stream()
                 .flatMap(map -> map.values().stream())
                 .filter(pair -> !hasCookieExpired(pair.cookie, pair.createdAt))
                 .map(pair -> pair.cookie)
                 .collect(Collectors.toList());
-
-        return result;
     }
 
     @Override
@@ -110,60 +108,65 @@ public final class ThreadSafeCookieStore implements CookieStore {
         return new HashMap<>(cookieJar);
     }
 
-    private String requestDomain(Uri requestUri) {
+    private static String requestDomain(Uri requestUri) {
         return requestUri.getHost().toLowerCase();
     }
 
-    private String requestPath(Uri requestUri) {
+    private static String requestPath(Uri requestUri) {
         return requestUri.getPath().isEmpty() ? "/" : requestUri.getPath();
     }
 
     // rfc6265#section-5.2.3
     // Let cookie-domain be the attribute-value without the leading %x2E (".") character.
-    private AbstractMap.SimpleEntry<String, Boolean> cookieDomain(String cookieDomain, String requestDomain) {
+    private static AbstractMap.SimpleEntry<String, Boolean> cookieDomain(String cookieDomain, String requestDomain) {
         if (cookieDomain != null) {
             String normalizedCookieDomain = cookieDomain.toLowerCase();
             return new AbstractMap.SimpleEntry<>(
-                    (!cookieDomain.isEmpty() && cookieDomain.charAt(0) == '.') ?
+                    !cookieDomain.isEmpty() && cookieDomain.charAt(0) == '.' ?
                             normalizedCookieDomain.substring(1) :
                             normalizedCookieDomain, false);
-        } else
+        } else {
             return new AbstractMap.SimpleEntry<>(requestDomain, true);
+        }
     }
 
     // rfc6265#section-5.2.4
-    private String cookiePath(String rawCookiePath, String requestPath) {
+    private static String cookiePath(String rawCookiePath, String requestPath) {
         if (MiscUtils.isNonEmpty(rawCookiePath) && rawCookiePath.charAt(0) == '/') {
             return rawCookiePath;
         } else {
             // rfc6265#section-5.1.4
             int indexOfLastSlash = requestPath.lastIndexOf('/');
-            if (!requestPath.isEmpty() && requestPath.charAt(0) == '/' && indexOfLastSlash > 0)
+            if (!requestPath.isEmpty() && requestPath.charAt(0) == '/' && indexOfLastSlash > 0) {
                 return requestPath.substring(0, indexOfLastSlash);
-            else
+            } else {
                 return "/";
+            }
         }
     }
 
-    private boolean hasCookieExpired(Cookie cookie, long whenCreated) {
+    private static boolean hasCookieExpired(Cookie cookie, long whenCreated) {
         // if not specify max-age, this cookie should be discarded when user agent is to be closed, but it is not expired.
-        if (cookie.maxAge() == Cookie.UNDEFINED_MAX_AGE)
+        if (cookie.maxAge() == Cookie.UNDEFINED_MAX_AGE) {
             return false;
+        }
 
-        if (cookie.maxAge() <= 0)
+        if (cookie.maxAge() <= 0) {
             return true;
+        }
 
         if (whenCreated > 0) {
             long deltaSecond = (System.currentTimeMillis() - whenCreated) / 1000;
             return deltaSecond > cookie.maxAge();
-        } else
+        } else {
             return false;
+        }
     }
 
     // rfc6265#section-5.1.4
-    private boolean pathsMatch(String cookiePath, String requestPath) {
+    private static boolean pathsMatch(String cookiePath, String requestPath) {
         return Objects.equals(cookiePath, requestPath) ||
-                (requestPath.startsWith(cookiePath) && (cookiePath.charAt(cookiePath.length() - 1) == '/' || requestPath.charAt(cookiePath.length()) == '/'));
+                requestPath.startsWith(cookiePath) && (cookiePath.charAt(cookiePath.length() - 1) == '/' || requestPath.charAt(cookiePath.length()) == '/');
     }
 
     private void add(String requestDomain, String requestPath, Cookie cookie) {
@@ -173,9 +176,9 @@ public final class ThreadSafeCookieStore implements CookieStore {
         String keyPath = cookiePath(cookie.path(), requestPath);
         CookieKey key = new CookieKey(cookie.name().toLowerCase(), keyPath);
 
-        if (hasCookieExpired(cookie, 0))
+        if (hasCookieExpired(cookie, 0)) {
             cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
-        else {
+        } else {
             final Map<CookieKey, StoredCookie> innerMap = cookieJar.computeIfAbsent(keyDomain, domain -> new ConcurrentHashMap<>());
             innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
         }
@@ -241,15 +244,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
         public int compareTo(CookieKey o) {
             Assertions.assertNotNull(o, "Parameter can't be null");
             int result;
-            if ((result = this.name.compareTo(o.name)) == 0)
-                result = this.path.compareTo(o.path);
-
+            if ((result = name.compareTo(o.name)) == 0) {
+                result = path.compareTo(o.path);
+            }
             return result;
         }
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof CookieKey && this.compareTo((CookieKey) obj) == 0;
+            return obj instanceof CookieKey && compareTo((CookieKey) obj) == 0;
         }
 
         @Override

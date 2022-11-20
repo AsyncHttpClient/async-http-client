@@ -107,4 +107,3 @@ public class InfiniteSemaphore extends Semaphore {
         return Collections.emptyList();
     }
 }
-

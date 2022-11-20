@@ -92,21 +92,21 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     public Throwable pendingException;
     // state mutated from outside the event loop
     // TODO check if they are indeed mutated outside the event loop
-    private volatile int isDone = 0;
-    private volatile int isCancelled = 0;
-    private volatile int inAuth = 0;
-    private volatile int inProxyAuth = 0;
+    private volatile int isDone;
+    private volatile int isCancelled;
+    private volatile int inAuth;
+    private volatile int inProxyAuth;
     @SuppressWarnings("unused")
-    private volatile int contentProcessed = 0;
+    private volatile int contentProcessed;
     @SuppressWarnings("unused")
-    private volatile int onThrowableCalled = 0;
+    private volatile int onThrowableCalled;
     @SuppressWarnings("unused")
     private volatile TimeoutsHolder timeoutsHolder;
     // partition key, when != null used to release lock in ChannelManager
     private volatile Object partitionKeyLock;
     // volatile where we need CAS ops
-    private volatile int redirectCount = 0;
-    private volatile int currentRetry = 0;
+    private volatile int redirectCount;
+    private volatile int currentRetry;
     // volatile where we don't need CAS ops
     private volatile long touch = unpreciseMillisTime();
     private volatile ChannelState channelState = ChannelState.NEW;
@@ -134,7 +134,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
                                ProxyServer proxyServer) {
 
         this.asyncHandler = asyncHandler;
-        this.targetRequest = currentRequest = originalRequest;
+        targetRequest = currentRequest = originalRequest;
         this.nettyRequest = nettyRequest;
         this.connectionPoolPartitioning = connectionPoolPartitioning;
         this.connectionSemaphore = connectionSemaphore;
@@ -181,8 +181,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         releasePartitionKeyLock();
         cancelTimeouts();
 
-        if (IS_CANCELLED_FIELD.getAndSet(this, 1) != 0)
+        if (IS_CANCELLED_FIELD.getAndSet(this, 1) != 0) {
             return false;
+        }
 
         // cancel could happen before channel was attached
         if (channel != null) {
@@ -249,15 +250,17 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private boolean terminateAndExit() {
         releasePartitionKeyLock();
         cancelTimeouts();
-        this.channel = null;
-        this.reuseChannel = false;
+        channel = null;
+        reuseChannel = false;
         return IS_DONE_FIELD.getAndSet(this, 1) != 0 || isCancelled != 0;
     }
 
-    public final void done() {
+    @Override
+    public void done() {
 
-        if (terminateAndExit())
+        if (terminateAndExit()) {
             return;
+        }
 
         try {
             loadContent();
@@ -271,10 +274,12 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         }
     }
 
-    public final void abort(final Throwable t) {
+    @Override
+    public void abort(final Throwable t) {
 
-        if (terminateAndExit())
+        if (terminateAndExit()) {
             return;
+        }
 
         future.completeExceptionally(t);
 
@@ -323,7 +328,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         }
     }
 
-    public final Request getTargetRequest() {
+    public Request getTargetRequest() {
         return targetRequest;
     }
 
@@ -331,7 +336,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         this.targetRequest = targetRequest;
     }
 
-    public final Request getCurrentRequest() {
+    public Request getCurrentRequest() {
         return currentRequest;
     }
 
@@ -339,15 +344,15 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         this.currentRequest = currentRequest;
     }
 
-    public final NettyRequest getNettyRequest() {
+    public NettyRequest getNettyRequest() {
         return nettyRequest;
     }
 
-    public final void setNettyRequest(NettyRequest nettyRequest) {
+    public void setNettyRequest(NettyRequest nettyRequest) {
         this.nettyRequest = nettyRequest;
     }
 
-    public final AsyncHandler<V> getAsyncHandler() {
+    public AsyncHandler<V> getAsyncHandler() {
         return asyncHandler;
     }
 
@@ -355,11 +360,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         this.asyncHandler = asyncHandler;
     }
 
-    public final boolean isKeepAlive() {
+    public boolean isKeepAlive() {
         return keepAlive;
     }
 
-    public final void setKeepAlive(final boolean keepAlive) {
+    public void setKeepAlive(final boolean keepAlive) {
         this.keepAlive = keepAlive;
     }
 
@@ -415,7 +420,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void setStreamConsumed(boolean streamConsumed) {
-        this.streamAlreadyConsumed = streamConsumed;
+        streamAlreadyConsumed = streamConsumed;
     }
 
     public long getLastTouch() {
@@ -481,7 +486,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
      * @return true if that {@link Future} cannot be recovered.
      */
     public boolean isReplayPossible() {
-        return !isDone() && !(Channels.isChannelActive(channel) && !getUri().getScheme().equalsIgnoreCase("https"))
+        return !isDone() && !(Channels.isChannelActive(channel) && !"https".equalsIgnoreCase(getUri().getScheme()))
                 && inAuth == 0 && inProxyAuth == 0;
     }
 

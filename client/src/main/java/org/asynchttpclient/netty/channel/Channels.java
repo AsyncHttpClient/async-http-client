@@ -20,12 +20,16 @@ import org.asynchttpclient.netty.DiscardEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Channels {
+public final class Channels {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Channels.class);
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
     private static final AttributeKey<Active> ACTIVE_TOKEN_ATTRIBUTE = AttributeKey.valueOf("activeToken");
+
+    private Channels() {
+        // Prevent outside initialization
+    }
 
     public static Object getAttribute(Channel channel) {
         Attribute<Object> attr = channel.attr(DEFAULT_ATTRIBUTE);
@@ -54,8 +58,9 @@ public class Channels {
 
     public static void silentlyCloseChannel(Channel channel) {
         try {
-            if (channel != null && channel.isActive())
+            if (channel != null && channel.isActive()) {
                 channel.close();
+            }
         } catch (Throwable t) {
             LOGGER.debug("Failed to close channel", t);
         }

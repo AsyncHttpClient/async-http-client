@@ -14,13 +14,11 @@ import java.lang.reflect.Method;
 public class NamePasswordCallbackHandler implements CallbackHandler {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private static final String PASSWORD_CALLBACK_NAME = "setObject";
-    private static final Class<?>[] PASSWORD_CALLBACK_TYPES =
-            new Class<?>[]{Object.class, char[].class, String.class};
+    private static final Class<?>[] PASSWORD_CALLBACK_TYPES = new Class<?>[]{Object.class, char[].class, String.class};
 
-    private String username;
-    private String password;
-
-    private String passwordCallbackName;
+    private final String username;
+    private final String password;
+    private final String passwordCallbackName;
 
     public NamePasswordCallbackHandler(String username, String password) {
         this(username, password, null);
@@ -32,9 +30,9 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
         this.passwordCallbackName = passwordCallbackName;
     }
 
+    @Override
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-        for (int i = 0; i < callbacks.length; i++) {
-            Callback callback = callbacks[i];
+        for (Callback callback : callbacks) {
             if (handleCallback(callback)) {
                 continue;
             } else if (callback instanceof NameCallback) {
@@ -43,9 +41,9 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
                 PasswordCallback pwCallback = (PasswordCallback) callback;
                 pwCallback.setPassword(password.toCharArray());
             } else if (!invokePasswordCallback(callback)) {
-                String errorMsg = "Unsupported callback type " + callbacks[i].getClass().getName();
+                String errorMsg = "Unsupported callback type " + callback.getClass().getName();
                 log.info(errorMsg);
-                throw new UnsupportedCallbackException(callbacks[i], errorMsg);
+                throw new UnsupportedCallbackException(callback, errorMsg);
             }
         }
     }
@@ -62,12 +60,11 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
      * If not, it returns false.
      */
     private boolean invokePasswordCallback(Callback callback) {
-        String cbname = passwordCallbackName == null
-                ? PASSWORD_CALLBACK_NAME : passwordCallbackName;
+        String cbname = passwordCallbackName == null ? PASSWORD_CALLBACK_NAME : passwordCallbackName;
         for (Class<?> arg : PASSWORD_CALLBACK_TYPES) {
             try {
                 Method method = callback.getClass().getMethod(cbname, arg);
-                Object args[] = new Object[]{
+                Object[] args = {
                         arg == String.class ? password : password.toCharArray()
                 };
                 method.invoke(callback, args);

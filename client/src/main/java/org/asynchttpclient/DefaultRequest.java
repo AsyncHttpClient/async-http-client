@@ -61,6 +61,7 @@ public class DefaultRequest implements Request {
     private final Charset charset;
     private final ChannelPoolPartitioning channelPoolPartitioning;
     private final NameResolver<InetAddress> nameResolver;
+
     // lazily loaded
     private List<Param> queryParams;
 
@@ -248,47 +249,50 @@ public class DefaultRequest implements Request {
 
     @Override
     public List<Param> getQueryParams() {
-        if (queryParams == null)
-            // lazy load
+        // lazy load
+        if (queryParams == null) {
             if (isNonEmpty(uri.getQuery())) {
                 queryParams = new ArrayList<>(1);
                 for (String queryStringParam : uri.getQuery().split("&")) {
                     int pos = queryStringParam.indexOf('=');
-                    if (pos <= 0)
+                    if (pos <= 0) {
                         queryParams.add(new Param(queryStringParam, null));
-                    else
+                    } else {
                         queryParams.add(new Param(queryStringParam.substring(0, pos), queryStringParam.substring(pos + 1)));
+                    }
                 }
-            } else
+            } else {
                 queryParams = Collections.emptyList();
+            }
+        }
         return queryParams;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(getUrl());
-
-        sb.append("\t");
+        sb.append('\t');
         sb.append(method);
         sb.append("\theaders:");
+
         if (!headers.isEmpty()) {
             for (Map.Entry<String, String> header : headers) {
-                sb.append("\t");
+                sb.append('\t');
                 sb.append(header.getKey());
-                sb.append(":");
+                sb.append(':');
                 sb.append(header.getValue());
             }
         }
+
         if (isNonEmpty(formParams)) {
             sb.append("\tformParams:");
             for (Param param : formParams) {
-                sb.append("\t");
+                sb.append('\t');
                 sb.append(param.getName());
-                sb.append(":");
+                sb.append(':');
                 sb.append(param.getValue());
             }
         }
-
         return sb.toString();
     }
 }

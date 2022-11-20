@@ -29,14 +29,15 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
     private final long length;
     private FileChannel channel;
-    private long position = 0L;
+    private long position;
 
     public FileMultipartPart(FilePart part, byte[] boundary) {
         super(part, boundary);
         File file = part.getFile();
         if (!file.exists()) {
             throw new IllegalArgumentException("File part doesn't exist: " + file.getAbsolutePath());
-        } else if (!file.canRead()) {
+        }
+        if (!file.canRead()) {
             throw new IllegalArgumentException("File part can't be read: " + file.getAbsolutePath());
         }
         length = file.length();

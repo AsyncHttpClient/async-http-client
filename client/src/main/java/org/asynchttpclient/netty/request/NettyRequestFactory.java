@@ -15,7 +15,13 @@ package org.asynchttpclient.netty.request;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
@@ -29,17 +35,29 @@ import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.request.body.NettyFileBody;
 import org.asynchttpclient.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.netty.request.body.NettyMultipartBody;
-import org.asynchttpclient.netty.request.body.NettyReactiveStreamsBody;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
+import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static io.netty.handler.codec.http.HttpHeaderNames.ORIGIN;
+import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_KEY;
+import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_VERSION;
+import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaderNames.UPGRADE;
+import static io.netty.handler.codec.http.HttpHeaderNames.USER_AGENT;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.ACCEPT_ALL_HEADER_VALUE;
@@ -69,41 +87,27 @@ public final class NettyRequestFactory {
 
         if (request.getByteData() != null) {
             nettyBody = new NettyByteArrayBody(request.getByteData());
-
         } else if (request.getCompositeByteData() != null) {
             nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
-
         } else if (request.getStringData() != null) {
             nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
-
         } else if (request.getByteBufferData() != null) {
             nettyBody = new NettyByteBufferBody(request.getByteBufferData());
-
         } else if (request.getStreamData() != null) {
             nettyBody = new NettyInputStreamBody(request.getStreamData());
-
         } else if (isNonEmpty(request.getFormParams())) {
             CharSequence contentTypeOverride = request.getHeaders().contains(CONTENT_TYPE) ? null : HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
             nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentTypeOverride);
-
         } else if (isNonEmpty(request.getBodyParts())) {
             nettyBody = new NettyMultipartBody(request.getBodyParts(), request.getHeaders(), config);
-
         } else if (request.getFile() != null) {
             nettyBody = new NettyFileBody(request.getFile(), config);
-
         } else if (request.getBodyGenerator() instanceof FileBodyGenerator) {
             FileBodyGenerator fileBodyGenerator = (FileBodyGenerator) request.getBodyGenerator();
             nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
-
         } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
-            InputStreamBodyGenerator inStreamGenerator = InputStreamBodyGenerator.class.cast(request.getBodyGenerator());
+            InputStreamBodyGenerator inStreamGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
             nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength());
-
-        } else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator) {
-            ReactiveStreamsBodyGenerator reactiveStreamsBodyGenerator = (ReactiveStreamsBodyGenerator) request.getBodyGenerator();
-            nettyBody = new NettyReactiveStreamsBody(reactiveStreamsBodyGenerator.getPublisher(), reactiveStreamsBodyGenerator.getContentLength());
-
         } else if (request.getBodyGenerator() != null) {
             nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }
@@ -112,18 +116,19 @@ public final class NettyRequestFactory {
     }
 
     public void addAuthorizationHeader(HttpHeaders headers, String authorizationHeader) {
-        if (authorizationHeader != null)
+        if (authorizationHeader != null) {
             // don't override authorization but append
             headers.add(AUTHORIZATION, authorizationHeader);
+        }
     }
 
     public void setProxyAuthorizationHeader(HttpHeaders headers, String proxyAuthorizationHeader) {
-        if (proxyAuthorizationHeader != null)
+        if (proxyAuthorizationHeader != null) {
             headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
+        }
     }
 
     public NettyRequest newNettyRequest(Request request, boolean performConnectRequest, ProxyServer proxyServer, Realm realm, Realm proxyRealm) {
-
         Uri uri = request.getUri();
         HttpMethod method = performConnectRequest ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
         boolean connect = method == HttpMethod.CONNECT;
@@ -139,11 +144,10 @@ public final class NettyRequestFactory {
             nettyRequest = new NettyRequest(httpRequest, null);
 
         } else if (body instanceof NettyDirectBody) {
-            ByteBuf buf = NettyDirectBody.class.cast(body).byteBuf();
+            ByteBuf buf = ((NettyDirectBody) body).byteBuf();
             HttpRequest httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, buf);
             // body is passed as null as it's written directly with the request
             nettyRequest = new NettyRequest(httpRequest, null);
-
         } else {
             HttpRequest httpRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
             nettyRequest = new NettyRequest(httpRequest, body);
@@ -233,7 +237,7 @@ public final class NettyRequestFactory {
         return nettyRequest;
     }
 
-    private String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
+    private static String requestUri(Uri uri, ProxyServer proxyServer, boolean connect) {
         if (connect) {
             // proxy tunnelling, connect need host and explicit port
             return uri.getAuthority();
@@ -248,7 +252,7 @@ public final class NettyRequestFactory {
         }
     }
 
-    private CharSequence connectionHeader(boolean keepAlive, HttpVersion httpVersion) {
+    private static CharSequence connectionHeader(boolean keepAlive, HttpVersion httpVersion) {
         if (httpVersion.isKeepAliveDefault()) {
             return keepAlive ? null : HttpHeaderValues.CLOSE;
         } else {

@@ -13,6 +13,10 @@
 package org.asynchttpclient.netty;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -26,10 +30,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +46,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 //FIXME there's no retry actually
 public class RetryNonBlockingIssueTest extends AbstractBasicTest {
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 
@@ -60,7 +61,8 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 

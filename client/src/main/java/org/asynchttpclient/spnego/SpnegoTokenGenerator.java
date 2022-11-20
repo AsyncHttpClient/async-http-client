@@ -48,6 +48,7 @@ import java.io.IOException;
  *
  * @since 4.1
  */
+@FunctionalInterface
 public interface SpnegoTokenGenerator {
 
     byte[] generateSpnegoDERObject(byte[] kerberosTicket) throws IOException;

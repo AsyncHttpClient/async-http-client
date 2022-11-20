@@ -29,18 +29,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ByteArrayBodyGeneratorTest {
 
     private final Random random = new Random();
-    private final int chunkSize = 1024 * 8;
+    private static final int CHUNK_SIZE = 1024 * 8;
 
     @Test
     public void testSingleRead() throws IOException {
-        final int srcArraySize = chunkSize - 1;
+        final int srcArraySize = CHUNK_SIZE - 1;
         final byte[] srcArray = new byte[srcArraySize];
         random.nextBytes(srcArray);
 
         final ByteArrayBodyGenerator babGen = new ByteArrayBodyGenerator(srcArray);
         final Body body = babGen.createBody();
 
-        final ByteBuf chunkBuffer = Unpooled.buffer(chunkSize);
+        final ByteBuf chunkBuffer = Unpooled.buffer(CHUNK_SIZE);
 
         try {
             // should take 1 read to get through the srcArray
@@ -56,14 +56,14 @@ public class ByteArrayBodyGeneratorTest {
 
     @Test
     public void testMultipleReads() throws IOException {
-        final int srcArraySize = 3 * chunkSize + 42;
+        final int srcArraySize = 3 * CHUNK_SIZE + 42;
         final byte[] srcArray = new byte[srcArraySize];
         random.nextBytes(srcArray);
 
         final ByteArrayBodyGenerator babGen = new ByteArrayBodyGenerator(srcArray);
         final Body body = babGen.createBody();
 
-        final ByteBuf chunkBuffer = Unpooled.buffer(chunkSize);
+        final ByteBuf chunkBuffer = Unpooled.buffer(CHUNK_SIZE);
 
         try {
             int reads = 0;

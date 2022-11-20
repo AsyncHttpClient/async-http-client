@@ -15,7 +15,13 @@
  */
 package org.asynchttpclient.proxy;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
+import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
@@ -24,12 +30,8 @@ import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.asynchttpclient.testserver.SocksProxy;
 import org.asynchttpclient.util.ProxyUtils;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -45,11 +47,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,8 +66,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ProxyTest extends AbstractBasicTest {
 
-
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new ProxyHandler();
     }
 
@@ -78,32 +83,35 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    // @Test
-    // public void asyncDoPostProxyTest() throws Throwable {
-    // try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port2).build()))) {
-    // HttpHeaders h = new DefaultHttpHeaders();
-    // h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
-    // StringBuilder sb = new StringBuilder();
-    // for (int i = 0; i < 5; i++) {
-    // sb.append("param_").append(i).append("=value_").append(i).append("&");
-    // }
-    // sb.setLength(sb.length() - 1);
-    //
-    // Response response = client.preparePost(getTargetUrl()).setHeaders(h).setBody(sb.toString()).execute(new AsyncCompletionHandler<Response>() {
-    // @Override
-    // public Response onCompleted(Response response) throws Throwable {
-    // return response;
-    // }
-    //
-    // @Override
-    // public void onThrowable(Throwable t) {
-    // }
-    // }).get();
-    //
-    // assertEquals(response.getStatusCode(), 200);
-    // assertEquals(response.getHeader("X-" + CONTENT_TYPE), APPLICATION_X_WWW_FORM_URLENCODED);
-    // }
-    // }
+    @Test
+    public void asyncDoPostProxyTest() throws Throwable {
+        try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port2).build()))) {
+            HttpHeaders h = new DefaultHttpHeaders();
+            h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 5; i++) {
+                sb.append("param_").append(i).append("=value_").append(i).append('&');
+            }
+            sb.setLength(sb.length() - 1);
+
+            Response response = client.preparePost(getTargetUrl())
+                    .setHeaders(h)
+                    .setBody(sb.toString())
+                    .execute(new AsyncCompletionHandler<Response>() {
+                        @Override
+                        public Response onCompleted(Response response) {
+                            return response;
+                        }
+
+                        @Override
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get();
+
+            assertEquals(200, response.getStatusCode());
+            assertEquals(APPLICATION_X_WWW_FORM_URLENCODED.toString(), response.getHeader("X-" + CONTENT_TYPE));
+        }
+    }
 
     @Test
     public void testGlobalProxy() throws Exception {
@@ -153,7 +161,9 @@ public class ProxyTest extends AbstractBasicTest {
         ProxyServer requestProxy = proxyServer("localhost", port1).setNonProxyHost("localhost").build();
 
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(configProxy))) {
-            assertThrows(ConnectException.class, () -> client.prepareGet("http://localhost:1234/").setProxyServer(requestProxy).execute().get());
+            client.prepareGet("http://localhost:1234/").setProxyServer(requestProxy).execute().get();
+        } catch (Exception ex) {
+            assertInstanceOf(ConnectException.class, ex.getCause());
         }
     }
 
@@ -179,7 +189,6 @@ public class ProxyTest extends AbstractBasicTest {
         testUseProxySelector();
     }
 
-    @Disabled
     @Test
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
@@ -207,7 +216,6 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void testIgnoreProxyPropertiesByDefault() throws IOException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
@@ -227,7 +235,6 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
@@ -255,7 +262,6 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void testWildcardNonProxyHosts() throws IOException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
@@ -275,7 +281,6 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         ProxySelector originalProxySelector = ProxySelector.getDefault();
@@ -339,9 +344,10 @@ public class ProxyTest extends AbstractBasicTest {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.addHeader("target", r.getHttpURI().getPath());
                 response.setStatus(HttpServletResponse.SC_OK);
+            } else if ("POST".equalsIgnoreCase(request.getMethod())) {
+                response.addHeader("X-" + CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED.toString());
             } else {
-                // this handler is to handle POST request
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             }
             r.setHandled(true);
         }

@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
+import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.KeepAliveStrategy;
@@ -32,6 +33,7 @@ import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
@@ -142,10 +144,10 @@ public interface AsyncHttpClientConfig {
     boolean isCompressionEnforced();
 
     /**
-     * Return the {@link java.util.concurrent.ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response.
+     * Return the {@link ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response.
      *
-     * @return the {@link java.util.concurrent.ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response. If no {@link ThreadFactory} has been explicitly
-     * provided, this method will return <code>null</code>
+     * @return the {@link ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response. If no {@link ThreadFactory} has been explicitly
+     * provided, this method will return {@code null}
      */
     ThreadFactory getThreadFactory();
 
@@ -185,9 +187,9 @@ public interface AsyncHttpClientConfig {
     List<ResponseFilter> getResponseFilters();
 
     /**
-     * Return the list of {@link java.io.IOException}
+     * Return the list of {@link IOException}
      *
-     * @return Unmodifiable list of {@link java.io.IOException}
+     * @return Unmodifiable list of {@link IOException}
      */
     List<IOExceptionFilter> getIoExceptionFilters();
 
@@ -206,9 +208,9 @@ public interface AsyncHttpClientConfig {
     int expiredCookieEvictionDelay();
 
     /**
-     * Return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     * Return the number of time the library will retry when an {@link IOException} is throw by the remote server
      *
-     * @return the number of time the library will retry when an {@link java.io.IOException} is throw by the remote server
+     * @return the number of time the library will retry when an {@link IOException} is throw by the remote server
      */
     int getMaxRequestRetry();
 
@@ -226,7 +228,7 @@ public interface AsyncHttpClientConfig {
      * In the case of a POST/Redirect/Get scenario where the server uses a 302 for the redirect, should AHC respond to the redirect with a GET or whatever the original method was.
      * Unless configured otherwise, for a 302, AHC, will use a GET for this case.
      *
-     * @return <code>true</code> if strict 302 handling is to be used, otherwise <code>false</code>.
+     * @return <code>true</code> if strict 302 handling is to be used, otherwise {@code false}.
      */
     boolean isStrict302Handling();
 
@@ -314,12 +316,12 @@ public interface AsyncHttpClientConfig {
     Timer getNettyTimer();
 
     /**
-     * @return the duration between tick of {@link io.netty.util.HashedWheelTimer}
+     * @return the duration between tick of {@link HashedWheelTimer}
      */
     long getHashedWheelTimerTickDuration();
 
     /**
-     * @return the size of the hashed wheel {@link io.netty.util.HashedWheelTimer}
+     * @return the size of the hashed wheel {@link HashedWheelTimer}
      */
     int getHashedWheelTimerSize();
 

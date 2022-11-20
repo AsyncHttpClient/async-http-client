@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 public final class HttpConstants {
 
     private HttpConstants() {
+        // Prevent outside initialization
     }
 
     public static final class Methods {
@@ -33,6 +34,7 @@ public final class HttpConstants {
         public static final String TRACE = HttpMethod.TRACE.name();
 
         private Methods() {
+            // Prevent outside initialization
         }
     }
 
@@ -49,6 +51,7 @@ public final class HttpConstants {
         public static final int PROXY_AUTHENTICATION_REQUIRED_407 = HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED.code();
 
         private ResponseStatusCodes() {
+            // Prevent outside initialization
         }
     }
 }

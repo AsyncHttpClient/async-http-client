@@ -36,7 +36,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.Methods.HEAD;
 import static org.asynchttpclient.util.HttpConstants.Methods.OPTIONS;
@@ -71,16 +76,12 @@ public class Redirect30xInterceptor {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
-        maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()), Redirect30xInterceptor.class,
-                "exitAfterHandlingRedirect");
+        maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()),
+                Redirect30xInterceptor.class, "exitAfterHandlingRedirect");
     }
 
-    public boolean exitAfterHandlingRedirect(Channel channel,
-                                             NettyResponseFuture<?> future,
-                                             HttpResponse response,
-                                             Request request,
-                                             int statusCode,
-                                             Realm realm) throws Exception {
+    public boolean exitAfterHandlingRedirect(Channel channel, NettyResponseFuture<?> future, HttpResponse response, Request request,
+                                             int statusCode, Realm realm) throws Exception {
 
         if (followRedirect(config, request)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
@@ -92,9 +93,11 @@ public class Redirect30xInterceptor {
                 future.setInProxyAuth(false);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals(GET)
-                        && !originalMethod.equals(OPTIONS) && !originalMethod.equals(HEAD) && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
-                boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
+                boolean switchToGet = !originalMethod.equals(GET) &&
+                        !originalMethod.equals(OPTIONS) &&
+                        !originalMethod.equals(HEAD) &&
+                        (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || statusCode == FOUND_302 && !config.isStrict302Handling());
+                boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || statusCode == FOUND_302 && config.isStrict302Handling();
 
                 final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
                         .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
@@ -107,17 +110,17 @@ public class Redirect30xInterceptor {
 
                 if (keepBody) {
                     requestBuilder.setCharset(request.getCharset());
-                    if (isNonEmpty(request.getFormParams()))
+                    if (isNonEmpty(request.getFormParams())) {
                         requestBuilder.setFormParams(request.getFormParams());
-                    else if (request.getStringData() != null)
+                    } else if (request.getStringData() != null) {
                         requestBuilder.setBody(request.getStringData());
-                    else if (request.getByteData() != null)
+                    } else if (request.getByteData() != null) {
                         requestBuilder.setBody(request.getByteData());
-                    else if (request.getByteBufferData() != null)
+                    } else if (request.getByteBufferData() != null) {
                         requestBuilder.setBody(request.getByteBufferData());
-                    else if (request.getBodyGenerator() != null)
+                    } else if (request.getBodyGenerator() != null) {
                         requestBuilder.setBody(request.getBodyGenerator());
-                    else if (isNonEmpty(request.getBodyParts())) {
+                    } else if (isNonEmpty(request.getBodyParts())) {
                         requestBuilder.setBodyParts(request.getBodyParts());
                     }
                 }
@@ -138,13 +141,14 @@ public class Redirect30xInterceptor {
                 if (cookieStore != null) {
                     // Update request's cookies assuming that cookie store is already updated by Interceptors
                     List<Cookie> cookies = cookieStore.get(newUri);
-                    if (!cookies.isEmpty())
-                        for (Cookie cookie : cookies)
+                    if (!cookies.isEmpty()) {
+                        for (Cookie cookie : cookies) {
                             requestBuilder.addOrReplaceCookie(cookie);
+                        }
+                    }
                 }
 
                 boolean sameBase = request.getUri().isSameBase(newUri);
-
                 if (sameBase) {
                     // we can only assume the virtual host is still valid if the baseUrl is the same
                     requestBuilder.setVirtualHost(request.getVirtualHost());
@@ -177,8 +181,7 @@ public class Redirect30xInterceptor {
         return false;
     }
 
-    private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
-
+    private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
         HttpHeaders headers = request.getHeaders()
                 .remove(HOST)
                 .remove(CONTENT_LENGTH);

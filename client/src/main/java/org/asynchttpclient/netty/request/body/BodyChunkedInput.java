@@ -32,15 +32,16 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     private final int chunkSize;
     private final long contentLength;
     private boolean endOfInput;
-    private long progress = 0L;
+    private long progress;
 
     BodyChunkedInput(Body body) {
         this.body = assertNotNull(body, "body");
-        this.contentLength = body.getContentLength();
-        if (contentLength <= 0)
+        contentLength = body.getContentLength();
+        if (contentLength <= 0) {
             chunkSize = DEFAULT_CHUNK_SIZE;
-        else
-            chunkSize = (int) Math.min(contentLength, (long) DEFAULT_CHUNK_SIZE);
+        } else {
+            chunkSize = (int) Math.min(contentLength, DEFAULT_CHUNK_SIZE);
+        }
     }
 
     @Override
@@ -51,9 +52,9 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
 
     @Override
     public ByteBuf readChunk(ByteBufAllocator alloc) throws Exception {
-
-        if (endOfInput)
+        if (endOfInput) {
             return null;
+        }
 
         ByteBuf buffer = alloc.buffer(chunkSize);
         Body.BodyState state = body.transferTo(buffer);

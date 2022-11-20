@@ -15,19 +15,19 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.head;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class Head302Test extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new Head302handler();
     }
 
@@ -78,13 +79,13 @@ public class Head302Test extends AbstractBasicTest {
                 // When setFollowRedirect == TRUE, a follow-up request to a HEAD request will also be a HEAD.
                 // This will cause an infinite loop, which will error out once the maximum amount of redirects is hit (default 5).
                 // Instead, we (arbitrarily) choose to allow for 3 redirects and then return a 200.
-                if(request.getRequestURI().endsWith("_moved_moved_moved")) {
+                if (request.getRequestURI().endsWith("_moved_moved_moved")) {
                     response.setStatus(HttpServletResponse.SC_OK);
                 } else {
                     response.setStatus(HttpServletResponse.SC_FOUND); // 302
                     response.setHeader("Location", request.getPathInfo() + "_moved");
                 }
-            } else if ("GET".equalsIgnoreCase(request.getMethod()) ) {
+            } else if ("GET".equalsIgnoreCase(request.getMethod())) {
                 response.setStatus(HttpServletResponse.SC_OK);
             } else {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);

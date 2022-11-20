@@ -13,8 +13,8 @@
 package org.asynchttpclient.netty;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.netty.util.ByteBufUtils;
 
 import java.nio.ByteBuffer;
 
@@ -46,7 +46,7 @@ public class LazyResponseBodyPart extends HttpResponseBodyPart {
      */
     @Override
     public byte[] getBodyPartBytes() {
-        return ByteBufUtils.byteBuf2Bytes(buf.duplicate());
+        return ByteBufUtil.getBytes(buf.duplicate());
     }
 
     @Override

@@ -26,24 +26,22 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
         this.bytes = bytes;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Body createBody() {
         return new ByteBody();
     }
 
     protected final class ByteBody implements Body {
-        private boolean eof = false;
-        private int lastPosition = 0;
+        private boolean eof;
+        private int lastPosition;
 
+        @Override
         public long getContentLength() {
             return bytes.length;
         }
 
+        @Override
         public BodyState transferTo(ByteBuf target) {
-
             if (eof) {
                 return BodyState.STOP;
             }
@@ -60,6 +58,7 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
             return BodyState.CONTINUE;
         }
 
+        @Override
         public void close() {
             lastPosition = 0;
             eof = false;

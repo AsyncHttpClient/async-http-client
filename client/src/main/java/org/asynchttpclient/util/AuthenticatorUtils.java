@@ -33,11 +33,16 @@ public final class AuthenticatorUtils {
 
     public static final String NEGOTIATE = "Negotiate";
 
+    private AuthenticatorUtils() {
+        // Prevent outside initialization
+    }
+
     public static String getHeaderWithPrefix(List<String> authenticateHeaders, String prefix) {
         if (authenticateHeaders != null) {
             for (String authenticateHeader : authenticateHeaders) {
-                if (authenticateHeader.regionMatches(true, 0, prefix, 0, prefix.length()))
+                if (authenticateHeader.regionMatches(true, 0, prefix, 0, prefix.length())) {
                     return authenticateHeader;
+                }
             }
         }
 
@@ -49,16 +54,16 @@ public final class AuthenticatorUtils {
     }
 
     private static String computeBasicAuthentication(String principal, String password, Charset charset) {
-        String s = principal + ":" + password;
+        String s = principal + ':' + password;
         return "Basic " + Base64.getEncoder().encodeToString(s.getBytes(charset));
     }
 
     public static String computeRealmURI(Uri uri, boolean useAbsoluteURI, boolean omitQuery) {
         if (useAbsoluteURI) {
-            return omitQuery && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
+            return omitQuery && isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
         } else {
             String path = uri.getNonEmptyPath();
-            return omitQuery || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
+            return omitQuery || !isNonEmpty(uri.getQuery()) ? path : path + '?' + uri.getQuery();
         }
     }
 
@@ -71,13 +76,15 @@ public final class AuthenticatorUtils {
         append(builder, "realm", realm.getRealmName(), true);
         append(builder, "nonce", realm.getNonce(), true);
         append(builder, "uri", realmUri, true);
-        if (isNonEmpty(realm.getAlgorithm()))
+        if (isNonEmpty(realm.getAlgorithm())) {
             append(builder, "algorithm", realm.getAlgorithm(), false);
+        }
 
         append(builder, "response", realm.getResponse(), true);
 
-        if (realm.getOpaque() != null)
+        if (realm.getOpaque() != null) {
             append(builder, "opaque", realm.getOpaque(), true);
+        }
 
         if (realm.getQop() != null) {
             append(builder, "qop", realm.getQop(), false);
@@ -93,11 +100,11 @@ public final class AuthenticatorUtils {
 
     private static void append(StringBuilder builder, String name, String value, boolean quoted) {
         builder.append(name).append('=');
-        if (quoted)
+        if (quoted) {
             builder.append('"').append(value).append('"');
-        else
+        } else {
             builder.append(value);
-
+        }
         builder.append(", ");
     }
 
@@ -123,7 +130,6 @@ public final class AuthenticatorUtils {
     }
 
     public static String perRequestProxyAuthorizationHeader(Request request, Realm proxyRealm) {
-
         String proxyAuthorization = null;
         if (proxyRealm != null && proxyRealm.isUsePreemptiveAuth()) {
 
@@ -167,15 +173,16 @@ public final class AuthenticatorUtils {
                 case KERBEROS:
                 case SPNEGO:
                     String host;
-                    if (proxyServer != null)
+                    if (proxyServer != null) {
                         host = proxyServer.getHost();
-                    else if (request.getVirtualHost() != null)
+                    } else if (request.getVirtualHost() != null) {
                         host = request.getVirtualHost();
-                    else
+                    } else {
                         host = request.getUri().getHost();
+                    }
 
                     try {
-                        authorizationHeader = NEGOTIATE + " " + SpnegoEngine.instance(
+                        authorizationHeader = NEGOTIATE + ' ' + SpnegoEngine.instance(
                                 realm.getPrincipal(),
                                 realm.getPassword(),
                                 realm.getServicePrincipalName(),
@@ -196,9 +203,7 @@ public final class AuthenticatorUtils {
     }
 
     public static String perRequestAuthorizationHeader(Request request, Realm realm) {
-
         String authorizationHeader = null;
-
         if (realm != null && realm.isUsePreemptiveAuth()) {
 
             switch (realm.getScheme()) {

@@ -23,7 +23,7 @@ public abstract class QueueBasedFeedableBodyGenerator<T extends Queue<BodyChunk>
     protected final T queue;
     private FeedListener listener;
 
-    public QueueBasedFeedableBodyGenerator(T queue) {
+    protected QueueBasedFeedableBodyGenerator(T queue) {
         this.queue = queue;
     }
 

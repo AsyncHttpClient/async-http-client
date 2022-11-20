@@ -36,7 +36,7 @@ import java.util.concurrent.Semaphore;
  * long as headers are received, and return Response as soon as possible, but
  * still pouring response body into supplied output stream. This handler is
  * meant for situations when the "recommended" way (using
- * <code>client.prepareGet("http://foo.com/aResource").execute().get()</code>
+ * {@code client.prepareGet("http://foo.com/aResource").execute().get()}
  * would not work for you, since a potentially large response body is about to
  * be GETted, but you need headers first, or you don't know yet (depending on
  * some logic, maybe coming from headers) where to save the body, or you just
@@ -92,13 +92,13 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     private volatile Throwable throwable;
 
     public BodyDeferringAsyncHandler(final OutputStream os) {
-        this.output = os;
-        this.responseSet = false;
+        output = os;
+        responseSet = false;
     }
 
     @Override
     public void onThrowable(Throwable t) {
-        this.throwable = t;
+        throwable = t;
         // Counting down to handle error cases too.
         // In "premature exceptions" cases, the onBodyPartReceived() and
         // onCompleted()
@@ -141,7 +141,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
     @Override
     public void onRetry() {
-        throw new UnsupportedOperationException(this.getClass().getSimpleName() + " cannot retry a request.");
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " cannot retry a request.");
     }
 
     @Override
@@ -210,7 +210,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * 1st cached, probably incomplete one. Note: the response returned by this
      * method will contain everything <em>except</em> the response body itself,
      * so invoking any method like Response.getResponseBodyXXX() will result in
-     * error! Also, please not that this method might return <code>null</code>
+     * error! Also, please not that this method might return {@code null}
      * in case of some errors.
      *
      * @return a {@link Response}
@@ -271,7 +271,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         /**
          * Delegates to {@link BodyDeferringAsyncHandler#getResponse()}. Will
          * blocks as long as headers arrives only. Might return
-         * <code>null</code>. See
+         * {@code null}. See
          * {@link BodyDeferringAsyncHandler#getResponse()} method for details.
          *
          * @return a {@link Response}
@@ -283,7 +283,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
         }
 
         /**
-         * Delegates to <code>Future$lt;Response&gt;#get()</code> method. Will block
+         * Delegates to {@code Future$lt;Response>#get()} method. Will block
          * as long as complete response arrives.
          *
          * @return a {@link Response}

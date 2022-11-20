@@ -15,8 +15,6 @@ package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.Timeout;
 import org.asynchttpclient.netty.NettyResponseFuture;
-import org.asynchttpclient.netty.channel.Channels;
-import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.StringBuilderPool;
 
@@ -26,18 +24,16 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     private final long readTimeout;
 
-    ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
-                         NettyRequestSender requestSender,
-                         TimeoutsHolder timeoutsHolder,
-                         int readTimeout) {
+    ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder, int readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
     }
 
+    @Override
     public void run(Timeout timeout) {
-
-        if (done.getAndSet(true) || requestSender.isClosed())
+        if (done.getAndSet(true) || requestSender.isClosed()) {
             return;
+        }
 
         if (nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
@@ -49,7 +45,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
         long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
         long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
 
-        if (durationBeforeCurrentReadTimeout <= 0L && !isReactiveWithNoOutstandingRequest()) {
+        if (durationBeforeCurrentReadTimeout <= 0L) {
             // idleConnectTimeout reached
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Read timeout to ");
             appendRemoteAddress(sb);
@@ -63,11 +59,5 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             done.set(false);
             timeoutsHolder.startReadTimeout(this);
         }
-    }
-
-    private boolean isReactiveWithNoOutstandingRequest() {
-        Object attribute = Channels.getAttribute(nettyResponseFuture.channel());
-        return attribute instanceof StreamedResponsePublisher &&
-                !((StreamedResponsePublisher) attribute).hasOutstandingRequest();
     }
 }

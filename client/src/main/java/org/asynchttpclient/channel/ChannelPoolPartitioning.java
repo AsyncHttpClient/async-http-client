@@ -16,6 +16,9 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 
+import java.util.Objects;
+
+@FunctionalInterface
 public interface ChannelPoolPartitioning {
 
     Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer);
@@ -24,6 +27,7 @@ public interface ChannelPoolPartitioning {
 
         INSTANCE;
 
+        @Override
         public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
             String targetHostBaseUrl = uri.getBaseUrl();
             if (proxyServer == null) {
@@ -67,16 +71,27 @@ public interface ChannelPoolPartitioning {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             CompositePartitionKey that = (CompositePartitionKey) o;
 
-            if (proxyPort != that.proxyPort) return false;
-            if (targetHostBaseUrl != null ? !targetHostBaseUrl.equals(that.targetHostBaseUrl) : that.targetHostBaseUrl != null)
+            if (proxyPort != that.proxyPort) {
                 return false;
-            if (virtualHost != null ? !virtualHost.equals(that.virtualHost) : that.virtualHost != null) return false;
-            if (proxyHost != null ? !proxyHost.equals(that.proxyHost) : that.proxyHost != null) return false;
+            }
+            if (!Objects.equals(targetHostBaseUrl, that.targetHostBaseUrl)) {
+                return false;
+            }
+            if (!Objects.equals(virtualHost, that.virtualHost)) {
+                return false;
+            }
+            if (!Objects.equals(proxyHost, that.proxyHost)) {
+                return false;
+            }
             return proxyType == that.proxyType;
         }
 

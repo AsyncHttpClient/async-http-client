@@ -1,7 +1,7 @@
 # This workflow is designed to build PRs for AHC. Note that it does not actually publish AHC, just builds and test it.
 # Docs: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Build and Test PR
+name: Build PR
 
 on:
   push:
@@ -17,9 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Grant Permission
+        run: sudo chmod +x ./mvnw
       - uses: actions/setup-java@v3
         with:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: mvn -B -ntp clean test
+        run: ./mvnw -B -ntp clean test

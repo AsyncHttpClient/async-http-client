@@ -14,7 +14,11 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpUtil;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
@@ -51,12 +55,8 @@ public class ProxyUnauthorized407Interceptor {
         this.requestSender = requestSender;
     }
 
-    public boolean exitAfterHandling407(Channel channel,
-                                        NettyResponseFuture<?> future,
-                                        HttpResponse response,
-                                        Request request,
-                                        ProxyServer proxyServer,
-                                        HttpRequest httpRequest) {
+    public boolean exitAfterHandling407(Channel channel, NettyResponseFuture<?> future, HttpResponse response, Request request,
+                                        ProxyServer proxyServer, HttpRequest httpRequest) {
 
         if (future.isAndSetInProxyAuth(true)) {
             LOGGER.info("Can't handle 407 as auth was already performed");
@@ -141,7 +141,6 @@ public class ProxyUnauthorized407Interceptor {
                 }
                 try {
                     kerberosProxyChallenge(proxyRealm, proxyServer, requestHeaders);
-
                 } catch (SpnegoEngineException e) {
                     // FIXME
                     String ntlmHeader2 = getHeaderWithPrefix(proxyAuthHeaders, "NTLM");
@@ -184,10 +183,7 @@ public class ProxyUnauthorized407Interceptor {
         return true;
     }
 
-    private void kerberosProxyChallenge(Realm proxyRealm,
-                                        ProxyServer proxyServer,
-                                        HttpHeaders headers) throws SpnegoEngineException {
-
+    private static void kerberosProxyChallenge(Realm proxyRealm, ProxyServer proxyServer, HttpHeaders headers) throws SpnegoEngineException {
         String challengeHeader = SpnegoEngine.instance(proxyRealm.getPrincipal(),
                 proxyRealm.getPassword(),
                 proxyRealm.getServicePrincipalName(),
@@ -195,22 +191,17 @@ public class ProxyUnauthorized407Interceptor {
                 proxyRealm.isUseCanonicalHostname(),
                 proxyRealm.getCustomLoginConfig(),
                 proxyRealm.getLoginContextName()).generateToken(proxyServer.getHost());
-        headers.set(PROXY_AUTHORIZATION, NEGOTIATE + " " + challengeHeader);
+        headers.set(PROXY_AUTHORIZATION, NEGOTIATE + ' ' + challengeHeader);
     }
 
-    private void ntlmProxyChallenge(String authenticateHeader,
-                                    HttpHeaders requestHeaders,
-                                    Realm proxyRealm,
-                                    NettyResponseFuture<?> future) {
-
-        if (authenticateHeader.equals("NTLM")) {
-            // server replied bare NTLM => we didn't preemptively sent Type1Msg
+    private static void ntlmProxyChallenge(String authenticateHeader, HttpHeaders requestHeaders, Realm proxyRealm, NettyResponseFuture<?> future) {
+        if ("NTLM".equals(authenticateHeader)) {
+            // server replied bare NTLM => we didn't preemptively send Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             requestHeaders.set(PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
             future.setInProxyAuth(false);
-
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
             String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(proxyRealm.getPrincipal(), proxyRealm.getPassword(), proxyRealm.getNtlmDomain(),

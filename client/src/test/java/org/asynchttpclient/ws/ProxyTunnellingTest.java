@@ -17,7 +17,12 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -37,28 +42,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
 
-    private static Server server2;
+    private Server server2;
 
-    private void setUpServers(boolean targetHttps) throws Exception {
-        server = new Server();
-        ServerConnector connector = addHttpConnector(server);
-        server.setHandler(new ConnectHandler());
-        server.start();
-        port1 = connector.getLocalPort();
+    @Override
+    @BeforeAll
+    public void setUpGlobal() throws Exception {
+        // Don't call Global
+    }
 
-        server2 = new Server();
-        @SuppressWarnings("resource")
-        ServerConnector connector2 = targetHttps ? addHttpsConnector(server2) : addHttpConnector(server2);
-        server2.setHandler(configureHandler());
-        server2.start();
-        port2 = connector2.getLocalPort();
-
-        logger.info("Local HTTP server started successfully");
+    @Override
+    @AfterAll
+    public void tearDownGlobal() throws Exception {
+        server.stop();
+        server2.stop();
     }
 
     @AfterEach
-    public static void tearDownGlobal() throws Exception {
-        server.stop();
+    public void cleanup() throws Exception {
+        super.tearDownGlobal();
         server2.stop();
     }
 
@@ -76,7 +77,6 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
 
     private void runTest(boolean secure) throws Exception {
         setUpServers(secure);
-
         String targetUrl = String.format("%s://localhost:%d/", secure ? "wss" : "ws", port2);
 
         // CONNECT happens over HTTP, not HTTPS
@@ -114,5 +114,38 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
             latch.await();
             assertEquals("ECHO", text.get());
         }
+    }
+
+    private void setUpServers(boolean targetHttps) throws Exception {
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
+        server.setHandler(new ConnectHandler());
+        server.start();
+        port1 = connector.getLocalPort();
+
+        server2 = new Server();
+        ServerConnector connector2 = targetHttps ? addHttpsConnector(server2) : addHttpConnector(server2);
+        server2.setHandler(configureHandler());
+        server2.start();
+        port2 = connector2.getLocalPort();
+
+        logger.info("Local HTTP server started successfully");
+    }
+
+    @Override
+    public AbstractHandler configureHandler() {
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server2.setHandler(context);
+
+        // Configure specific websocket behavior
+        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
+            // Configure default max size
+            wsContainer.setMaxTextMessageSize(65535);
+
+            // Add websockets
+            wsContainer.addMapping("/", EchoWebSocket.class);
+        });
+        return context;
     }
 }

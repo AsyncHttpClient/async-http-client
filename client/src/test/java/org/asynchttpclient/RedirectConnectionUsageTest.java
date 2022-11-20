@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -22,9 +25,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
@@ -48,7 +48,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     private static String servletEndpointRedirectUrl;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 

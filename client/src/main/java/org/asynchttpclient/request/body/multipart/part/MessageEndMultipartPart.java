@@ -88,7 +88,8 @@ public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
     @Override
     public void close() {
         super.close();
-        if (contentBuffer != null)
+        if (contentBuffer != null) {
             contentBuffer.release();
+        }
     }
 }

@@ -15,14 +15,14 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class PerRequestTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
 
-    private void checkTimeoutMessage(String message, boolean requestTimeout) {
+    private static void checkTimeoutMessage(String message, boolean requestTimeout) {
         if (requestTimeout) {
             assertTrue(message.startsWith("Request timeout"), "error message indicates reason of error but got: " + message);
         } else {
@@ -56,7 +56,8 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         assertTrue(message.contains("after 100 ms"), "error message contains timeout configuration value but got: " + message);
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new SlowHandler();
     }
 

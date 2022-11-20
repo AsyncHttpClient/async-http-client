@@ -63,12 +63,8 @@ public class Interceptors {
         cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
     }
 
-    public boolean exitAfterIntercept(Channel channel,
-                                      NettyResponseFuture<?> future,
-                                      AsyncHandler<?> handler,
-                                      HttpResponse response,
-                                      HttpResponseStatus status,
-                                      HttpHeaders responseHeaders) throws Exception {
+    public boolean exitAfterIntercept(Channel channel, NettyResponseFuture<?> future, AsyncHandler<?> handler, HttpResponse response,
+                                      HttpResponseStatus status, HttpHeaders responseHeaders) throws Exception {
 
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         ProxyServer proxyServer = future.getProxyServer();
@@ -94,19 +90,22 @@ public class Interceptors {
 
         if (statusCode == UNAUTHORIZED_401) {
             return unauthorized401Interceptor.exitAfterHandling401(channel, future, response, request, realm, httpRequest);
+        }
 
-        } else if (statusCode == PROXY_AUTHENTICATION_REQUIRED_407) {
+        if (statusCode == PROXY_AUTHENTICATION_REQUIRED_407) {
             return proxyUnauthorized407Interceptor.exitAfterHandling407(channel, future, response, request, proxyServer, httpRequest);
+        }
 
-        } else if (statusCode == CONTINUE_100) {
+        if (statusCode == CONTINUE_100) {
             return continue100Interceptor.exitAfterHandling100(channel, future);
+        }
 
-        } else if (Redirect30xInterceptor.REDIRECT_STATUSES.contains(statusCode)) {
+        if (Redirect30xInterceptor.REDIRECT_STATUSES.contains(statusCode)) {
             return redirect30xInterceptor.exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
+        }
 
-        } else if (httpRequest.method() == HttpMethod.CONNECT && statusCode == OK_200) {
+        if (httpRequest.method() == HttpMethod.CONNECT && statusCode == OK_200) {
             return connectSuccessInterceptor.exitAfterHandlingConnect(channel, future, request, proxyServer);
-
         }
         return false;
     }

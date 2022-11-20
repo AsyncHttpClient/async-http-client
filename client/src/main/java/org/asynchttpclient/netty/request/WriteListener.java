@@ -34,18 +34,16 @@ public abstract class WriteListener {
 
     WriteListener(NettyResponseFuture<?> future, boolean notifyHeaders) {
         this.future = future;
-        this.progressAsyncHandler = future.getAsyncHandler() instanceof ProgressAsyncHandler ? (ProgressAsyncHandler<?>) future.getAsyncHandler() : null;
+        progressAsyncHandler = future.getAsyncHandler() instanceof ProgressAsyncHandler ? (ProgressAsyncHandler<?>) future.getAsyncHandler() : null;
         this.notifyHeaders = notifyHeaders;
     }
 
     private void abortOnThrowable(Channel channel, Throwable cause) {
-        if (future.getChannelState() == ChannelState.POOLED
-                && (cause instanceof IllegalStateException
-                || cause instanceof ClosedChannelException
-                || cause instanceof SSLException
-                || StackTraceInspector.recoverOnReadOrWriteException(cause))) {
+        if (future.getChannelState() == ChannelState.POOLED && (cause instanceof IllegalStateException ||
+                cause instanceof ClosedChannelException ||
+                cause instanceof SSLException ||
+                StackTraceInspector.recoverOnReadOrWriteException(cause))) {
             LOGGER.debug("Write exception on pooled channel, letting retry trigger", cause);
-
         } else {
             future.abort(cause);
         }

@@ -4,8 +4,11 @@ import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SemaphoreTest {
 
     static final int CHECK_ACQUIRE_TIME__PERMITS = 10;
@@ -39,19 +43,22 @@ public class SemaphoreTest {
         return objects;
     }
 
-    @ParameterizedTest(name = "permitsAndRunnersCount")
+    @ParameterizedTest
+    @MethodSource("permitsAndRunnersCount")
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void maxConnectionCheckPermitCount(int permitCount, int runnerCount) {
         allSemaphoresCheckPermitCount(new MaxConnectionSemaphore(permitCount, 0), permitCount, runnerCount);
     }
 
-    @ParameterizedTest(name = "permitsAndRunnersCount")
+    @ParameterizedTest
+    @MethodSource("permitsAndRunnersCount")
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void perHostCheckPermitCount(int permitCount, int runnerCount) {
         allSemaphoresCheckPermitCount(new PerHostConnectionSemaphore(permitCount, 0), permitCount, runnerCount);
     }
 
-    @ParameterizedTest(name = "permitsAndRunnersCount")
+    @ParameterizedTest
+    @MethodSource("permitsAndRunnersCount")
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void combinedCheckPermitCount(int permitCount, int runnerCount) {
         allSemaphoresCheckPermitCount(new CombinedConnectionSemaphore(permitCount, permitCount, 0), permitCount, runnerCount);

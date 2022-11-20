@@ -41,8 +41,7 @@ public class ProxyServer {
     private final ProxyType proxyType;
     private final Function<Request, HttpHeaders> customHeaders;
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
-                       ProxyType proxyType, Function<Request, HttpHeaders> customHeaders) {
+    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts, ProxyType proxyType, Function<Request, HttpHeaders> customHeaders) {
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
@@ -52,8 +51,7 @@ public class ProxyServer {
         this.customHeaders = customHeaders;
     }
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
-                       ProxyType proxyType) {
+    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts, ProxyType proxyType) {
         this(host, port, securedPort, realm, nonProxyHosts, proxyType, null);
     }
 
@@ -87,7 +85,7 @@ public class ProxyServer {
 
     /**
      * Checks whether proxy should be used according to nonProxyHosts settings of
-     * it, or we want to go directly to target host. If <code>null</code> proxy is
+     * it, or we want to go directly to target host. If {@code null} proxy is
      * passed in, this method returns true -- since there is NO proxy, we should
      * avoid to use it. Simple hostname pattern matching using "*" are supported,
      * but only as prefixes.
@@ -103,22 +101,24 @@ public class ProxyServer {
         assertNotNull(hostname, "hostname");
         if (isNonEmpty(nonProxyHosts)) {
             for (String nonProxyHost : nonProxyHosts) {
-                if (matchNonProxyHost(hostname, nonProxyHost))
+                if (matchNonProxyHost(hostname, nonProxyHost)) {
                     return true;
+                }
             }
         }
 
         return false;
     }
 
-    private boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
+    private static boolean matchNonProxyHost(String targetHost, String nonProxyHost) {
 
         if (nonProxyHost.length() > 1) {
             if (nonProxyHost.charAt(0) == '*') {
                 return targetHost.regionMatches(true, targetHost.length() - nonProxyHost.length() + 1, nonProxyHost, 1,
                         nonProxyHost.length() - 1);
-            } else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*')
+            } else if (nonProxyHost.charAt(nonProxyHost.length() - 1) == '*') {
                 return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length() - 1);
+            }
         }
 
         return nonProxyHost.equalsIgnoreCase(targetHost);
@@ -126,8 +126,8 @@ public class ProxyServer {
 
     public static class Builder {
 
-        private String host;
-        private int port;
+        private final String host;
+        private final int port;
         private int securedPort;
         private Realm realm;
         private List<String> nonProxyHosts;
@@ -137,7 +137,7 @@ public class ProxyServer {
         public Builder(String host, int port) {
             this.host = host;
             this.port = port;
-            this.securedPort = port;
+            securedPort = port;
         }
 
         public Builder setSecuredPort(int securedPort) {
@@ -156,8 +156,9 @@ public class ProxyServer {
         }
 
         public Builder setNonProxyHost(String nonProxyHost) {
-            if (nonProxyHosts == null)
+            if (nonProxyHosts == null) {
                 nonProxyHosts = new ArrayList<>(1);
+            }
             nonProxyHosts.add(nonProxyHost);
             return this;
         }
@@ -178,8 +179,7 @@ public class ProxyServer {
         }
 
         public ProxyServer build() {
-            List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
-                    : Collections.emptyList();
+            List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts) : Collections.emptyList();
             ProxyType proxyType = this.proxyType != null ? this.proxyType : ProxyType.HTTP;
             return new ProxyServer(host, port, securedPort, realm, nonProxyHosts, proxyType, customHeaders);
         }

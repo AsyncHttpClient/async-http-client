@@ -34,6 +34,10 @@ public final class MessageDigestUtils {
         }
     });
 
+    private MessageDigestUtils() {
+        // Prevent outside initialization
+    }
+
     public static MessageDigest pooledMd5MessageDigest() {
         MessageDigest md = MD5_MESSAGE_DIGESTS.get();
         md.reset();

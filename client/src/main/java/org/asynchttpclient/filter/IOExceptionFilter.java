@@ -12,14 +12,19 @@
  */
 package org.asynchttpclient.filter;
 
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Request;
+
+import java.io.IOException;
+
 /**
- * This filter is invoked when an {@link java.io.IOException} occurs during an http transaction.
+ * This filter is invoked when an {@link IOException} occurs during an http transaction.
  */
 public interface IOExceptionFilter {
 
     /**
-     * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link IOExceptionFilter#filter} and will
-     * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.Request} or abort the processing.
+     * An {@link AsyncHttpClient} will invoke {@link IOExceptionFilter#filter} and will
+     * use the returned {@link FilterContext} to replay the {@link Request} or abort the processing.
      *
      * @param ctx a {@link FilterContext}
      * @param <T> the handler result type

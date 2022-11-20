@@ -24,7 +24,7 @@ public abstract class HttpResponseBodyPart {
 
     private final boolean last;
 
-    public HttpResponseBodyPart(boolean last) {
+    protected HttpResponseBodyPart(boolean last) {
         this.last = last;
     }
 

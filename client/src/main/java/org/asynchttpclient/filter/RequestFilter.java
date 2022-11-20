@@ -12,13 +12,15 @@
  */
 package org.asynchttpclient.filter;
 
+import org.asynchttpclient.AsyncHttpClient;
+
 /**
  * A Filter interface that gets invoked before making an actual request.
  */
 public interface RequestFilter {
 
     /**
-     * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link RequestFilter#filter} and will use the
+     * An {@link AsyncHttpClient} will invoke {@link RequestFilter#filter} and will use the
      * returned {@link FilterContext#getRequest()} and {@link FilterContext#getAsyncHandler()} to continue the request
      * processing.
      *

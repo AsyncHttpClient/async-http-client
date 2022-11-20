@@ -43,8 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MultipartBasicAuthTest extends AbstractBasicTest {
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -53,7 +54,8 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new BasicAuthTest.SimpleHandler();
     }
 

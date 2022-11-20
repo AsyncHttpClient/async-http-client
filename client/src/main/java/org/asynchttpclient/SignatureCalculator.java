@@ -23,6 +23,7 @@ package org.asynchttpclient;
  *
  * @since 1.1
  */
+@FunctionalInterface
 public interface SignatureCalculator {
     /**
      * Method called when {@link RequestBuilder#build} method is called.
@@ -36,6 +37,5 @@ public interface SignatureCalculator {
      * @param request        Request that is being built; needed to access content to
      *                       be signed
      */
-    void calculateAndAddSignature(Request request,
-                                  RequestBuilderBase<?> requestBuilder);
+    void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder);
 }

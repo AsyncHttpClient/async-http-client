@@ -32,14 +32,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
+import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.HttpUtils.extractContentTypeCharsetAttribute;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 /**
- * Wrapper around the {@link org.asynchttpclient.Response} API.
+ * Wrapper around the {@link Response} API.
  */
 public class NettyResponse implements Response {
 
@@ -68,8 +70,9 @@ public class NettyResponse implements Response {
             List<Cookie> cookies = new ArrayList<>(1);
             for (String value : setCookieHeaders) {
                 Cookie c = ClientCookieDecoder.STRICT.decode(value);
-                if (c != null)
+                if (c != null) {
                     cookies.add(c);
+                }
             }
             return Collections.unmodifiableList(cookies);
         }
@@ -174,12 +177,14 @@ public class NettyResponse implements Response {
     public ByteBuffer getResponseBodyAsByteBuffer() {
 
         int length = 0;
-        for (HttpResponseBodyPart part : bodyParts)
+        for (HttpResponseBodyPart part : bodyParts) {
             length += part.length();
+        }
 
         ByteBuffer target = ByteBuffer.wrap(new byte[length]);
-        for (HttpResponseBodyPart part : bodyParts)
+        for (HttpResponseBodyPart part : bodyParts) {
             target.put(part.getBodyPartBytes());
+        }
 
         target.flip();
         return target;
@@ -204,13 +209,13 @@ public class NettyResponse implements Response {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getClass().getSimpleName()).append(" {\n")
-                .append("\tstatusCode=").append(getStatusCode()).append("\n")
+                .append("\tstatusCode=").append(getStatusCode()).append('\n')
                 .append("\theaders=\n");
 
         for (Map.Entry<String, String> header : getHeaders()) {
-            sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append("\n");
+            sb.append("\t\t").append(header.getKey()).append(": ").append(header.getValue()).append('\n');
         }
-        return sb.append("\tbody=\n").append(getResponseBody()).append("\n")
-                .append("}").toString();
+        return sb.append("\tbody=\n").append(getResponseBody()).append('\n')
+                .append('}').toString();
     }
 }

@@ -15,6 +15,7 @@ package org.asynchttpclient.util;
 public final class ThrowableUtil {
 
     private ThrowableUtil() {
+        // Prevent outside initialization
     }
 
     /**

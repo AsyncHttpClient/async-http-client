@@ -20,11 +20,9 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 public class WriteProgressListener extends WriteListener implements ChannelProgressiveFutureListener {
 
     private final long expectedTotal;
-    private long lastProgress = 0L;
+    private long lastProgress;
 
-    public WriteProgressListener(NettyResponseFuture<?> future,
-                                 boolean notifyHeaders,
-                                 long expectedTotal) {
+    public WriteProgressListener(NettyResponseFuture<?> future, boolean notifyHeaders, long expectedTotal) {
         super(future, notifyHeaders);
         this.expectedTotal = expectedTotal;
     }

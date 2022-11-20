@@ -62,7 +62,6 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, Object msg) throws Exception {
-
         Channel channel = ctx.channel();
         Object attribute = Channels.getAttribute(channel);
 
@@ -71,39 +70,10 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                 if (msg instanceof LastHttpContent) {
                     ((OnLastHttpContentCallback) attribute).call();
                 }
-
             } else if (attribute instanceof NettyResponseFuture) {
                 NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
                 future.touch();
                 handleRead(channel, future, msg);
-
-            } else if (attribute instanceof StreamedResponsePublisher) {
-                StreamedResponsePublisher publisher = (StreamedResponsePublisher) attribute;
-                publisher.future().touch();
-
-                if (msg instanceof HttpContent) {
-                    ByteBuf content = ((HttpContent) msg).content();
-                    // Republish as a HttpResponseBodyPart
-                    if (content.isReadable()) {
-                        HttpResponseBodyPart part = config.getResponseBodyPartFactory().newResponseBodyPart(content, false);
-                        ctx.fireChannelRead(part);
-                    }
-                    if (msg instanceof LastHttpContent) {
-                        // Remove the handler from the pipeline, this will trigger
-                        // it to finish
-                        ctx.pipeline().remove(publisher);
-                        // Trigger a read, just in case the last read complete
-                        // triggered no new read
-                        ctx.read();
-                        // Send the last content on to the protocol, so that it can
-                        // conclude the cleanup
-                        handleRead(channel, publisher.future(), msg);
-                    }
-                } else {
-                    logger.info("Received unexpected message while expecting a chunk: " + msg);
-                    ctx.pipeline().remove(publisher);
-                    Channels.setDiscard(channel);
-                }
             } else if (attribute != DiscardEvent.DISCARD) {
                 // unhandled message
                 logger.debug("Orphan channel {} with attribute {} received message {}, closing", channel, attribute, msg);
@@ -114,21 +84,17 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         }
     }
 
+    @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-
-        if (requestSender.isClosed())
+        if (requestSender.isClosed()) {
             return;
+        }
 
         Channel channel = ctx.channel();
         channelManager.removeAll(channel);
 
         Object attribute = Channels.getAttribute(channel);
         logger.debug("Channel Closed: {} with attribute {}", channel, attribute);
-        if (attribute instanceof StreamedResponsePublisher) {
-            // setting `attribute` to be the underlying future so that the retry
-            // logic can kick-in
-            attribute = ((StreamedResponsePublisher) attribute).future();
-        }
         if (attribute instanceof OnLastHttpContentCallback) {
             OnLastHttpContentCallback callback = (OnLastHttpContentCallback) attribute;
             Channels.setAttribute(channel, callback.future());
@@ -138,8 +104,9 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
             NettyResponseFuture<?> future = (NettyResponseFuture<?>) attribute;
             future.touch();
 
-            if (hasIOExceptionFilters && requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel))
+            if (hasIOExceptionFilters && requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel)) {
                 return;
+            }
 
             handleChannelInactive(future);
             requestSender.handleUnexpectedClosedChannel(channel, future);
@@ -150,8 +117,9 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) {
         Throwable cause = getCause(e);
 
-        if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException)
+        if (cause instanceof PrematureChannelClosureException || cause instanceof ClosedChannelException) {
             return;
+        }
 
         Channel channel = ctx.channel();
         NettyResponseFuture<?> future = null;
@@ -160,19 +128,12 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
         try {
             Object attribute = Channels.getAttribute(channel);
-            if (attribute instanceof StreamedResponsePublisher) {
-                ctx.fireExceptionCaught(e);
-                // setting `attribute` to be the underlying future so that the
-                // retry logic can kick-in
-                attribute = ((StreamedResponsePublisher) attribute).future();
-            }
             if (attribute instanceof NettyResponseFuture<?>) {
                 future = (NettyResponseFuture<?>) attribute;
                 future.attachChannel(null, false);
                 future.touch();
 
                 if (cause instanceof IOException) {
-
                     // FIXME why drop the original exception and throw a new one?
                     if (hasIOExceptionFilters) {
                         if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel)) {
@@ -189,13 +150,13 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                     return;
                 }
             } else if (attribute instanceof OnLastHttpContentCallback) {
-                future = OnLastHttpContentCallback.class.cast(attribute).future();
+                future = ((OnLastHttpContentCallback) attribute).future();
             }
         } catch (Throwable t) {
             cause = t;
         }
 
-        if (future != null)
+        if (future != null) {
             try {
                 logger.debug("Was unable to recover Future: {}", future);
                 requestSender.abort(channel, future, cause);
@@ -203,6 +164,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
+        }
 
         channelManager.closeChannel(channel);
         // FIXME not really sure
@@ -217,16 +179,17 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        if (!isHandledByReactiveStreams(ctx)) {
-            ctx.read();
-        } else {
-            ctx.fireChannelReadComplete();
-        }
+        ctx.read();
+//        if (!isHandledByReactiveStreams(ctx)) {
+//            ctx.read();
+//        } else {
+//            ctx.fireChannelReadComplete();
+//        }
     }
 
-    private boolean isHandledByReactiveStreams(ChannelHandlerContext ctx) {
-        return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
-    }
+//    private static boolean isHandledByReactiveStreams(ChannelHandlerContext ctx) {
+//        return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
+//    }
 
     void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) {
         future.cancelTimeouts();

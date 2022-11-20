@@ -32,7 +32,11 @@ import static org.asynchttpclient.util.HttpUtils.computeMultipartBoundary;
 import static org.asynchttpclient.util.HttpUtils.patchContentTypeWithBoundaryAttribute;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
-public class MultipartUtils {
+public final class MultipartUtils {
+
+    private MultipartUtils() {
+        // Prevent outside initialization
+    }
 
     /**
      * Creates a new multipart entity containing the given parts.
@@ -53,7 +57,7 @@ public class MultipartUtils {
             if (boundaryLocation != -1) {
                 // boundary defined in existing Content-Type
                 contentType = contentTypeHeader;
-                boundary = (contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim()).getBytes(US_ASCII);
+                boundary = contentTypeHeader.substring(boundaryLocation + "boundary=".length()).trim().getBytes(US_ASCII);
             } else {
                 // generate boundary and append it to existing Content-Type
                 boundary = computeMultipartBoundary();
@@ -61,11 +65,10 @@ public class MultipartUtils {
             }
         } else {
             boundary = computeMultipartBoundary();
-            contentType = patchContentTypeWithBoundaryAttribute(HttpHeaderValues.MULTIPART_FORM_DATA, boundary);
+            contentType = patchContentTypeWithBoundaryAttribute(HttpHeaderValues.MULTIPART_FORM_DATA.toString(), boundary);
         }
 
         List<MultipartPart<? extends Part>> multipartParts = generateMultipartParts(parts, boundary);
-
         return new MultipartBody(multipartParts, contentType, boundary);
     }
 
@@ -90,7 +93,6 @@ public class MultipartUtils {
         }
         // add an extra fake part for terminating the message
         multipartParts.add(new MessageEndMultipartPart(boundary));
-
         return multipartParts;
     }
 }

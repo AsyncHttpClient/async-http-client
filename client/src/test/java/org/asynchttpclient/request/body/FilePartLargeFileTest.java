@@ -12,6 +12,9 @@
  */
 package org.asynchttpclient.request.body;
 
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
@@ -20,9 +23,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 
@@ -35,7 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FilePartLargeFileTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
 
             @Override
@@ -63,8 +64,10 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
     @Test
     public void testPutImageFile() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8))
-                    .execute().get();
+            Response response = client.preparePut(getTargetUrl())
+                    .addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8))
+                    .execute()
+                    .get();
             assertEquals(200, response.getStatusCode());
         }
     }
@@ -74,7 +77,10 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 1024);
 
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
-            Response response = client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8)).execute().get();
+            Response response = client.preparePut(getTargetUrl())
+                    .addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8))
+                    .execute()
+                    .get();
             assertEquals(200, response.getStatusCode());
         }
     }

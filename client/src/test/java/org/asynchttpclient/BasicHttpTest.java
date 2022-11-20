@@ -18,6 +18,9 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
@@ -31,13 +34,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
@@ -284,7 +283,7 @@ public class BasicHttpTest extends HttpTest {
 
     @Test
     public void nullSchemeThrowsNPE() throws Throwable {
-        assertThrows(IllegalAccessException.class, () -> withClient().run(client -> client.prepareGet("gatling.io").execute()));
+        assertThrows(IllegalArgumentException.class, () -> withClient().run(client -> client.prepareGet("gatling.io").execute()));
     }
 
     @Test
@@ -531,19 +530,17 @@ public class BasicHttpTest extends HttpTest {
     @Test
     public void connectFailureThrowsConnectException() throws Throwable {
         assertThrows(ConnectException.class, () -> {
-            assertThrows(ConnectException.class, () -> {
-                withClient().run(client -> {
-                    int dummyPort = findFreePort();
-                    try {
-                        client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                            @Override
-                            public void onThrowable(Throwable t) {
-                            }
-                        }).get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException ex) {
-                        throw ex.getCause();
-                    }
-                });
+            withClient().run(client -> {
+                int dummyPort = findFreePort();
+                try {
+                    client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
+                        @Override
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get(TIMEOUT, SECONDS);
+                } catch (ExecutionException ex) {
+                    throw ex.getCause();
+                }
             });
         });
     }
@@ -978,8 +975,9 @@ public class BasicHttpTest extends HttpTest {
                         final EchoHandler chain = new EchoHandler();
 
                         @Override
-                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-                                throws IOException, ServletException {
+                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest,
+                                           HttpServletResponse httpServletResponse) throws IOException, ServletException {
+
                             assertEquals(request.getHeader(TRANSFER_ENCODING.toString()), HttpHeaderValues.CHUNKED.toString());
                             assertNull(request.getHeader(CONTENT_LENGTH.toString()));
                             chain.handle(target, request, httpServletRequest, httpServletResponse);
@@ -1011,8 +1009,9 @@ public class BasicHttpTest extends HttpTest {
                         final EchoHandler chain = new EchoHandler();
 
                         @Override
-                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-                                throws IOException, ServletException {
+                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest,
+                                           HttpServletResponse httpServletResponse) throws IOException, ServletException {
+
                             assertNull(request.getHeader(TRANSFER_ENCODING.toString()));
                             assertEquals(request.getHeader(CONTENT_LENGTH.toString()),
                                     Integer.toString("{}".getBytes(StandardCharsets.ISO_8859_1).length));

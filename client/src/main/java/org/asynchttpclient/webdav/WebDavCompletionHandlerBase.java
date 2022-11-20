@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.netty.NettyResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Simple {@link AsyncHandler} that add support for WebDav's response manipulation.
@@ -59,27 +61,18 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final State onBodyPartReceived(final HttpResponseBodyPart content) {
         bodyParts.add(content);
         return State.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final State onStatusReceived(final HttpResponseStatus status) {
         this.status = status;
         return State.CONTINUE;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final State onHeadersReceived(final HttpHeaders headers) {
         this.headers = headers;
@@ -105,15 +98,12 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
             Node node = statusNode.item(i);
 
             String value = node.getFirstChild().getNodeValue();
-            int statusCode = Integer.parseInt(value.substring(value.indexOf(" "), value.lastIndexOf(" ")).trim());
-            String statusText = value.substring(value.lastIndexOf(" "));
+            int statusCode = Integer.parseInt(value.substring(value.indexOf(' '), value.lastIndexOf(' ')).trim());
+            String statusText = value.substring(value.lastIndexOf(' '));
             status = new HttpStatusWrapper(status, statusText, statusCode);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public final T onCompleted() throws Exception {
         if (status != null) {
@@ -128,9 +118,6 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onThrowable(Throwable t) {
         LOGGER.debug(t.getMessage(), t);
@@ -139,11 +126,11 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     /**
      * Invoked once the HTTP response has been fully read.
      *
-     * @param response The {@link org.asynchttpclient.Response}
-     * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @param response The {@link Response}
+     * @return Type of the value that will be returned by the associated {@link Future}
      * @throws Exception if something wrong happens
      */
-    abstract public T onCompleted(WebDavResponse response) throws Exception;
+    public abstract T onCompleted(WebDavResponse response) throws Exception;
 
     private static class HttpStatusWrapper extends HttpResponseStatus {
 
@@ -155,19 +142,19 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
 
         HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
             super(wrapper.getUri());
-            this.wrapped = wrapper;
+            wrapped = wrapper;
             this.statusText = statusText;
             this.statusCode = statusCode;
         }
 
         @Override
         public int getStatusCode() {
-            return (statusText == null ? wrapped.getStatusCode() : statusCode);
+            return statusText == null ? wrapped.getStatusCode() : statusCode;
         }
 
         @Override
         public String getStatusText() {
-            return (statusText == null ? wrapped.getStatusText() : statusText);
+            return statusText == null ? wrapped.getStatusText() : statusText;
         }
 
         @Override

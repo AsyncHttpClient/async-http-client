@@ -69,7 +69,7 @@ public class SpnegoEngine {
 
     private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
     private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
-    private static Map<String, SpnegoEngine> instances = new HashMap<>();
+    private static final Map<String, SpnegoEngine> instances = new HashMap<>();
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final SpnegoTokenGenerator spnegoGenerator;
     private final String username;
@@ -80,14 +80,8 @@ public class SpnegoEngine {
     private final String loginContextName;
     private final Map<String, String> customLoginConfig;
 
-    public SpnegoEngine(final String username,
-                        final String password,
-                        final String servicePrincipalName,
-                        final String realmName,
-                        final boolean useCanonicalHostname,
-                        final Map<String, String> customLoginConfig,
-                        final String loginContextName,
-                        final SpnegoTokenGenerator spnegoGenerator) {
+    public SpnegoEngine(final String username, final String password, final String servicePrincipalName, final String realmName, final boolean useCanonicalHostname,
+                        final Map<String, String> customLoginConfig, final String loginContextName, final SpnegoTokenGenerator spnegoGenerator) {
         this.username = username;
         this.password = password;
         this.servicePrincipalName = servicePrincipalName;
@@ -99,38 +93,31 @@ public class SpnegoEngine {
     }
 
     public SpnegoEngine() {
-        this(null,
-                null,
-                null,
-                null,
-                true,
-                null,
-                null,
-                null);
+        this(null, null, null, null, true, null, null, null);
     }
 
-    public static SpnegoEngine instance(final String username,
-                                        final String password,
-                                        final String servicePrincipalName,
-                                        final String realmName,
-                                        final boolean useCanonicalHostname,
-                                        final Map<String, String> customLoginConfig,
-                                        final String loginContextName) {
+    public static SpnegoEngine instance(final String username, final String password, final String servicePrincipalName, final String realmName,
+                                        final boolean useCanonicalHostname, final Map<String, String> customLoginConfig, final String loginContextName) {
         String key = "";
         if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
             StringBuilder customLoginConfigKeyValues = new StringBuilder();
-            for (String loginConfigKey : customLoginConfig.keySet()) {
-                customLoginConfigKeyValues.append(loginConfigKey).append("=")
-                        .append(customLoginConfig.get(loginConfigKey));
+            for (Map.Entry<String, String> entry : customLoginConfig.entrySet()) {
+                customLoginConfigKeyValues
+                        .append(entry.getKey())
+                        .append('=')
+                        .append(entry.getValue());
             }
             key = customLoginConfigKeyValues.toString();
         }
+
         if (username != null) {
             key += username;
         }
+
         if (loginContextName != null) {
             key += loginContextName;
         }
+
         if (!instances.containsKey(key)) {
             instances.put(key, new SpnegoEngine(username,
                     password,
@@ -151,8 +138,8 @@ public class SpnegoEngine {
 
         try {
             /*
-             * Using the SPNEGO OID is the correct method. Kerberos v5 works for IIS but not JBoss. Unwrapping the initial token when using SPNEGO OID looks like what is described
-             * here...
+             * Using the SPNEGO OID is the correct method. Kerberos v5 works for IIS but not JBoss.
+             * Unwrapping the initial token when using SPNEGO OID looks like what is described here...
              *
              * http://msdn.microsoft.com/en-us/library/ms995330.aspx
              *
@@ -162,7 +149,6 @@ public class SpnegoEngine {
              *
              * Unfortunately SPNEGO is JRE >=1.6.
              */
-
             // Try SPNEGO by default, fall back to Kerberos later if error
             negotiationOid = new Oid(SPNEGO_OID);
 
@@ -172,19 +158,16 @@ public class SpnegoEngine {
                 GSSManager manager = GSSManager.getInstance();
                 GSSName serverName = manager.createName(spn, GSSName.NT_HOSTBASED_SERVICE);
                 GSSCredential myCred = null;
-                if (username != null || loginContextName != null || (customLoginConfig != null && !customLoginConfig.isEmpty())) {
+                if (username != null || loginContextName != null || customLoginConfig != null && !customLoginConfig.isEmpty()) {
                     String contextName = loginContextName;
                     if (contextName == null) {
                         contextName = "";
                     }
-                    LoginContext loginContext = new LoginContext(contextName,
-                            null,
-                            getUsernamePasswordHandler(),
-                            getLoginConfiguration());
+                    LoginContext loginContext = new LoginContext(contextName, null, getUsernamePasswordHandler(), getLoginConfiguration());
                     loginContext.login();
                     final Oid negotiationOidFinal = negotiationOid;
-                    final PrivilegedExceptionAction<GSSCredential> action = () -> manager.createCredential(null,
-                            GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
+                    final PrivilegedExceptionAction<GSSCredential> action = () ->
+                            manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, negotiationOidFinal, GSSCredential.INITIATE_AND_ACCEPT);
                     myCred = Subject.doAs(loginContext.getSubject(), action);
                 }
                 gssContext = manager.createContext(useCanonicalHostname ? serverName.canonicalize(negotiationOid) : serverName,
@@ -242,13 +225,16 @@ public class SpnegoEngine {
             return tokenstr;
         } catch (GSSException gsse) {
             log.error("generateToken", gsse);
-            if (gsse.getMajor() == GSSException.DEFECTIVE_CREDENTIAL || gsse.getMajor() == GSSException.CREDENTIALS_EXPIRED)
+            if (gsse.getMajor() == GSSException.DEFECTIVE_CREDENTIAL || gsse.getMajor() == GSSException.CREDENTIALS_EXPIRED) {
                 throw new SpnegoEngineException(gsse.getMessage(), gsse);
-            if (gsse.getMajor() == GSSException.NO_CRED)
+            }
+            if (gsse.getMajor() == GSSException.NO_CRED) {
                 throw new SpnegoEngineException(gsse.getMessage(), gsse);
+            }
             if (gsse.getMajor() == GSSException.DEFECTIVE_TOKEN || gsse.getMajor() == GSSException.DUPLICATE_TOKEN
-                    || gsse.getMajor() == GSSException.OLD_TOKEN)
+                    || gsse.getMajor() == GSSException.OLD_TOKEN) {
                 throw new SpnegoEngineException(gsse.getMessage(), gsse);
+            }
             // other error
             throw new SpnegoEngineException(gsse.getMessage());
         } catch (IOException | LoginException | PrivilegedActionException ex) {
@@ -266,7 +252,7 @@ public class SpnegoEngine {
         } else {
             name = servicePrincipalName;
             if (realmName != null && !name.contains("@")) {
-                name += "@" + realmName;
+                name += '@' + realmName;
             }
         }
         log.debug("Service Principal Name is {}", name);

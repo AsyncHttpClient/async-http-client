@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ByteBufferCapacityTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new BasicHandler();
     }
 
@@ -59,7 +60,8 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
         }
     }
 
-    public static String getTargetUrl() {
+    @Override
+    public String getTargetUrl() {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 

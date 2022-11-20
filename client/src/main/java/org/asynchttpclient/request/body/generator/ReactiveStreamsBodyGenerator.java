@@ -43,12 +43,12 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
      */
     public ReactiveStreamsBodyGenerator(Publisher<ByteBuf> publisher, long contentLength) {
         this.publisher = publisher;
-        this.feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
+        feedableBodyGenerator = new UnboundedQueueFeedableBodyGenerator();
         this.contentLength = contentLength;
     }
 
     public Publisher<ByteBuf> getPublisher() {
-        return this.publisher;
+        return publisher;
     }
 
     @Override
@@ -79,9 +79,9 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
         private final long contentLength;
 
-        public StreamedBody(FeedableBodyGenerator bodyGenerator, long contentLength) {
-            this.body = bodyGenerator.createBody();
-            this.subscriber = new SimpleSubscriber(bodyGenerator);
+        private StreamedBody(FeedableBodyGenerator bodyGenerator, long contentLength) {
+            body = bodyGenerator.createBody();
+            subscriber = new SimpleSubscriber(bodyGenerator);
             this.contentLength = contentLength;
         }
 
@@ -107,12 +107,12 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
     private class SimpleSubscriber implements Subscriber<ByteBuf> {
 
-        private final Logger LOGGER = LoggerFactory.getLogger(SimpleSubscriber.class);
+        private final Logger logger = LoggerFactory.getLogger(SimpleSubscriber.class);
 
         private final FeedableBodyGenerator feeder;
         private volatile Subscription subscription;
 
-        public SimpleSubscriber(FeedableBodyGenerator feeder) {
+        private SimpleSubscriber(FeedableBodyGenerator feeder) {
             this.feeder = feeder;
         }
 
@@ -121,7 +121,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
             assertNotNull(s, "subscription");
 
             // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
-            if (this.subscription != null) {
+            if (subscription != null) {
                 s.cancel(); // Cancel the additional subscription
             } else {
                 subscription = s;
@@ -135,7 +135,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
             try {
                 feeder.feed(b, false);
             } catch (Exception e) {
-                LOGGER.error("Exception occurred while processing element in stream.", e);
+                logger.error("Exception occurred while processing element in stream.", e);
                 subscription.cancel();
             }
         }
@@ -143,7 +143,7 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
         @Override
         public void onError(Throwable t) {
             assertNotNull(t, "throwable");
-            LOGGER.debug("Error occurred while consuming body stream.", t);
+            logger.debug("Error occurred while consuming body stream.", t);
             FeedListener listener = feedListener;
             if (listener != null) {
                 listener.onError(t);
@@ -155,8 +155,8 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
             try {
                 feeder.feed(Unpooled.EMPTY_BUFFER, true);
             } catch (Exception e) {
-                LOGGER.info("Ignoring exception occurred while completing stream processing.", e);
-                this.subscription.cancel();
+                logger.info("Ignoring exception occurred while completing stream processing.", e);
+                subscription.cancel();
             }
         }
     }

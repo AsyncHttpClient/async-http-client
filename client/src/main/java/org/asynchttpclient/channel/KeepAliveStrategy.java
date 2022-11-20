@@ -19,6 +19,7 @@ import org.asynchttpclient.Request;
 
 import java.net.InetSocketAddress;
 
+@FunctionalInterface
 public interface KeepAliveStrategy {
 
     /**

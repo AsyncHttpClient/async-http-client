@@ -192,7 +192,7 @@ public interface WebSocket {
     Future<Void> sendCloseFrame(int statusCode, String reasonText);
 
     /**
-     * @return <code>true</code> if the WebSocket is open/connected.
+     * @return {@code true} if the WebSocket is open/connected.
      */
     boolean isOpen();
 

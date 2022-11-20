@@ -13,18 +13,18 @@
  */
 package org.asynchttpclient.proxy;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
-import org.eclipse.jetty.server.Request;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NTLMProxyTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new NTLMProxyHandler();
     }
 
@@ -51,7 +52,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
         }
     }
 
-    private static ProxyServer ntlmProxy() {
+    private ProxyServer ntlmProxy() {
         Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")
                 .setNtlmDomain("Ursa-Minor")
                 .setNtlmHost("LightCity")
@@ -64,8 +65,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
         private final AtomicInteger state = new AtomicInteger();
 
         @Override
-        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException,
-                ServletException {
+        public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
 
             String authorization = httpRequest.getHeader("Proxy-Authorization");
             boolean asExpected = false;

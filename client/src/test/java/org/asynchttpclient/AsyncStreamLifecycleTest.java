@@ -16,14 +16,14 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.concurrent.CountDownLatch;
@@ -48,13 +48,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AsyncStreamLifecycleTest extends AbstractBasicTest {
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
-        AbstractBasicTest.tearDownGlobal();
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
         executorService.shutdownNow();
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request request, HttpServletRequest req, final HttpServletResponse resp) throws IOException {

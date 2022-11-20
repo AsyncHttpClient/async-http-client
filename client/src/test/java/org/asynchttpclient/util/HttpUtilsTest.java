@@ -19,7 +19,6 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Dsl;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.netty.util.ByteBufUtils;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,7 @@ public class HttpUtilsTest {
     private static String toUsAsciiString(ByteBuffer buf) {
         ByteBuf bb = Unpooled.wrappedBuffer(buf);
         try {
-            return ByteBufUtils.byteBuf2String(US_ASCII, bb);
+            return bb.toString(US_ASCII);
         } finally {
             bb.release();
         }
@@ -81,14 +80,14 @@ public class HttpUtilsTest {
 
     @Test
     public void testGetHostHeader() {
-        Uri uri = Uri.create("http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
+        Uri uri = Uri.create("https://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
         String hostHeader = HttpUtils.hostHeader(uri);
         assertEquals("stackoverflow.com", hostHeader, "Incorrect hostHeader returned");
     }
 
     @Test
     public void testDefaultFollowRedirect() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setVirtualHost("example.com").build();
+        Request request = Dsl.get("https://shieldblaze.com").setVirtualHost("shieldblaze.com").setFollowRedirect(false).build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertFalse(followRedirect, "Default value of redirect should be false");
@@ -96,7 +95,7 @@ public class HttpUtilsTest {
 
     @Test
     public void testGetFollowRedirectInRequest() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setFollowRedirect(true).build();
+        Request request = Dsl.get("https://stackoverflow.com/questions/1057564").setFollowRedirect(true).build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertTrue(followRedirect, "Follow redirect must be true as set in the request");
@@ -104,7 +103,7 @@ public class HttpUtilsTest {
 
     @Test
     public void testGetFollowRedirectInConfig() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").build();
+        Request request = Dsl.get("https://stackoverflow.com/questions/1057564").build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertTrue(followRedirect, "Follow redirect should be equal to value specified in config when not specified in request");
@@ -112,7 +111,7 @@ public class HttpUtilsTest {
 
     @Test
     public void testGetFollowRedirectPriorityGivenToRequest() {
-        Request request = Dsl.get("http://stackoverflow.com/questions/1057564").setFollowRedirect(false).build();
+        Request request = Dsl.get("https://stackoverflow.com/questions/1057564").setFollowRedirect(false).build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertFalse(followRedirect, "Follow redirect value set in request should be given priority");

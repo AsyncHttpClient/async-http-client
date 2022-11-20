@@ -12,11 +12,14 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.fileupload.util.Streams;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.fileupload2.FileItemIterator;
+import org.apache.commons.fileupload2.FileItemStream;
+import org.apache.commons.fileupload2.FileUploadException;
+import org.apache.commons.fileupload2.jaksrvlt.JakSrvltFileUpload;
+import org.apache.commons.fileupload2.util.Streams;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AbstractBasicTest;
@@ -32,9 +35,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MultipartUploadTest extends AbstractBasicTest {
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -148,7 +148,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    private static void sendEmptyFile0(boolean disableZeroCopy) throws Exception {
+    private void sendEmptyFile0(boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("empty.txt");
         try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             Request r = post("http://localhost" + ':' + port1 + "/upload")
@@ -169,7 +169,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         sendEmptyFile0(false);
     }
 
-    private static void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
+    private void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("empty.txt");
         try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -191,7 +191,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         sendEmptyFileInputStream(false);
     }
 
-    private static void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
+    private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("textfile.txt");
         try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -326,11 +326,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    /**
-     * Takes the content that is being passed to it, and streams to a file on disk
-     *
-     * @author dominict
-     */
+
     public static class MockMultipartUploadServlet extends HttpServlet {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(MockMultipartUploadServlet.class);
@@ -371,10 +367,10 @@ public class MultipartUploadTest extends AbstractBasicTest {
         @Override
         public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
             // Check that we have a file upload request
-            boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+            boolean isMultipart = JakSrvltFileUpload.isMultipartContent(request);
             if (isMultipart) {
                 List<String> files = new ArrayList<>();
-                ServletFileUpload upload = new ServletFileUpload();
+                JakSrvltFileUpload upload = new JakSrvltFileUpload();
                 // Parse the request
                 FileItemIterator iter;
                 try {
@@ -385,8 +381,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
                         try (InputStream stream = item.openStream()) {
 
                             if (item.isFormField()) {
-                                LOGGER.debug("Form field " + name + " with value " + Streams.asString(stream)
-                                        + " detected.");
+                                LOGGER.debug("Form field " + name + " with value " + Streams.asString(stream) + " detected.");
                                 incrementStringsProcessed();
                             } else {
                                 LOGGER.debug("File field " + name + " with file name " + item.getName() + " detected.");
@@ -409,7 +404,6 @@ public class MultipartUploadTest extends AbstractBasicTest {
                 } catch (FileUploadException e) {
                     //
                 }
-
                 try (Writer w = response.getWriter()) {
                     w.write(Integer.toString(getFilesProcessed()));
                     resetFilesProcessed();

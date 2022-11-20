@@ -22,7 +22,7 @@ public interface PartVisitor {
 
     class CounterPartVisitor implements PartVisitor {
 
-        private int count = 0;
+        private int count;
 
         @Override
         public void withBytes(byte[] bytes) {

@@ -17,7 +17,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.DecoderResultProvider;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -39,33 +43,15 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         super(config, channelManager, requestSender);
     }
 
-    private boolean abortAfterHandlingStatus(AsyncHandler<?> handler,
-                                             NettyResponseStatus status) throws Exception {
+    private static boolean abortAfterHandlingStatus(AsyncHandler<?> handler, NettyResponseStatus status) throws Exception {
         return handler.onStatusReceived(status) == State.ABORT;
     }
 
-    private boolean abortAfterHandlingHeaders(AsyncHandler<?> handler,
-                                              HttpHeaders responseHeaders) throws Exception {
+    private static boolean abortAfterHandlingHeaders(AsyncHandler<?> handler, HttpHeaders responseHeaders) throws Exception {
         return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
-    private boolean abortAfterHandlingReactiveStreams(Channel channel,
-                                                      NettyResponseFuture<?> future,
-                                                      AsyncHandler<?> handler) {
-        if (handler instanceof StreamedAsyncHandler) {
-            StreamedAsyncHandler<?> streamedAsyncHandler = (StreamedAsyncHandler<?>) handler;
-            StreamedResponsePublisher publisher = new StreamedResponsePublisher(channel.eventLoop(), channelManager, future, channel);
-            // FIXME do we really need to pass the event loop?
-            // FIXME move this to ChannelManager
-            channel.pipeline().addLast(channel.eventLoop(), "streamedAsyncHandler", publisher);
-            Channels.setAttribute(channel, publisher);
-            return streamedAsyncHandler.onStream(publisher) == State.ABORT;
-        }
-        return false;
-    }
-
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
-
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
 
@@ -75,21 +61,14 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         HttpHeaders responseHeaders = response.headers();
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-            boolean abort = abortAfterHandlingStatus(handler, status) || //
-                    abortAfterHandlingHeaders(handler, responseHeaders) || //
-                    abortAfterHandlingReactiveStreams(channel, future, handler);
-
+            boolean abort = abortAfterHandlingStatus(handler, status) || abortAfterHandlingHeaders(handler, responseHeaders);
             if (abort) {
                 finishUpdate(future, channel, true);
             }
         }
     }
 
-    private void handleChunk(HttpContent chunk,
-                             final Channel channel,
-                             final NettyResponseFuture<?> future,
-                             AsyncHandler<?> handler) throws Exception {
-
+    private void handleChunk(HttpContent chunk, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         boolean abort = false;
         boolean last = chunk instanceof LastHttpContent;
 
@@ -116,7 +95,6 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
     @Override
     public void handleRead(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
-
         // future is already done because of an exception or a timeout
         if (future.isDone()) {
             // FIXME isn't the channel already properly closed?
@@ -144,9 +122,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         } catch (Exception t) {
             // e.g. an IOException when trying to open a connection and send the
             // next request
-            if (hasIOExceptionFilters//
-                    && t instanceof IOException//
-                    && requestSender.applyIoExceptionFiltersAndReplayRequest(future, (IOException) t, channel)) {
+            if (hasIOExceptionFilters && t instanceof IOException && requestSender.applyIoExceptionFiltersAndReplayRequest(future, (IOException) t, channel)) {
                 return;
             }
 

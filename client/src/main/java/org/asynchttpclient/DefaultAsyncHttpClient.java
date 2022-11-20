@@ -85,7 +85,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     public DefaultAsyncHttpClient(AsyncHttpClientConfig config) {
 
         this.config = config;
-        this.noRequestFilters = config.getRequestFilters().isEmpty();
+        noRequestFilters = config.getRequestFilters().isEmpty();
         allowStopNettyTimer = config.getNettyTimer() == null;
         nettyTimer = allowStopNettyTimer ? newNettyTimer(config) : config.getNettyTimer();
 
@@ -106,7 +106,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         }
     }
 
-    private Timer newNettyTimer(AsyncHttpClientConfig config) {
+    private static Timer newNettyTimer(AsyncHttpClientConfig config) {
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
         HashedWheelTimer timer = new HashedWheelTimer(threadFactory, config.getHashedWheelTimerTickDuration(), TimeUnit.MILLISECONDS, config.getHashedWheelTimerSize());
         timer.start();
@@ -278,12 +278,12 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
         Request request = fc.getRequest();
         if (fc.getAsyncHandler() instanceof ResumableAsyncHandler) {
-            request = ResumableAsyncHandler.class.cast(fc.getAsyncHandler()).adjustRequestRange(request);
+            request = ((ResumableAsyncHandler) fc.getAsyncHandler()).adjustRequestRange(request);
         }
 
         if (request.getRangeOffset() != 0) {
             RequestBuilder builder = request.toBuilder();
-            builder.setHeader("Range", "bytes=" + request.getRangeOffset() + "-");
+            builder.setHeader("Range", "bytes=" + request.getRangeOffset() + '-');
             request = builder.build();
         }
         fc = new FilterContext.FilterContextBuilder<>(fc).request(request).build();
@@ -318,6 +318,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public AsyncHttpClientConfig getConfig() {
-        return this.config;
+        return config;
     }
 }

@@ -248,7 +248,7 @@ public interface AsyncHttpClient extends Closeable {
      *
      * @param request {@link Request}
      * @param handler an instance of {@link AsyncHandler}
-     * @param <T>     Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @param <T>     Type of the value that will be returned by the associated {@link Future}
      * @return a {@link Future} of type T
      */
     <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler);
@@ -258,7 +258,7 @@ public interface AsyncHttpClient extends Closeable {
      *
      * @param requestBuilder {@link RequestBuilder}
      * @param handler        an instance of {@link AsyncHandler}
-     * @param <T>            Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
+     * @param <T>            Type of the value that will be returned by the associated {@link Future}
      * @return a {@link Future} of type T
      */
     <T> ListenableFuture<T> executeRequest(RequestBuilder requestBuilder, AsyncHandler<T> handler);

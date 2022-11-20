@@ -284,12 +284,12 @@ public class UriTest {
 
     @Test
     public void creatingUriWithMissingSchemeThrowsIllegalArgumentException() {
-        assertThrows(IllegalAccessException.class, () -> Uri.create("localhost"));
+        assertThrows(IllegalArgumentException.class, () -> Uri.create("localhost"));
     }
 
     @Test
     public void creatingUriWithMissingHostThrowsIllegalArgumentException() {
-        assertThrows(IllegalAccessException.class, () -> Uri.create("http://"));
+        assertThrows(IllegalArgumentException.class, () -> Uri.create("http://"));
     }
 
     @Test

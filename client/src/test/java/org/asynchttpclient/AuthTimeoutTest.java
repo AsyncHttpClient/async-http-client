@@ -12,6 +12,9 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -21,9 +24,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
@@ -40,6 +40,7 @@ import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuthTimeoutTest extends AbstractBasicTest {
@@ -50,8 +51,9 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
     private static Server server2;
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -67,30 +69,37 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
-        AbstractBasicTest.tearDownGlobal();
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
         server2.stop();
     }
 
     @Test
     public void basicAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            assertThrows(TimeoutException.class, () -> execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+            execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            assertInstanceOf(TimeoutException.class, ex.getCause());
         }
     }
 
     @Test
     public void basicPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            assertThrows(TimeoutException.class, () -> execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+            execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            assertInstanceOf(TimeoutException.class, ex.getCause());
         }
     }
 
     @Test
     public void digestAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            assertThrows(TimeoutException.class, () -> execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+            execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            assertInstanceOf(TimeoutException.class, ex.getCause());
         }
     }
 
@@ -156,7 +165,8 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         return client.prepareGet(url).setRealm(realm.setUsePreemptiveAuth(preemptive).build()).execute();
     }
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return "http://localhost:" + port1 + '/';
     }
 
@@ -165,7 +175,8 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         return "http://localhost:" + port2 + '/';
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new IncompleteResponseHandler();
     }
 

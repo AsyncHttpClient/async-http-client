@@ -20,7 +20,7 @@ public abstract class OnLastHttpContentCallback {
         this.future = future;
     }
 
-    abstract public void call() throws Exception;
+    public abstract void call() throws Exception;
 
     public NettyResponseFuture<?> future() {
         return future;

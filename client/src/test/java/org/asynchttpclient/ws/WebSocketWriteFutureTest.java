@@ -14,8 +14,9 @@
 package org.asynchttpclient.ws;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -26,15 +27,6 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
-
-    public static WebSocketHandler configureHandler() {
-        return new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(EchoWebSocket.class);
-            }
-        };
-    }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)

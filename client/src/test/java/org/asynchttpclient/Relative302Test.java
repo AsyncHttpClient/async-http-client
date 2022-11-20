@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.uri.Uri;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -24,9 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
@@ -54,8 +54,9 @@ public class Relative302Test extends AbstractBasicTest {
         return port;
     }
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(new Relative302Handler());
@@ -73,7 +74,6 @@ public class Relative302Test extends AbstractBasicTest {
         relativePathRedirectTest();
     }
 
-    @Disabled
     @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
@@ -88,7 +88,6 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
@@ -107,7 +106,6 @@ public class Relative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @Disabled
     @Test
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
@@ -125,7 +123,6 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
