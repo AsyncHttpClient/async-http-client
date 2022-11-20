@@ -15,7 +15,14 @@ package org.asynchttpclient.reactivestreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.reactivex.Flowable;
+import io.reactivex.rxjava3.core.Flowable;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.catalina.Context;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.startup.Tomcat;
@@ -37,13 +44,6 @@ import org.reactivestreams.example.unicast.AsyncIterablePublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -78,8 +78,8 @@ public class ReactiveStreamsTest {
         return Flowable.fromIterable(new ByteBufIterable(bytes, chunkSize));
     }
 
-    private Publisher<ByteBuf> createAsyncPublisher(final byte[] bytes, final int chunkSize) {
-        return new AsyncIterablePublisher(new ByteBufIterable(bytes, chunkSize), executor);
+    private static Publisher<ByteBuf> createAsyncPublisher(final byte[] bytes, final int chunkSize) {
+        return new AsyncIterablePublisher<>(new ByteBufIterable(bytes, chunkSize), executor);
     }
 
     private static byte[] getBytes(List<HttpResponseBodyPart> bodyParts) throws IOException {
@@ -105,8 +105,7 @@ public class ReactiveStreamsTest {
         Wrapper wrapper = Tomcat.addServlet(ctx, "webdav", new HttpServlet() {
 
             @Override
-            public void service(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-                    throws IOException {
+            public void service(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
                 LOGGER.debug("Echo received request {} on path {}", httpRequest,
                         httpRequest.getServletContext().getContextPath());
 

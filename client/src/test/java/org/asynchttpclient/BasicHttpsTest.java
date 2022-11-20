@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.testserver.HttpServer;
@@ -25,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import javax.net.ssl.SSLHandshakeException;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

@@ -14,6 +14,7 @@
 package org.asynchttpclient.test;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
@@ -47,7 +48,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -78,7 +78,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class TestUtils {
+public final class TestUtils {
 
     public static final int TIMEOUT = 30;
     public static final String USER = "user";
@@ -168,10 +168,9 @@ public class TestUtils {
         httpsConfig.setSecureScheme("https");
         httpsConfig.addCustomizer(new SecureRequestCustomizer());
 
-        ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpsConfig));
+        ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(null, "http/1.1"), new HttpConnectionFactory(httpsConfig));
 
         server.addConnector(connector);
-
         return connector;
     }
 

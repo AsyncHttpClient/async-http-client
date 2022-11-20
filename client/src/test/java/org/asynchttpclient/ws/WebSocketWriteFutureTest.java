@@ -14,8 +14,8 @@
 package org.asynchttpclient.ws;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -27,13 +27,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
 
-    public static WebSocketHandler configureHandler() {
-        return new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(EchoWebSocket.class);
-            }
-        };
+    public static ServletContextHandler configureHandler() {
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server.setHandler(context);
+
+        // Configure specific websocket behavior
+        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
+            // Configure default max size
+            wsContainer.setMaxTextMessageSize(65535);
+
+            // Add websockets
+            wsContainer.addMapping("/", EchoWebSocket.class);
+        });
+
+        return context;
     }
 
     @Test
@@ -155,11 +163,11 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    private WebSocket getWebSocket(final AsyncHttpClient c) throws Exception {
+    private static WebSocket getWebSocket(final AsyncHttpClient c) throws Exception {
         return c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().build()).get();
     }
 
-    private WebSocket getWebSocket(final AsyncHttpClient c, CountDownLatch closeLatch) throws Exception {
+    private static WebSocket getWebSocket(final AsyncHttpClient c, CountDownLatch closeLatch) throws Exception {
         return c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
             @Override

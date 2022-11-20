@@ -18,6 +18,9 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
@@ -31,9 +34,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -977,8 +977,9 @@ public class BasicHttpTest extends HttpTest {
                         final EchoHandler chain = new EchoHandler();
 
                         @Override
-                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-                                throws IOException, ServletException {
+                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest,
+                                           HttpServletResponse httpServletResponse) throws IOException, ServletException {
+
                             assertEquals(request.getHeader(TRANSFER_ENCODING.toString()), HttpHeaderValues.CHUNKED.toString());
                             assertNull(request.getHeader(CONTENT_LENGTH.toString()));
                             chain.handle(target, request, httpServletRequest, httpServletResponse);
@@ -1010,8 +1011,9 @@ public class BasicHttpTest extends HttpTest {
                         final EchoHandler chain = new EchoHandler();
 
                         @Override
-                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-                                throws IOException, ServletException {
+                        public void handle(String target, org.eclipse.jetty.server.Request request, HttpServletRequest httpServletRequest,
+                                           HttpServletResponse httpServletResponse) throws IOException, ServletException {
+
                             assertNull(request.getHeader(TRANSFER_ENCODING.toString()));
                             assertEquals(request.getHeader(CONTENT_LENGTH.toString()),
                                     Integer.toString("{}".getBytes(StandardCharsets.ISO_8859_1).length));

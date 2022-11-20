@@ -13,6 +13,9 @@
  */
 package org.asynchttpclient.ntlm;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
@@ -23,9 +26,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -53,14 +53,13 @@ public class NtlmTest extends AbstractBasicTest {
         return new NTLMHandler();
     }
 
-    private Realm.Builder realmBuilderBase() {
+    private static Realm.Builder realmBuilderBase() {
         return ntlmAuthRealm("Zaphod", "Beeblebrox")
                 .setNtlmDomain("Ursa-Minor")
                 .setNtlmHost("LightCity");
     }
 
-    private void ntlmAuthTest(Realm.Builder realmBuilder) throws IOException, InterruptedException, ExecutionException {
-
+    private static void ntlmAuthTest(Realm.Builder realmBuilder) throws IOException, InterruptedException, ExecutionException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRealm(realmBuilder))) {
             Future<Response> responseFuture = client.executeRequest(get(getTargetUrl()));
             int status = responseFuture.get().getStatusCode();

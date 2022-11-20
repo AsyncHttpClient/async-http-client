@@ -5,7 +5,7 @@
 
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
-    <version>2.12.4-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>AHC/Project</name>
@@ -45,21 +45,18 @@
 
         <netty.version>4.1.85.Final</netty.version>
         <slf4j.version>2.0.3</slf4j.version>
-        <reactive-streams.version>1.0.3</reactive-streams.version>
+        <reactive-streams.version>1.0.4</reactive-streams.version>
         <activation.version>2.0.1</activation.version>
-        <netty-reactive-streams.version>2.0.4</netty-reactive-streams.version>
-        <rxjava.version>1.3.8</rxjava.version>
-        <rxjava2.version>2.2.19</rxjava2.version>
-        <logback.version>1.2.9</logback.version>
-        <testng.version>7.6.1</testng.version>
-        <jetty.version>9.4.49.v20220914</jetty.version>
-        <tomcat.version>9.0.69</tomcat.version>
-        <commons-io.version>2.7</commons-io.version>
-        <commons-fileupload.version>1.4</commons-fileupload.version>
-        <privilegedaccessor.version>1.2.2</privilegedaccessor.version>
-        <mockito.version>3.4.6</mockito.version>
+        <netty-reactive-streams.version>2.0.7</netty-reactive-streams.version>
+        <rxjava3.version>3.1.5</rxjava3.version>
+        <logback.version>1.4.4</logback.version>
+        <jetty.version>11.0.12</jetty.version>
+        <tomcat.version>10.1.2</tomcat.version>
+        <commons-io.version>2.11.0</commons-io.version>
+        <privilegedaccessor.version>1.3</privilegedaccessor.version>
+        <mockito.version>4.9.0</mockito.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <kerby.version>2.0.0</kerby.version>
+        <kerby.version>2.0.2</kerby.version>
     </properties>
 
     <scm>
@@ -103,123 +100,134 @@
         <module>example</module>
     </modules>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-socks</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler-proxy</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver-dns</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-epoll</artifactId>
-                <classifier>linux-x86_64</classifier>
-                <version>${netty.version}</version>
-                <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-kqueue</artifactId>
-                <classifier>osx-x86_64</classifier>
-                <version>${netty.version}</version>
-                <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>io.netty.incubator</groupId>
-                <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-                <version>0.0.16.Final</version>
-                <classifier>linux-x86_64</classifier>
-            </dependency>
-            <dependency>
-                <groupId>io.netty.incubator</groupId>
-                <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-                <version>0.0.16.Final</version>
-                <classifier>linux-aarch_64</classifier>
-            </dependency>
-            <dependency>
-                <groupId>org.reactivestreams</groupId>
-                <artifactId>reactive-streams</artifactId>
-                <version>${reactive-streams.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.reactivestreams</groupId>
-                <artifactId>reactive-streams-examples</artifactId>
-                <version>${reactive-streams.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.netty</groupId>
-                <artifactId>netty-reactive-streams</artifactId>
-                <version>${netty-reactive-streams.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.reactivex</groupId>
-                <artifactId>rxjava</artifactId>
-                <version>${rxjava.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.reactivex.rxjava2</groupId>
-                <artifactId>rxjava</artifactId>
-                <version>${rxjava2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.kerby</groupId>
-                <artifactId>kerb-simplekdc</artifactId>
-                <version>${kerby.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-socks</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler-proxy</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-epoll</artifactId>
+            <classifier>linux-x86_64</classifier>
+            <version>${netty.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-kqueue</artifactId>
+            <classifier>osx-x86_64</classifier>
+            <version>${netty.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty.incubator</groupId>
+            <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+            <version>0.0.16.Final</version>
+            <classifier>linux-x86_64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty.incubator</groupId>
+            <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+            <version>0.0.16.Final</version>
+            <classifier>linux-aarch_64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.reactivestreams</groupId>
+            <artifactId>reactive-streams</artifactId>
+            <version>${reactive-streams.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.reactivestreams</groupId>
+            <artifactId>reactive-streams-examples</artifactId>
+            <version>${reactive-streams.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.netty</groupId>
+            <artifactId>netty-reactive-streams</artifactId>
+            <version>${netty-reactive-streams.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.reactivex.rxjava3</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>${rxjava3.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+            <version>${kerby.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.sun.activation</groupId>
             <artifactId>jakarta.activation</artifactId>
             <version>${activation.version}</version>
         </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -258,66 +266,71 @@
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-proxy</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jetty.websocket/websocket-jetty-server -->
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-server</artifactId>
+            <artifactId>websocket-jetty-server</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>websocket-servlet</artifactId>
             <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
             <version>${tomcat.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-            <version>${commons-fileupload.version}</version>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>com.e-movimento.tinytools</groupId>
             <artifactId>privilegedaccessor</artifactId>
             <version>${privilegedaccessor.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>

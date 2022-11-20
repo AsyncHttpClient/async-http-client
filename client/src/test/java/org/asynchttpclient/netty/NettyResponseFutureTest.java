@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +35,7 @@ public class NettyResponseFutureTest {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         boolean result = nettyResponseFuture.cancel(false);
-        verify(asyncHandler).onThrowable(anyObject());
+        verify(asyncHandler).onThrowable(any());
         assertTrue(result, "Cancel should return true if the Future was cancelled successfully");
         assertTrue(nettyResponseFuture.isCancelled(), "isCancelled should return true for a cancelled Future");
     }

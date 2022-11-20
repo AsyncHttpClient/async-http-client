@@ -12,14 +12,14 @@
  */
 package org.asynchttpclient;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -140,7 +140,8 @@ public class PostRedirectGetTest extends AbstractBasicTest {
         final AtomicInteger counter = new AtomicInteger();
 
         @Override
-        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
+        public void handle(String pathInContext, org.eclipse.jetty.server.Request request, HttpServletRequest httpRequest,
+                           HttpServletResponse httpResponse) throws IOException, ServletException {
 
             final boolean expectGet = httpRequest.getHeader("x-expect-get") != null;
             final boolean expectPost = httpRequest.getHeader("x-expect-post") != null;

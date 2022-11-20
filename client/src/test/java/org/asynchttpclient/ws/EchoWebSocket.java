@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -30,7 +31,7 @@ public class EchoWebSocket extends WebSocketAdapter {
     @Override
     public void onWebSocketConnect(Session sess) {
         super.onWebSocketConnect(sess);
-        sess.setIdleTimeout(10000);
+        sess.setIdleTimeout(Duration.ofMillis(10_000));
     }
 
     @Override

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>async-http-client-extras-parent</artifactId>
         <groupId>org.asynchttpclient</groupId>
-        <version>2.12.4-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>async-http-client-extras-typesafe-config</artifactId>

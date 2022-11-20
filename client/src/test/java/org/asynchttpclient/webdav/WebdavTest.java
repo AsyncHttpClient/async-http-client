@@ -12,6 +12,9 @@
  */
 package org.asynchttpclient.webdav;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.apache.catalina.Context;
 import org.apache.catalina.servlets.WebdavServlet;
 import org.apache.catalina.startup.Tomcat;
@@ -24,9 +27,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import java.io.File;
 import java.util.Enumeration;
 

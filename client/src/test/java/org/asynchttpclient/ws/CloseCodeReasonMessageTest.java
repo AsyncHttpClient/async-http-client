@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,8 +55,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
             latch.await();
-            // used to be correct 001-Idle Timeout prior to Jetty 9.4.15...
-            assertEquals(text.get(), "1000-");
+            assertEquals("1001-Connection Idle Timeout", text.get());
         }
     }
 
@@ -93,7 +93,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
-            client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            client.prepareGet("ws://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -111,7 +111,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             }).build());
 
             latch.await();
-            assertThrows(IOException.class, () -> throwable.get());
+            assertInstanceOf(IOException.class, throwable.get());
         }
     }
 
@@ -140,7 +140,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             }).build());
 
             latch.await();
-            assertThrows(IOException.class, () -> throwable.get());
+            assertInstanceOf(IOException.class, throwable.get());
         }
     }
 

@@ -15,8 +15,8 @@ package org.asynchttpclient.ws;
 import org.asynchttpclient.AbstractBasicTest;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.junit.jupiter.api.BeforeAll;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
@@ -37,12 +37,21 @@ public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
         return String.format("ws://localhost:%d/", port1);
     }
 
-    public static WebSocketHandler configureHandler() {
-        return new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(EchoWebSocket.class);
-            }
-        };
+    public static ServletContextHandler configureHandler() {
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server.setHandler(context);
+
+        // Configure specific websocket behavior
+        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) ->
+        {
+            // Configure default max size
+            wsContainer.setMaxTextMessageSize(65535);
+
+            // Add websockets
+            wsContainer.addMapping("/", EchoWebSocket.class);
+        });
+
+        return context;
     }
 }
