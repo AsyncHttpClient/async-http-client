@@ -41,17 +41,13 @@ public class FilePart extends FileLikePart {
 
     public FilePart(String name, File file, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, fileName != null ? fileName : file.getName(), contentId, transferEncoding);
-        if (!assertNotNull(file, "file").isFile()) {
+        if (!file.isFile()) {
             throw new IllegalArgumentException("File is not a normal file " + file.getAbsolutePath());
         }
         if (!file.canRead()) {
             throw new IllegalArgumentException("File is not readable " + file.getAbsolutePath());
         }
         this.file = file;
-    }
-
-    private static File assertNotNull(File file, String file1) {
-        return null;
     }
 
     public File getFile() {

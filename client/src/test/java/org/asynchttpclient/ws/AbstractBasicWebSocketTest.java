@@ -36,6 +36,13 @@ public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
     }
 
     @Override
+    public void tearDownGlobal() throws Exception {
+        if (server != null) {
+            server.stop();
+        }
+    }
+
+    @Override
     protected String getTargetUrl() {
         return String.format("ws://localhost:%d/", port1);
     }
@@ -47,15 +54,13 @@ public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
         server.setHandler(context);
 
         // Configure specific websocket behavior
-        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) ->
-        {
+        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
             // Configure default max size
             wsContainer.setMaxTextMessageSize(65535);
 
             // Add websockets
             wsContainer.addMapping("/", EchoWebSocket.class);
         });
-
         return context;
     }
 }

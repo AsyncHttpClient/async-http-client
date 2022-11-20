@@ -64,7 +64,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         relativeLocationUrl();
     }
 
-    @Disabled
+//    @Disabled
     @Test
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
@@ -82,7 +82,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
@@ -106,7 +105,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);

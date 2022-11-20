@@ -27,7 +27,6 @@ public class NoNullResponseTest extends AbstractBasicTest {
 
     @RepeatedTest(4)
     public void multipleSslRequestsWithDelayAndKeepAlive() throws Exception {
-
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)
                 .setKeepAlive(true)

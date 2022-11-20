@@ -19,7 +19,6 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Dsl;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.netty.util.ByteBufUtils;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,7 @@ public class HttpUtilsTest {
     private static String toUsAsciiString(ByteBuffer buf) {
         ByteBuf bb = Unpooled.wrappedBuffer(buf);
         try {
-            return ByteBufUtils.byteBuf2String(US_ASCII, bb);
+            return bb.toString(US_ASCII);
         } finally {
             bb.release();
         }

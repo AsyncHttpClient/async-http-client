@@ -26,28 +26,40 @@ public class ComplexClientTest extends AbstractBasicTest {
 
     @Test
     public void multipleRequestsTest() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             String body = "hello there";
 
             // once
-            Response response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response response = client.preparePost(getTargetUrl())
+                    .setBody(body)
+                    .setHeader("Content-Type", "text/html")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getResponseBody(), body);
 
             // twice
-            response = c.preparePost(getTargetUrl()).setBody(body).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
+            response = client.preparePost(getTargetUrl())
+                    .setBody(body)
+                    .setHeader("Content-Type", "text/html")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
 
-            assertEquals(response.getResponseBody(), body);
+            assertEquals(body, response.getResponseBody());
         }
     }
 
     @Test
     public void urlWithoutSlashTest() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient()) {
             String body = "hello there";
-            Response response = c.preparePost(String.format("http://localhost:%d/foo/test", port1)).setBody(body)
-                    .setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
-            assertEquals(response.getResponseBody(), body);
+            Response response = client.preparePost(String.format("http://localhost:%d/foo/test", port1))
+                    .setBody(body)
+                    .setHeader("Content-Type", "text/html")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(body, response.getResponseBody());
         }
     }
 }

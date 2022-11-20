@@ -51,19 +51,6 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
-    private boolean abortAfterHandlingReactiveStreams(Channel channel, NettyResponseFuture<?> future, AsyncHandler<?> handler) {
-        if (handler instanceof StreamedAsyncHandler) {
-            StreamedAsyncHandler<?> streamedAsyncHandler = (StreamedAsyncHandler<?>) handler;
-            StreamedResponsePublisher publisher = new StreamedResponsePublisher(channel.eventLoop(), channelManager, future, channel);
-            // FIXME do we really need to pass the event loop?
-            // FIXME move this to ChannelManager
-            channel.pipeline().addLast(channel.eventLoop(), "streamedAsyncHandler", publisher);
-            Channels.setAttribute(channel, publisher);
-            return streamedAsyncHandler.onStream(publisher) == State.ABORT;
-        }
-        return false;
-    }
-
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
@@ -74,10 +61,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         HttpHeaders responseHeaders = response.headers();
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-            boolean abort = abortAfterHandlingStatus(handler, status) || //
-                    abortAfterHandlingHeaders(handler, responseHeaders) || //
-                    abortAfterHandlingReactiveStreams(channel, future, handler);
-
+            boolean abort = abortAfterHandlingStatus(handler, status) || abortAfterHandlingHeaders(handler, responseHeaders);
             if (abort) {
                 finishUpdate(future, channel, true);
             }

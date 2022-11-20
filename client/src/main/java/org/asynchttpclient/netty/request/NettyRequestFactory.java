@@ -35,11 +35,9 @@ import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.request.body.NettyFileBody;
 import org.asynchttpclient.netty.request.body.NettyInputStreamBody;
 import org.asynchttpclient.netty.request.body.NettyMultipartBody;
-import org.asynchttpclient.netty.request.body.NettyReactiveStreamsBody;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
-import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
@@ -110,9 +108,6 @@ public final class NettyRequestFactory {
         } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
             InputStreamBodyGenerator inStreamGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
             nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength());
-        } else if (request.getBodyGenerator() instanceof ReactiveStreamsBodyGenerator) {
-            ReactiveStreamsBodyGenerator reactiveStreamsBodyGenerator = (ReactiveStreamsBodyGenerator) request.getBodyGenerator();
-            nettyBody = new NettyReactiveStreamsBody(reactiveStreamsBodyGenerator.getPublisher(), reactiveStreamsBodyGenerator.getContentLength());
         } else if (request.getBodyGenerator() != null) {
             nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }

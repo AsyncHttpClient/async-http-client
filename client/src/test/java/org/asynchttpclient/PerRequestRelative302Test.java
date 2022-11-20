@@ -77,7 +77,6 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         redirected302InvalidTest();
     }
 
-    @Disabled
     @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
@@ -94,7 +93,6 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
@@ -115,7 +113,6 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         return url.substring(0, url.lastIndexOf(':') + String.valueOf(port).length() + 1);
     }
 
-    @Disabled
     @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
@@ -133,7 +130,6 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @Disabled
     @Test
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);

@@ -37,12 +37,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MultipartPartTest {
 
-    public static final byte[] BOUNDARY = new byte[0];
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     @Test
     public void testVisitStart() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, new byte[10])) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitStart(counterVisitor);
             assertEquals(12, counterVisitor.getCount(), "CounterPartVisitor count for visitStart should match EXTRA_BYTES count plus boundary bytes count");
@@ -52,7 +52,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitStartZeroSizedByteArray() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitStart(counterVisitor);
             assertEquals(2, counterVisitor.getCount(), "CounterPartVisitor count for visitStart should match EXTRA_BYTES count when boundary byte array is of size zero");
@@ -62,7 +62,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitDispositionHeaderWithoutFileName() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitDispositionHeader(counterVisitor);
             assertEquals(45, counterVisitor.getCount(), "CounterPartVisitor count for visitDispositionHeader should be equal to "
@@ -73,7 +73,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitDispositionHeaderWithFileName() {
         TestFileLikePart fileLikePart = new TestFileLikePart("baPart", null, null, null, null, "fileName");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitDispositionHeader(counterVisitor);
             assertEquals(68, counterVisitor.getCount(), "CounterPartVisitor count for visitDispositionHeader should be equal to "
@@ -85,7 +85,7 @@ public class MultipartPartTest {
     public void testVisitDispositionHeaderWithoutName() {
         // with fileName
         TestFileLikePart fileLikePart = new TestFileLikePart(null, null, null, null, null, "fileName");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitDispositionHeader(counterVisitor);
             assertEquals(53, counterVisitor.getCount(), "CounterPartVisitor count for visitDispositionHeader should be equal to "
@@ -96,7 +96,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitContentTypeHeaderWithCharset() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, "application/test", UTF_8, null, null);
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitContentTypeHeader(counterVisitor);
             assertEquals(47, counterVisitor.getCount(), "CounterPartVisitor count for visitContentTypeHeader should be equal to "
@@ -107,7 +107,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitContentTypeHeaderWithoutCharset() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, "application/test");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitContentTypeHeader(counterVisitor);
             assertEquals(32, counterVisitor.getCount(), "CounterPartVisitor count for visitContentTypeHeader should be equal to "
@@ -118,7 +118,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitTransferEncodingHeader() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, null, null, null, "transferEncoding");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitTransferEncodingHeader(counterVisitor);
             assertEquals(45, counterVisitor.getCount(), "CounterPartVisitor count for visitTransferEncodingHeader should be equal to "
@@ -129,7 +129,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitContentIdHeader() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, null, null, "contentId");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitContentIdHeader(counterVisitor);
             assertEquals(23, counterVisitor.getCount(), "CounterPartVisitor count for visitContentIdHeader should be equal to"
@@ -140,7 +140,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitCustomHeadersWhenNoCustomHeaders() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitCustomHeaders(counterVisitor);
             assertEquals(0, counterVisitor.getCount(), "CounterPartVisitor count for visitCustomHeaders should be zero for visitCustomHeaders "
@@ -152,7 +152,7 @@ public class MultipartPartTest {
     public void testVisitCustomHeaders() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
         fileLikePart.addCustomHeader("custom-header", "header-value");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitCustomHeaders(counterVisitor);
             assertEquals(29, counterVisitor.getCount(), "CounterPartVisitor count for visitCustomHeaders should include the length of the custom headers");
@@ -162,7 +162,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitEndOfHeaders() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitEndOfHeaders(counterVisitor);
             assertEquals(4, counterVisitor.getCount(), "CounterPartVisitor count for visitEndOfHeaders should be equal to 4");
@@ -173,7 +173,7 @@ public class MultipartPartTest {
     public void testVisitPreContent() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name", "application/test", UTF_8, "contentId", "transferEncoding", "fileName");
         fileLikePart.addCustomHeader("custom-header", "header-value");
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitPreContent(counterVisitor);
             assertEquals(216, counterVisitor.getCount(), "CounterPartVisitor count for visitPreContent should " + "be equal to the sum of the lengths of precontent");
@@ -183,7 +183,7 @@ public class MultipartPartTest {
     @Test
     public void testVisitPostContents() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
-        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, BOUNDARY)) {
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
             CounterPartVisitor counterVisitor = new CounterPartVisitor();
             multipartPart.visitPostContent(counterVisitor);
             assertEquals(2, counterVisitor.getCount(), "CounterPartVisitor count for visitPostContent should be equal to 2");

@@ -40,6 +40,7 @@ import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuthTimeoutTest extends AbstractBasicTest {
@@ -78,21 +79,27 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     @Test
     public void basicAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            assertThrows(TimeoutException.class, () -> execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+            execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            assertInstanceOf(TimeoutException.class, ex.getCause());
         }
     }
 
     @Test
     public void basicPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            assertThrows(TimeoutException.class, () -> execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+            execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            assertInstanceOf(TimeoutException.class, ex.getCause());
         }
     }
 
     @Test
     public void digestAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
-            assertThrows(TimeoutException.class, () -> execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+            execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            assertInstanceOf(TimeoutException.class, ex.getCause());
         }
     }
 

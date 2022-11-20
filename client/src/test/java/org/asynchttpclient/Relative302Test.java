@@ -74,7 +74,6 @@ public class Relative302Test extends AbstractBasicTest {
         relativePathRedirectTest();
     }
 
-    @Disabled
     @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
@@ -89,7 +88,6 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
@@ -108,7 +106,6 @@ public class Relative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @Disabled
     @Test
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
@@ -126,7 +123,6 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Disabled
     @Test
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);

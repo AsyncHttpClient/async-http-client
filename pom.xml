@@ -45,9 +45,7 @@
 
         <netty.version>4.1.85.Final</netty.version>
         <slf4j.version>2.0.3</slf4j.version>
-        <reactive-streams.version>1.0.4</reactive-streams.version>
         <activation.version>2.0.1</activation.version>
-        <netty-reactive-streams.version>2.0.7</netty-reactive-streams.version>
         <rxjava3.version>3.1.5</rxjava3.version>
         <logback.version>1.4.4</logback.version>
         <jetty.version>11.0.12</jetty.version>
@@ -93,11 +91,7 @@
     </mailingLists>
 
     <modules>
-        <module>bom</module>
-        <module>netty-utils</module>
         <module>client</module>
-        <module>extras</module>
-        <module>example</module>
     </modules>
 
     <dependencies>
@@ -183,24 +177,6 @@
             <artifactId>netty-incubator-transport-native-io_uring</artifactId>
             <version>0.0.16.Final</version>
             <classifier>linux-aarch_64</classifier>
-        </dependency>
-
-        <dependency>
-            <groupId>org.reactivestreams</groupId>
-            <artifactId>reactive-streams</artifactId>
-            <version>${reactive-streams.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.reactivestreams</groupId>
-            <artifactId>reactive-streams-examples</artifactId>
-            <version>${reactive-streams.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.typesafe.netty</groupId>
-            <artifactId>netty-reactive-streams</artifactId>
-            <version>${netty-reactive-streams.version}</version>
         </dependency>
 
         <dependency>

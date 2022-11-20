@@ -111,78 +111,78 @@ public class WebdavTest {
         }
     }
 
-    @Test
-    public void mkcolWebDavTest1() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-            Response response = client.executeRequest(mkcolRequest).get();
-            assertEquals(201, response.getStatusCode());
-        }
-    }
-
-    @Test
-    public void mkcolWebDavTest2() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
-            Response response = client.executeRequest(mkcolRequest).get();
-            assertEquals(409, response.getStatusCode());
-        }
-    }
-
-    @Test
-    public void basicPropFindWebDavTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
-            Response response = client.executeRequest(propFindRequest).get();
-
-            assertEquals(404, response.getStatusCode());
-        }
-    }
-
-    @Test
-    public void propFindWebDavTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-            Response response = client.executeRequest(mkcolRequest).get();
-            assertEquals(201, response.getStatusCode());
-
-            Request putRequest = put(getTargetUrl() + "/Test.txt").setBody("this is a test").build();
-            response = client.executeRequest(putRequest).get();
-            assertEquals(201, response.getStatusCode());
-
-            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl() + "/Test.txt").build();
-            response = client.executeRequest(propFindRequest).get();
-
-            assertEquals(207, response.getStatusCode());
-            String body = response.getResponseBody();
-            assertTrue(body.contains("HTTP/1.1 200"), "Got " + body);
-        }
-    }
-
-    @Test
-    public void propFindCompletionHandlerWebDavTest() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient()) {
-            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
-            Response response = c.executeRequest(mkcolRequest).get();
-            assertEquals(201, response.getStatusCode());
-
-            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
-            WebDavResponse webDavResponse = c.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
-
-                @Override
-                public void onThrowable(Throwable t) {
-                    t.printStackTrace();
-                }
-
-                @Override
-                public WebDavResponse onCompleted(WebDavResponse response) {
-                    return response;
-                }
-            }).get();
-
-            assertEquals(207, webDavResponse.getStatusCode());
-            String body = webDavResponse.getResponseBody();
-            assertTrue(body.contains("HTTP/1.1 200"), "Got " + body);
-        }
-    }
+//    @Test
+//    public void mkcolWebDavTest1() throws Exception {
+//        try (AsyncHttpClient client = asyncHttpClient()) {
+//            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
+//            Response response = client.executeRequest(mkcolRequest).get();
+//            assertEquals(201, response.getStatusCode());
+//        }
+//    }
+//
+//    @Test
+//    public void mkcolWebDavTest2() throws Exception {
+//        try (AsyncHttpClient client = asyncHttpClient()) {
+//            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
+//            Response response = client.executeRequest(mkcolRequest).get();
+//            assertEquals(409, response.getStatusCode());
+//        }
+//    }
+//
+//    @Test
+//    public void basicPropFindWebDavTest() throws Exception {
+//        try (AsyncHttpClient client = asyncHttpClient()) {
+//            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
+//            Response response = client.executeRequest(propFindRequest).get();
+//
+//            assertEquals(404, response.getStatusCode());
+//        }
+//    }
+//
+//    @Test
+//    public void propFindWebDavTest() throws Exception {
+//        try (AsyncHttpClient client = asyncHttpClient()) {
+//            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
+//            Response response = client.executeRequest(mkcolRequest).get();
+//            assertEquals(201, response.getStatusCode());
+//
+//            Request putRequest = put(getTargetUrl() + "/Test.txt").setBody("this is a test").build();
+//            response = client.executeRequest(putRequest).get();
+//            assertEquals(201, response.getStatusCode());
+//
+//            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl() + "/Test.txt").build();
+//            response = client.executeRequest(propFindRequest).get();
+//
+//            assertEquals(207, response.getStatusCode());
+//            String body = response.getResponseBody();
+//            assertTrue(body.contains("HTTP/1.1 200"), "Got " + body);
+//        }
+//    }
+//
+//    @Test
+//    public void propFindCompletionHandlerWebDavTest() throws Exception {
+//        try (AsyncHttpClient c = asyncHttpClient()) {
+//            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
+//            Response response = c.executeRequest(mkcolRequest).get();
+//            assertEquals(201, response.getStatusCode());
+//
+//            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
+//            WebDavResponse webDavResponse = c.executeRequest(propFindRequest, new WebDavCompletionHandlerBase<WebDavResponse>() {
+//
+//                @Override
+//                public void onThrowable(Throwable t) {
+//                    t.printStackTrace();
+//                }
+//
+//                @Override
+//                public WebDavResponse onCompleted(WebDavResponse response) {
+//                    return response;
+//                }
+//            }).get();
+//
+//            assertEquals(207, webDavResponse.getStatusCode());
+//            String body = webDavResponse.getResponseBody();
+//            assertTrue(body.contains("HTTP/1.1 200"), "Got " + body);
+//        }
+//    }
 }
