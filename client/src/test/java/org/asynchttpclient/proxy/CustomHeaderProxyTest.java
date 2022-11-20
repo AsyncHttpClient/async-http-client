@@ -53,12 +53,14 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
     private static final String customHeaderName = "Custom-Header";
     private static final String customHeaderValue = "Custom-Value";
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new ProxyHandler(customHeaderName, customHeaderValue);
     }
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
@@ -74,8 +76,9 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    public void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }

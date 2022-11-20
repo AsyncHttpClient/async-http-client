@@ -156,7 +156,7 @@ public final class TestUtils {
 
     public static ServerConnector addHttpsConnector(Server server) throws IOException, URISyntaxException {
         String keyStoreFile = resourceAsFile("ssltest-keystore.jks").getAbsolutePath();
-        SslContextFactory sslContextFactory = new SslContextFactory.Server();
+        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setKeyStorePath(keyStoreFile);
         sslContextFactory.setKeyStorePassword("changeit");
 
@@ -168,7 +168,7 @@ public final class TestUtils {
         httpsConfig.setSecureScheme("https");
         httpsConfig.addCustomizer(new SecureRequestCustomizer());
 
-        ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(null, "http/1.1"), new HttpConnectionFactory(httpsConfig));
+        ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpsConfig));
 
         server.addConnector(connector);
         return connector;

@@ -44,8 +44,9 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     private static ServerSocket serverSocket;
     private static Future<?> voidFuture;
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
         port1 = serverSocket.getLocalPort();
         executorService = Executors.newFixedThreadPool(1);
@@ -77,8 +78,9 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         });
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    public void tearDownGlobal() throws Exception {
         voidFuture.cancel(true);
         executorService.shutdownNow();
         serverSocket.close();

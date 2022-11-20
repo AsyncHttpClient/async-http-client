@@ -11,11 +11,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Arrays;
 import java.util.concurrent.Exchanger;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class NettyConnectionResetByPeerTest {
 
@@ -31,8 +32,11 @@ public class NettyConnectionResetByPeerTest {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setRequestTimeout(1500)
                 .build();
-
-        assertThrows(IOException.class, () -> new DefaultAsyncHttpClient(config).executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get());
+        try {
+            new DefaultAsyncHttpClient(config).executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get();
+        } catch (Exception ex) {
+            assertInstanceOf(SocketException.class, ex.getCause());
+        }
     }
 
     private static String createResettingServer() {

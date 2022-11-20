@@ -39,7 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class InputStreamPartLargeFileTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
 
             @Override

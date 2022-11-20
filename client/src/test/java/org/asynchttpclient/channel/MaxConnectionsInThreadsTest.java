@@ -30,6 +30,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +44,12 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -129,7 +132,8 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
         }
     }
 
-    public static String getTargetUrl() {
+    @Override
+    public String getTargetUrl() {
         return "http://localhost:" + port1 + "/timeout/";
     }
 

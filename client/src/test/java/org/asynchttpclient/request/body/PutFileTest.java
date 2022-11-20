@@ -50,7 +50,8 @@ public class PutFileTest extends AbstractBasicTest {
         put(1024);
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
 
             @Override

@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ErrorResponseTest extends AbstractBasicTest {
     static final String BAD_REQUEST_STR = "Very Bad Request! No cookies.";
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new ErrorHandler();
     }
 

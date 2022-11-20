@@ -48,13 +48,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AsyncStreamLifecycleTest extends AbstractBasicTest {
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
-        AbstractBasicTest.tearDownGlobal();
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
         executorService.shutdownNow();
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request request, HttpServletRequest req, final HttpServletResponse resp) throws IOException {

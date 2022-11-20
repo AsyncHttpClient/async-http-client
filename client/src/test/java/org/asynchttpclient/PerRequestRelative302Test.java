@@ -55,8 +55,9 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         return port;
     }
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 

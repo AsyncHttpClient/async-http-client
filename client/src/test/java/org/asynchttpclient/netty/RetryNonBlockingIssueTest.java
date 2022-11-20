@@ -46,8 +46,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 //FIXME there's no retry actually
 public class RetryNonBlockingIssueTest extends AbstractBasicTest {
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 
@@ -60,7 +61,8 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 

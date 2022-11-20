@@ -93,7 +93,6 @@ public class ReactiveStreamsTest {
     @SuppressWarnings("serial")
     @BeforeAll
     public static void setUpGlobal() throws Exception {
-
         String path = new File(".").getAbsolutePath() + "/target";
 
         tomcat = new Tomcat();
@@ -189,8 +188,7 @@ public class ReactiveStreamsTest {
                     @Override
                     public void onError(Throwable t) {
                         t.printStackTrace();
-                        httpResponse
-                                .setStatus(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+                        httpResponse.setStatus(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
                         context.complete();
                     }
 
@@ -219,16 +217,20 @@ public class ReactiveStreamsTest {
         });
         wrapper.setAsyncSupported(true);
         ctx.addServletMappingDecoded("/*", "webdav");
+
         tomcat.start();
         port1 = tomcat.getConnector().getLocalPort();
-
         executor = Executors.newSingleThreadExecutor();
     }
 
     @AfterAll
     public static void tearDownGlobal() throws Exception {
-        tomcat.stop();
-        executor.shutdown();
+        if (tomcat != null) {
+            tomcat.stop();
+        }
+        if (executor != null) {
+            executor.shutdown();
+        }
     }
 
     private String getTargetUrl() {

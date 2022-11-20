@@ -37,8 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DigestAuthTest extends AbstractBasicTest {
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         addDigestAuthHandler(server, configureHandler());
@@ -47,7 +48,8 @@ public class DigestAuthTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new SimpleHandler();
     }
 

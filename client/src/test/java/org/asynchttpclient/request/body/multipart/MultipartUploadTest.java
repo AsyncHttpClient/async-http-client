@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MultipartUploadTest extends AbstractBasicTest {
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -148,7 +148,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    private static void sendEmptyFile0(boolean disableZeroCopy) throws Exception {
+    private void sendEmptyFile0(boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("empty.txt");
         try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             Request r = post("http://localhost" + ':' + port1 + "/upload")
@@ -169,7 +169,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         sendEmptyFile0(false);
     }
 
-    private static void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
+    private void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("empty.txt");
         try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -191,7 +191,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         sendEmptyFileInputStream(false);
     }
 
-    private static void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
+    private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("textfile.txt");
         try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(file));

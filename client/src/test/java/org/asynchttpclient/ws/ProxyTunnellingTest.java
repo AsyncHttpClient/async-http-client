@@ -56,8 +56,9 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    @Override
     @AfterEach
-    public static void tearDownGlobal() throws Exception {
+    public void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();
     }

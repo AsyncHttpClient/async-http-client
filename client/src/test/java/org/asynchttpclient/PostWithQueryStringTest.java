@@ -90,7 +90,8 @@ public class PostWithQueryStringTest extends AbstractBasicTest {
         }
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new PostWithQueryStringHandler();
     }
 

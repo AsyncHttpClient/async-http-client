@@ -42,7 +42,8 @@ public class RedirectBodyTest extends AbstractBasicTest {
         receivedContentType = null;
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {

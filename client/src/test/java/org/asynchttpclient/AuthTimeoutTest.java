@@ -50,8 +50,9 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
     private static Server server2;
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         addBasicAuthHandler(server, configureHandler());
@@ -67,9 +68,10 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
-        AbstractBasicTest.tearDownGlobal();
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
         server2.stop();
     }
 
@@ -156,7 +158,8 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         return client.prepareGet(url).setRealm(realm.setUsePreemptiveAuth(preemptive).build()).execute();
     }
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return "http://localhost:" + port1 + '/';
     }
 
@@ -165,7 +168,8 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         return "http://localhost:" + port2 + '/';
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new IncompleteResponseHandler();
     }
 

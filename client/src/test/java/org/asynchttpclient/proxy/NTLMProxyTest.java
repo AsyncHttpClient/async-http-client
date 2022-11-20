@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NTLMProxyTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new NTLMProxyHandler();
     }
 
@@ -51,7 +52,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
         }
     }
 
-    private static ProxyServer ntlmProxy() {
+    private ProxyServer ntlmProxy() {
         Realm realm = ntlmAuthRealm("Zaphod", "Beeblebrox")
                 .setNtlmDomain("Ursa-Minor")
                 .setNtlmHost("LightCity")

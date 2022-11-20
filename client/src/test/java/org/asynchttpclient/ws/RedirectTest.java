@@ -39,7 +39,6 @@ public class RedirectTest extends AbstractBasicWebSocketTest {
 
     @BeforeEach
     public void setUpGlobals() throws Exception {
-
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         ServerConnector connector2 = addHttpConnector(server);
@@ -94,7 +93,7 @@ public class RedirectTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    private static String getRedirectURL() {
+    private String getRedirectURL() {
         return String.format("ws://localhost:%d/", port2);
     }
 }

@@ -15,12 +15,10 @@
 
     <modules>
         <module>guava</module>
-        <module>jdeferred</module>
         <module>registry</module>
         <module>rxjava3</module>
         <module>simple</module>
         <module>retrofit2</module>
-        <module>typesafeconfig</module>
     </modules>
 
     <dependencies>

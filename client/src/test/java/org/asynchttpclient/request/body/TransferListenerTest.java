@@ -43,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TransferListenerTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new BasicHandler();
     }
 

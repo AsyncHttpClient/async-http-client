@@ -42,7 +42,8 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
     private static final String MSG = "Enough is enough.";
     private static final int SLEEPTIME_MS = 1000;
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new SlowHandler();
     }
 

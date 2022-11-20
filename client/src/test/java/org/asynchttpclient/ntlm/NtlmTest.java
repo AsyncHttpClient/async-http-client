@@ -49,7 +49,8 @@ public class NtlmTest extends AbstractBasicTest {
         return buffer.array();
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new NTLMHandler();
     }
 
@@ -59,7 +60,7 @@ public class NtlmTest extends AbstractBasicTest {
                 .setNtlmHost("LightCity");
     }
 
-    private static void ntlmAuthTest(Realm.Builder realmBuilder) throws IOException, InterruptedException, ExecutionException {
+    private void ntlmAuthTest(Realm.Builder realmBuilder) throws IOException, InterruptedException, ExecutionException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRealm(realmBuilder))) {
             Future<Response> responseFuture = client.executeRequest(get(getTargetUrl()));
             int status = responseFuture.get().getStatusCode();

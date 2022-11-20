@@ -283,7 +283,7 @@ public class BasicHttpTest extends HttpTest {
 
     @Test
     public void nullSchemeThrowsNPE() throws Throwable {
-        assertThrows(IllegalAccessException.class, () -> withClient().run(client -> client.prepareGet("gatling.io").execute()));
+        assertThrows(IllegalArgumentException.class, () -> withClient().run(client -> client.prepareGet("gatling.io").execute()));
     }
 
     @Test
@@ -530,19 +530,17 @@ public class BasicHttpTest extends HttpTest {
     @Test
     public void connectFailureThrowsConnectException() throws Throwable {
         assertThrows(ConnectException.class, () -> {
-            assertThrows(ConnectException.class, () -> {
-                withClient().run(client -> {
-                    int dummyPort = findFreePort();
-                    try {
-                        client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
-                            @Override
-                            public void onThrowable(Throwable t) {
-                            }
-                        }).get(TIMEOUT, SECONDS);
-                    } catch (ExecutionException ex) {
-                        throw ex.getCause();
-                    }
-                });
+            withClient().run(client -> {
+                int dummyPort = findFreePort();
+                try {
+                    client.preparePost(String.format("http://localhost:%d/", dummyPort)).execute(new AsyncCompletionHandlerAdapter() {
+                        @Override
+                        public void onThrowable(Throwable t) {
+                        }
+                    }).get(TIMEOUT, SECONDS);
+                } catch (ExecutionException ex) {
+                    throw ex.getCause();
+                }
             });
         });
     }

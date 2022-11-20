@@ -58,7 +58,6 @@ public class BasicHttpProxyToHttpsTest {
 
     @BeforeAll
     public static void setUpGlobal() throws Exception {
-
         // HTTP server
         httpServer = new Server();
         ServerConnector connector1 = addHttpsConnector(httpServer);

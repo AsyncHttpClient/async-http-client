@@ -52,8 +52,9 @@ public class RC1KTest extends AbstractBasicTest {
     private static final Server[] servers = new Server[SRV_COUNT];
     private static int[] ports = new int[SRV_COUNT];
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         ports = new int[SRV_COUNT];
         for (int i = 0; i < SRV_COUNT; i++) {
             Server server = new Server();
@@ -66,14 +67,16 @@ public class RC1KTest extends AbstractBasicTest {
         logger.info("Local HTTP servers started successfully");
     }
 
+    @Override
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    public void tearDownGlobal() throws Exception {
         for (Server srv : servers) {
             srv.stop();
         }
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request r, HttpServletRequest req, HttpServletResponse resp) throws IOException {

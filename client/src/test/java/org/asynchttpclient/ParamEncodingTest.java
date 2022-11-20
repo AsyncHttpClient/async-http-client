@@ -46,7 +46,8 @@ public class ParamEncodingTest extends AbstractBasicTest {
         }
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new ParamEncoding();
     }
 

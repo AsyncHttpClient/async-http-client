@@ -20,6 +20,7 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -37,11 +37,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FilterTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new BasicHandler();
     }
 
-    public static String getTargetUrl() {
+    @Override
+    public String getTargetUrl() {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 
@@ -113,7 +115,7 @@ public class FilterTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
-            assertEquals("true", response.getHeader("X-X-Replay"));
+            assertEquals("true", response.getHeader("X-Replay"));
         }
     }
 
@@ -136,7 +138,7 @@ public class FilterTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
-            assertEquals("true", response.getHeader("X-X-Replay"));
+            assertEquals("true", response.getHeader("X-Replay"));
         }
     }
 
@@ -158,7 +160,7 @@ public class FilterTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).addHeader("Ping", "Pong").execute().get();
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
-            assertEquals("Pong", response.getHeader("X-Ping"));
+            assertEquals("Pong", response.getHeader("Ping"));
         }
     }
 

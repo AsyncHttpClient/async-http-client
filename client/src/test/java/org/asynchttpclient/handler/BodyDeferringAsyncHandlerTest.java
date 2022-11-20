@@ -33,6 +33,7 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
@@ -43,6 +44,7 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,7 +54,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     static final int CONTENT_LENGTH_VALUE = 100000;
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new SlowAndBigHandler();
     }
 
@@ -105,7 +108,11 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
             // now be polite and wait for body arrival too (otherwise we would be
             // dropping the "line" on server)
-            assertThrows(RemotelyClosedException.class, () -> f.get());
+            try {
+                assertThrows(ExecutionException.class, () -> f.get());
+            } catch (Exception ex) {
+                assertInstanceOf(RemotelyClosedException.class, ex.getCause());
+            }
             assertNotEquals(CONTENT_LENGTH_VALUE, cos.getByteCount());
         }
     }
@@ -163,7 +170,9 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             CountingOutputStream cos = new CountingOutputStream();
 
             try (is; cos) {
-                assertThrows(RemotelyClosedException.class, () -> copy(is, cos));
+                copy(is, cos);
+            } catch (Exception ex) {
+                assertInstanceOf(RemotelyClosedException.class, ex.getCause());
             }
         }
     }
@@ -188,7 +197,9 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             CountingOutputStream cos = new CountingOutputStream();
 
             try (is; cos) {
-                assertThrows(UnsupportedOperationException.class, () -> copy(is, cos));
+                copy(is, cos);
+            } catch (Exception ex) {
+                assertInstanceOf(UnsupportedOperationException.class, ex.getCause());
             }
         }
     }

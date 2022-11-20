@@ -33,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ByteBufferCapacityTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new BasicHandler();
     }
 
@@ -59,7 +60,8 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
         }
     }
 
-    public static String getTargetUrl() {
+    @Override
+    public String getTargetUrl() {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 

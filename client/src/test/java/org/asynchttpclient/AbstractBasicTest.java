@@ -21,23 +21,23 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractBasicTest {
-
     protected static final Logger logger = LoggerFactory.getLogger(AbstractBasicTest.class);
-
     protected static final int TIMEOUT = 30;
 
-    protected static Server server;
-    protected static int port1 = -1;
-    protected static int port2 = -1;
+    protected Server server;
+    protected int port1 = -1;
+    protected int port2 = -1;
 
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         server.setHandler(configureHandler());
@@ -51,13 +51,13 @@ public abstract class AbstractBasicTest {
     }
 
     @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    public void tearDownGlobal() throws Exception {
         if (server != null) {
             server.stop();
         }
     }
 
-    protected static String getTargetUrl() {
+    protected String getTargetUrl() {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 
@@ -65,7 +65,7 @@ public abstract class AbstractBasicTest {
         return String.format("https://localhost:%d/foo/test", port2);
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    public AbstractHandler configureHandler() throws Exception {
         return new EchoHandler();
     }
 

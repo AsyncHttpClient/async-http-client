@@ -31,11 +31,13 @@ import static org.asynchttpclient.Dsl.config;
 
 public class EofTerminatedTest extends AbstractBasicTest {
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         GzipHandler gzipHandler = new GzipHandler();
         gzipHandler.setHandler(new StreamHandler());
         return gzipHandler;

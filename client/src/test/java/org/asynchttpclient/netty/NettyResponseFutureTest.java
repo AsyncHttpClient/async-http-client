@@ -55,8 +55,7 @@ public class NettyResponseFutureTest {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         nettyResponseFuture.cancel(false);
-        assertThrows(CancellationException.class, () -> nettyResponseFuture.get(),
-                "A CancellationException must have occurred by now as 'cancel' was called before 'get'");
+        assertThrows(CancellationException.class, () -> nettyResponseFuture.get(), "A CancellationException must have occurred by now as 'cancel' was called before 'get'");
     }
 
     @Test
@@ -68,7 +67,7 @@ public class NettyResponseFutureTest {
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
         nettyResponseFuture.done();
         Object result = nettyResponseFuture.get();
-        assertEquals(result, "The Future should return the value given by asyncHandler#onCompleted");
+        assertEquals(value, result, "The Future should return the value given by asyncHandler#onCompleted");
     }
 
     @Test

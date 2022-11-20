@@ -30,11 +30,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class RetryRequestTest extends AbstractBasicTest {
 
-    protected static String getTargetUrl() {
+    @Override
+    protected String getTargetUrl() {
         return String.format("http://localhost:%d/", port1);
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new SlowAndBigHandler();
     }
 

@@ -43,8 +43,9 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     // FIXME super NOT threadsafe!!!
     private static final AtomicBoolean redirectDone = new AtomicBoolean(false);
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         ServerConnector connector2 = addHttpsConnector(server);

@@ -34,8 +34,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NonAsciiContentLengthTest extends AbstractBasicTest {
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(new AbstractHandler() {

@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 public class QueryParametersTest extends AbstractBasicTest {
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new QueryStringHandler();
     }
 

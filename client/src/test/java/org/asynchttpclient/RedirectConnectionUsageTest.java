@@ -48,7 +48,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     private static String servletEndpointRedirectUrl;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 

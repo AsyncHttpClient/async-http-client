@@ -54,8 +54,9 @@ public class Relative302Test extends AbstractBasicTest {
         return port;
     }
 
+    @Override
     @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(new Relative302Handler());

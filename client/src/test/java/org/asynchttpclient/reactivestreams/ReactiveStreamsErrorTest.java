@@ -57,7 +57,8 @@ public class ReactiveStreamsErrorTest extends AbstractBasicTest {
         client.close();
     }
 
-    public static AbstractHandler configureHandler() throws Exception {
+    @Override
+    public AbstractHandler configureHandler() throws Exception {
         return new AbstractHandler() {
             @Override
             public void handle(String target, Request r, HttpServletRequest request, HttpServletResponse response) {
