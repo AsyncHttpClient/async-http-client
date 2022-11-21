@@ -34,9 +34,9 @@ public class DefaultAsyncHttpClientTest {
     public void testNativeTransportWithEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build();
 
-        try (AsyncHttpClient client = asyncHttpClient(config)) {
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
             assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
-            assertInstanceOf(EpollEventLoopGroup.class, config.getEventLoopGroup());
+            assertInstanceOf(EpollEventLoopGroup.class, client.channelManager().getEventLoopGroup());
         }
     }
 
@@ -44,9 +44,9 @@ public class DefaultAsyncHttpClientTest {
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportWithoutEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
-        try (AsyncHttpClient client = asyncHttpClient(config)) {
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
             assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
-            assertInstanceOf(IOUringEventLoopGroup.class, config.getEventLoopGroup());
+            assertInstanceOf(IOUringEventLoopGroup.class, client.channelManager().getEventLoopGroup());
         }
     }
 
@@ -54,9 +54,9 @@ public class DefaultAsyncHttpClientTest {
     @EnabledOnOs(OS.MAC)
     public void testNativeTransportKQueueOnMacOs() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
-        try (AsyncHttpClient client = asyncHttpClient(config)) {
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
             assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
-            assertInstanceOf(KQueueEventLoopGroup.class, config.getEventLoopGroup());
+            assertInstanceOf(KQueueEventLoopGroup.class, client.channelManager().getEventLoopGroup());
         }
     }
 
