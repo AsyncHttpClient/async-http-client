@@ -31,23 +31,30 @@ public class DefaultAsyncHttpClientTest {
 
     @Test
     @EnabledOnOs(OS.LINUX)
-    public void testNativeTransportWithEpollOnly() {
+    public void testNativeTransportWithEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build();
-        assertInstanceOf(EpollEventLoopGroup.class, config.getEventLoopGroup());
+
+        try (AsyncHttpClient ignored = asyncHttpClient(config)) {
+            assertInstanceOf(EpollEventLoopGroup.class, config.getEventLoopGroup());
+        }
     }
 
     @Test
     @EnabledOnOs(OS.LINUX)
-    public void testNativeTransportWithoutEpollOnly() {
+    public void testNativeTransportWithoutEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
-        assertInstanceOf(IOUringEventLoopGroup.class, config.getEventLoopGroup());
+        try (AsyncHttpClient ignored = asyncHttpClient(config)) {
+            assertInstanceOf(IOUringEventLoopGroup.class, config.getEventLoopGroup());
+        }
     }
 
     @Test
     @EnabledOnOs(OS.MAC)
-    public void testNativeTransportKQueueOnMacOs() {
+    public void testNativeTransportKQueueOnMacOs() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
-        assertInstanceOf(KQueueEventLoopGroup.class, config.getEventLoopGroup());
+        try (AsyncHttpClient ignored = asyncHttpClient(config)) {
+            assertInstanceOf(KQueueEventLoopGroup.class, config.getEventLoopGroup());
+        }
     }
 
     @Test
