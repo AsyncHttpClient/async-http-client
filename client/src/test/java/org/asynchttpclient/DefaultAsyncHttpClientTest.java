@@ -34,7 +34,8 @@ public class DefaultAsyncHttpClientTest {
     public void testNativeTransportWithEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build();
 
-        try (AsyncHttpClient ignored = asyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
+            assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
             assertInstanceOf(EpollEventLoopGroup.class, config.getEventLoopGroup());
         }
     }
@@ -43,7 +44,8 @@ public class DefaultAsyncHttpClientTest {
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportWithoutEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
-        try (AsyncHttpClient ignored = asyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
+            assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
             assertInstanceOf(IOUringEventLoopGroup.class, config.getEventLoopGroup());
         }
     }
@@ -52,7 +54,8 @@ public class DefaultAsyncHttpClientTest {
     @EnabledOnOs(OS.MAC)
     public void testNativeTransportKQueueOnMacOs() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
-        try (AsyncHttpClient ignored = asyncHttpClient(config)) {
+        try (AsyncHttpClient client = asyncHttpClient(config)) {
+            assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
             assertInstanceOf(KQueueEventLoopGroup.class, config.getEventLoopGroup());
         }
     }
