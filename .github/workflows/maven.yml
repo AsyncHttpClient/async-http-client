@@ -13,8 +13,21 @@ on:
         default: 'GitHub Actions'
 
 jobs:
-  Build:
+  RunOnLinux:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Grant Permission
+        run: sudo chmod +x ./mvnw
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+      - name: Run Tests
+        run: ./mvnw -B -ntp clean test
+
+  RunOnMacOs:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - name: Grant Permission

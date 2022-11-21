@@ -21,15 +21,13 @@ import java.util.concurrent.ThreadFactory;
 
 class EpollTransportFactory implements TransportFactory<EpollSocketChannel, EpollEventLoopGroup> {
 
-    EpollTransportFactory() {
+    static boolean isAvailable() {
         try {
             Class.forName("io.netty.channel.epoll.Epoll");
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("The epoll transport is not available");
+            return false;
         }
-        if (!Epoll.isAvailable()) {
-            throw new IllegalStateException("The epoll transport is not supported");
-        }
+        return Epoll.isAvailable();
     }
 
     @Override

@@ -106,6 +106,11 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         }
     }
 
+    // Visible for testing
+    ChannelManager channelManager() {
+        return channelManager;
+    }
+
     private static Timer newNettyTimer(AsyncHttpClientConfig config) {
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
         HashedWheelTimer timer = new HashedWheelTimer(threadFactory, config.getHashedWheelTimerTickDuration(), TimeUnit.MILLISECONDS, config.getHashedWheelTimerSize());

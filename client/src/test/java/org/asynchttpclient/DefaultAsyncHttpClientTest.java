@@ -1,17 +1,25 @@
 package org.asynchttpclient;
 
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.util.Timer;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -20,6 +28,37 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class DefaultAsyncHttpClientTest {
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    public void testNativeTransportWithEpollOnly() {
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build();
+        assertInstanceOf(EpollEventLoopGroup.class, config.getEventLoopGroup());
+    }
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    public void testNativeTransportWithoutEpollOnly() {
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
+        assertInstanceOf(IOUringEventLoopGroup.class, config.getEventLoopGroup());
+    }
+
+    @Test
+    @EnabledOnOs(OS.MAC)
+    public void testNativeTransportKQueueOnMacOs() {
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
+        assertInstanceOf(KQueueEventLoopGroup.class, config.getEventLoopGroup());
+    }
+
+    @Test
+    public void testUseOnlyEpollNativeTransportButNativeTransportIsDisabled() {
+        assertThrows(IllegalArgumentException.class, () -> config().setUseNativeTransport(false).setUseOnlyEpollNativeTransport(true).build());
+    }
+
+    @Test
+    public void testUseOnlyEpollNativeTransportAndNativeTransportIsEnabled() {
+        assertDoesNotThrow(() -> config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build());
+    }
 
     @Test
     public void testWithSharedNettyTimerShouldScheduleCookieEvictionOnlyOnce() throws IOException {

@@ -28,6 +28,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AsyncHttpClientDefaultsTest {
 
     @Test
+    public void testDefaultUseOnlyEpollNativeTransport() {
+        assertFalse(AsyncHttpClientConfigDefaults.defaultUseOnlyEpollNativeTransport());
+        testBooleanSystemProperty("useOnlyEpollNativeTransport", "defaultUseOnlyEpollNativeTransport", "false");
+    }
+
+    @Test
     public void testDefaultMaxTotalConnections() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnections(), -1);
         testIntegerSystemProperty("maxConnections", "defaultMaxConnections", "100");

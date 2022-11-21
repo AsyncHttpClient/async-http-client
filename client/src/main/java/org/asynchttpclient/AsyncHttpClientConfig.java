@@ -303,6 +303,8 @@ public interface AsyncHttpClientConfig {
 
     boolean isUseNativeTransport();
 
+    boolean isUseOnlyEpollNativeTransport();
+
     Consumer<Channel> getHttpAdditionalChannelInitializer();
 
     Consumer<Channel> getWsAdditionalChannelInitializer();
