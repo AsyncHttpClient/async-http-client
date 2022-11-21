@@ -70,6 +70,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String SHUTDOWN_QUIET_PERIOD_CONFIG = "shutdownQuietPeriod";
     public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
     public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
+    public static final String USE_ONLY_EPOLL_NATIVE_TRANSPORT = "useOnlyEpollNativeTransport";
     public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
     public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
     public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
@@ -292,6 +293,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultUseNativeTransport() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_NATIVE_TRANSPORT_CONFIG);
+    }
+
+    public static boolean defaultUseOnlyEpollNativeTransport() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_ONLY_EPOLL_NATIVE_TRANSPORT);
     }
 
     public static int defaultIoThreadsCount() {

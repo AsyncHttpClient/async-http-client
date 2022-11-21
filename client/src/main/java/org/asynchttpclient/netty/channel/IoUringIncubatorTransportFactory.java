@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2022 AsyncHttpClient Project. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,30 +13,30 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueSocketChannel;
+import io.netty.incubator.channel.uring.IOUring;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.incubator.channel.uring.IOUringSocketChannel;
 
 import java.util.concurrent.ThreadFactory;
 
-class KQueueTransportFactory implements TransportFactory<KQueueSocketChannel, KQueueEventLoopGroup> {
+class IoUringIncubatorTransportFactory implements TransportFactory<IOUringSocketChannel, IOUringEventLoopGroup> {
 
     static boolean isAvailable() {
         try {
-            Class.forName("io.netty.channel.kqueue.KQueue");
+            Class.forName("io.netty.incubator.channel.uring.IOUring");
         } catch (ClassNotFoundException e) {
             return false;
         }
-        return KQueue.isAvailable();
+        return IOUring.isAvailable();
     }
 
     @Override
-    public KQueueSocketChannel newChannel() {
-        return new KQueueSocketChannel();
+    public IOUringSocketChannel newChannel() {
+        return new IOUringSocketChannel();
     }
 
     @Override
-    public KQueueEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-        return new KQueueEventLoopGroup(ioThreadsCount, threadFactory);
+    public IOUringEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+        return new IOUringEventLoopGroup(ioThreadsCount, threadFactory);
     }
 }

@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BasicAuthTest;
@@ -63,22 +64,19 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 1024);
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            for (int i = 0; i < 20; i++) {
-                Response response = f.apply(client.preparePut(getTargetUrl())
-                                .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
-                        .execute()
-                        .get();
-                assertEquals(expectedResponseCode, response.getStatusCode());
-            }
+            Response response = f.apply(client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
+                    .execute()
+                    .get();
+            assertEquals(expectedResponseCode, response.getStatusCode());
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 3)
     public void noRealmCausesServerToCloseSocket() throws Throwable {
         expectHttpResponse(rb -> rb, 401);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 3)
     public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Throwable {
         expectHttpResponse(rb -> rb.setRealm(basicAuthRealm(USER, "NOT-ADMIN")), 401);
     }

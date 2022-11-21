@@ -91,6 +91,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTh
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseLaxCookieEncoder;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseNativeTransport;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOnlyEpollNativeTransport;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOpenSsl;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseProxyProperties;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseProxySelector;
@@ -179,6 +180,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final EventLoopGroup eventLoopGroup;
     private final boolean useNativeTransport;
+    private final boolean useOnlyEpollNativeTransport;
     private final ByteBufAllocator allocator;
     private final boolean tcpNoDelay;
     private final boolean soReuseAddress;
@@ -273,6 +275,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          Map<ChannelOption<Object>, Object> channelOptions,
                                          EventLoopGroup eventLoopGroup,
                                          boolean useNativeTransport,
+                                         boolean useOnlyEpollNativeTransport,
                                          ByteBufAllocator allocator,
                                          Timer nettyTimer,
                                          ThreadFactory threadFactory,
@@ -363,6 +366,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
         this.useNativeTransport = useNativeTransport;
+        this.useOnlyEpollNativeTransport = useOnlyEpollNativeTransport;
+
+        if (useOnlyEpollNativeTransport && !useNativeTransport) {
+            throw new IllegalArgumentException("Native Transport must be enabled to use Epoll Native Transport only");
+        }
+
         this.allocator = allocator;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
@@ -704,6 +713,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public boolean isUseOnlyEpollNativeTransport() {
+        return useOnlyEpollNativeTransport;
+    }
+
+    @Override
     public ByteBufAllocator getAllocator() {
         return allocator;
     }
@@ -832,6 +846,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int httpClientCodecInitialBufferSize = defaultHttpClientCodecInitialBufferSize();
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
+        private boolean useOnlyEpollNativeTransport = defaultUseOnlyEpollNativeTransport();
         private ByteBufAllocator allocator;
         private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
         private EventLoopGroup eventLoopGroup;
@@ -918,6 +933,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             channelOptions.putAll(config.getChannelOptions());
             eventLoopGroup = config.getEventLoopGroup();
             useNativeTransport = config.isUseNativeTransport();
+            useOnlyEpollNativeTransport = config.isUseOnlyEpollNativeTransport();
+
             allocator = config.getAllocator();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
@@ -1309,6 +1326,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setUseOnlyEpollNativeTransport(boolean useOnlyEpollNativeTransport) {
+            this.useOnlyEpollNativeTransport = useOnlyEpollNativeTransport;
+            return this;
+        }
+
         public Builder setAllocator(ByteBufAllocator allocator) {
             this.allocator = allocator;
             return this;
@@ -1426,6 +1448,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),
                     eventLoopGroup,
                     useNativeTransport,
+                    useOnlyEpollNativeTransport,
                     allocator,
                     nettyTimer,
                     threadFactory,

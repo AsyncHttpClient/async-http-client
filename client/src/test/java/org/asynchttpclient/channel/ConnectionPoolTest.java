@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.channel;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
@@ -109,58 +110,57 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedTest(10)
+    @RepeatedIfExceptionsTest(repeats = 3)
     public void asyncDoGetKeepAliveHandlerTest_channelClosedDoesNotFail() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            try (AsyncHttpClient client = asyncHttpClient()) {
+                final CountDownLatch l = new CountDownLatch(2);
+                final Map<String, Boolean> remoteAddresses = new ConcurrentHashMap<>();
 
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            // Use a l in case the assert fail
-            final CountDownLatch l = new CountDownLatch(2);
+                AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
 
-            final Map<String, Boolean> remoteAddresses = new ConcurrentHashMap<>();
-
-            AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
-
-                @Override
-                public Response onCompleted(Response response) {
-                    logger.debug("ON COMPLETED INVOKED " + response.getHeader("X-KEEP-ALIVE"));
-                    try {
-                        assertEquals(200, response.getStatusCode());
-                        remoteAddresses.put(response.getHeader("X-KEEP-ALIVE"), true);
-                    } finally {
-                        l.countDown();
+                    @Override
+                    public Response onCompleted(Response response) {
+                        logger.debug("ON COMPLETED INVOKED " + response.getHeader("X-KEEP-ALIVE"));
+                        try {
+                            assertEquals(200, response.getStatusCode());
+                            remoteAddresses.put(response.getHeader("X-KEEP-ALIVE"), true);
+                        } finally {
+                            l.countDown();
+                        }
+                        return response;
                     }
-                    return response;
+
+                    @Override
+                    public void onThrowable(Throwable t) {
+                        try {
+                            super.onThrowable(t);
+                        } finally {
+                            l.countDown();
+                        }
+                    }
+                };
+
+                client.prepareGet(getTargetUrl()).execute(handler).get();
+                server.stop();
+
+                // Jetty 9.4.8 doesn't properly stop and restart (recreates ReservedThreadExecutors on start but still point to old offers threads to old ones)
+                // instead of restarting, we create a fresh new one and have it bind on the same port
+                server = new Server();
+                ServerConnector newConnector = addHttpConnector(server);
+                // make sure connector will restart with the port as it's originally dynamically allocated
+                newConnector.setPort(port1);
+                server.setHandler(configureHandler());
+                server.start();
+
+                client.prepareGet(getTargetUrl()).execute(handler);
+
+                if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
+                    fail("Timed out");
                 }
 
-                @Override
-                public void onThrowable(Throwable t) {
-                    try {
-                        super.onThrowable(t);
-                    } finally {
-                        l.countDown();
-                    }
-                }
-            };
-
-            client.prepareGet(getTargetUrl()).execute(handler).get();
-            server.stop();
-
-            // Jetty 9.4.8 doesn't properly stop and restart (recreates ReservedThreadExecutors on start but still point to old offers threads to old ones)
-            // instead of restarting, we create a fresh new one and have it bind on the same port
-            server = new Server();
-            ServerConnector newConnector = addHttpConnector(server);
-            // make sure connector will restart with the port as it's originally dynamically allocated
-            newConnector.setPort(port1);
-            server.setHandler(configureHandler());
-            server.start();
-
-            client.prepareGet(getTargetUrl()).execute(handler);
-
-            if (!l.await(TIMEOUT, TimeUnit.SECONDS)) {
-                fail("Timed out");
+                assertEquals(remoteAddresses.size(), 2);
             }
-
-            assertEquals(remoteAddresses.size(), 2);
         }
     }
 
@@ -194,40 +194,6 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             response = c.preparePost(getTargetUrl()).setBody(body).execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
-        }
-    }
-
-    /**
-     * This test just make sure the hack used to catch disconnected channel under win7 doesn't throw any exception. The onComplete method must be only called once.
-     *
-     * @throws Exception if something wrong happens.
-     */
-    @Test
-    public void win7DisconnectTest() throws Exception {
-        final AtomicInteger count = new AtomicInteger(0);
-
-        try (AsyncHttpClient client = asyncHttpClient()) {
-            AsyncCompletionHandler<Response> handler = new AsyncCompletionHandlerAdapter() {
-
-                @Override
-                public Response onCompleted(Response response) throws Exception {
-
-                    count.incrementAndGet();
-                    StackTraceElement e = new StackTraceElement("sun.nio.ch.SocketDispatcher", "read0", null, -1);
-                    IOException t = new IOException();
-                    t.setStackTrace(new StackTraceElement[]{e});
-                    throw t;
-                }
-            };
-
-            try {
-                client.prepareGet(getTargetUrl()).execute(handler).get();
-                fail("Must have received an exception");
-            } catch (Exception ex) {
-                assertNotNull(ex);
-                assertNotNull(ex.getCause());
-                assertEquals(count.get(), 1);
-            }
         }
     }
 

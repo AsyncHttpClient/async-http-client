@@ -42,6 +42,7 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -140,12 +141,11 @@ public class ChannelManager {
 
         if (allowReleaseEventLoopGroup) {
             if (config.isUseNativeTransport()) {
-                transportFactory = getNativeTransportFactory();
+                transportFactory = getNativeTransportFactory(config);
             } else {
                 transportFactory = NioTransportFactory.INSTANCE;
             }
             eventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
-
         } else {
             eventLoopGroup = config.getEventLoopGroup();
 
@@ -155,6 +155,8 @@ public class ChannelManager {
                 transportFactory = new EpollTransportFactory();
             } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
                 transportFactory = new KQueueTransportFactory();
+            } else if (eventLoopGroup instanceof IOUringEventLoopGroup) {
+                transportFactory = new IoUringIncubatorTransportFactory();
             } else {
                 throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
             }
@@ -165,6 +167,30 @@ public class ChannelManager {
 
         // for reactive streams
         httpBootstrap.option(ChannelOption.AUTO_READ, false);
+    }
+
+    private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory(AsyncHttpClientConfig config) {
+        // If we are running on macOS then use KQueue
+        if (PlatformDependent.isOsx()) {
+            if (KQueueTransportFactory.isAvailable()) {
+                return new KQueueTransportFactory();
+            }
+        }
+
+        // If we're not running on Windows then we're probably running on Linux.
+        // We will check if Io_Uring is available or not. If available, return IoUringIncubatorTransportFactory.
+        // Else
+        // We will check if Epoll is available or not. If available, return EpollTransportFactory.
+        // If none of the condition matches then no native transport is available, and we will throw an exception.
+        if (!PlatformDependent.isWindows()) {
+            if (IoUringIncubatorTransportFactory.isAvailable() && !config.isUseOnlyEpollNativeTransport()) {
+                return new IoUringIncubatorTransportFactory();
+            } else if (EpollTransportFactory.isAvailable()) {
+                return new EpollTransportFactory();
+            }
+        }
+
+        throw new IllegalArgumentException("No suitable native transport (Epoll, Io_Uring or KQueue) available");
     }
 
     public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
@@ -200,24 +226,6 @@ public class ChannelManager {
         }
 
         return bootstrap;
-    }
-
-    private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory() {
-        String nativeTransportFactoryClassName = null;
-        if (PlatformDependent.isOsx()) {
-            nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.KQueueTransportFactory";
-        } else if (!PlatformDependent.isWindows()) {
-            nativeTransportFactoryClassName = "org.asynchttpclient.netty.channel.EpollTransportFactory";
-        }
-
-        try {
-            if (nativeTransportFactoryClassName != null) {
-                return (TransportFactory<? extends Channel, ? extends EventLoopGroup>) Class.forName(nativeTransportFactoryClassName).newInstance();
-            }
-        } catch (Exception ignored) {
-            // Ignore
-        }
-        throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
     }
 
     public void configureBootstraps(NettyRequestSender requestSender) {
