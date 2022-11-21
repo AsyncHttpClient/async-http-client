@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BasicAuthTest;
@@ -73,12 +74,12 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 3)
     public void noRealmCausesServerToCloseSocket() throws Throwable {
         expectHttpResponse(rb -> rb, 401);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 3)
     public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Throwable {
         expectHttpResponse(rb -> rb.setRealm(basicAuthRealm(USER, "NOT-ADMIN")), 401);
     }

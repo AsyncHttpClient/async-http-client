@@ -23,7 +23,7 @@ class IoUringIncubatorTransportFactory implements TransportFactory<IOUringSocket
 
     static boolean isAvailable() {
         try {
-            Class.forName("io.netty.incubator.channel.uring");
+            Class.forName("io.netty.incubator.channel.uring.IOUring");
         } catch (ClassNotFoundException e) {
             return false;
         }
