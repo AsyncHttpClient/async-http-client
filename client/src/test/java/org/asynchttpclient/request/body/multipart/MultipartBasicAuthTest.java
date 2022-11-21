@@ -64,13 +64,10 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 1024);
 
         try (AsyncHttpClient client = asyncHttpClient()) {
-            for (int i = 0; i < 20; i++) {
-                Response response = f.apply(client.preparePut(getTargetUrl())
-                                .addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
-                        .execute()
-                        .get();
-                assertEquals(expectedResponseCode, response.getStatusCode());
-            }
+            Response response = f.apply(client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
+                    .execute()
+                    .get();
+            assertEquals(expectedResponseCode, response.getStatusCode());
         }
     }
 
