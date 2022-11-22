@@ -7,10 +7,9 @@ The library also supports the WebSocket Protocol.
 
 It's built on top of [Netty](https://github.com/netty/netty). It's currently compiled on Java 8 but runs on Java 9 too.
 
-## New Roadmap RFCs!
+## New Maintainer!
 
-Well, not really RFCs, but as [I](https://github.com/TomGranot) am ramping up to release a new version, I would appreciate the comments from the community. Please add an issue
-and [label it RFC](https://github.com/AsyncHttpClient/async-http-client/labels/RFC) and I'll take a look!
+[Aayush (hyperxpro)](https://twitter.com/HyperXPro) has gracefully decided to take over maintainership from [Tom](https://github.com/TomGranot), and is available for your questions. Please mention him in your issues and PRs from now on!
 
 ## Installation
 
