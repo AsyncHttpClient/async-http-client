@@ -300,7 +300,13 @@ public final class AsyncHttpClientConfigDefaults {
     }
 
     public static int defaultIoThreadsCount() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + IO_THREADS_COUNT_CONFIG);
+        int threads = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + IO_THREADS_COUNT_CONFIG);
+
+        // If threads value is -1 then we will automatically pick number of available processors.
+        if (threads == -1) {
+            threads = Runtime.getRuntime().availableProcessors();
+        }
+        return threads;
     }
 
     public static int defaultHashedWheelTimerTickDuration() {

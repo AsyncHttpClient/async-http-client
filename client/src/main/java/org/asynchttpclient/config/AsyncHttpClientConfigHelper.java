@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class AsyncHttpClientConfigHelper {
+public final class AsyncHttpClientConfigHelper {
 
     private static volatile Config config;
 
