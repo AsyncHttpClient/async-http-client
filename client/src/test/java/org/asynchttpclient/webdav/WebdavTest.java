@@ -19,22 +19,15 @@ import org.apache.catalina.Context;
 import org.apache.catalina.servlets.WebdavServlet;
 import org.apache.catalina.startup.Tomcat;
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Enumeration;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.delete;
-import static org.asynchttpclient.Dsl.put;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WebdavTest {
 
@@ -111,7 +104,7 @@ public class WebdavTest {
         }
     }
 
-//    @Test
+//    @RepeatedIfExceptionsTest(repeats = 5)
 //    public void mkcolWebDavTest1() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -120,7 +113,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @Test
+//    @RepeatedIfExceptionsTest(repeats = 5)
 //    public void mkcolWebDavTest2() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
@@ -129,7 +122,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @Test
+//    @RepeatedIfExceptionsTest(repeats = 5)
 //    public void basicPropFindWebDavTest() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
@@ -139,7 +132,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @Test
+//    @RepeatedIfExceptionsTest(repeats = 5)
 //    public void propFindWebDavTest() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -159,7 +152,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @Test
+//    @RepeatedIfExceptionsTest(repeats = 5)
 //    public void propFindCompletionHandlerWebDavTest() throws Exception {
 //        try (AsyncHttpClient c = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();

@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +23,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         return new SlowHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
         final int samples = 10;

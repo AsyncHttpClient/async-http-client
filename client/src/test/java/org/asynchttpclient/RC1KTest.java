@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +25,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
@@ -91,7 +91,7 @@ public class RC1KTest extends AbstractBasicTest {
         };
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 10 * 60 * 1000)
     public void rc10kProblem() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C1K).setKeepAlive(true))) {

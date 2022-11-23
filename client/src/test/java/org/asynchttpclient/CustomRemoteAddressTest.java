@@ -13,13 +13,13 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.util.internal.SocketUtils;
 import org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.get;
@@ -41,7 +41,7 @@ public class CustomRemoteAddressTest extends HttpTest {
         server.close();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getRootUrlWithCustomRemoteAddress() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {

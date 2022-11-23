@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +27,6 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ZeroCopyFileTest extends AbstractBasicTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void zeroCopyPostTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
@@ -82,7 +82,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void zeroCopyPutTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://localhost:" + port1 + '/').setBody(SIMPLE_TEXT_FILE).execute();
@@ -98,7 +98,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void zeroCopyFileTest() throws Exception {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
@@ -138,7 +138,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void zeroCopyFileWithBodyManipulationTest() throws Exception {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();

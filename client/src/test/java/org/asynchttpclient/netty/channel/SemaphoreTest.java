@@ -1,14 +1,13 @@
 package org.asynchttpclient.netty.channel;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -121,19 +120,19 @@ public class SemaphoreTest {
         assertTrue(timeToAcquire <= CHECK_ACQUIRE_TIME__TIMEOUT + 300, "Semaphore acquired too late: " + timeToAcquire + " ms"); //Upper Bound
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void maxConnectionCheckRelease() throws IOException {
         checkRelease(new MaxConnectionSemaphore(1, 0));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void perHostCheckRelease() throws IOException {
         checkRelease(new PerHostConnectionSemaphore(1, 0));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void combinedCheckRelease() throws IOException {
         checkRelease(new CombinedConnectionSemaphore(1, 1, 0));

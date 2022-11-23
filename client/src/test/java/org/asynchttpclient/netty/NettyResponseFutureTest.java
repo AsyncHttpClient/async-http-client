@@ -13,8 +13,8 @@
  */
 package org.asynchttpclient.netty;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHandler;
-import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 public class NettyResponseFutureTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testCancel() {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
@@ -40,7 +40,7 @@ public class NettyResponseFutureTest {
         assertTrue(nettyResponseFuture.isCancelled(), "isCancelled should return true for a cancelled Future");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testCancelOnAlreadyCancelled() {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
@@ -50,7 +50,7 @@ public class NettyResponseFutureTest {
         assertTrue(nettyResponseFuture.isCancelled(), "isCancelled should return true for a cancelled Future");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGetContentThrowsCancellationExceptionIfCancelled() throws Exception {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
@@ -58,7 +58,7 @@ public class NettyResponseFutureTest {
         assertThrows(CancellationException.class, () -> nettyResponseFuture.get(), "A CancellationException must have occurred by now as 'cancel' was called before 'get'");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGet() throws Exception {
         @SuppressWarnings("unchecked")
         AsyncHandler<Object> asyncHandler = mock(AsyncHandler.class);
@@ -70,7 +70,7 @@ public class NettyResponseFutureTest {
         assertEquals(value, result, "The Future should return the value given by asyncHandler#onCompleted");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGetThrowsExceptionThrownByAsyncHandler() throws Exception {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         when(asyncHandler.onCompleted()).thenThrow(new RuntimeException());
@@ -80,7 +80,7 @@ public class NettyResponseFutureTest {
                 "An ExecutionException must have occurred by now as asyncHandler threw an exception in 'onCompleted'");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGetThrowsExceptionOnAbort() throws Exception {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         NettyResponseFuture<?> nettyResponseFuture = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);

@@ -26,11 +26,8 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -63,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testMaxTotalConnections() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
@@ -84,7 +81,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testMaxTotalConnectionsException() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
@@ -164,7 +161,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void multipleMaxConnectionOpenTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
@@ -181,7 +178,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
@@ -197,7 +194,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void asyncHandlerOnThrowableTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicInteger count = new AtomicInteger();
@@ -231,7 +228,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void nonPoolableConnectionReleaseSemaphoresTest() throws Throwable {
 
         RequestBuilder request = get(getTargetUrl()).setHeader("Connection", "close");
@@ -247,7 +244,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testPooledEventsFired() throws Exception {
         RequestBuilder request = get("http://localhost:" + port1 + "/Test");
 

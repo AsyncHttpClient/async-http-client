@@ -1,17 +1,16 @@
 package org.asynchttpclient.netty;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.concurrent.Exchanger;
 import java.util.function.Consumer;
@@ -27,7 +26,7 @@ public class NettyConnectionResetByPeerTest {
         resettingServerAddress = createResettingServer();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testAsyncHttpClientConnectionResetByPeer() throws InterruptedException {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setRequestTimeout(1500)

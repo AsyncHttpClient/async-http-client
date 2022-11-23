@@ -13,11 +13,8 @@
  */
 package org.asynchttpclient.ws;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
@@ -28,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendTextMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -36,7 +33,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendTextMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -48,7 +45,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendByteMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -56,7 +53,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendByteMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -68,7 +65,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPingMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -76,7 +73,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPingMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -88,7 +85,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPongMessage() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -96,7 +93,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void sendPongMessageExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -108,7 +105,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void streamBytes() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -116,7 +113,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void streamBytesExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -128,7 +125,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void streamText() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             getWebSocket(c).sendTextFrame("STREAM", true, 0).get(1, TimeUnit.SECONDS);
@@ -136,7 +133,7 @@ public class WebSocketWriteFutureTest extends AbstractBasicWebSocketTest {
     }
 
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void streamTextExpectFailure() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             CountDownLatch closeLatch = new CountDownLatch(1);

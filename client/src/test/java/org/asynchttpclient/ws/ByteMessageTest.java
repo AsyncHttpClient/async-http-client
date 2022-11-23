@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.ws;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
@@ -64,17 +64,17 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoByte() throws Exception {
         echoByte0(false);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoByteCompressed() throws Exception {
         echoByte0(true);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -120,7 +120,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoOnOpenMessagesTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -165,7 +165,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoFragments() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);

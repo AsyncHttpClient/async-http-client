@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient.netty;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +29,7 @@ import static org.asynchttpclient.Dsl.config;
 public class TimeToLiveIssueTest extends AbstractBasicTest {
 
     @Disabled("https://github.com/AsyncHttpClient/async-http-client/issues/1113")
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testTTLBug() throws Throwable {
         // The purpose of this test is to reproduce two issues:
         // 1) Connections that are rejected by the pool are not closed and eventually use all available sockets.

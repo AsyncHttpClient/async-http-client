@@ -13,12 +13,12 @@
  */
 package org.asynchttpclient.request.body.generator;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,14 +38,14 @@ public class FeedableBodyGeneratorTest {
         feedableBodyGenerator.setListener(listener);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void feedNotifiesListener() throws Exception {
         feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, false);
         feedableBodyGenerator.feed(Unpooled.EMPTY_BUFFER, true);
         assertEquals(2, listener.getCalls());
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void readingBytesReturnsFedContentWithoutChunkBoundaries() throws Exception {
         byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
 
@@ -63,7 +63,7 @@ public class FeedableBodyGeneratorTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void returnZeroToSuspendStreamWhenNothingIsInQueue() throws Exception {
         byte[] content = "Test123".getBytes(StandardCharsets.US_ASCII);
 

@@ -13,9 +13,9 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
-import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
@@ -27,127 +27,127 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class AsyncHttpClientDefaultsTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultUseOnlyEpollNativeTransport() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultUseOnlyEpollNativeTransport());
         testBooleanSystemProperty("useOnlyEpollNativeTransport", "defaultUseOnlyEpollNativeTransport", "false");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultMaxTotalConnections() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnections(), -1);
         testIntegerSystemProperty("maxConnections", "defaultMaxConnections", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultMaxConnectionPerHost() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultMaxConnectionsPerHost(), -1);
         testIntegerSystemProperty("maxConnectionsPerHost", "defaultMaxConnectionsPerHost", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultConnectTimeOut() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 5 * 1000);
         testIntegerSystemProperty("connectTimeout", "defaultConnectTimeout", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultPooledConnectionIdleTimeout() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), 60 * 1000);
         testIntegerSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultReadTimeout() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), 60 * 1000);
         testIntegerSystemProperty("readTimeout", "defaultReadTimeout", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultRequestTimeout() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultRequestTimeout(), 60 * 1000);
         testIntegerSystemProperty("requestTimeout", "defaultRequestTimeout", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultConnectionTtl() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), -1);
         testIntegerSystemProperty("connectionTtl", "defaultConnectionTtl", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultFollowRedirect() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultFollowRedirect());
         testBooleanSystemProperty("followRedirect", "defaultFollowRedirect", "true");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultMaxRedirects() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRedirects(), 5);
         testIntegerSystemProperty("maxRedirects", "defaultMaxRedirects", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultCompressionEnforced() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultCompressionEnforced());
         testBooleanSystemProperty("compressionEnforced", "defaultCompressionEnforced", "true");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultUserAgent() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultUserAgent(), "AHC/2.1");
         testStringSystemProperty("userAgent", "defaultUserAgent", "MyAHC");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultUseProxySelector() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxySelector());
         testBooleanSystemProperty("useProxySelector", "defaultUseProxySelector", "true");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultUseProxyProperties() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultUseProxyProperties());
         testBooleanSystemProperty("useProxyProperties", "defaultUseProxyProperties", "true");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultStrict302Handling() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultStrict302Handling());
         testBooleanSystemProperty("strict302Handling", "defaultStrict302Handling", "true");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultAllowPoolingConnection() {
         assertTrue(AsyncHttpClientConfigDefaults.defaultKeepAlive());
         testBooleanSystemProperty("keepAlive", "defaultKeepAlive", "false");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultMaxRequestRetry() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultMaxRequestRetry(), 5);
         testIntegerSystemProperty("maxRequestRetry", "defaultMaxRequestRetry", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultDisableUrlEncodingForBoundRequests() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests());
         testBooleanSystemProperty("disableUrlEncodingForBoundRequests", "defaultDisableUrlEncodingForBoundRequests", "true");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultUseInsecureTrustManager() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager());
         testBooleanSystemProperty("useInsecureTrustManager", "defaultUseInsecureTrustManager", "false");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultHashedWheelTimerTickDuration() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration(), 100);
         testIntegerSystemProperty("hashedWheelTimerTickDuration", "defaultHashedWheelTimerTickDuration", "100");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultHashedWheelTimerSize() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize(), 512);
         testIntegerSystemProperty("hashedWheelTimerSize", "defaultHashedWheelTimerSize", "512");

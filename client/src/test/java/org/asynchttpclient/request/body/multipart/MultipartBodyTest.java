@@ -13,11 +13,11 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import org.asynchttpclient.request.body.Body.BodyState;
-import org.junit.jupiter.api.Test;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -123,7 +123,7 @@ public class MultipartBodyTest {
         return transferred.get();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void transferWithCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
@@ -133,7 +133,7 @@ public class MultipartBodyTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void transferZeroCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {

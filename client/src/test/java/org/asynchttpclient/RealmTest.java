@@ -12,9 +12,9 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
-import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RealmTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testClone() {
         Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)
                 .setUsePreemptiveAuth(true)
@@ -44,12 +44,12 @@ public class RealmTest {
         assertEquals(clone.getScheme(), orig.getScheme());
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOldDigestEmptyString() throws Exception {
         testOldDigest("");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOldDigestNull() throws Exception {
         testOldDigest(null);
     }
@@ -76,7 +76,7 @@ public class RealmTest {
         assertEquals(orig.getResponse(), expectedResponse);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testStrongDigest() throws Exception {
         String user = "user";
         String pass = "pass";

@@ -23,7 +23,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.function.Function;
@@ -95,12 +94,12 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void authorizedPreemptiveRealmWorks() throws Exception {
         expectSuccess(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN).setUsePreemptiveAuth(true)));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void authorizedNonPreemptiveRealmWorksWithExpectContinue() throws Exception {
         expectSuccess(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)).setHeader(EXPECT, CONTINUE));
     }

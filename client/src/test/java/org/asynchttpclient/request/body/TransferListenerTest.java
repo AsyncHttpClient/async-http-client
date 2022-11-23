@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +25,6 @@ import org.asynchttpclient.handler.TransferListener;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void basicGetTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
@@ -103,7 +103,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void basicPutFileTest() throws Exception {
         final AtomicReference<Throwable> throwable = new AtomicReference<>();
         final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
@@ -163,7 +163,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void basicPutFileBodyGeneratorTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
