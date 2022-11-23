@@ -164,9 +164,6 @@ public class ChannelManager {
 
         httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
         wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
-
-        // for reactive streams
-        httpBootstrap.option(ChannelOption.AUTO_READ, false);
     }
 
     private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory(AsyncHttpClientConfig config) {

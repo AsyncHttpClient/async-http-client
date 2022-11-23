@@ -112,7 +112,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     @Test
     public void testClientStatusNoKeepalive() throws Throwable {
-        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
+        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setPooledConnectionIdleTimeout(1000))) {
             final String url = getTargetUrl();
 
             final ClientStats emptyStats = client.getClientStats();
