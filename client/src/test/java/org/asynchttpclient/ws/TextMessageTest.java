@@ -12,8 +12,8 @@
  */
 package org.asynchttpclient.ws;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.net.ConnectException;
@@ -26,12 +26,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TextMessageTest extends AbstractBasicWebSocketTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onOpen() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -62,7 +61,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onEmptyListenerTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -76,7 +75,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onFailureTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -88,7 +87,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onTimeoutCloseTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -119,7 +118,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onClose() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -152,7 +151,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoText() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -190,7 +189,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoDoubleListenerText() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -250,7 +249,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -287,7 +286,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void echoFragments() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -325,7 +324,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoTextAndThenClose() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {

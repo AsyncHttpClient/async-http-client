@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -28,7 +29,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         return client.executeRequest(r);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testRetryNonBlocking() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
@@ -102,7 +102,7 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testRetryNonBlockingAsyncConnect() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)

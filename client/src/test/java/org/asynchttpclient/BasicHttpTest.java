@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -31,7 +32,6 @@ import org.asynchttpclient.testserver.HttpTest;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
@@ -102,7 +102,7 @@ public class BasicHttpTest extends HttpTest {
         return server.getHttpUrl() + "/foo/bar";
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getRootUrl() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -114,7 +114,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getUrlWithPathWithoutQuery() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -125,7 +125,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getUrlWithPathWithQuery() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -139,7 +139,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getUrlWithPathWithQueryParams() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -150,7 +150,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getResponseBody() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -178,7 +178,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getWithHeaders() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -203,7 +203,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postWithHeadersAndFormParams() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -233,7 +233,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postChineseChar() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -263,7 +263,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void headHasEmptyBody() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -281,12 +281,12 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void nullSchemeThrowsNPE() throws Throwable {
         assertThrows(IllegalArgumentException.class, () -> withClient().run(client -> client.prepareGet("gatling.io").execute()));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void jettyRespondsWithChunkedTransferEncoding() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -303,7 +303,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getWithCookies() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -327,7 +327,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void defaultRequestBodyEncodingIsUtf8() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -339,7 +339,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postFormParametersAsBodyString() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -371,7 +371,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postFormParametersAsBodyStream() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -402,7 +402,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void putFormParametersAsBodyStream() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -433,7 +433,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postSingleStringPart() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -452,7 +452,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postWithBody() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -468,7 +468,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getVirtualHost() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -487,7 +487,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void cancelledFutureThrowsCancellationException() throws Throwable {
         assertThrows(CancellationException.class, () -> {
             withClient().run(client ->
@@ -507,7 +507,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void futureTimeOutThrowsTimeoutException() throws Throwable {
         assertThrows(TimeoutException.class, () -> {
             withClient().run(client ->
@@ -527,7 +527,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void connectFailureThrowsConnectException() throws Throwable {
         assertThrows(ConnectException.class, () -> {
             withClient().run(client -> {
@@ -545,7 +545,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void connectFailureNotifiesHandlerWithConnectException() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -569,7 +569,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void unknownHostThrowsUnknownHostException() throws Throwable {
         assertThrows(UnknownHostException.class, () -> {
             withClient().run(client ->
@@ -587,7 +587,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getEmptyBody() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -598,7 +598,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getEmptyBodyNotifiesHandler() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -618,7 +618,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void exceptionInOnCompletedGetNotifiedToOnThrowable() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -648,7 +648,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void exceptionInOnCompletedGetNotifiedToFuture() throws Throwable {
         assertThrows(IllegalStateException.class, () -> {
             withClient().run(client ->
@@ -674,7 +674,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void configTimeoutNotifiesOnThrowableAndFuture() throws Throwable {
         assertThrows(TimeoutException.class, () -> {
             withClient(config().setRequestTimeout(1_000)).run(client ->
@@ -719,7 +719,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void configRequestTimeoutHappensInDueTime() throws Throwable {
         assertThrows(TimeoutException.class, () -> {
             withClient(config().setRequestTimeout(1_000)).run(client ->
@@ -741,7 +741,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getProperPathAndQueryString() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -757,7 +757,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void connectionIsReusedForSequentialRequests() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -796,7 +796,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void reachingMaxRedirectThrowsMaxRedirectException() throws Throwable {
         assertThrows(MaxRedirectException.class, () -> {
             withClient(config().setMaxRedirects(1).setFollowRedirect(true)).run(client ->
@@ -823,7 +823,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void nonBlockingNestedRequestsFromIoThreadAreFine() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -858,7 +858,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void optionsIsSupported() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -869,7 +869,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void cancellingFutureNotifiesOnThrowableWithCancellationException() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -896,14 +896,14 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void getShouldAllowBody() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server ->
                         client.prepareGet(getTargetUrl()).setBody("Boo!").execute()));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void malformedUriThrowsException() throws Throwable {
         assertThrows(IllegalArgumentException.class, () -> {
             withClient().run(client ->
@@ -911,7 +911,7 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void emptyResponseBodyBytesAreEmpty() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -922,7 +922,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void newConnectionEventsAreFired() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -950,7 +950,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void requestingPlainHttpEndpointOverHttpsThrowsSslException() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -965,7 +965,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postUnboundedInputStreamAsBodyStream() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -999,7 +999,7 @@ public class BasicHttpTest extends HttpTest {
                 }));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postInputStreamWithContentLengthAsBodyGenerator() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {

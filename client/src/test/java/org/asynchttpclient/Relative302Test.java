@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,8 +25,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -66,7 +65,7 @@ public class Relative302Test extends AbstractBasicTest {
         port2 = findFreePort();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
         redirected302InvalidTest();
@@ -74,7 +73,7 @@ public class Relative302Test extends AbstractBasicTest {
         relativePathRedirectTest();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
 
@@ -88,7 +87,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -106,7 +105,7 @@ public class Relative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -123,7 +122,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 

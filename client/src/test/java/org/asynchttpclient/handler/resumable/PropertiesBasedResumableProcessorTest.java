@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.handler.resumable;
 
-import org.junit.jupiter.api.Test;
+import io.github.artsok.RepeatedIfExceptionsTest;
 
 import java.util.Map;
 
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class PropertiesBasedResumableProcessorTest {
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSaveLoad() {
         PropertiesBasedResumableProcessor processor = new PropertiesBasedResumableProcessor();
         processor.put("http://localhost/test.url", 15L);
@@ -37,7 +37,7 @@ public class PropertiesBasedResumableProcessorTest {
         assertEquals(Long.valueOf(50L), map.get("http://localhost/test2.url"));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testRemove() {
         PropertiesBasedResumableProcessor processor = new PropertiesBasedResumableProcessor();
         processor.put("http://localhost/test.url", 15L);

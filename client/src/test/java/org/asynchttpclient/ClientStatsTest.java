@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient;
 
-import org.junit.jupiter.api.Test;
+import io.github.artsok.RepeatedIfExceptionsTest;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +31,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     private static final String hostname = "localhost";
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testClientStatus() throws Throwable {
         try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(5000))) {
             final String url = getTargetUrl();
@@ -110,9 +110,9 @@ public class ClientStatsTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testClientStatusNoKeepalive() throws Throwable {
-        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
+        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setPooledConnectionIdleTimeout(1000))) {
             final String url = getTargetUrl();
 
             final ClientStats emptyStats = client.getClientStats();

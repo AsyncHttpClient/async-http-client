@@ -1,18 +1,17 @@
 package org.asynchttpclient.spnego;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.apache.commons.io.FileUtils;
 import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
 import org.asynchttpclient.AbstractBasicTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,7 +66,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         FileUtils.copyInputStreamToFile(SpnegoEngine.class.getResourceAsStream("/kerberos.jaas"), loginConfig);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSpnegoGenerateTokenWithUsernamePassword() throws Exception {
         SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
                 "alice",
@@ -82,7 +81,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         assertTrue(token.startsWith("YII"));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSpnegoGenerateTokenWithUsernamePasswordFail() throws Exception {
         SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
                 "wrong password",
@@ -95,7 +94,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         assertThrows(SpnegoEngineException.class, () -> spnegoEngine.generateToken("localhost"));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSpnegoGenerateTokenWithCustomLoginConfig() throws Exception {
         Map<String, String> loginConfig = new HashMap<>();
         loginConfig.put("useKeyTab", "true");
@@ -118,7 +117,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         assertTrue(token.startsWith("YII"));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGetCompleteServicePrincipalName() throws Exception {
         {
             SpnegoEngine spnegoEngine = new SpnegoEngine(null,

@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.exception.RemotelyClosedException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,7 +40,7 @@ public class RetryRequestTest extends AbstractBasicTest {
         return new SlowAndBigHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testMaxRetry() {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();

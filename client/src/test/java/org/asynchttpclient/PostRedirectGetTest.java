@@ -12,13 +12,13 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -37,27 +37,27 @@ public class PostRedirectGetTest extends AbstractBasicTest {
         return new PostRedirectGetHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postRedirectGet302Test() throws Exception {
         doTestPositive(302);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postRedirectGet302StrictTest() throws Exception {
         doTestNegative(302, true);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postRedirectGet303Test() throws Exception {
         doTestPositive(303);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postRedirectGet301Test() throws Exception {
         doTestPositive(301);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void postRedirectGet307Test() throws Exception {
         doTestNegative(307, false);
     }

@@ -13,7 +13,7 @@
  */
 package org.asynchttpclient;
 
-import org.junit.jupiter.api.Test;
+import io.github.artsok.RepeatedIfExceptionsTest;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -44,7 +44,7 @@ public class ThreadNameTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testThreadName() throws Exception {
         String threadPoolName = "ahc-" + (new Random().nextLong() & 0x7fffffffffffffffL);
         try (AsyncHttpClient client = asyncHttpClient(config().setThreadPoolName(threadPoolName))) {

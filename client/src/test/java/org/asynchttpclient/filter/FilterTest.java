@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.filter;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +21,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class FilterTest extends AbstractBasicTest {
         return String.format("http://localhost:%d/foo/test", port1);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void basicTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
@@ -56,7 +56,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void loadThrottleTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(10)))) {
             List<Future<Response>> futures = new ArrayList<>();
@@ -72,14 +72,14 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void maxConnectionsText() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
             assertThrows(Exception.class, () -> client.preparePost(getTargetUrl()).execute().get());
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void basicResponseFilterTest() throws Exception {
 
         ResponseFilter responseFilter = new ResponseFilter() {
@@ -96,7 +96,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void replayResponseFilterTest() throws Exception {
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
@@ -119,7 +119,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void replayStatusCodeResponseFilterTest() throws Exception {
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
@@ -142,7 +142,7 @@ public class FilterTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void replayHeaderResponseFilterTest() throws Exception {
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {

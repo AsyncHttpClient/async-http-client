@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.proxy;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +31,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -83,7 +83,7 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testHttpProxy() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)

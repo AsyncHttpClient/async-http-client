@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.handler.resumable;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.AsyncHandler;
@@ -21,7 +22,6 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -44,7 +44,7 @@ public class ResumableAsyncHandlerTest {
 
     public static final byte[] T = new byte[0];
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testAdjustRange() {
         MapResumableProcessor processor = new MapResumableProcessor();
 
@@ -62,7 +62,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals("bytes=5000-", rangeHeader);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnStatusReceivedOkStatus() throws Exception {
         MapResumableProcessor processor = new MapResumableProcessor();
         ResumableAsyncHandler handler = new ResumableAsyncHandler(processor);
@@ -73,7 +73,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(AsyncHandler.State.CONTINUE, state, "Status should be CONTINUE for a OK response");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnStatusReceived206Status() throws Exception {
         MapResumableProcessor processor = new MapResumableProcessor();
         ResumableAsyncHandler handler = new ResumableAsyncHandler(processor);
@@ -84,7 +84,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(AsyncHandler.State.CONTINUE, state, "Status should be CONTINUE for a 'Partial Content' response");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnStatusReceivedOkStatusWithDecoratedAsyncHandler() throws Exception {
         HttpResponseStatus mockResponseStatus = mock(HttpResponseStatus.class);
         when(mockResponseStatus.getStatusCode()).thenReturn(200);
@@ -101,7 +101,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(State.CONTINUE, state, "State returned should be equal to the one returned from decoratedAsyncHandler");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnStatusReceived500Status() throws Exception {
         MapResumableProcessor processor = new MapResumableProcessor();
         ResumableAsyncHandler handler = new ResumableAsyncHandler(processor);
@@ -112,7 +112,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(AsyncHandler.State.ABORT, state, "State should be ABORT for Internal Server Error status");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnBodyPartReceived() throws Exception {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
         HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
@@ -123,7 +123,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(AsyncHandler.State.CONTINUE, state, "State should be CONTINUE for a successful onBodyPartReceived");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnBodyPartReceivedWithResumableListenerThrowsException() throws Exception {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
 
@@ -137,7 +137,7 @@ public class ResumableAsyncHandlerTest {
                 "State should be ABORT if the resumableListener threw an exception in onBodyPartReceived");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnBodyPartReceivedWithDecoratedAsyncHandler() throws Exception {
         HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
         when(bodyPart.getBodyPartBytes()).thenReturn(new byte[0]);
@@ -161,7 +161,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(State.CONTINUE, state, "State should be equal to the state returned from decoratedAsyncHandler");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnHeadersReceived() throws Exception {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
@@ -169,7 +169,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(AsyncHandler.State.CONTINUE, status, "State should be CONTINUE for a successful onHeadersReceived");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnHeadersReceivedWithDecoratedAsyncHandler() throws Exception {
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
 
@@ -182,7 +182,7 @@ public class ResumableAsyncHandlerTest {
         assertEquals(State.CONTINUE, status, "State should be equal to the state returned from decoratedAsyncHandler");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testOnHeadersReceivedContentLengthMinus() throws Exception {
         ResumableAsyncHandler handler = new ResumableAsyncHandler();
         HttpHeaders responseHeaders = new DefaultHttpHeaders();

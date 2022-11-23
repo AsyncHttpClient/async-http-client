@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,7 +32,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendingSmallFilesAndByteArray() throws Exception {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -159,12 +159,12 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void sendEmptyFile() throws Exception {
         sendEmptyFile0(true);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void sendEmptyFileZeroCopy() throws Exception {
         sendEmptyFile0(false);
     }
@@ -181,12 +181,12 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendEmptyFileInputStream() throws Exception {
         sendEmptyFileInputStream(true);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendEmptyFileInputStreamZeroCopy() throws Exception {
         sendEmptyFileInputStream(false);
     }
@@ -208,22 +208,22 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendFileInputStreamUnknownContentLength() throws Exception {
         sendFileInputStream(false, true);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
         sendFileInputStream(false, false);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendFileInputStreamKnownContentLength() throws Exception {
         sendFileInputStream(true, true);
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
         sendFileInputStream(true, false);
     }
@@ -231,8 +231,8 @@ public class MultipartUploadTest extends AbstractBasicTest {
     /**
      * Test that the files were sent, based on the response from the servlet
      */
-    private void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r,
-                              List<Boolean> deflate) throws IOException {
+    private static void testSentFile(List<String> expectedContents, List<File> sourceFiles, Response r,
+                                     List<Boolean> deflate) throws IOException {
         String content = r.getResponseBody();
         assertNotNull(content);
         logger.debug(content);

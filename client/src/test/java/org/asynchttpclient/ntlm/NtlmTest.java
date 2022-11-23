@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient.ntlm;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +25,6 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.ntlm.NtlmEngine.Type2Message;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -68,24 +68,24 @@ public class NtlmTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void lazyNTLMAuthTest() throws Exception {
         ntlmAuthTest(realmBuilderBase());
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void preemptiveNTLMAuthTest() throws Exception {
         ntlmAuthTest(realmBuilderBase().setUsePreemptiveAuth(true));
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType1Msg() {
         NtlmEngine engine = new NtlmEngine();
         String message = engine.generateType1Msg();
         assertEquals(message, "TlRMTVNTUAABAAAAAYIIogAAAAAoAAAAAAAAACgAAAAFASgKAAAADw==", "Incorrect type1 message generated");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType3MsgThrowsExceptionWhenChallengeTooShort() {
         NtlmEngine engine = new NtlmEngine();
         assertThrows(NtlmEngineException.class, () -> engine.generateType3Msg("username", "password", "localhost", "workstation",
@@ -93,7 +93,7 @@ public class NtlmTest extends AbstractBasicTest {
                 "An NtlmEngineException must have occurred as challenge length is too short");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType3MsgThrowsExceptionWhenChallengeDoesNotFollowCorrectFormat() {
         NtlmEngine engine = new NtlmEngine();
         assertThrows(NtlmEngineException.class, () -> engine.generateType3Msg("username", "password", "localhost", "workstation",
@@ -101,7 +101,7 @@ public class NtlmTest extends AbstractBasicTest {
                 "An NtlmEngineException must have occurred as challenge length is too short");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType3MsgThworsExceptionWhenType2IndicatorNotPresent() throws IOException {
         try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
             buf.write("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
@@ -118,7 +118,7 @@ public class NtlmTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType3MsgThrowsExceptionWhenUnicodeSupportNotIndicated() throws IOException {
         try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
             buf.write("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
@@ -145,13 +145,13 @@ public class NtlmTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType2Msg() {
         Type2Message type2Message = new Type2Message("TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==");
         assertEquals(40, type2Message.getMessageLength(), "This is a sample challenge that should return 40");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGenerateType3Msg() throws IOException {
         try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
             buf.write("NTLMSSP".getBytes(StandardCharsets.US_ASCII));
@@ -180,7 +180,7 @@ public class NtlmTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testWriteULong() {
         // test different combinations so that different positions in the byte array will be written
         byte[] buffer = new byte[4];

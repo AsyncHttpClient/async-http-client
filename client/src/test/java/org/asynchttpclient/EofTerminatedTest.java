@@ -13,6 +13,7 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -43,7 +43,7 @@ public class EofTerminatedTest extends AbstractBasicTest {
         return gzipHandler;
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testEolTerminatedResponse() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())

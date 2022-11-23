@@ -13,6 +13,7 @@
 
 package org.asynchttpclient.ws;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AsyncHttpClient;
@@ -22,7 +23,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class RedirectTest extends AbstractBasicWebSocketTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void testRedirectToWSResource() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {

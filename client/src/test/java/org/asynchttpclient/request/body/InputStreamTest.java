@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.request.body;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -26,7 +27,6 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class InputStreamTest extends AbstractBasicTest {
         return new InputStreamHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testInvalidInputStream() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient()) {

@@ -13,13 +13,13 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -72,7 +72,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         };
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void regular301LosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -84,7 +84,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void regular302LosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -96,7 +96,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void regular302StrictKeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true))) {
             String body = "hello there";
@@ -108,7 +108,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void regular307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";

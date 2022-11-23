@@ -12,11 +12,11 @@
  */
 package org.asynchttpclient.request.body.generator;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Random;
@@ -31,7 +31,7 @@ public class ByteArrayBodyGeneratorTest {
     private final Random random = new Random();
     private static final int CHUNK_SIZE = 1024 * 8;
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSingleRead() throws IOException {
         final int srcArraySize = CHUNK_SIZE - 1;
         final byte[] srcArray = new byte[srcArraySize];
@@ -54,7 +54,7 @@ public class ByteArrayBodyGeneratorTest {
         }
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testMultipleReads() throws IOException {
         final int srcArraySize = 3 * CHUNK_SIZE + 42;
         final byte[] srcArray = new byte[srcArraySize];

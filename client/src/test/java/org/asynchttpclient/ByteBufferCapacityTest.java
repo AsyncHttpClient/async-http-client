@@ -12,12 +12,12 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void basicByteBufferTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             File largeFile = createTempFile(1024 * 100 * 10);
