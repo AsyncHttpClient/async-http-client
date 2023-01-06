@@ -29,12 +29,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertTrue;
-
-import com.google.common.collect.Sets;
 
 public class CookieStoreTest {
 
@@ -359,7 +358,10 @@ public class CookieStoreTest {
     store.evictExpired();
     assertTrue(store.getUnderlying().size() == 2);
     Collection<String> unexpiredCookieNames = store.getAll().stream().map(Cookie::name).collect(Collectors.toList());
-    assertTrue(unexpiredCookieNames.containsAll(Sets.newHashSet("UNEXPIRED_BAR", "UNEXPIRED_FOOBAR")));
+    assertTrue(unexpiredCookieNames.containsAll(new HashSet<String>() {{
+      add("UNEXPIRED_BAR");
+      add("UNEXPIRED_FOOBAR");
+    }}));
   }
 
   private static Cookie getCookie(String key, String value, int maxAge) {
