@@ -5,7 +5,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import org.asynchttpclient.Request;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
 
@@ -18,7 +18,7 @@ public class DefaultKeepAliveStrategy implements KeepAliveStrategy {
    * Implemented in accordance with RFC 7230 section 6.1 https://tools.ietf.org/html/rfc7230#section-6.1
    */
   @Override
-  public boolean keepAlive(InetSocketAddress remoteAddress, Request ahcRequest, HttpRequest request, HttpResponse response) {
+  public boolean keepAlive(SocketAddress remoteAddress, Request ahcRequest, HttpRequest request, HttpResponse response) {
     return HttpUtil.isKeepAlive(response)
             && HttpUtil.isKeepAlive(request)
             // support non standard Proxy-Connection

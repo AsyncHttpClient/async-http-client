@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
@@ -28,6 +29,7 @@ import org.asynchttpclient.uri.Uri;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -62,7 +64,7 @@ public interface Request {
   String getUrl();
 
   /**
-   * @return the InetAddress to be used to bypass uri's hostname resolution
+   * @return the InetAddress to be used to bypass uri's hostname  or unix domain path resolution
    */
   InetAddress getAddress();
 
@@ -70,6 +72,16 @@ public interface Request {
    * @return the local address to bind from
    */
   InetAddress getLocalAddress();
+
+  /**
+   * @return the local address to bind from
+   */
+  SocketAddress getLocalSocketAddress();
+
+  /**
+   * @return the SocketAddress to be used to bypass uri's hostname  or unix domain path resolution
+   */
+  SocketAddress getSocketAddress();
 
   /**
    * @return the HTTP headers
@@ -180,6 +192,11 @@ public interface Request {
    * @return the NameResolver to be used to resolve hostnams's IP
    */
   NameResolver<InetAddress> getNameResolver();
+
+  /**
+   * @return the NameResolver to be used to resolve hostnams's IP
+   */
+  NameResolver<DomainSocketAddress> getDomainNameResolver();
 
   /**
    * @return a new request builder using this request as a prototype

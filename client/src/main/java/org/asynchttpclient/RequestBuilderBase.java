@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -27,6 +28,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
+import org.asynchttpclient.resolver.DefaultDomainNameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.UriEncoder;
 import org.reactivestreams.Publisher;
@@ -36,6 +38,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -56,6 +60,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   private final static Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
   private static final Uri DEFAULT_REQUEST_URL = Uri.create("http://localhost");
   public static NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
+  public static NameResolver<DomainSocketAddress> DEFAULT_DOMAIN_NAME_RESOLVER = new DefaultDomainNameResolver(ImmediateEventExecutor.INSTANCE);
   // builder only fields
   protected UriEncoder uriEncoder;
   protected List<Param> queryParams;
@@ -64,8 +69,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   // request fields
   protected String method;
   protected Uri uri;
-  protected InetAddress address;
-  protected InetAddress localAddress;
+  protected SocketAddress address;
+  protected SocketAddress localAddress;
   protected HttpHeaders headers;
   protected ArrayList<Cookie> cookies;
   protected byte[] byteData;
@@ -87,6 +92,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   protected Charset charset;
   protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
   protected NameResolver<InetAddress> nameResolver = DEFAULT_NAME_RESOLVER;
+  protected NameResolver<DomainSocketAddress> domainNameResolver = DEFAULT_DOMAIN_NAME_RESOLVER;
 
   protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
     this(method, disableUrlEncoding, true);
@@ -106,8 +112,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     this.method = prototype.getMethod();
     this.uriEncoder = UriEncoder.uriEncoder(disableUrlEncoding);
     this.uri = prototype.getUri();
-    this.address = prototype.getAddress();
-    this.localAddress = prototype.getLocalAddress();
+    this.address = prototype.getSocketAddress();
+    this.localAddress = prototype.getLocalSocketAddress();
     this.headers = new DefaultHttpHeaders(validateHeaders);
     this.headers.add(prototype.getHeaders());
     if (isNonEmpty(prototype.getCookies())) {
@@ -136,6 +142,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     this.charset = prototype.getCharset();
     this.channelPoolPartitioning = prototype.getChannelPoolPartitioning();
     this.nameResolver = prototype.getNameResolver();
+    this.domainNameResolver = prototype.getDomainNameResolver();
   }
 
   @SuppressWarnings("unchecked")
@@ -153,11 +160,21 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
   }
 
   public T setAddress(InetAddress address) {
+    this.address = new InetSocketAddress(address,0);
+    return asDerivedType();
+  }
+
+  public T setAddress(SocketAddress address) {
     this.address = address;
     return asDerivedType();
   }
 
   public T setLocalAddress(InetAddress address) {
+    this.localAddress = new InetSocketAddress(address,0);
+    return asDerivedType();
+  }
+
+  public T setLocalAddress(SocketAddress address) {
     this.localAddress = address;
     return asDerivedType();
   }
@@ -534,6 +551,11 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     return asDerivedType();
   }
 
+  public T setDomainNameResolver(NameResolver<DomainSocketAddress> nameResolver) {
+    this.domainNameResolver = nameResolver;
+    return asDerivedType();
+  }
+
   public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
     this.signatureCalculator = signatureCalculator;
     return asDerivedType();
@@ -580,6 +602,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     rb.charset = this.charset;
     rb.channelPoolPartitioning = this.channelPoolPartitioning;
     rb.nameResolver = this.nameResolver;
+    rb.domainNameResolver = this.domainNameResolver;
     Request unsignedRequest = rb.build();
     signatureCalculator.calculateAndAddSignature(unsignedRequest, rb);
     return rb;
@@ -642,6 +665,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             rb.rangeOffset,
             rb.charset,
             rb.channelPoolPartitioning,
-            rb.nameResolver);
+            rb.nameResolver,
+            rb.domainNameResolver);
   }
 }

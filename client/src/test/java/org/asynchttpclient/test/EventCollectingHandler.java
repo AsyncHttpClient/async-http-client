@@ -21,7 +21,7 @@ import org.asynchttpclient.netty.request.NettyRequest;
 import org.testng.Assert;
 
 import javax.net.ssl.SSLSession;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -94,17 +94,17 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase {
   }
 
   @Override
-  public void onTcpConnectAttempt(InetSocketAddress address) {
+  public void onTcpConnectAttempt(SocketAddress address) {
     firedEvents.add(CONNECTION_OPEN_EVENT);
   }
 
   @Override
-  public void onTcpConnectSuccess(InetSocketAddress address, Channel connection) {
+  public void onTcpConnectSuccess(SocketAddress address, Channel connection) {
     firedEvents.add(CONNECTION_SUCCESS_EVENT);
   }
 
   @Override
-  public void onTcpConnectFailure(InetSocketAddress address, Throwable t) {
+  public void onTcpConnectFailure(SocketAddress address, Throwable t) {
     firedEvents.add(CONNECTION_FAILURE_EVENT);
   }
 
@@ -114,7 +114,7 @@ public class EventCollectingHandler extends AsyncCompletionHandlerBase {
   }
 
   @Override
-  public void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+  public void onHostnameResolutionSuccess(String name, List<? extends SocketAddress> addresses) {
     firedEvents.add(HOSTNAME_RESOLUTION_SUCCESS_EVENT);
   }
 

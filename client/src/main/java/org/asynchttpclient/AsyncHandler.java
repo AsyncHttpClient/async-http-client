@@ -20,7 +20,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.netty.request.NettyRequest;
 
 import javax.net.ssl.SSLSession;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 
@@ -132,7 +132,7 @@ public interface AsyncHandler<T> {
    * @param name      the name to be resolved
    * @param addresses the resolved addresses
    */
-  default void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
+  default void onHostnameResolutionSuccess(String name, List<? extends SocketAddress> addresses) {
   }
 
   /**
@@ -153,7 +153,7 @@ public interface AsyncHandler<T> {
    *
    * @param remoteAddress the address we try to connect to
    */
-  default void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+  default void onTcpConnectAttempt(SocketAddress remoteAddress) {
   }
 
   /**
@@ -162,7 +162,7 @@ public interface AsyncHandler<T> {
    * @param remoteAddress the address we try to connect to
    * @param connection    the connection
    */
-  default void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
+  default void onTcpConnectSuccess(SocketAddress remoteAddress, Channel connection) {
   }
 
   /**
@@ -173,7 +173,7 @@ public interface AsyncHandler<T> {
    * @param remoteAddress the address we try to connect to
    * @param cause         the cause of the failure
    */
-  default void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
+  default void onTcpConnectFailure(SocketAddress remoteAddress, Throwable cause) {
   }
 
   // ////////////// TLS ///////////////

@@ -13,21 +13,21 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.kqueue.KQueueDomainSocketChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueSocketChannel;
 import org.asynchttpclient.util.ReflectionUtil;
 
 import java.util.concurrent.ThreadFactory;
 
-class KQueueTransportFactory implements TransportFactory<KQueueSocketChannel, KQueueEventLoopGroup> {
+class KQueueDomainTransportFactory implements TransportFactory<KQueueDomainSocketChannel, KQueueEventLoopGroup> {
 
-  KQueueTransportFactory() {
+  KQueueDomainTransportFactory() {
     ReflectionUtil.loadKQueueClass();
   }
 
   @Override
-  public KQueueSocketChannel newChannel() {
-    return new KQueueSocketChannel();
+  public KQueueDomainSocketChannel newChannel() {
+    return new KQueueDomainSocketChannel();
   }
 
   @Override

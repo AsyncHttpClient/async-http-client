@@ -17,11 +17,13 @@
 package org.asynchttpclient.example.completable;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 
 import java.io.IOException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
 
 public class CompletableFutures {
   public static void main(String[] args) throws IOException {
@@ -34,5 +36,25 @@ public class CompletableFutures {
               .thenAccept(System.out::println)
               .join();
     }
+//    example of use unix domain socket
+//    if (!isWindows()) {
+//      // support unix domain socket
+//      DefaultAsyncHttpClientConfig.Builder config = config();
+//      config.setUnixSocket("/root/server.socket"); // when the unixSocket is set, the useNativeTransport will be true.
+//      try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+//        asyncHttpClient
+//                .prepareGet("http://www.example.com/")
+//                .execute()
+//                .toCompletableFuture()
+//                .thenApply(Response::getResponseBody)
+//                .thenAccept(System.out::println)
+//                .join();
+//      }
+//    }
+
+  }
+
+  private static boolean isWindows(){
+    return System.getProperty("os.name").toUpperCase().contains("WINDOW");
   }
 }
