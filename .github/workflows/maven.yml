@@ -7,6 +7,13 @@ on:
   pull_request:
     branches: [ main ]
 
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Github Actions'
+        required: true
+        default: 'Github Actions'
+
 jobs:
   build:
     runs-on: ubuntu-latest
