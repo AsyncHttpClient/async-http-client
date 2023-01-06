@@ -34,6 +34,7 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
   private SslContext buildSslContext(AsyncHttpClientConfig config) throws SSLException {
     if (config.getSslContext() != null) {
+      ReferenceCountUtil.retain(config.getSslContext());
       return config.getSslContext();
     }
 
