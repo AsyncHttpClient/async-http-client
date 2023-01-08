@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -191,7 +192,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         sendEmptyFileInputStream(false);
     }
 
-    private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
+    private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Throwable {
         File file = getClasspathFile("textfile.txt");
         try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -205,26 +206,28 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
             Response res = c.executeRequest(r).get();
             assertEquals(200, res.getStatusCode());
+        } catch (ExecutionException ex) {
+            throw ex.getCause();
         }
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamUnknownContentLength() throws Exception {
+    public void testSendFileInputStreamUnknownContentLength() throws Throwable {
         sendFileInputStream(false, true);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
+    public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Throwable {
         sendFileInputStream(false, false);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamKnownContentLength() throws Exception {
+    public void testSendFileInputStreamKnownContentLength() throws Throwable {
         sendFileInputStream(true, true);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
+    public void testSendFileInputStreamZeroCopyKnownContentLength() throws Throwable {
         sendFileInputStream(true, false);
     }
 
