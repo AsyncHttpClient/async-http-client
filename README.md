@@ -1,4 +1,4 @@
-# Async Http Client [![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/maven.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/maven.yml) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
+# Async Http Client [![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
 
 Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 
@@ -7,31 +7,9 @@ The library also supports the WebSocket Protocol.
 
 It's built on top of [Netty](https://github.com/netty/netty). It's currently compiled on Java 8 but runs on Java 9 too.
 
-## New Maintainer!
-
-[Aayush (hyperxpro)](https://twitter.com/HyperXPro) has gracefully decided to take over maintainership from [Tom](https://github.com/TomGranot), and is available for your questions. Please mention him in your issues and PRs from now on!
-
 ## Installation
 
 Binaries are deployed on Maven Central.
-
-Import the AsyncHttpClient Bill of Materials (BOM) to add dependency management for AsyncHttpClient artifacts to your project:
-
-```xml
-
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.asynchttpclient</groupId>
-            <artifactId>async-http-client-bom</artifactId>
-            <version>LATEST_VERSION</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
-```
-
 Add a dependency on the main AsyncHttpClient artifact:
 
 ```xml
@@ -40,11 +18,10 @@ Add a dependency on the main AsyncHttpClient artifact:
     <dependency>
         <groupId>org.asynchttpclient</groupId>
         <artifactId>async-http-client</artifactId>
+        <version>3.0.0-SNAPSHOT</version>
     </dependency>
 </dependencies>
 ```
-
-The `async-http-client-extras-*` and other modules can also be added without having to specify the version for each dependency, because they are all managed via the BOM.
 
 ## Version
 
@@ -274,16 +251,6 @@ public void onError(Throwable t){
         }
         }).build()).get();
 ```
-
-## Reactive Streams
-
-AsyncHttpClient has built-in support for reactive streams.
-
-You can pass a request body as a `Publisher<ByteBuf>` or a `ReactiveStreamsBodyGenerator`.
-
-You can also pass a `StreamedAsyncHandler<T>` whose `onStream` method will be notified with a `Publisher<HttpResponseBodyPart>`.
-
-See tests in package `org.asynchttpclient.reactivestreams` for examples.
 
 ## WebDAV
 
