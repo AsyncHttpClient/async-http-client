@@ -5,12 +5,16 @@ name: Build PR
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
+
   workflow_dispatch:
     inputs:
       name:
-        description: 'GitHub Actions'
+        description: 'Github Actions'
         required: true
-        default: 'GitHub Actions'
+        default: 'Github Actions'
 
 jobs:
   RunOnLinux:

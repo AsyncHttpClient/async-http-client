@@ -23,7 +23,6 @@
  * <http://www.apache.org/>.
  *
  */
-
 package org.asynchttpclient.ntlm;
 
 

@@ -35,7 +35,6 @@
  * <http://www.apache.org/>.
  *
  */
-
 package org.asynchttpclient.spnego;
 
 import java.io.IOException;
