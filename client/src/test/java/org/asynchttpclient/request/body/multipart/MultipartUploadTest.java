@@ -172,8 +172,8 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
     private void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("empty.txt");
-        try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
-            InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+        try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy));
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
             Request r = post("http://localhost" + ':' + port1 + "/upload")
                     .addBodyPart(new InputStreamPart("file", inputStream, file.getName(), file.length(), "text/plain", UTF_8)).build();
 
@@ -194,8 +194,9 @@ public class MultipartUploadTest extends AbstractBasicTest {
 
     private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("textfile.txt");
-        try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
-            InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+        try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy));
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+
             InputStreamPart part;
             if (useContentLength) {
                 part = new InputStreamPart("file", inputStream, file.getName(), file.length());
