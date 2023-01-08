@@ -16,11 +16,6 @@
  */
 package org.apache.commons.fileupload2.impl;
 
-import static java.lang.String.format;
-
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.apache.commons.fileupload2.FileItemHeaders;
 import org.apache.commons.fileupload2.FileItemStream;
 import org.apache.commons.fileupload2.FileUploadException;
@@ -31,6 +26,11 @@ import org.apache.commons.fileupload2.pub.FileUploadIOException;
 import org.apache.commons.fileupload2.util.Closeable;
 import org.apache.commons.fileupload2.util.LimitedInputStream;
 import org.apache.commons.fileupload2.util.Streams;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import static java.lang.String.format;
 
 
 /**
@@ -78,18 +78,18 @@ public class FileItemStreamImpl implements FileItemStream {
      * Creates a new instance.
      *
      * @param pFileItemIterator The {@link FileItemIteratorImpl iterator}, which returned this file
-     * item.
-     * @param pName The items file name, or null.
-     * @param pFieldName The items field name.
-     * @param pContentType The items content type, or null.
-     * @param pFormField Whether the item is a form field.
-     * @param pContentLength The items content length, if known, or -1
-     * @throws IOException Creating the file item failed.
+     *                          item.
+     * @param pName             The items file name, or null.
+     * @param pFieldName        The items field name.
+     * @param pContentType      The items content type, or null.
+     * @param pFormField        Whether the item is a form field.
+     * @param pContentLength    The items content length, if known, or -1
+     * @throws IOException         Creating the file item failed.
      * @throws FileUploadException Parsing the incoming data stream failed.
      */
     public FileItemStreamImpl(final FileItemIteratorImpl pFileItemIterator, final String pName, final String pFieldName,
-            final String pContentType, final boolean pFormField,
-            final long pContentLength) throws FileUploadException, IOException {
+                              final String pContentType, final boolean pFormField,
+                              final long pContentLength) throws FileUploadException, IOException {
         fileItemIteratorImpl = pFileItemIterator;
         name = pName;
         fieldName = pFieldName;
@@ -117,10 +117,10 @@ public class FileItemStreamImpl implements FileItemStream {
                         throws IOException {
                     itemStream.close(true);
                     final FileSizeLimitExceededException e =
-                        new FileSizeLimitExceededException(
-                            format("The field %s exceeds its maximum permitted size of %s bytes.",
-                                   fieldName, pSizeMax),
-                            pCount, pSizeMax);
+                            new FileSizeLimitExceededException(
+                                    format("The field %s exceeds its maximum permitted size of %s bytes.",
+                                            fieldName, pSizeMax),
+                                    pCount, pSizeMax);
                     e.setFieldName(fieldName);
                     e.setFileName(name);
                     throw new FileUploadIOException(e);
@@ -155,9 +155,9 @@ public class FileItemStreamImpl implements FileItemStream {
      *
      * @return File name, if known, or null.
      * @throws InvalidFileNameException The file name contains a NUL character,
-     *   which might be an indicator of a security attack. If you intend to
-     *   use the file name anyways, catch the exception and use
-     *   InvalidFileNameException#getName().
+     *                                  which might be an indicator of a security attack. If you intend to
+     *                                  use the file name anyways, catch the exception and use
+     *                                  InvalidFileNameException#getName().
      */
     @Override
     public String getName() {
@@ -168,7 +168,7 @@ public class FileItemStreamImpl implements FileItemStream {
      * Returns, whether this is a form field.
      *
      * @return True, if the item is a form field,
-     *   otherwise false.
+     * otherwise false.
      */
     @Override
     public boolean isFormField() {

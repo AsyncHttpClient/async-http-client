@@ -55,10 +55,10 @@ public interface FileItemStream extends FileItemHeadersSupport {
      * items contents.
      *
      * @return The input stream, from which the items data may
-     *   be read.
+     * be read.
      * @throws IllegalStateException The method was already invoked on
-     * this item. It is not possible to recreate the data stream.
-     * @throws IOException An I/O error occurred.
+     *                               this item. It is not possible to recreate the data stream.
+     * @throws IOException           An I/O error occurred.
      * @see ItemSkippedException
      */
     InputStream openStream() throws IOException;
@@ -68,7 +68,7 @@ public interface FileItemStream extends FileItemHeadersSupport {
      * not defined.
      *
      * @return The content type passed by the browser or {@code null} if
-     *         not defined.
+     * not defined.
      */
     String getContentType();
 
@@ -95,7 +95,7 @@ public interface FileItemStream extends FileItemHeadersSupport {
      * a simple form field.
      *
      * @return {@code true} if the instance represents a simple form
-     *         field; {@code false} if it represents an uploaded file.
+     * field; {@code false} if it represents an uploaded file.
      */
     boolean isFormField();
 

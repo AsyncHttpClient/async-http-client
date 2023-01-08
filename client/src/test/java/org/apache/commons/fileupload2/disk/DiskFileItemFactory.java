@@ -16,11 +16,11 @@
  */
 package org.apache.commons.fileupload2.disk;
 
-import java.io.File;
-
 import org.apache.commons.fileupload2.FileItem;
 import org.apache.commons.fileupload2.FileItemFactory;
 import org.apache.commons.io.FileCleaningTracker;
+
+import java.io.File;
 
 /**
  * <p>The default {@link FileItemFactory}
@@ -133,9 +133,7 @@ public class DiskFileItemFactory implements FileItemFactory {
      * than the configured size threshold.
      *
      * @return The directory in which temporary files will be located.
-     *
      * @see #setRepository(File)
-     *
      */
     public File getRepository() {
         return repository;
@@ -146,9 +144,7 @@ public class DiskFileItemFactory implements FileItemFactory {
      * than the configured size threshold.
      *
      * @param repository The directory in which temporary files will be located.
-     *
      * @see #getRepository()
-     *
      */
     public void setRepository(final File repository) {
         this.repository = repository;
@@ -159,7 +155,6 @@ public class DiskFileItemFactory implements FileItemFactory {
      * disk. The default value is 10240 bytes.
      *
      * @return The size threshold, in bytes.
-     *
      * @see #setSizeThreshold(int)
      */
     public int getSizeThreshold() {
@@ -170,9 +165,7 @@ public class DiskFileItemFactory implements FileItemFactory {
      * Sets the size threshold beyond which files are written directly to disk.
      *
      * @param sizeThreshold The size threshold, in bytes.
-     *
      * @see #getSizeThreshold()
-     *
      */
     public void setSizeThreshold(final int sizeThreshold) {
         this.sizeThreshold = sizeThreshold;
@@ -191,12 +184,11 @@ public class DiskFileItemFactory implements FileItemFactory {
      *                    {@code false} otherwise.
      * @param fileName    The name of the uploaded file, if any, as supplied
      *                    by the browser or other client.
-     *
      * @return The newly created file item.
      */
     @Override
     public FileItem createItem(final String fieldName, final String contentType,
-                final boolean isFormField, final String fileName) {
+                               final boolean isFormField, final String fileName) {
         final DiskFileItem result = new DiskFileItem(fieldName, contentType,
                 isFormField, fileName, sizeThreshold, repository);
         result.setDefaultCharset(defaultCharset);
@@ -212,7 +204,7 @@ public class DiskFileItemFactory implements FileItemFactory {
      * files.
      *
      * @return An instance of {@link FileCleaningTracker}, or null
-     *   (default), if temporary files aren't tracked.
+     * (default), if temporary files aren't tracked.
      */
     public FileCleaningTracker getFileCleaningTracker() {
         return fileCleaningTracker;
@@ -223,8 +215,8 @@ public class DiskFileItemFactory implements FileItemFactory {
      * files.
      *
      * @param pTracker An instance of {@link FileCleaningTracker},
-     *   which will from now on track the created files, or null
-     *   (default), to disable tracking.
+     *                 which will from now on track the created files, or null
+     *                 (default), to disable tracking.
      */
     public void setFileCleaningTracker(final FileCleaningTracker pTracker) {
         fileCleaningTracker = pTracker;
@@ -233,6 +225,7 @@ public class DiskFileItemFactory implements FileItemFactory {
     /**
      * Returns the default charset for use when no explicit charset
      * parameter is provided by the sender.
+     *
      * @return the default charset
      */
     public String getDefaultCharset() {
@@ -242,6 +235,7 @@ public class DiskFileItemFactory implements FileItemFactory {
     /**
      * Sets the default charset for use when no explicit charset
      * parameter is provided by the sender.
+     *
      * @param pCharset the default charset
      */
     public void setDefaultCharset(final String pCharset) {

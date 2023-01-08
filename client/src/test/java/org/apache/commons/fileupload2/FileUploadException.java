@@ -58,7 +58,7 @@ public class FileUploadException extends IOException {
      * Creates a new {@code FileUploadException} with the given
      * detail message and cause.
      *
-     * @param msg The exceptions detail message.
+     * @param msg   The exceptions detail message.
      * @param cause The exceptions cause.
      */
     public FileUploadException(final String msg, final Throwable cause) {

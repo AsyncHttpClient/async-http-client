@@ -20,9 +20,7 @@ import io.netty.util.internal.SocketUtils;
 import org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import static java.util.concurrent.TimeUnit.SECONDS;

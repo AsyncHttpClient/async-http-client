@@ -14,9 +14,7 @@ package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import javax.net.ServerSocketFactory;

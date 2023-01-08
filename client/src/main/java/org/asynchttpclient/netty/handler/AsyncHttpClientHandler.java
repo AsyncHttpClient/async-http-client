@@ -15,16 +15,13 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.PrematureChannelClosureException;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.exception.ChannelClosedException;
 import org.asynchttpclient.netty.DiscardEvent;
 import org.asynchttpclient.netty.NettyResponseFuture;

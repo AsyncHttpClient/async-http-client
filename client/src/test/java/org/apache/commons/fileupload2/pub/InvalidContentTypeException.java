@@ -50,9 +50,8 @@ public class InvalidContentTypeException
      * Constructs an {@code InvalidContentTypeException} with
      * the specified detail message and cause.
      *
-     * @param msg The detail message.
+     * @param msg   The detail message.
      * @param cause the original cause
-     *
      * @since 1.3.1
      */
     public InvalidContentTypeException(final String msg, final Throwable cause) {

@@ -16,9 +16,9 @@
  */
 package org.apache.commons.fileupload2.pub;
 
-import java.io.IOException;
-
 import org.apache.commons.fileupload2.FileUploadException;
+
+import java.io.IOException;
 
 /**
  * This exception is thrown for hiding an inner

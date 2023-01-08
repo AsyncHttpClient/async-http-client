@@ -32,9 +32,7 @@ import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpServer.EchoHandler;
 import org.asynchttpclient.testserver.HttpTest;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import javax.net.ssl.SSLException;

@@ -49,7 +49,7 @@ import java.util.concurrent.Semaphore;
  *     OutputStream fos = ...
  *     BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(fos);
  *     // client executes async
- *     Future&lt;Response&gt; fr = client.prepareGet(&quot;http://foo.com/aresource&quot;).execute(
+ *     Future&lt;Response&gt; fr = client.prepareGet(&quot;<a href="http://foo.com/aresource&quot;">...</a>).execute(
  * 	bdah);
  *     // main thread will block here until headers are available
  *     Response response = bdah.getResponse();

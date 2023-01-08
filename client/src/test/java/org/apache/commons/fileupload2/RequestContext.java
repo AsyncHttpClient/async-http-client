@@ -16,8 +16,8 @@
  */
 package org.apache.commons.fileupload2;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * <p>Abstracts access to the request information needed for file uploads. This
@@ -55,7 +55,6 @@ public interface RequestContext {
      * Retrieve the input stream for the request.
      *
      * @return The input stream for the request.
-     *
      * @throws IOException if a problem occurs.
      */
     InputStream getInputStream() throws IOException;

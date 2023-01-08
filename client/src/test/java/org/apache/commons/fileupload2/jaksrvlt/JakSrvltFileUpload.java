@@ -16,18 +16,17 @@
  */
 package org.apache.commons.fileupload2.jaksrvlt;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.apache.commons.fileupload2.FileItem;
 import org.apache.commons.fileupload2.FileItemFactory;
 import org.apache.commons.fileupload2.FileItemIterator;
 import org.apache.commons.fileupload2.FileUpload;
 import org.apache.commons.fileupload2.FileUploadBase;
 import org.apache.commons.fileupload2.FileUploadException;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>High level API for processing file uploads.</p>
@@ -57,9 +56,8 @@ public class JakSrvltFileUpload extends FileUpload {
      * content.
      *
      * @param request The servlet request to be evaluated. Must be non-null.
-     *
      * @return {@code true} if the request is multipart;
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     public static final boolean isMultipartContent(
             final HttpServletRequest request) {
@@ -85,8 +83,8 @@ public class JakSrvltFileUpload extends FileUpload {
      * Constructs an instance of this class which uses the supplied factory to
      * create {@code FileItem} instances.
      *
-     * @see FileUpload#FileUpload()
      * @param fileItemFactory The factory to use for creating file items.
+     * @see FileUpload#FileUpload()
      */
     public JakSrvltFileUpload(final FileItemFactory fileItemFactory) {
         super(fileItemFactory);
@@ -99,10 +97,8 @@ public class JakSrvltFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The servlet request to be parsed.
-     *
      * @return A list of {@code FileItem} instances parsed from the
-     *         request, in the order that they were transmitted.
-     *
+     * request, in the order that they were transmitted.
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
      */
@@ -115,12 +111,9 @@ public class JakSrvltFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The servlet request to be parsed.
-     *
      * @return A map of {@code FileItem} instances parsed from the request.
-     *
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
-     *
      * @since 1.3
      */
     public Map<String, List<FileItem>> parseParameterMap(final HttpServletRequest request)
@@ -133,19 +126,17 @@ public class JakSrvltFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The servlet request to be parsed.
-     *
      * @return An iterator to instances of {@code FileItemStream}
-     *         parsed from the request, in the order that they were
-     *         transmitted.
-     *
+     * parsed from the request, in the order that they were
+     * transmitted.
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
-     * @throws IOException An I/O error occurred. This may be a network
-     *   error while communicating with the client or a problem while
-     *   storing the uploaded content.
+     * @throws IOException         An I/O error occurred. This may be a network
+     *                             error while communicating with the client or a problem while
+     *                             storing the uploaded content.
      */
     public FileItemIterator getItemIterator(final HttpServletRequest request)
-    throws FileUploadException, IOException {
+            throws FileUploadException, IOException {
         return super.getItemIterator(new JakSrvltRequestContext(request));
     }
 

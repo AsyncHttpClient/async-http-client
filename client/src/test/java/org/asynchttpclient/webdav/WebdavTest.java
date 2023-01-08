@@ -19,9 +19,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.servlets.WebdavServlet;
 import org.apache.catalina.startup.Tomcat;
 import org.asynchttpclient.AsyncHttpClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;

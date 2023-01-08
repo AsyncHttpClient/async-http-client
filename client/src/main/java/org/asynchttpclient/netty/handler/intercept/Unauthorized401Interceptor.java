@@ -139,9 +139,7 @@ public class Unauthorized401Interceptor {
                 }
                 try {
                     kerberosChallenge(realm, request, requestHeaders);
-
                 } catch (SpnegoEngineException e) {
-                    // FIXME
                     String ntlmHeader2 = getHeaderWithPrefix(wwwAuthHeaders, "NTLM");
                     if (ntlmHeader2 != null) {
                         LOGGER.warn("Kerberos/Spnego auth failed, proceeding with NTLM");

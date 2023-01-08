@@ -30,7 +30,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
 public class DefaultKeepAliveStrategy implements KeepAliveStrategy {
 
     /**
-     * Implemented in accordance with RFC 7230 section 6.1 https://tools.ietf.org/html/rfc7230#section-6.1
+     * Implemented in accordance with RFC 7230 section 6.1 <a href="https://tools.ietf.org/html/rfc7230#section-6.1">...</a>
      */
     @Override
     public boolean keepAlive(InetSocketAddress remoteAddress, Request ahcRequest, HttpRequest request, HttpResponse response) {
