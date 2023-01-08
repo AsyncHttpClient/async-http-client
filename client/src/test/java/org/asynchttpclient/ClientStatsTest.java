@@ -75,8 +75,8 @@ public class ClientStatsTest extends AbstractBasicTest {
             // Let's make sure the active count is correct when reusing cached connections.
 
             final List<ListenableFuture<Response>> repeatedFutures = Stream.generate(() -> client.prepareGet(url).setHeader("LockThread", "6").execute())
-                            .limit(3)
-                            .collect(Collectors.toList());
+                    .limit(3)
+                    .collect(Collectors.toList());
 
             Thread.sleep(2000 + 1000);
 
@@ -154,8 +154,8 @@ public class ClientStatsTest extends AbstractBasicTest {
             // Let's make sure the active count is correct when reusing cached connections.
 
             final List<ListenableFuture<Response>> repeatedFutures = Stream.generate(() -> client.prepareGet(url).setHeader("LockThread", "6").execute())
-                            .limit(3)
-                            .collect(Collectors.toList());
+                    .limit(3)
+                    .collect(Collectors.toList());
 
             Thread.sleep(2000 + 1000);
 

@@ -37,8 +37,11 @@ public final class StackTraceInspector {
     }
 
     private static boolean recoverOnConnectCloseException(Throwable t) {
-        return exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
-                || t.getCause() != null && recoverOnConnectCloseException(t.getCause());
+        while (true) {
+            if (exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")) return true;
+            if (t.getCause() == null) return false;
+            t = t.getCause();
+        }
     }
 
     public static boolean recoverOnNettyDisconnectException(Throwable t) {
@@ -48,21 +51,24 @@ public final class StackTraceInspector {
     }
 
     public static boolean recoverOnReadOrWriteException(Throwable t) {
-        if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage())) {
-            return true;
-        }
-
-        try {
-            for (StackTraceElement element : t.getStackTrace()) {
-                String className = element.getClassName();
-                String methodName = element.getMethodName();
-                if ("sun.nio.ch.SocketDispatcher".equals(className) && ("read".equals(methodName) || "write".equals(methodName))) {
-                    return true;
-                }
+        while (true) {
+            if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage())) {
+                return true;
             }
-        } catch (Throwable ignore) {
-        }
 
-        return t.getCause() != null && recoverOnReadOrWriteException(t.getCause());
+            try {
+                for (StackTraceElement element : t.getStackTrace()) {
+                    String className = element.getClassName();
+                    String methodName = element.getMethodName();
+                    if ("sun.nio.ch.SocketDispatcher".equals(className) && ("read".equals(methodName) || "write".equals(methodName))) {
+                        return true;
+                    }
+                }
+            } catch (Throwable ignore) {
+            }
+
+            if (t.getCause() == null) return false;
+            t = t.getCause();
+        }
     }
 }

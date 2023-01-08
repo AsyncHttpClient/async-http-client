@@ -45,8 +45,8 @@ public abstract class LimitedInputStream extends FilterInputStream implements Cl
      * Creates a new instance.
      *
      * @param inputStream The input stream, which shall be limited.
-     * @param pSizeMax The limit; no more than this number of bytes
-     *   shall be returned by the source stream.
+     * @param pSizeMax    The limit; no more than this number of bytes
+     *                    shall be returned by the source stream.
      */
     public LimitedInputStream(final InputStream inputStream, final long pSizeMax) {
         super(inputStream);
@@ -58,9 +58,9 @@ public abstract class LimitedInputStream extends FilterInputStream implements Cl
      * been exceeded.
      *
      * @param pSizeMax The input streams limit, in bytes.
-     * @param pCount The actual number of bytes.
+     * @param pCount   The actual number of bytes.
      * @throws IOException The called method is expected
-     *   to raise an IOException.
+     *                     to raise an IOException.
      */
     protected abstract void raiseError(long pSizeMax, long pCount)
             throws IOException;
@@ -89,10 +89,10 @@ public abstract class LimitedInputStream extends FilterInputStream implements Cl
      * This method
      * simply performs {@code in.read()} and returns the result.
      *
-     * @return     the next byte of data, or {@code -1} if the end of the
-     *             stream is reached.
-     * @throws  IOException  if an I/O error occurs.
-     * @see        FilterInputStream#in
+     * @return the next byte of data, or {@code -1} if the end of the
+     * stream is reached.
+     * @throws IOException if an I/O error occurs.
+     * @see FilterInputStream#in
      */
     @Override
     public int read() throws IOException {
@@ -113,19 +113,19 @@ public abstract class LimitedInputStream extends FilterInputStream implements Cl
      * This method simply performs {@code in.read(b, off, len)}
      * and returns the result.
      *
-     * @param      b     the buffer into which the data is read.
-     * @param      off   The start offset in the destination array
-     *                   {@code b}.
-     * @param      len   the maximum number of bytes read.
-     * @return     the total number of bytes read into the buffer, or
-     *             {@code -1} if there is no more data because the end of
-     *             the stream has been reached.
-     * @throws  NullPointerException If {@code b} is {@code null}.
-     * @throws  IndexOutOfBoundsException If {@code off} is negative,
-     * {@code len} is negative, or {@code len} is greater than
-     * {@code b.length - off}
-     * @throws  IOException  if an I/O error occurs.
-     * @see        FilterInputStream#in
+     * @param b   the buffer into which the data is read.
+     * @param off The start offset in the destination array
+     *            {@code b}.
+     * @param len the maximum number of bytes read.
+     * @return the total number of bytes read into the buffer, or
+     * {@code -1} if there is no more data because the end of
+     * the stream has been reached.
+     * @throws NullPointerException      If {@code b} is {@code null}.
+     * @throws IndexOutOfBoundsException If {@code off} is negative,
+     *                                   {@code len} is negative, or {@code len} is greater than
+     *                                   {@code b.length - off}
+     * @throws IOException               if an I/O error occurs.
+     * @see FilterInputStream#in
      */
     @Override
     public int read(final byte[] b, final int off, final int len) throws IOException {
@@ -154,8 +154,8 @@ public abstract class LimitedInputStream extends FilterInputStream implements Cl
      * This
      * method simply performs {@code in.close()}.
      *
-     * @throws  IOException  if an I/O error occurs.
-     * @see        FilterInputStream#in
+     * @throws IOException if an I/O error occurs.
+     * @see FilterInputStream#in
      */
     @Override
     public void close() throws IOException {

@@ -16,15 +16,14 @@
  */
 package org.apache.commons.fileupload2.jaksrvlt;
 
-import static java.lang.String.format;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.fileupload2.FileUploadBase;
+import org.apache.commons.fileupload2.UploadContext;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.apache.commons.fileupload2.FileUploadBase;
-import org.apache.commons.fileupload2.UploadContext;
+import static java.lang.String.format;
 
 /**
  * <p>Provides access to the request information needed for a request made to
@@ -107,7 +106,6 @@ public class JakSrvltRequestContext implements UploadContext {
      * Retrieve the input stream for the request.
      *
      * @return The input stream for the request.
-     *
      * @throws IOException if a problem occurs.
      */
     @Override

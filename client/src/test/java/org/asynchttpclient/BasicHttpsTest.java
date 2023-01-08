@@ -21,9 +21,7 @@ import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 

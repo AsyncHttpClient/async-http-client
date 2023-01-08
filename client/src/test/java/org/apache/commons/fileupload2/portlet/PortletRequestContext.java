@@ -16,15 +16,14 @@
  */
 package org.apache.commons.fileupload2.portlet;
 
-import static java.lang.String.format;
+import org.apache.commons.fileupload2.FileUploadBase;
+import org.apache.commons.fileupload2.UploadContext;
 
+import javax.portlet.ActionRequest;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.portlet.ActionRequest;
-
-import org.apache.commons.fileupload2.FileUploadBase;
-import org.apache.commons.fileupload2.UploadContext;
+import static java.lang.String.format;
 
 /**
  * <p>Provides access to the request information needed for a request made to
@@ -109,7 +108,6 @@ public class PortletRequestContext implements UploadContext {
      * Retrieve the input stream for the request.
      *
      * @return The input stream for the request.
-     *
      * @throws IOException if a problem occurs.
      */
     @Override
@@ -126,7 +124,7 @@ public class PortletRequestContext implements UploadContext {
     public String toString() {
         return format("ContentLength=%s, ContentType=%s",
                 this.contentLength(),
-                      this.getContentType());
+                this.getContentType());
     }
 
 }

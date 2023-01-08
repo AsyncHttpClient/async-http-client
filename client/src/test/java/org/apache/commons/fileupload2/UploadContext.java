@@ -19,7 +19,7 @@ package org.apache.commons.fileupload2;
 /**
  * Enhanced access to the request information needed for file uploads,
  * which fixes the Content Length data access in {@link RequestContext}.
- *
+ * <p>
  * The reason of introducing this new interface is just for backward compatibility
  * and it might vanish for a refactored 2.x version moving the new method into
  * RequestContext again.

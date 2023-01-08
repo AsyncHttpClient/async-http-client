@@ -20,10 +20,9 @@ package org.apache.commons.fileupload2;
  * Interface that will indicate that {@link FileItem} or {@link FileItemStream}
  * implementations will accept the headers read for the item.
  *
- * @since 1.2.1
- *
  * @see FileItem
  * @see FileItemStream
+ * @since 1.2.1
  */
 public interface FileItemHeadersSupport {
 
@@ -41,7 +40,7 @@ public interface FileItemHeadersSupport {
      * header block.
      *
      * @param headers the instance that holds onto the headers
-     *         for this instance.
+     *                for this instance.
      */
     void setHeaders(FileItemHeaders headers);
 

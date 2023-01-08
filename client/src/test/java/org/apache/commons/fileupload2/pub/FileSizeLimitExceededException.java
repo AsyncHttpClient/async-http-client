@@ -46,7 +46,7 @@ public class FileSizeLimitExceededException
      * @param permitted The maximum permitted request size.
      */
     public FileSizeLimitExceededException(final String message, final long actual,
-            final long permitted) {
+                                          final long permitted) {
         super(message, actual, permitted);
     }
 
@@ -85,7 +85,7 @@ public class FileSizeLimitExceededException
      * exception.
      *
      * @param pFieldName the field name of the item,
-     *        which caused the exception.
+     *                   which caused the exception.
      */
     public void setFieldName(final String pFieldName) {
         fieldName = pFieldName;

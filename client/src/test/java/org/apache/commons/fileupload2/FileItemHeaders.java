@@ -29,7 +29,7 @@ public interface FileItemHeaders {
 
     /**
      * Returns the value of the specified part header as a {@code String}.
-     *
+     * <p>
      * If the part did not include a header of the specified name, this method
      * return {@code null}.  If there are multiple headers with the same
      * name, this method returns the first header in the item.  The header
@@ -37,8 +37,8 @@ public interface FileItemHeaders {
      *
      * @param name a {@code String} specifying the header name
      * @return a {@code String} containing the value of the requested
-     *         header, or {@code null} if the item does not have a header
-     *         of that name
+     * header, or {@code null} if the item does not have a header
+     * of that name
      */
     String getHeader(String name);
 
@@ -55,8 +55,8 @@ public interface FileItemHeaders {
      *
      * @param name a {@code String} specifying the header name
      * @return an {@code Iterator} containing the values of the
-     *         requested header. If the item does not have any headers of
-     *         that name, return an empty {@code Iterator}
+     * requested header. If the item does not have any headers of
+     * that name, return an empty {@code Iterator}
      */
     Iterator<String> getHeaders(String name);
 
@@ -66,8 +66,8 @@ public interface FileItemHeaders {
      * </p>
      *
      * @return an {@code Iterator} containing all of the names of
-     *         headers provided with this file item. If the item does not have
-     *         any headers return an empty {@code Iterator}
+     * headers provided with this file item. If the item does not have
+     * any headers return an empty {@code Iterator}
      */
     Iterator<String> getHeaderNames();
 

@@ -31,7 +31,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +173,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
     private void sendEmptyFileInputStream(boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("empty.txt");
         try (AsyncHttpClient client = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy));
-            InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+             InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
             Request r = post("http://localhost" + ':' + port1 + "/upload")
                     .addBodyPart(new InputStreamPart("file", inputStream, file.getName(), file.length(), "text/plain", UTF_8)).build();
 
@@ -196,7 +195,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
     private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("textfile.txt");
         try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy));
-            InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+             InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
 
             InputStreamPart part;
             if (useContentLength) {

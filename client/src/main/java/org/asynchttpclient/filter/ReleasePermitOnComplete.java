@@ -71,6 +71,6 @@ public final class ReleasePermitOnComplete {
         for (Class<?> clazz = handlerClass; clazz != null; clazz = clazz.getSuperclass()) {
             Collections.addAll(allInterfaces, clazz.getInterfaces());
         }
-        return allInterfaces.toArray(new Class[allInterfaces.size()]);
+        return allInterfaces.toArray(new Class[0]);
     }
 }

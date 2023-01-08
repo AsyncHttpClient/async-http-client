@@ -40,9 +40,8 @@ final class QuotedPrintableDecoder {
     /**
      * Decode the encoded byte data writing it to the given output stream.
      *
-     * @param data   The array of byte data to decode.
-     * @param out    The output stream used to return the decoded data.
-     *
+     * @param data The array of byte data to decode.
+     * @param out  The output stream used to return the decoded data.
      * @return the number of bytes produced.
      * @throws IOException if an IO error occurs
      */

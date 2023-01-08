@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -57,7 +56,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
     private static final Uri DEFAULT_REQUEST_URL = Uri.create("http://localhost");
-    public static NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
+    public static final NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
     // builder only fields
     protected UriEncoder uriEncoder;
     protected List<Param> queryParams;

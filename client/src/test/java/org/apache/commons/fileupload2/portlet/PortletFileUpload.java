@@ -16,10 +16,6 @@
  */
 package org.apache.commons.fileupload2.portlet;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.fileupload2.FileItem;
 import org.apache.commons.fileupload2.FileItemFactory;
 import org.apache.commons.fileupload2.FileItemIterator;
@@ -28,6 +24,9 @@ import org.apache.commons.fileupload2.FileUploadBase;
 import org.apache.commons.fileupload2.FileUploadException;
 
 import javax.portlet.ActionRequest;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>High level API for processing file uploads.</p>
@@ -55,9 +54,8 @@ public class PortletFileUpload extends FileUpload {
      * content.
      *
      * @param request The portlet request to be evaluated. Must be non-null.
-     *
      * @return {@code true} if the request is multipart;
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     public static final boolean isMultipartContent(final ActionRequest request) {
         return FileUploadBase.isMultipartContent(new PortletRequestContext(request));
@@ -79,8 +77,8 @@ public class PortletFileUpload extends FileUpload {
      * Constructs an instance of this class which uses the supplied factory to
      * create {@code FileItem} instances.
      *
-     * @see FileUpload#FileUpload()
      * @param fileItemFactory The factory to use for creating file items.
+     * @see FileUpload#FileUpload()
      */
     public PortletFileUpload(final FileItemFactory fileItemFactory) {
         super(fileItemFactory);
@@ -93,10 +91,8 @@ public class PortletFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The portlet request to be parsed.
-     *
      * @return A list of {@code FileItem} instances parsed from the
-     *         request, in the order that they were transmitted.
-     *
+     * request, in the order that they were transmitted.
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
      */
@@ -109,12 +105,9 @@ public class PortletFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The portlet request to be parsed.
-     *
      * @return A map of {@code FileItem} instances parsed from the request.
-     *
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
-     *
      * @since 1.3
      */
     public Map<String, List<FileItem>> parseParameterMap(final ActionRequest request) throws FileUploadException {
@@ -126,16 +119,14 @@ public class PortletFileUpload extends FileUpload {
      * compliant {@code multipart/form-data} stream.
      *
      * @param request The portlet request to be parsed.
-     *
      * @return An iterator to instances of {@code FileItemStream}
-     *         parsed from the request, in the order that they were
-     *         transmitted.
-     *
+     * parsed from the request, in the order that they were
+     * transmitted.
      * @throws FileUploadException if there are problems reading/parsing
      *                             the request or storing files.
-     * @throws IOException An I/O error occurred. This may be a network
-     *   error while communicating with the client or a problem while
-     *   storing the uploaded content.
+     * @throws IOException         An I/O error occurred. This may be a network
+     *                             error while communicating with the client or a problem while
+     *                             storing the uploaded content.
      */
     public FileItemIterator getItemIterator(final ActionRequest request) throws FileUploadException, IOException {
         return super.getItemIterator(new PortletRequestContext(request));

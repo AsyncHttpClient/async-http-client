@@ -23,7 +23,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
@@ -64,7 +63,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         relativeLocationUrl();
     }
 
-//    @Disabled
+    //    @Disabled
     @RepeatedIfExceptionsTest(repeats = 5)
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);

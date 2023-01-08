@@ -16,7 +16,14 @@
  */
 package org.apache.commons.fileupload2.disk;
 
-import static java.lang.String.format;
+import org.apache.commons.fileupload2.FileItem;
+import org.apache.commons.fileupload2.FileItemHeaders;
+import org.apache.commons.fileupload2.FileUploadException;
+import org.apache.commons.fileupload2.ParameterParser;
+import org.apache.commons.fileupload2.util.Streams;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.DeferredFileOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -30,14 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.fileupload2.FileItem;
-import org.apache.commons.fileupload2.FileItemHeaders;
-import org.apache.commons.fileupload2.FileUploadException;
-import org.apache.commons.fileupload2.ParameterParser;
-import org.apache.commons.fileupload2.util.Streams;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.DeferredFileOutputStream;
+import static java.lang.String.format;
 
 /**
  * <p> The default implementation of the
@@ -69,7 +69,7 @@ import org.apache.commons.io.output.DeferredFileOutputStream;
  * @since 1.1
  */
 public class DiskFileItem
-    implements FileItem {
+        implements FileItem {
 
     // ----------------------------------------------------- Manifest constants
 
@@ -178,8 +178,8 @@ public class DiskFileItem
      *                      exceed the threshold.
      */
     public DiskFileItem(final String fieldName,
-            final String contentType, final boolean isFormField, final String fileName,
-            final int sizeThreshold, final File repository) {
+                        final String contentType, final boolean isFormField, final String fileName,
+                        final int sizeThreshold, final File repository) {
         this.fieldName = fieldName;
         this.contentType = contentType;
         this.isFormField = isFormField;
@@ -195,13 +195,12 @@ public class DiskFileItem
      * used to retrieve the contents of the file.
      *
      * @return An {@link InputStream InputStream} that can be
-     *         used to retrieve the contents of the file.
-     *
+     * used to retrieve the contents of the file.
      * @throws IOException if an error occurs.
      */
     @Override
     public InputStream getInputStream()
-        throws IOException {
+            throws IOException {
         if (!isInMemory()) {
             return Files.newInputStream(dfos.getFile().toPath());
         }
@@ -217,7 +216,7 @@ public class DiskFileItem
      * not defined.
      *
      * @return The content type passed by the agent or {@code null} if
-     *         not defined.
+     * not defined.
      */
     @Override
     public String getContentType() {
@@ -229,7 +228,7 @@ public class DiskFileItem
      * not defined.
      *
      * @return The content charset passed by the agent or {@code null} if
-     *         not defined.
+     * not defined.
      */
     public String getCharSet() {
         final ParameterParser parser = new ParameterParser();
@@ -244,9 +243,9 @@ public class DiskFileItem
      *
      * @return The original file name in the client's file system.
      * @throws org.apache.commons.fileupload2.InvalidFileNameException The file name contains a NUL character,
-     *   which might be an indicator of a security attack. If you intend to
-     *   use the file name anyways, catch the exception and use
-     *   {@link org.apache.commons.fileupload2.InvalidFileNameException#getName()}.
+     *                                                                 which might be an indicator of a security attack. If you intend to
+     *                                                                 use the file name anyways, catch the exception and use
+     *                                                                 {@link org.apache.commons.fileupload2.InvalidFileNameException#getName()}.
      */
     @Override
     public String getName() {
@@ -260,7 +259,7 @@ public class DiskFileItem
      * from memory.
      *
      * @return {@code true} if the file contents will be read
-     *         from memory; {@code false} otherwise.
+     * from memory; {@code false} otherwise.
      */
     @Override
     public boolean isInMemory() {
@@ -296,7 +295,6 @@ public class DiskFileItem
      *
      * @return The contents of the file as an array of bytes
      * or {@code null} if the data cannot be read
-     *
      * @throws UncheckedIOException if an I/O error occurs
      */
     @Override
@@ -324,15 +322,13 @@ public class DiskFileItem
      * contents of the file.
      *
      * @param charset The charset to use.
-     *
      * @return The contents of the file, as a string.
-     *
      * @throws UnsupportedEncodingException if the requested character
      *                                      encoding is not available.
      */
     @Override
     public String getString(final String charset)
-        throws UnsupportedEncodingException, IOException {
+            throws UnsupportedEncodingException, IOException {
         return new String(get(), charset);
     }
 
@@ -376,7 +372,6 @@ public class DiskFileItem
      *
      * @param file The {@code File} into which the uploaded item should
      *             be stored.
-     *
      * @throws Exception if an error occurs.
      */
     @Override
@@ -395,7 +390,7 @@ public class DiskFileItem
                  * file to disk.
                  */
                 throw new FileUploadException(
-                    "Cannot write uploaded file to disk!");
+                        "Cannot write uploaded file to disk!");
             }
             // Save the length of the file
             size = outputFile.length();
@@ -433,9 +428,7 @@ public class DiskFileItem
      * this file item.
      *
      * @return The name of the form field.
-     *
      * @see #setFieldName(String)
-     *
      */
     @Override
     public String getFieldName() {
@@ -446,9 +439,7 @@ public class DiskFileItem
      * Sets the field name used to reference this file item.
      *
      * @param fieldName The name of the form field.
-     *
      * @see #getFieldName()
-     *
      */
     @Override
     public void setFieldName(final String fieldName) {
@@ -460,10 +451,8 @@ public class DiskFileItem
      * a simple form field.
      *
      * @return {@code true} if the instance represents a simple form
-     *         field; {@code false} if it represents an uploaded file.
-     *
+     * field; {@code false} if it represents an uploaded file.
      * @see #setFormField(boolean)
-     *
      */
     @Override
     public boolean isFormField() {
@@ -476,9 +465,7 @@ public class DiskFileItem
      *
      * @param state {@code true} if the instance represents a simple form
      *              field; {@code false} if it represents an uploaded file.
-     *
      * @see #isFormField()
-     *
      */
     @Override
     public void setFormField(final boolean state) {
@@ -490,8 +477,7 @@ public class DiskFileItem
      * be used for storing the contents of the file.
      *
      * @return An {@link OutputStream OutputStream} that can be used
-     *         for storing the contents of the file.
-     *
+     * for storing the contents of the file.
      */
     @Override
     public OutputStream getOutputStream() {
@@ -515,7 +501,7 @@ public class DiskFileItem
      * volume.
      *
      * @return The data file, or {@code null} if the data is stored in
-     *         memory.
+     * memory.
      */
     public File getStoreLocation() {
         if (dfos == null) {
@@ -583,12 +569,13 @@ public class DiskFileItem
     @Override
     public String toString() {
         return format("name=%s, StoreLocation=%s, size=%s bytes, isFormField=%s, FieldName=%s",
-                      getName(), getStoreLocation(), getSize(),
+                getName(), getStoreLocation(), getSize(),
                 isFormField(), getFieldName());
     }
 
     /**
      * Returns the file item headers.
+     *
      * @return The file items headers.
      */
     @Override
@@ -598,6 +585,7 @@ public class DiskFileItem
 
     /**
      * Sets the file item headers.
+     *
      * @param pHeaders The file items headers.
      */
     @Override
@@ -608,6 +596,7 @@ public class DiskFileItem
     /**
      * Returns the default charset for use when no explicit charset
      * parameter is provided by the sender.
+     *
      * @return the default charset
      */
     public String getDefaultCharset() {
@@ -617,6 +606,7 @@ public class DiskFileItem
     /**
      * Sets the default charset for use when no explicit charset
      * parameter is provided by the sender.
+     *
      * @param charset the default charset
      */
     public void setDefaultCharset(final String charset) {

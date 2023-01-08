@@ -16,16 +16,6 @@
  */
 package org.apache.commons.fileupload2.impl;
 
-import static java.lang.String.format;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-
 import org.apache.commons.fileupload2.FileItem;
 import org.apache.commons.fileupload2.FileItemHeaders;
 import org.apache.commons.fileupload2.FileItemIterator;
@@ -42,6 +32,16 @@ import org.apache.commons.fileupload2.pub.SizeLimitExceededException;
 import org.apache.commons.fileupload2.util.LimitedInputStream;
 import org.apache.commons.io.IOUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
+import static java.lang.String.format;
+
 /**
  * The iterator, which is returned by
  * {@link FileUploadBase#getItemIterator(RequestContext)}.
@@ -49,11 +49,13 @@ import org.apache.commons.io.IOUtils;
 public class FileItemIteratorImpl implements FileItemIterator {
     /**
      * The file uploads processing utility.
+     *
      * @see FileUploadBase
      */
     private final FileUploadBase fileUploadBase;
     /**
      * The request context.
+     *
      * @see RequestContext
      */
     private final RequestContext ctx;
@@ -134,11 +136,11 @@ public class FileItemIteratorImpl implements FileItemIterator {
      * @param fileUploadBase Main processor.
      * @param requestContext The request context.
      * @throws FileUploadException An error occurred while
-     *   parsing the request.
-     * @throws IOException An I/O error occurred.
+     *                             parsing the request.
+     * @throws IOException         An I/O error occurred.
      */
     public FileItemIteratorImpl(final FileUploadBase fileUploadBase, final RequestContext requestContext)
-        throws FileUploadException, IOException {
+            throws FileUploadException, IOException {
         this.fileUploadBase = fileUploadBase;
         sizeMax = fileUploadBase.getSizeMax();
         fileSizeMax = fileUploadBase.getFileSizeMax();
@@ -154,22 +156,22 @@ public class FileItemIteratorImpl implements FileItemIterator {
                 || (!contentType.toLowerCase(Locale.ENGLISH).startsWith(FileUploadBase.MULTIPART))) {
             throw new InvalidContentTypeException(
                     format("the request doesn't contain a %s or %s stream, content type header is %s",
-                           FileUploadBase.MULTIPART_FORM_DATA, FileUploadBase.MULTIPART_MIXED, contentType));
+                            FileUploadBase.MULTIPART_FORM_DATA, FileUploadBase.MULTIPART_MIXED, contentType));
         }
         final long contentLengthInt = ((UploadContext) ctx).contentLength();
         final long requestSize = UploadContext.class.isAssignableFrom(ctx.getClass())
-                                 // Inline conditional is OK here CHECKSTYLE:OFF
-                                 ? ((UploadContext) ctx).contentLength()
-                                 : contentLengthInt;
-                                 // CHECKSTYLE:ON
+                // Inline conditional is OK here CHECKSTYLE:OFF
+                ? ((UploadContext) ctx).contentLength()
+                : contentLengthInt;
+        // CHECKSTYLE:ON
 
         final InputStream input; // N.B. this is eventually closed in MultipartStream processing
         if (sizeMax >= 0) {
             if (requestSize != -1 && requestSize > sizeMax) {
                 throw new SizeLimitExceededException(
-                    format("the request was rejected because its size (%s) exceeds the configured maximum (%s)",
-                            requestSize, sizeMax),
-                           requestSize, sizeMax);
+                        format("the request was rejected because its size (%s) exceeds the configured maximum (%s)",
+                                requestSize, sizeMax),
+                        requestSize, sizeMax);
             }
             // N.B. this is eventually closed in MultipartStream processing
             input = new LimitedInputStream(ctx.getInputStream(), sizeMax) {
@@ -177,9 +179,9 @@ public class FileItemIteratorImpl implements FileItemIterator {
                 protected void raiseError(final long pSizeMax, final long pCount)
                         throws IOException {
                     final FileUploadException ex = new SizeLimitExceededException(
-                    format("the request was rejected because its size (%s) exceeds the configured maximum (%s)",
-                            pCount, pSizeMax),
-                           pCount, pSizeMax);
+                            format("the request was rejected because its size (%s) exceeds the configured maximum (%s)",
+                                    pCount, pSizeMax),
+                            pCount, pSizeMax);
                     throw new FileUploadIOException(ex);
                 }
             };
@@ -231,7 +233,7 @@ public class FileItemIteratorImpl implements FileItemIterator {
             currentItem = null;
         }
         final MultipartStream multi = getMultiPartStream();
-        for (;;) {
+        for (; ; ) {
             final boolean nextPart;
             if (skipPreamble) {
                 nextPart = multi.skipPreamble();
@@ -256,8 +258,8 @@ public class FileItemIteratorImpl implements FileItemIterator {
                 if (fieldName != null) {
                     final String subContentType = headers.getHeader(FileUploadBase.CONTENT_TYPE);
                     if (subContentType != null
-                            &&  subContentType.toLowerCase(Locale.ENGLISH)
-                                    .startsWith(FileUploadBase.MULTIPART_MIXED)) {
+                            && subContentType.toLowerCase(Locale.ENGLISH)
+                            .startsWith(FileUploadBase.MULTIPART_MIXED)) {
                         currentFieldName = fieldName;
                         // Multiple files associated with this field name
                         final byte[] subBoundary = fileUploadBase.getBoundary(subContentType);
@@ -303,11 +305,11 @@ public class FileItemIteratorImpl implements FileItemIterator {
      * Returns, whether another instance of {@link FileItemStream}
      * is available.
      *
-     * @throws FileUploadException Parsing or processing the
-     *   file item failed.
-     * @throws IOException Reading the file item failed.
      * @return True, if one or more additional file items
-     *   are available, otherwise false.
+     * are available, otherwise false.
+     * @throws FileUploadException Parsing or processing the
+     *                             file item failed.
+     * @throws IOException         Reading the file item failed.
      */
     @Override
     public boolean hasNext() throws FileUploadException, IOException {
@@ -328,17 +330,17 @@ public class FileItemIteratorImpl implements FileItemIterator {
     /**
      * Returns the next available {@link FileItemStream}.
      *
-     * @throws NoSuchElementException No more items are
-     *   available. Use {@link #hasNext()} to prevent this exception.
-     * @throws FileUploadException Parsing or processing the
-     *   file item failed.
-     * @throws IOException Reading the file item failed.
      * @return FileItemStream instance, which provides
-     *   access to the next file item.
+     * access to the next file item.
+     * @throws NoSuchElementException No more items are
+     *                                available. Use {@link #hasNext()} to prevent this exception.
+     * @throws FileUploadException    Parsing or processing the
+     *                                file item failed.
+     * @throws IOException            Reading the file item failed.
      */
     @Override
     public FileItemStream next() throws FileUploadException, IOException {
-        if (eof  ||  (!itemValid && !hasNext())) {
+        if (eof || (!itemValid && !hasNext())) {
             throw new NoSuchElementException();
         }
         itemValid = false;
