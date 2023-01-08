@@ -1,4 +1,4 @@
-# Async Http Client [![Build Status](https://travis-ci.org/AsyncHttpClient/async-http-client.svg?branch=master)](https://travis-ci.org/AsyncHttpClient/async-http-client) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
+# Async Http Client [![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/maven.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/maven.yml) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
 
 Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 
