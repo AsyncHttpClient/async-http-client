@@ -19,66 +19,72 @@ import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractBasicTest {
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractBasicTest.class);
+    protected static final int TIMEOUT = 30;
 
-  protected final static int TIMEOUT = 30;
+    protected Server server;
+    protected int port1 = -1;
+    protected int port2 = -1;
 
-  protected final Logger logger = LoggerFactory.getLogger(getClass());
+    @BeforeEach
+    public void setUpGlobal() throws Exception {
+        server = new Server();
+        ServerConnector connector1 = addHttpConnector(server);
+        server.setHandler(configureHandler());
+        ServerConnector connector2 = addHttpConnector(server);
+        server.start();
 
-  protected Server server;
-  protected int port1 = -1;
-  protected int port2 = -1;
+        port1 = connector1.getLocalPort();
+        port2 = connector2.getLocalPort();
 
-  @BeforeClass(alwaysRun = true)
-  public void setUpGlobal() throws Exception {
-    server = new Server();
-    ServerConnector connector1 = addHttpConnector(server);
-    server.setHandler(configureHandler());
-    ServerConnector connector2 = addHttpConnector(server);
-    server.start();
-
-    port1 = connector1.getLocalPort();
-    port2 = connector2.getLocalPort();
-
-    logger.info("Local HTTP server started successfully");
-  }
-
-  @AfterClass(alwaysRun = true)
-  public void tearDownGlobal() throws Exception {
-    if (server != null) {
-      server.stop();
-    }
-  }
-
-  protected String getTargetUrl() {
-    return String.format("http://localhost:%d/foo/test", port1);
-  }
-
-  protected String getTargetUrl2() {
-    return String.format("https://localhost:%d/foo/test", port2);
-  }
-
-  public AbstractHandler configureHandler() throws Exception {
-    return new EchoHandler();
-  }
-
-  public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
-
-    @Override
-    public Response onCompleted(Response response) throws Exception {
-      return response;
+        logger.info("Local HTTP server started successfully");
     }
 
-    @Override
-    public void onThrowable(Throwable t) {
-      t.printStackTrace();
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        logger.debug("Shutting down local server: {}", server);
+
+        if (server != null) {
+            server.stop();
+        }
     }
-  }
+
+    protected String getTargetUrl() {
+        return String.format("http://localhost:%d/foo/test", port1);
+    }
+
+    protected String getTargetUrl2() {
+        return String.format("https://localhost:%d/foo/test", port2);
+    }
+
+    public AbstractHandler configureHandler() throws Exception {
+        return new EchoHandler();
+    }
+
+    public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
+
+        private static final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerAdapter.class);
+
+        @Override
+        public Response onCompleted(Response response) throws Exception {
+            return response;
+        }
+
+        @Override
+        public void onThrowable(Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
+    }
 }

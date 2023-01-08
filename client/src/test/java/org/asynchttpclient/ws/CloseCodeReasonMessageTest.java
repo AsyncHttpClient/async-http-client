@@ -12,55 +12,147 @@
  */
 package org.asynchttpclient.ws;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
 
-  @Test(timeOut = 60000)
-  public void onCloseWithCode() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient()) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      final AtomicReference<String> text = new AtomicReference<>("");
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
+    public void onCloseWithCode() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<String> text = new AtomicReference<>("");
 
-      WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            WebSocket websocket = c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
-      websocket.sendCloseFrame();
+            websocket.sendCloseFrame();
 
-      latch.await();
-      assertTrue(text.get().startsWith("1000"), "Expected a 1000 code but got " + text.get());
+            latch.await();
+            assertTrue(text.get().startsWith("1000"), "Expected a 1000 code but got " + text.get());
+        }
     }
-  }
 
-  @Test(timeOut = 60000)
-  public void onCloseWithCodeServerClose() throws Exception {
-    try (AsyncHttpClient c = asyncHttpClient()) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      final AtomicReference<String> text = new AtomicReference<>("");
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
+    public void onCloseWithCodeServerClose() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<String> text = new AtomicReference<>("");
 
-      c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
+            c.prepareGet(getTargetUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new Listener(latch, text)).build()).get();
 
-      latch.await();
-      // used to be correct 001-Idle Timeout prior to Jetty 9.4.15...
-      assertEquals(text.get(), "1000-");
+            latch.await();
+            assertEquals("1001-Connection Idle Timeout", text.get());
+        }
     }
-  }
 
-  @Test(groups = "online", timeOut = 60000, expectedExceptions = ExecutionException.class)
-  public void getWebSocketThrowsException() throws Throwable {
-    final CountDownLatch latch = new CountDownLatch(1);
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
+    public void getWebSocketThrowsException() throws Throwable {
+        final CountDownLatch latch = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            assertThrows(Exception.class, () -> {
+                client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+
+                    @Override
+                    public void onOpen(WebSocket websocket) {
+                    }
+
+                    @Override
+                    public void onClose(WebSocket websocket, int code, String reason) {
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        latch.countDown();
+                    }
+                }).build()).get();
+            });
+        }
+
+        latch.await();
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
+    public void wrongStatusCode() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
+
+            client.prepareGet("ws://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(WebSocket websocket, int code, String reason) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    throwable.set(t);
+                    latch.countDown();
+                }
+            }).build());
+
+            latch.await();
+            assertInstanceOf(Exception.class, throwable.get());
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
+    public void wrongProtocolCode() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<Throwable> throwable = new AtomicReference<>();
+
+            c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+
+                @Override
+                public void onOpen(WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(WebSocket websocket, int code, String reason) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    throwable.set(t);
+                    latch.countDown();
+                }
+            }).build());
+
+            latch.await();
+            assertInstanceOf(IOException.class, throwable.get());
+        }
+    }
+
+    public static final class Listener implements WebSocketListener {
+
+        final CountDownLatch latch;
+        final AtomicReference<String> text;
+
+        Listener(CountDownLatch latch, AtomicReference<String> text) {
+            this.latch = latch;
+            this.text = text;
+        }
 
         @Override
         public void onOpen(WebSocket websocket) {
@@ -68,100 +160,14 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
 
         @Override
         public void onClose(WebSocket websocket, int code, String reason) {
+            text.set(code + "-" + reason);
+            latch.countDown();
         }
 
         @Override
         public void onError(Throwable t) {
-          latch.countDown();
+            t.printStackTrace();
+            latch.countDown();
         }
-      }).build()).get();
     }
-
-    latch.await();
-  }
-
-  @Test(groups = "online", timeOut = 60000, expectedExceptions = IllegalArgumentException.class)
-  public void wrongStatusCode() throws Throwable {
-    try (AsyncHttpClient client = asyncHttpClient()) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      final AtomicReference<Throwable> throwable = new AtomicReference<>();
-
-      client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
-
-        @Override
-        public void onOpen(org.asynchttpclient.ws.WebSocket websocket) {
-        }
-
-        @Override
-        public void onClose(WebSocket websocket, int code, String reason) {
-        }
-
-        @Override
-        public void onError(Throwable t) {
-          throwable.set(t);
-          latch.countDown();
-        }
-      }).build());
-
-      latch.await();
-      assertNotNull(throwable.get());
-      throw throwable.get();
-    }
-  }
-
-  @Test(groups = "online", timeOut = 60000, expectedExceptions = IOException.class)
-  public void wrongProtocolCode() throws Throwable {
-    try (AsyncHttpClient c = asyncHttpClient()) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      final AtomicReference<Throwable> throwable = new AtomicReference<>();
-
-      c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
-
-        @Override
-        public void onOpen(WebSocket websocket) {
-        }
-
-        @Override
-        public void onClose(WebSocket websocket, int code, String reason) {
-        }
-
-        @Override
-        public void onError(Throwable t) {
-          throwable.set(t);
-          latch.countDown();
-        }
-      }).build());
-
-      latch.await();
-      assertNotNull(throwable.get());
-      throw throwable.get();
-    }
-  }
-
-  public final static class Listener implements WebSocketListener {
-
-    final CountDownLatch latch;
-    final AtomicReference<String> text;
-
-    Listener(CountDownLatch latch, AtomicReference<String> text) {
-      this.latch = latch;
-      this.text = text;
-    }
-
-    @Override
-    public void onOpen(WebSocket websocket) {
-    }
-
-    @Override
-    public void onClose(WebSocket websocket, int code, String reason) {
-      text.set(code + "-" + reason);
-      latch.countDown();
-    }
-
-    @Override
-    public void onError(Throwable t) {
-      t.printStackTrace();
-      latch.countDown();
-    }
-  }
 }

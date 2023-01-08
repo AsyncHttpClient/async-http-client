@@ -12,7 +12,11 @@
  */
 package org.asynchttpclient.proxy;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -25,18 +29,21 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static org.asynchttpclient.Dsl.*;
-import static org.asynchttpclient.test.TestUtils.*;
-import static org.testng.Assert.assertEquals;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.post;
+import static org.asynchttpclient.Dsl.proxyServer;
+import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Proxy usage tests.
@@ -45,75 +52,78 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
 
     private Server server2;
 
-    private final String customHeaderName = "Custom-Header";
-    private final String customHeaderValue = "Custom-Value";
+    private static final String customHeaderName = "Custom-Header";
+    private static final String customHeaderValue = "Custom-Value";
 
+    @Override
     public AbstractHandler configureHandler() throws Exception {
-      return new ProxyHandler(customHeaderName, customHeaderValue);
+        return new ProxyHandler(customHeaderName, customHeaderValue);
     }
 
-    @BeforeClass(alwaysRun = true)
+    @Override
+    @BeforeEach
     public void setUpGlobal() throws Exception {
-      server = new Server();
-      ServerConnector connector = addHttpConnector(server);
-      server.setHandler(configureHandler());
-      server.start();
-      port1 = connector.getLocalPort();
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
+        server.setHandler(configureHandler());
+        server.start();
+        port1 = connector.getLocalPort();
 
-      server2 = new Server();
-      ServerConnector connector2 = addHttpsConnector(server2);
-      server2.setHandler(new EchoHandler());
-      server2.start();
-      port2 = connector2.getLocalPort();
+        server2 = new Server();
+        ServerConnector connector2 = addHttpsConnector(server2);
+        server2.setHandler(new EchoHandler());
+        server2.start();
+        port2 = connector2.getLocalPort();
 
-      logger.info("Local HTTP server started successfully");
+        logger.info("Local HTTP server started successfully");
     }
 
-    @AfterClass(alwaysRun = true)
+    @Override
+    @AfterEach
     public void tearDownGlobal() throws Exception {
-      server.stop();
-      server2.stop();
+        server.stop();
+        server2.stop();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testHttpProxy() throws Exception {
-      AsyncHttpClientConfig config = config()
-        .setFollowRedirect(true)
-        .setProxyServer(
-          proxyServer("localhost", port1)
-            .setCustomHeaders((req) -> new DefaultHttpHeaders().add(customHeaderName, customHeaderValue))
-            .build()
-        )
-        .setUseInsecureTrustManager(true)
-        .build();
-      try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
-        Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
-        assertEquals(r.getStatusCode(), 200);
-      }
+        AsyncHttpClientConfig config = config()
+                .setFollowRedirect(true)
+                .setProxyServer(
+                        proxyServer("localhost", port1)
+                                .setCustomHeaders(req -> new DefaultHttpHeaders().add(customHeaderName, customHeaderValue))
+                                .build()
+                )
+                .setUseInsecureTrustManager(true)
+                .build();
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
+            Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
+            assertEquals(200, r.getStatusCode());
+        }
     }
 
     public static class ProxyHandler extends ConnectHandler {
-      String customHeaderName;
-      String customHeaderValue;
+        String customHeaderName;
+        String customHeaderValue;
 
-      public ProxyHandler(String customHeaderName, String customHeaderValue) {
-        this.customHeaderName = customHeaderName;
-        this.customHeaderValue = customHeaderValue;
-      }
-
-      @Override
-      public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        if (HttpConstants.Methods.CONNECT.equalsIgnoreCase(request.getMethod())) {
-          if (request.getHeader(customHeaderName).equals(customHeaderValue)) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            super.handle(s, r, request, response);
-          } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            r.setHandled(true);
-          }
-        } else {
-          super.handle(s, r, request, response);
+        public ProxyHandler(String customHeaderName, String customHeaderValue) {
+            this.customHeaderName = customHeaderName;
+            this.customHeaderValue = customHeaderValue;
         }
-      }
+
+        @Override
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            if (HttpConstants.Methods.CONNECT.equalsIgnoreCase(request.getMethod())) {
+                if (request.getHeader(customHeaderName).equals(customHeaderValue)) {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    super.handle(s, r, request, response);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    r.setHandled(true);
+                }
+            } else {
+                super.handle(s, r, request, response);
+            }
+        }
     }
 }

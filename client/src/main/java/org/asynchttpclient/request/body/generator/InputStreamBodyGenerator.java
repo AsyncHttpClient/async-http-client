@@ -10,7 +10,6 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-
 package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
@@ -24,78 +23,78 @@ import java.io.InputStream;
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
  * <br>
- * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
+ * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
  * resumable download will not works.
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
-  private final InputStream inputStream;
-  private final long contentLength;
-
-  public InputStreamBodyGenerator(InputStream inputStream) {
-    this(inputStream, -1L);
-  }
-
-  public InputStreamBodyGenerator(InputStream inputStream, long contentLength) {
-    this.inputStream = inputStream;
-    this.contentLength = contentLength;
-  }
-
-  public InputStream getInputStream() {
-    return inputStream;
-  }
-
-  public long getContentLength() {
-    return contentLength;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Body createBody() {
-    return new InputStreamBody(inputStream, contentLength);
-  }
-
-  private class InputStreamBody implements Body {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
     private final InputStream inputStream;
     private final long contentLength;
-    private byte[] chunk;
 
-    private InputStreamBody(InputStream inputStream, long contentLength) {
-      this.inputStream = inputStream;
-      this.contentLength = contentLength;
+    public InputStreamBodyGenerator(InputStream inputStream) {
+        this(inputStream, -1L);
+    }
+
+    public InputStreamBodyGenerator(InputStream inputStream, long contentLength) {
+        this.inputStream = inputStream;
+        this.contentLength = contentLength;
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
     }
 
     public long getContentLength() {
-      return contentLength;
+        return contentLength;
     }
 
-    public BodyState transferTo(ByteBuf target) {
-
-      // To be safe.
-      chunk = new byte[target.writableBytes() - 10];
-
-      int read = -1;
-      boolean write = false;
-      try {
-        read = inputStream.read(chunk);
-      } catch (IOException ex) {
-        LOGGER.warn("Unable to read", ex);
-      }
-
-      if (read > 0) {
-        target.writeBytes(chunk, 0, read);
-        write = true;
-      }
-      return write ? BodyState.CONTINUE : BodyState.STOP;
+    @Override
+    public Body createBody() {
+        return new InputStreamBody(inputStream, contentLength);
     }
 
-    public void close() throws IOException {
-      inputStream.close();
+    private static class InputStreamBody implements Body {
+
+        private final InputStream inputStream;
+        private final long contentLength;
+        private byte[] chunk;
+
+        private InputStreamBody(InputStream inputStream, long contentLength) {
+            this.inputStream = inputStream;
+            this.contentLength = contentLength;
+        }
+
+        @Override
+        public long getContentLength() {
+            return contentLength;
+        }
+
+        @Override
+        public BodyState transferTo(ByteBuf target) {
+
+            // To be safe.
+            chunk = new byte[target.writableBytes() - 10];
+
+            int read = -1;
+            boolean write = false;
+            try {
+                read = inputStream.read(chunk);
+            } catch (IOException ex) {
+                LOGGER.warn("Unable to read", ex);
+            }
+
+            if (read > 0) {
+                target.writeBytes(chunk, 0, read);
+                write = true;
+            }
+            return write ? BodyState.CONTINUE : BodyState.STOP;
+        }
+
+        @Override
+        public void close() throws IOException {
+            inputStream.close();
+        }
     }
-  }
 }
 

@@ -1,14 +1,17 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ *    Copyright (c) 2014-2023 AsyncHttpClient Project. All rights reserved.
  *
- * This program is licensed to you under the Apache License Version 2.0,
- * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the Apache License Version 2.0 is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package org.asynchttpclient;
 
@@ -23,61 +26,69 @@ import java.util.Map;
  */
 public class Param {
 
-  private final String name;
-  private final String value;
+    private final String name;
+    private final String value;
 
-  public Param(String name, String value) {
-    this.name = name;
-    this.value = value;
-  }
-
-  public static List<Param> map2ParamList(Map<String, List<String>> map) {
-    if (map == null)
-      return null;
-
-    List<Param> params = new ArrayList<>(map.size());
-    for (Map.Entry<String, List<String>> entries : map.entrySet()) {
-      String name = entries.getKey();
-      for (String value : entries.getValue())
-        params.add(new Param(name, value));
+    public Param(String name, String value) {
+        this.name = name;
+        this.value = value;
     }
-    return params;
-  }
 
-  public String getName() {
-    return name;
-  }
+    public static List<Param> map2ParamList(Map<String, List<String>> map) {
+        if (map == null) {
+            return null;
+        }
 
-  public String getValue() {
-    return value;
-  }
+        List<Param> params = new ArrayList<>(map.size());
+        for (Map.Entry<String, List<String>> entries : map.entrySet()) {
+            String name = entries.getKey();
+            for (String value : entries.getValue()) {
+                params.add(new Param(name, value));
+            }
+        }
+        return params;
+    }
 
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((name == null) ? 0 : name.hashCode());
-    result = prime * result + ((value == null) ? 0 : value.hashCode());
-    return result;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (!(obj instanceof Param))
-      return false;
-    Param other = (Param) obj;
-    if (name == null) {
-      if (other.name != null)
-        return false;
-    } else if (!name.equals(other.name))
-      return false;
-    if (value == null) {
-      if (other.value != null)
-        return false;
-    } else if (!value.equals(other.value))
-      return false;
-    return true;
-  }
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (name == null ? 0 : name.hashCode());
+        result = prime * result + (value == null ? 0 : value.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof Param)) {
+            return false;
+        }
+        Param other = (Param) obj;
+        if (name == null) {
+            if (other.name != null) {
+                return false;
+            }
+        } else if (!name.equals(other.name)) {
+            return false;
+        }
+        if (value == null) {
+            return other.value == null;
+        } else {
+            return value.equals(other.value);
+        }
+    }
 }

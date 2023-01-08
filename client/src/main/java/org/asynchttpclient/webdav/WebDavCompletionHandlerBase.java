@@ -10,13 +10,13 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-
 package org.asynchttpclient.webdav;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.netty.NettyResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +34,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Simple {@link AsyncHandler} that add support for WebDav's response manipulation.
@@ -41,163 +42,148 @@ import java.util.List;
  * @param <T> the result type
  */
 public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(WebDavCompletionHandlerBase.class);
-  private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
-  private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<>());
-  private HttpResponseStatus status;
-  private HttpHeaders headers;
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebDavCompletionHandlerBase.class);
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
+    private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<>());
+    private HttpResponseStatus status;
+    private HttpHeaders headers;
 
-  static {
-    DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
-    if (Boolean.getBoolean("org.asynchttpclient.webdav.enableDtd")) {
-      try {
-        DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      } catch (ParserConfigurationException e) {
-        LOGGER.error("Failed to disable doctype declaration");
-        throw new ExceptionInInitializerError(e);
-      }
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public final State onBodyPartReceived(final HttpResponseBodyPart content) {
-    bodyParts.add(content);
-    return State.CONTINUE;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public final State onStatusReceived(final HttpResponseStatus status) {
-    this.status = status;
-    return State.CONTINUE;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public final State onHeadersReceived(final HttpHeaders headers) {
-    this.headers = headers;
-    return State.CONTINUE;
-  }
-
-  private Document readXMLResponse(InputStream stream) {
-    Document document;
-    try {
-      document = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(stream);
-      parse(document);
-    } catch (SAXException | IOException | ParserConfigurationException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-    return document;
-  }
-
-  private void parse(Document document) {
-    Element element = document.getDocumentElement();
-    NodeList statusNode = element.getElementsByTagName("status");
-    for (int i = 0; i < statusNode.getLength(); i++) {
-      Node node = statusNode.item(i);
-
-      String value = node.getFirstChild().getNodeValue();
-      int statusCode = Integer.parseInt(value.substring(value.indexOf(" "), value.lastIndexOf(" ")).trim());
-      String statusText = value.substring(value.lastIndexOf(" "));
-      status = new HttpStatusWrapper(status, statusText, statusCode);
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public final T onCompleted() throws Exception {
-    if (status != null) {
-      Document document = null;
-      if (status.getStatusCode() == 207) {
-        document = readXMLResponse(new NettyResponse(status, headers, bodyParts).getResponseBodyAsStream());
-      }
-      // recompute response as readXMLResponse->parse might have updated it
-      return onCompleted(new WebDavResponse(new NettyResponse(status, headers, bodyParts), document));
-    } else {
-      throw new IllegalStateException("Status is null");
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void onThrowable(Throwable t) {
-    LOGGER.debug(t.getMessage(), t);
-  }
-
-  /**
-   * Invoked once the HTTP response has been fully read.
-   *
-   * @param response The {@link org.asynchttpclient.Response}
-   * @return Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
-   * @throws Exception if something wrong happens
-   */
-  abstract public T onCompleted(WebDavResponse response) throws Exception;
-
-  private static class HttpStatusWrapper extends HttpResponseStatus {
-
-    private final HttpResponseStatus wrapped;
-
-    private final String statusText;
-
-    private final int statusCode;
-
-    HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
-      super(wrapper.getUri());
-      this.wrapped = wrapper;
-      this.statusText = statusText;
-      this.statusCode = statusCode;
+    static {
+        DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+        if (Boolean.getBoolean("org.asynchttpclient.webdav.enableDtd")) {
+            try {
+                DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            } catch (ParserConfigurationException e) {
+                LOGGER.error("Failed to disable doctype declaration");
+                throw new ExceptionInInitializerError(e);
+            }
+        }
     }
 
     @Override
-    public int getStatusCode() {
-      return (statusText == null ? wrapped.getStatusCode() : statusCode);
+    public final State onBodyPartReceived(final HttpResponseBodyPart content) {
+        bodyParts.add(content);
+        return State.CONTINUE;
     }
 
     @Override
-    public String getStatusText() {
-      return (statusText == null ? wrapped.getStatusText() : statusText);
+    public final State onStatusReceived(final HttpResponseStatus status) {
+        this.status = status;
+        return State.CONTINUE;
     }
 
     @Override
-    public String getProtocolName() {
-      return wrapped.getProtocolName();
+    public final State onHeadersReceived(final HttpHeaders headers) {
+        this.headers = headers;
+        return State.CONTINUE;
+    }
+
+    private Document readXMLResponse(InputStream stream) {
+        Document document;
+        try {
+            document = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(stream);
+            parse(document);
+        } catch (SAXException | IOException | ParserConfigurationException e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        return document;
+    }
+
+    private void parse(Document document) {
+        Element element = document.getDocumentElement();
+        NodeList statusNode = element.getElementsByTagName("status");
+        for (int i = 0; i < statusNode.getLength(); i++) {
+            Node node = statusNode.item(i);
+
+            String value = node.getFirstChild().getNodeValue();
+            int statusCode = Integer.parseInt(value.substring(value.indexOf(' '), value.lastIndexOf(' ')).trim());
+            String statusText = value.substring(value.lastIndexOf(' '));
+            status = new HttpStatusWrapper(status, statusText, statusCode);
+        }
     }
 
     @Override
-    public int getProtocolMajorVersion() {
-      return wrapped.getProtocolMajorVersion();
+    public final T onCompleted() throws Exception {
+        if (status != null) {
+            Document document = null;
+            if (status.getStatusCode() == 207) {
+                document = readXMLResponse(new NettyResponse(status, headers, bodyParts).getResponseBodyAsStream());
+            }
+            // recompute response as readXMLResponse->parse might have updated it
+            return onCompleted(new WebDavResponse(new NettyResponse(status, headers, bodyParts), document));
+        } else {
+            throw new IllegalStateException("Status is null");
+        }
     }
 
     @Override
-    public int getProtocolMinorVersion() {
-      return wrapped.getProtocolMinorVersion();
+    public void onThrowable(Throwable t) {
+        LOGGER.debug(t.getMessage(), t);
     }
 
-    @Override
-    public String getProtocolText() {
-      return wrapped.getStatusText();
-    }
+    /**
+     * Invoked once the HTTP response has been fully read.
+     *
+     * @param response The {@link Response}
+     * @return Type of the value that will be returned by the associated {@link Future}
+     * @throws Exception if something wrong happens
+     */
+    public abstract T onCompleted(WebDavResponse response) throws Exception;
 
-    @Override
-    public SocketAddress getRemoteAddress() {
-      return wrapped.getRemoteAddress();
-    }
+    private static class HttpStatusWrapper extends HttpResponseStatus {
 
-    @Override
-    public SocketAddress getLocalAddress() {
-      return wrapped.getLocalAddress();
+        private final HttpResponseStatus wrapped;
+
+        private final String statusText;
+
+        private final int statusCode;
+
+        HttpStatusWrapper(HttpResponseStatus wrapper, String statusText, int statusCode) {
+            super(wrapper.getUri());
+            wrapped = wrapper;
+            this.statusText = statusText;
+            this.statusCode = statusCode;
+        }
+
+        @Override
+        public int getStatusCode() {
+            return statusText == null ? wrapped.getStatusCode() : statusCode;
+        }
+
+        @Override
+        public String getStatusText() {
+            return statusText == null ? wrapped.getStatusText() : statusText;
+        }
+
+        @Override
+        public String getProtocolName() {
+            return wrapped.getProtocolName();
+        }
+
+        @Override
+        public int getProtocolMajorVersion() {
+            return wrapped.getProtocolMajorVersion();
+        }
+
+        @Override
+        public int getProtocolMinorVersion() {
+            return wrapped.getProtocolMinorVersion();
+        }
+
+        @Override
+        public String getProtocolText() {
+            return wrapped.getStatusText();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() {
+            return wrapped.getRemoteAddress();
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() {
+            return wrapped.getLocalAddress();
+        }
     }
-  }
 }

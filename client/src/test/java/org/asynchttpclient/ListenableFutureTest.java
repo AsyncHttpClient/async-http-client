@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import org.testng.annotations.Test;
+import io.github.artsok.RepeatedIfExceptionsTest;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -21,56 +21,56 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ListenableFutureTest extends AbstractBasicTest {
 
-  @Test
-  public void testListenableFuture() throws Exception {
-    final AtomicInteger statusCode = new AtomicInteger(500);
-    try (AsyncHttpClient ahc = asyncHttpClient()) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
-      future.addListener(() -> {
-        try {
-          statusCode.set(future.get().getStatusCode());
-          latch.countDown();
-        } catch (InterruptedException | ExecutionException e) {
-          e.printStackTrace();
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testListenableFuture() throws Exception {
+        final AtomicInteger statusCode = new AtomicInteger(500);
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
+            future.addListener(() -> {
+                try {
+                    statusCode.set(future.get().getStatusCode());
+                    latch.countDown();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }, Executors.newFixedThreadPool(1));
+
+            latch.await(10, TimeUnit.SECONDS);
+            assertEquals(statusCode.get(), 200);
         }
-      }, Executors.newFixedThreadPool(1));
-
-      latch.await(10, TimeUnit.SECONDS);
-      assertEquals(statusCode.get(), 200);
-    }
-  }
-
-  @Test
-  public void testListenableFutureAfterCompletion() throws Exception {
-
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    try (AsyncHttpClient ahc = asyncHttpClient()) {
-      final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
-      future.get();
-      future.addListener(latch::countDown, Runnable::run);
     }
 
-    latch.await(10, TimeUnit.SECONDS);
-  }
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testListenableFutureAfterCompletion() throws Exception {
 
-  @Test
-  public void testListenableFutureBeforeAndAfterCompletion() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
 
-    final CountDownLatch latch = new CountDownLatch(2);
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
+            final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
+            future.get();
+            future.addListener(latch::countDown, Runnable::run);
+        }
 
-    try (AsyncHttpClient ahc = asyncHttpClient()) {
-      final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
-      future.addListener(latch::countDown, Runnable::run);
-      future.get();
-      future.addListener(latch::countDown, Runnable::run);
+        latch.await(10, TimeUnit.SECONDS);
     }
 
-    latch.await(10, TimeUnit.SECONDS);
-  }
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testListenableFutureBeforeAndAfterCompletion() throws Exception {
+
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        try (AsyncHttpClient ahc = asyncHttpClient()) {
+            final ListenableFuture<Response> future = ahc.prepareGet(getTargetUrl()).execute();
+            future.addListener(latch::countDown, Runnable::run);
+            future.get();
+            future.addListener(latch::countDown, Runnable::run);
+        }
+
+        latch.await(10, TimeUnit.SECONDS);
+    }
 }

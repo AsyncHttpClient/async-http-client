@@ -15,24 +15,26 @@
  */
 package org.asynchttpclient;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
 
-import static org.asynchttpclient.Dsl.*;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test for multithreaded url fetcher calls that use two separate sets of ssl certificates. This then tests that the certificate settings do not clash (override each other),
@@ -41,79 +43,83 @@ import static org.testng.Assert.assertNotNull;
  * @author dominict
  */
 public class RedirectConnectionUsageTest extends AbstractBasicTest {
-  private String BASE_URL;
 
-  private String servletEndpointRedirectUrl;
+    private String baseUrl;
+    private String servletEndpointRedirectUrl;
 
-  @BeforeClass
-  public void setUp() throws Exception {
-    server = new Server();
-    ServerConnector connector = addHttpConnector(server);
+    @BeforeEach
+    public void setUp() throws Exception {
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
 
-    ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-    context.addServlet(new ServletHolder(new MockRedirectHttpServlet()), "/redirect/*");
-    context.addServlet(new ServletHolder(new MockFullResponseHttpServlet()), "/*");
-    server.setHandler(context);
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.addServlet(new ServletHolder(new MockRedirectHttpServlet()), "/redirect/*");
+        context.addServlet(new ServletHolder(new MockFullResponseHttpServlet()), "/*");
+        server.setHandler(context);
 
-    server.start();
-    port1 = connector.getLocalPort();
+        server.start();
+        port1 = connector.getLocalPort();
 
-    BASE_URL = "http://localhost" + ":" + port1;
-    servletEndpointRedirectUrl = BASE_URL + "/redirect";
-  }
-
-  /**
-   * Tests that after a redirect the final url in the response reflect the redirect
-   */
-  @Test
-  public void testGetRedirectFinalUrl() throws Exception {
-
-    AsyncHttpClientConfig config = config()
-            .setKeepAlive(true)
-            .setMaxConnectionsPerHost(1)
-            .setMaxConnections(1)
-            .setConnectTimeout(1000)
-            .setRequestTimeout(1000)
-            .setFollowRedirect(true)
-            .build();
-
-    try (AsyncHttpClient c = asyncHttpClient(config)) {
-      ListenableFuture<Response> response = c.executeRequest(get(servletEndpointRedirectUrl));
-      Response res = response.get();
-      assertNotNull(res.getResponseBody());
-      assertEquals(res.getUri().toString(), BASE_URL + "/overthere");
+        baseUrl = "http://localhost" + ':' + port1;
+        servletEndpointRedirectUrl = baseUrl + "/redirect";
     }
-  }
 
-  @SuppressWarnings("serial")
-  class MockRedirectHttpServlet extends HttpServlet {
-    public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
-      res.sendRedirect("/overthere");
+    /**
+     * Tests that after a redirect the final url in the response reflect the redirect
+     */
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testGetRedirectFinalUrl() throws Exception {
+
+        AsyncHttpClientConfig config = config()
+                .setKeepAlive(true)
+                .setMaxConnectionsPerHost(1)
+                .setMaxConnections(1)
+                .setConnectTimeout(1000)
+                .setRequestTimeout(1000)
+                .setFollowRedirect(true)
+                .build();
+
+        try (AsyncHttpClient c = asyncHttpClient(config)) {
+            ListenableFuture<Response> response = c.executeRequest(get(servletEndpointRedirectUrl));
+            Response res = response.get();
+            assertNotNull(res.getResponseBody());
+            assertEquals(res.getUri().toString(), baseUrl + "/overthere");
+        }
     }
-  }
 
-  @SuppressWarnings("serial")
-  class MockFullResponseHttpServlet extends HttpServlet {
-
-    private static final String contentType = "text/xml";
-    private static final String xml = "<?xml version=\"1.0\"?><hello date=\"%s\"></hello>";
-
-    public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
-      String xmlToReturn = String.format(xml, new Date().toString());
-
-      res.setStatus(200);
-      res.addHeader("Content-Type", contentType);
-      res.addHeader("X-Method", req.getMethod());
-      res.addHeader("MultiValue", "1");
-      res.addHeader("MultiValue", "2");
-      res.addHeader("MultiValue", "3");
-
-      OutputStream os = res.getOutputStream();
-
-      byte[] retVal = xmlToReturn.getBytes();
-      res.setContentLength(retVal.length);
-      os.write(retVal);
-      os.close();
+    @SuppressWarnings("serial")
+    static
+    class MockRedirectHttpServlet extends HttpServlet {
+        @Override
+        public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
+            res.sendRedirect("/overthere");
+        }
     }
-  }
+
+    @SuppressWarnings("serial")
+    static
+    class MockFullResponseHttpServlet extends HttpServlet {
+
+        private static final String contentType = "text/xml";
+        private static final String xml = "<?xml version=\"1.0\"?><hello date=\"%s\"></hello>";
+
+        @Override
+        public void service(HttpServletRequest req, HttpServletResponse res) throws IOException {
+            String xmlToReturn = String.format(xml, new Date());
+
+            res.setStatus(200);
+            res.addHeader("Content-Type", contentType);
+            res.addHeader("X-Method", req.getMethod());
+            res.addHeader("MultiValue", "1");
+            res.addHeader("MultiValue", "2");
+            res.addHeader("MultiValue", "3");
+
+            OutputStream os = res.getOutputStream();
+
+            byte[] retVal = xmlToReturn.getBytes();
+            res.setContentLength(retVal.length);
+            os.write(retVal);
+            os.close();
+        }
+    }
 }

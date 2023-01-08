@@ -1,15 +1,17 @@
 /*
- * Copyright (c) 2017 AsyncHttpClient Project. All rights reserved.
+ *    Copyright (c) 2017-2023 AsyncHttpClient Project. All rights reserved.
  *
- * This program is licensed to you under the Apache License Version 2.0,
- * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at
- *     http://www.apache.org/licenses/LICENSE-2.0.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the Apache License Version 2.0 is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package org.asynchttpclient.oauth;
 
@@ -18,39 +20,41 @@ package org.asynchttpclient.oauth;
  */
 final class Parameter implements Comparable<Parameter> {
 
-  final String key, value;
+    final String key, value;
 
-  public Parameter(String key, String value) {
-    this.key = key;
-    this.value = value;
-  }
+    public Parameter(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
 
-  @Override
-  public int compareTo(Parameter other) {
-    int keyDiff = key.compareTo(other.key);
-    return keyDiff == 0 ? value.compareTo(other.value) : keyDiff;
-  }
+    @Override
+    public int compareTo(Parameter other) {
+        int keyDiff = key.compareTo(other.key);
+        return keyDiff == 0 ? value.compareTo(other.value) : keyDiff;
+    }
 
-  @Override
-  public String toString() {
-    return key + "=" + value;
-  }
+    @Override
+    public String toString() {
+        return key + '=' + value;
+    }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-    Parameter parameter = (Parameter) o;
-    return key.equals(parameter.key) && value.equals(parameter.value);
-  }
+        Parameter parameter = (Parameter) o;
+        return key.equals(parameter.key) && value.equals(parameter.value);
+    }
 
-  @Override
-  public int hashCode() {
-    int result = key.hashCode();
-    result = 31 * result + value.hashCode();
-    return result;
-  }
+    @Override
+    public int hashCode() {
+        int result = key.hashCode();
+        result = 31 * result + value.hashCode();
+        return result;
+    }
 }

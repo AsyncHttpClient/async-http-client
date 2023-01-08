@@ -1,15 +1,17 @@
 /*
- * Copyright (c) 2014 AsyncHttpClient Project. All rights reserved.
+ *    Copyright (c) 2014-2023 AsyncHttpClient Project. All rights reserved.
  *
- * This program is licensed to you under the Apache License Version 2.0,
- * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at
- *     http://www.apache.org/licenses/LICENSE-2.0.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the Apache License Version 2.0 is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package org.asynchttpclient.netty.timeout;
 
@@ -22,31 +24,33 @@ import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
-  private final long requestTimeout;
+    private final long requestTimeout;
 
-  RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
-                                 NettyRequestSender requestSender,
-                                 TimeoutsHolder timeoutsHolder,
-                                 int requestTimeout) {
-    super(nettyResponseFuture, requestSender, timeoutsHolder);
-    this.requestTimeout = requestTimeout;
-  }
+    RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
+                            NettyRequestSender requestSender,
+                            TimeoutsHolder timeoutsHolder,
+                            int requestTimeout) {
+        super(nettyResponseFuture, requestSender, timeoutsHolder);
+        this.requestTimeout = requestTimeout;
+    }
 
-  public void run(Timeout timeout) {
+    @Override
+    public void run(Timeout timeout) {
+        if (done.getAndSet(true) || requestSender.isClosed()) {
+            return;
+        }
 
-    if (done.getAndSet(true) || requestSender.isClosed())
-      return;
+        // in any case, cancel possible readTimeout sibling
+        timeoutsHolder.cancel();
 
-    // in any case, cancel possible readTimeout sibling
-    timeoutsHolder.cancel();
+        if (nettyResponseFuture.isDone()) {
+            return;
+        }
 
-    if (nettyResponseFuture.isDone())
-      return;
-
-    StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Request timeout to ");
-    appendRemoteAddress(sb);
-    String message = sb.append(" after ").append(requestTimeout).append(" ms").toString();
-    long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
-    expire(message, age);
-  }
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Request timeout to ");
+        appendRemoteAddress(sb);
+        String message = sb.append(" after ").append(requestTimeout).append(" ms").toString();
+        long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
+        expire(message, age);
+    }
 }

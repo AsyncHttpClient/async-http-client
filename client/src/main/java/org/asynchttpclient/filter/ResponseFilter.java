@@ -12,6 +12,8 @@
  */
 package org.asynchttpclient.filter;
 
+import org.asynchttpclient.AsyncHttpClient;
+
 /**
  * A Filter interface that gets invoked before making the processing of the response bytes. {@link ResponseFilter} are invoked
  * before the actual response's status code get processed. That means authorization, proxy authentication and redirects
@@ -19,16 +21,16 @@ package org.asynchttpclient.filter;
  */
 public interface ResponseFilter {
 
-  /**
-   * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link ResponseFilter#filter} and will use the
-   * returned {@link FilterContext#replayRequest()} and {@link FilterContext#getAsyncHandler()} to decide if the response
-   * processing can continue. If {@link FilterContext#replayRequest()} return true, a new request will be made
-   * using {@link FilterContext#getRequest()} and the current response processing will be ignored.
-   *
-   * @param ctx a {@link FilterContext}
-   * @param <T> the handler result type
-   * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
-   * @throws FilterException to interrupt the filter processing.
-   */
-  <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
+    /**
+     * An {@link AsyncHttpClient} will invoke {@link ResponseFilter#filter} and will use the
+     * returned {@link FilterContext#replayRequest()} and {@link FilterContext#getAsyncHandler()} to decide if the response
+     * processing can continue. If {@link FilterContext#replayRequest()} return true, a new request will be made
+     * using {@link FilterContext#getRequest()} and the current response processing will be ignored.
+     *
+     * @param ctx a {@link FilterContext}
+     * @param <T> the handler result type
+     * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
+     * @throws FilterException to interrupt the filter processing.
+     */
+    <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
 }

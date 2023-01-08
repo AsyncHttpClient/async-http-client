@@ -29,92 +29,110 @@ import java.util.List;
  */
 public class WebDavResponse implements Response {
 
-  private final Response response;
-  private final Document document;
+    private final Response response;
+    private final Document document;
 
-  WebDavResponse(Response response, Document document) {
-    this.response = response;
-    this.document = document;
-  }
+    WebDavResponse(Response response, Document document) {
+        this.response = response;
+        this.document = document;
+    }
 
-  public int getStatusCode() {
-    return response.getStatusCode();
-  }
+    @Override
+    public int getStatusCode() {
+        return response.getStatusCode();
+    }
 
-  public String getStatusText() {
-    return response.getStatusText();
-  }
+    @Override
+    public String getStatusText() {
+        return response.getStatusText();
+    }
 
-  @Override
-  public byte[] getResponseBodyAsBytes() {
-    return response.getResponseBodyAsBytes();
-  }
+    @Override
+    public byte[] getResponseBodyAsBytes() {
+        return response.getResponseBodyAsBytes();
+    }
 
-  public ByteBuffer getResponseBodyAsByteBuffer() {
-    return response.getResponseBodyAsByteBuffer();
-  }
+    @Override
+    public ByteBuffer getResponseBodyAsByteBuffer() {
+        return response.getResponseBodyAsByteBuffer();
+    }
 
-  public InputStream getResponseBodyAsStream() {
-    return response.getResponseBodyAsStream();
-  }
+    @Override
+    public InputStream getResponseBodyAsStream() {
+        return response.getResponseBodyAsStream();
+    }
 
-  public String getResponseBody() {
-    return response.getResponseBody();
-  }
+    @Override
+    public String getResponseBody() {
+        return response.getResponseBody();
+    }
 
-  public String getResponseBody(Charset charset) {
-    return response.getResponseBody(charset);
-  }
+    @Override
+    public String getResponseBody(Charset charset) {
+        return response.getResponseBody(charset);
+    }
 
-  public Uri getUri() {
-    return response.getUri();
-  }
+    @Override
+    public Uri getUri() {
+        return response.getUri();
+    }
 
-  public String getContentType() {
-    return response.getContentType();
-  }
+    @Override
+    public String getContentType() {
+        return response.getContentType();
+    }
 
-  public String getHeader(CharSequence name) {
-    return response.getHeader(name);
-  }
+    @Override
+    public String getHeader(CharSequence name) {
+        return response.getHeader(name);
+    }
 
-  public List<String> getHeaders(CharSequence name) {
-    return response.getHeaders(name);
-  }
+    @Override
+    public List<String> getHeaders(CharSequence name) {
+        return response.getHeaders(name);
+    }
 
-  public HttpHeaders getHeaders() {
-    return response.getHeaders();
-  }
+    @Override
+    public HttpHeaders getHeaders() {
+        return response.getHeaders();
+    }
 
-  public boolean isRedirected() {
-    return response.isRedirected();
-  }
+    @Override
+    public boolean isRedirected() {
+        return response.isRedirected();
+    }
 
-  public List<Cookie> getCookies() {
-    return response.getCookies();
-  }
+    @Override
+    public List<Cookie> getCookies() {
+        return response.getCookies();
+    }
 
-  public boolean hasResponseStatus() {
-    return response.hasResponseStatus();
-  }
+    @Override
+    public boolean hasResponseStatus() {
+        return response.hasResponseStatus();
+    }
 
-  public boolean hasResponseHeaders() {
-    return response.hasResponseHeaders();
-  }
+    @Override
+    public boolean hasResponseHeaders() {
+        return response.hasResponseHeaders();
+    }
 
-  public boolean hasResponseBody() {
-    return response.hasResponseBody();
-  }
+    @Override
+    public boolean hasResponseBody() {
+        return response.hasResponseBody();
+    }
 
-  public SocketAddress getRemoteAddress() {
-    return response.getRemoteAddress();
-  }
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return response.getRemoteAddress();
+    }
 
-  public SocketAddress getLocalAddress() {
-    return response.getLocalAddress();
-  }
+    @Override
+    public SocketAddress getLocalAddress() {
+        return response.getLocalAddress();
+    }
 
-  public Document getBodyAsXML() {
-    return document;
-  }
+    public Document getBodyAsXML() {
+        return document;
+    }
 }

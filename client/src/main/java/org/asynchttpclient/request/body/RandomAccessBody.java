@@ -10,7 +10,6 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-
 package org.asynchttpclient.request.body;
 
 import java.io.IOException;
@@ -21,12 +20,12 @@ import java.nio.channels.WritableByteChannel;
  */
 public interface RandomAccessBody extends Body {
 
-  /**
-   * Transfers the specified chunk of bytes from this body to the specified channel.
-   *
-   * @param target The destination channel to transfer the body chunk to, must not be {@code null}.
-   * @return The non-negative number of bytes actually transferred.
-   * @throws IOException If the body chunk could not be transferred.
-   */
-  long transferTo(WritableByteChannel target) throws IOException;
+    /**
+     * Transfers the specified chunk of bytes from this body to the specified channel.
+     *
+     * @param target The destination channel to transfer the body chunk to, must not be {@code null}.
+     * @return The non-negative number of bytes actually transferred.
+     * @throws IOException If the body chunk could not be transferred.
+     */
+    long transferTo(WritableByteChannel target) throws IOException;
 }

@@ -35,7 +35,6 @@
  * <http://www.apache.org/>.
  *
  */
-
 package org.asynchttpclient.spnego;
 
 import java.io.IOException;
@@ -48,7 +47,8 @@ import java.io.IOException;
  *
  * @since 4.1
  */
+@FunctionalInterface
 public interface SpnegoTokenGenerator {
 
-  byte[] generateSpnegoDERObject(byte[] kerberosTicket) throws IOException;
+    byte[] generateSpnegoDERObject(byte[] kerberosTicket) throws IOException;
 }

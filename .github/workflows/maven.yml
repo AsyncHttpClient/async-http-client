@@ -1,11 +1,13 @@
 # This workflow is designed to build PRs for AHC. Note that it does not actually publish AHC, just builds and test it.
 # Docs: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Test PR
+name: Build PR
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
 
   workflow_dispatch:
     inputs:
@@ -15,15 +17,39 @@ on:
         default: 'Github Actions'
 
 jobs:
-  build:
+  RunOnLinux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 8
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'corretto'
-        java-version: 8
-        architecture: x64
-    - name: Build and test with Maven
-      run: mvn -ntp -B test -Ptest-output
+      - uses: actions/checkout@v3
+      - name: Grant Permission
+        run: sudo chmod +x ./mvnw
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+      - name: Run Tests
+        run: ./mvnw -B -ntp clean test
+
+  RunOnMacOs:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Grant Permission
+        run: sudo chmod +x ./mvnw
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+      - name: Run Tests
+        run: ./mvnw -B -ntp clean test
+
+  RunOnWindows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+      - name: Run Tests
+        run: ./mvnw.cmd -B -ntp clean test

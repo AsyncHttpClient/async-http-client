@@ -1,15 +1,17 @@
 /*
- * Copyright (c) 2018 AsyncHttpClient Project. All rights reserved.
+ *    Copyright (c) 2018-2023 AsyncHttpClient Project. All rights reserved.
  *
- * This program is licensed to you under the Apache License Version 2.0,
- * and you may not use this file except in compliance with the Apache License Version 2.0.
- * You may obtain a copy of the Apache License Version 2.0 at
- *     http://www.apache.org/licenses/LICENSE-2.0.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the Apache License Version 2.0 is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package org.asynchttpclient.netty.channel;
 
@@ -27,36 +29,37 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  */
 public class PerHostConnectionSemaphore implements ConnectionSemaphore {
 
-  protected final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
-  protected final int maxConnectionsPerHost;
-  protected final IOException tooManyConnectionsPerHost;
-  protected final int acquireTimeout;
+    protected final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
+    protected final int maxConnectionsPerHost;
+    protected final IOException tooManyConnectionsPerHost;
+    protected final int acquireTimeout;
 
-  PerHostConnectionSemaphore(int maxConnectionsPerHost, int acquireTimeout) {
-    tooManyConnectionsPerHost = unknownStackTrace(new TooManyConnectionsPerHostException(maxConnectionsPerHost), PerHostConnectionSemaphore.class, "acquireChannelLock");
-    this.maxConnectionsPerHost = maxConnectionsPerHost;
-    this.acquireTimeout = Math.max(0, acquireTimeout);
-  }
-
-  @Override
-  public void acquireChannelLock(Object partitionKey) throws IOException {
-    try {
-      if (!getFreeConnectionsForHost(partitionKey).tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
-        throw tooManyConnectionsPerHost;
-      }
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    PerHostConnectionSemaphore(int maxConnectionsPerHost, int acquireTimeout) {
+        tooManyConnectionsPerHost = unknownStackTrace(new TooManyConnectionsPerHostException(maxConnectionsPerHost),
+                PerHostConnectionSemaphore.class, "acquireChannelLock");
+        this.maxConnectionsPerHost = maxConnectionsPerHost;
+        this.acquireTimeout = Math.max(0, acquireTimeout);
     }
-  }
 
-  @Override
-  public void releaseChannelLock(Object partitionKey) {
-    getFreeConnectionsForHost(partitionKey).release();
-  }
+    @Override
+    public void acquireChannelLock(Object partitionKey) throws IOException {
+        try {
+            if (!getFreeConnectionsForHost(partitionKey).tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
+                throw tooManyConnectionsPerHost;
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-  protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
-    return maxConnectionsPerHost > 0 ?
-            freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(maxConnectionsPerHost)) :
-            InfiniteSemaphore.INSTANCE;
-  }
+    @Override
+    public void releaseChannelLock(Object partitionKey) {
+        getFreeConnectionsForHost(partitionKey).release();
+    }
+
+    protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
+        return maxConnectionsPerHost > 0 ?
+                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(maxConnectionsPerHost)) :
+                InfiniteSemaphore.INSTANCE;
+    }
 }

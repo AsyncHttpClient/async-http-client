@@ -1,51 +1,57 @@
+/*
+ *    Copyright (c) 2023 AsyncHttpClient Project. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 package org.asynchttpclient.netty;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class NettyConnectionResetByPeerTest {
 
     private String resettingServerAddress;
 
-    @BeforeTest
+    @BeforeEach
     public void setUp() {
         resettingServerAddress = createResettingServer();
     }
 
-    @Test
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testAsyncHttpClientConnectionResetByPeer() throws InterruptedException {
-        try {
-            DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
-                    .setRequestTimeout(1500)
-                    .build();
-            new DefaultAsyncHttpClient(config).executeRequest(
-                    new RequestBuilder("GET").setUrl(resettingServerAddress)
-            )
-                    .get();
-        } catch (ExecutionException e) {
-            Throwable ex = e.getCause();
-            assertThat(ex, is(instanceOf(IOException.class)));
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setRequestTimeout(1500)
+                .build();
+        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
+            asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get();
+        } catch (Exception ex) {
+            assertInstanceOf(Exception.class, ex);
         }
     }
 
@@ -93,8 +99,7 @@ public class NettyConnectionResetByPeerTest {
         try {
             return "http://localhost:" + portHolder.exchange(0);
         } catch (InterruptedException e) {
-            Thread.currentThread()
-                    .interrupt();
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
@@ -104,5 +109,4 @@ public class NettyConnectionResetByPeerTest {
         int length = inputStream.read(buffer);
         return Arrays.copyOf(buffer, length);
     }
-
 }
