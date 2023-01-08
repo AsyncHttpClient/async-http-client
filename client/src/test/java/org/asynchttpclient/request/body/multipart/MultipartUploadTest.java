@@ -192,7 +192,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         sendEmptyFileInputStream(false);
     }
 
-    private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Throwable {
+    private void sendFileInputStream(boolean useContentLength, boolean disableZeroCopy) throws Exception {
         File file = getClasspathFile("textfile.txt");
         try (AsyncHttpClient c = asyncHttpClient(config().setDisableZeroCopy(disableZeroCopy))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -207,27 +207,28 @@ public class MultipartUploadTest extends AbstractBasicTest {
             Response res = c.executeRequest(r).get();
             assertEquals(200, res.getStatusCode());
         } catch (ExecutionException ex) {
-            throw ex.getCause();
+            ex.getCause().printStackTrace();
+            throw ex;
         }
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamUnknownContentLength() throws Throwable {
+    public void testSendFileInputStreamUnknownContentLength() throws Exception {
         sendFileInputStream(false, true);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Throwable {
+    public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
         sendFileInputStream(false, false);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamKnownContentLength() throws Throwable {
+    public void testSendFileInputStreamKnownContentLength() throws Exception {
         sendFileInputStream(true, true);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSendFileInputStreamZeroCopyKnownContentLength() throws Throwable {
+    public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
         sendFileInputStream(true, false);
     }
 

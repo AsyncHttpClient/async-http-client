@@ -52,6 +52,8 @@ public abstract class AbstractBasicTest {
 
     @AfterAll
     public void tearDownGlobal() throws Exception {
+        logger.debug("Shutting down local server: {}", server);
+
         if (server != null) {
             server.stop();
         }
