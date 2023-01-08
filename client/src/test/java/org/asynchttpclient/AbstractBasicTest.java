@@ -73,6 +73,8 @@ public abstract class AbstractBasicTest {
 
     public static class AsyncCompletionHandlerAdapter extends AsyncCompletionHandler<Response> {
 
+        private static final Logger logger = LoggerFactory.getLogger(AsyncCompletionHandlerAdapter.class);
+
         @Override
         public Response onCompleted(Response response) throws Exception {
             return response;
@@ -80,7 +82,7 @@ public abstract class AbstractBasicTest {
 
         @Override
         public void onThrowable(Throwable t) {
-            t.printStackTrace();
+            logger.error(t.getMessage(), t);
         }
     }
 }
