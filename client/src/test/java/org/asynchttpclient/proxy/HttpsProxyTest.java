@@ -25,7 +25,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -42,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class HttpsProxyTest extends AbstractBasicTest {
 
-    private static Server server2;
+    private Server server2;
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
@@ -50,7 +52,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
 
     @Override
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
@@ -68,7 +70,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     }
 
     @Override
-    @AfterAll
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         server.stop();
         server2.stop();

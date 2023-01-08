@@ -23,7 +23,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -43,11 +43,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author dominict
  */
 public class RedirectConnectionUsageTest extends AbstractBasicTest {
-    private static String BASE_URL;
 
-    private static String servletEndpointRedirectUrl;
+    private String baseUrl;
+    private String servletEndpointRedirectUrl;
 
-    @BeforeAll
+    @BeforeEach
     public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
@@ -60,8 +60,8 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
         server.start();
         port1 = connector.getLocalPort();
 
-        BASE_URL = "http://localhost" + ':' + port1;
-        servletEndpointRedirectUrl = BASE_URL + "/redirect";
+        baseUrl = "http://localhost" + ':' + port1;
+        servletEndpointRedirectUrl = baseUrl + "/redirect";
     }
 
     /**
@@ -83,7 +83,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
             ListenableFuture<Response> response = c.executeRequest(get(servletEndpointRedirectUrl));
             Response res = response.get();
             assertNotNull(res.getResponseBody());
-            assertEquals(res.getUri().toString(), BASE_URL + "/overthere");
+            assertEquals(res.getUri().toString(), baseUrl + "/overthere");
         }
     }
 

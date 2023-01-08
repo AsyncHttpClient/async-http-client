@@ -5,7 +5,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
 import org.asynchttpclient.AbstractBasicTest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;
 import java.util.HashMap;
@@ -17,17 +19,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SpnegoEngineTest extends AbstractBasicTest {
-    private static SimpleKdcServer kerbyServer;
+    private SimpleKdcServer kerbyServer;
 
-    private static String basedir;
-    private static String alice;
-    private static String bob;
-    private static File aliceKeytab;
-    private static File bobKeytab;
-    private static File loginConfig;
+    private String basedir;
+    private String alice;
+    private String bob;
+    private File aliceKeytab;
+    private File bobKeytab;
+    private File loginConfig;
 
-    @BeforeAll
-    public static void startServers() throws Exception {
+    @BeforeEach
+    public void startServers() throws Exception {
         basedir = System.getProperty("basedir");
         if (basedir == null) {
             basedir = new File(".").getCanonicalPath();
@@ -154,8 +156,8 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         }
     }
 
-    @AfterAll
-    public static void cleanup() throws Exception {
+    @AfterEach
+    public void cleanup() throws Exception {
         if (kerbyServer != null) {
             kerbyServer.stop();
         }

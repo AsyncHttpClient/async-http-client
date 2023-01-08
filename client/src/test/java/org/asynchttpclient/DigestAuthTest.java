@@ -21,6 +21,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -38,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class DigestAuthTest extends AbstractBasicTest {
 
     @Override
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
@@ -92,6 +93,7 @@ public class DigestAuthTest extends AbstractBasicTest {
     }
 
     private static class SimpleHandler extends AbstractHandler {
+
         @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             response.addHeader("X-Auth", request.getHeader("Authorization"));

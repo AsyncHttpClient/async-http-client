@@ -22,6 +22,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;
 import java.util.Enumeration;
@@ -31,13 +32,12 @@ import static org.asynchttpclient.Dsl.delete;
 
 public class WebdavTest {
 
-    private static Tomcat tomcat;
-    private static int port1;
+    private Tomcat tomcat;
+    private int port1;
 
     @SuppressWarnings("serial")
-    @BeforeAll
-    public static void setUpGlobal() throws Exception {
-
+    @BeforeEach
+    public void setUpGlobal() throws Exception {
         String path = new File(".").getAbsolutePath() + "/target";
 
         tomcat = new Tomcat();
@@ -88,8 +88,8 @@ public class WebdavTest {
         port1 = tomcat.getConnector().getLocalPort();
     }
 
-    @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
         tomcat.stop();
     }
 

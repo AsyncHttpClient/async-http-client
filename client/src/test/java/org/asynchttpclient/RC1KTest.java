@@ -24,7 +24,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
@@ -53,7 +55,7 @@ public class RC1KTest extends AbstractBasicTest {
     private static int[] ports = new int[SRV_COUNT];
 
     @Override
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         ports = new int[SRV_COUNT];
         for (int i = 0; i < SRV_COUNT; i++) {
@@ -68,7 +70,7 @@ public class RC1KTest extends AbstractBasicTest {
     }
 
     @Override
-    @AfterAll
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         for (Server srv : servers) {
             srv.stop();

@@ -21,7 +21,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
@@ -49,10 +51,10 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     private static final int SHORT_FUTURE_TIMEOUT = 500; // shorter than REQUEST_TIMEOUT
     private static final int LONG_FUTURE_TIMEOUT = 1500; // longer than REQUEST_TIMEOUT
 
-    private static Server server2;
+    private Server server2;
 
     @Override
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
@@ -70,7 +72,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     @Override
-    @AfterAll
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         super.tearDownGlobal();
         server2.stop();

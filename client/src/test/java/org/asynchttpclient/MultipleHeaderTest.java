@@ -15,7 +15,9 @@ package org.asynchttpclient;
 import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.net.ServerSocketFactory;
 import java.io.BufferedReader;
@@ -45,7 +47,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     private static Future<?> voidFuture;
 
     @Override
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
         port1 = serverSocket.getLocalPort();
@@ -79,7 +81,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
     }
 
     @Override
-    @AfterAll
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         voidFuture.cancel(true);
         executorService.shutdownNow();

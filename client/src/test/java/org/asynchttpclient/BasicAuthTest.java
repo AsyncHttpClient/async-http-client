@@ -25,7 +25,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,12 +52,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class BasicAuthTest extends AbstractBasicTest {
 
-    private static Server server2;
-    private static Server serverNoAuth;
-    private static int portNoAuth;
+    private Server server2;
+    private Server serverNoAuth;
+    private int portNoAuth;
 
     @Override
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
@@ -80,7 +82,7 @@ public class BasicAuthTest extends AbstractBasicTest {
     }
 
     @Override
-    @AfterAll
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         super.tearDownGlobal();
         server2.stop();
@@ -97,7 +99,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         return "http://localhost:" + port2 + "/uff";
     }
 
-    private static String getTargetUrlNoAuth() {
+    private String getTargetUrlNoAuth() {
         return "http://localhost:" + portNoAuth + '/';
     }
 

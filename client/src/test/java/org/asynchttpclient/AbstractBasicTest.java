@@ -20,7 +20,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,7 @@ public abstract class AbstractBasicTest {
     protected int port1 = -1;
     protected int port2 = -1;
 
-    @BeforeAll
+    @BeforeEach
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
@@ -50,7 +52,7 @@ public abstract class AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterAll
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         logger.debug("Shutting down local server: {}", server);
 

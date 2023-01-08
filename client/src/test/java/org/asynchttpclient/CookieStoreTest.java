@@ -23,7 +23,9 @@ import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,14 +42,14 @@ public class CookieStoreTest {
 
     private static final Logger logger = LoggerFactory.getLogger(CookieStoreTest.class);
 
-    @BeforeAll
-    public static void setUpGlobal() {
+    @BeforeEach
+    public void setUpGlobal() {
         logger.info("Local HTTP server started successfully");
         System.out.println("--Start");
     }
 
-    @AfterAll
-    public static void tearDownGlobal() {
+    @AfterEach
+    public void tearDownGlobal() {
         System.out.println("--Stop");
     }
 

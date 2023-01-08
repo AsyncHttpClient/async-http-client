@@ -31,7 +31,9 @@ import org.asynchttpclient.testserver.HttpServer.EchoHandler;
 import org.asynchttpclient.testserver.HttpTest;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
@@ -85,20 +87,20 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class BasicHttpTest extends HttpTest {
 
     public static final byte[] ACTUAL = {};
-    private static HttpServer server;
+    private HttpServer server;
 
-    @BeforeAll
-    public static void start() throws Throwable {
+    @BeforeEach
+    public void start() throws Throwable {
         server = new HttpServer();
         server.start();
     }
 
-    @AfterAll
-    public static void stop() throws Throwable {
+    @AfterEach
+    public void stop() throws Throwable {
         server.close();
     }
 
-    private static String getTargetUrl() {
+    private String getTargetUrl() {
         return server.getHttpUrl() + "/foo/bar";
     }
 

@@ -21,7 +21,9 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.Arrays;
@@ -52,20 +54,20 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
     private static final String RESPONSE = "param_1=value_1";
 
-    private static HttpServer server;
+    private HttpServer server;
 
-    @BeforeAll
-    public static void start() throws Throwable {
+    @BeforeEach
+    public void start() throws Throwable {
         server = new HttpServer();
         server.start();
     }
 
-    @AfterAll
-    public static void stop() throws Throwable {
+    @AfterEach
+    public void stop() throws Throwable {
         server.close();
     }
 
-    private static String getTargetUrl() {
+    private String getTargetUrl() {
         return server.getHttpUrl() + "/foo/bar";
     }
 

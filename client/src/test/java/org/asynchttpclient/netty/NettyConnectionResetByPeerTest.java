@@ -1,10 +1,12 @@
 package org.asynchttpclient.netty;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,10 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class NettyConnectionResetByPeerTest {
 
-    private static String resettingServerAddress;
+    private String resettingServerAddress;
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         resettingServerAddress = createResettingServer();
     }
 
@@ -31,8 +33,8 @@ public class NettyConnectionResetByPeerTest {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setRequestTimeout(1500)
                 .build();
-        try {
-            new DefaultAsyncHttpClient(config).executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get();
+        try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
+            asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get();
         } catch (Exception ex) {
             assertInstanceOf(Exception.class, ex);
         }
@@ -82,8 +84,7 @@ public class NettyConnectionResetByPeerTest {
         try {
             return "http://localhost:" + portHolder.exchange(0);
         } catch (InterruptedException e) {
-            Thread.currentThread()
-                    .interrupt();
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

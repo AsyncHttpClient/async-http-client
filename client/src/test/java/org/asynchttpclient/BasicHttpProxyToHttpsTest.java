@@ -22,7 +22,9 @@ import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,14 +52,14 @@ public class BasicHttpProxyToHttpsTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicHttpProxyToHttpsTest.class);
     private static final String CUSTOM_USER_AGENT = "custom-user-agent";
 
-    private static int httpPort;
-    private static int proxyPort;
+    private int httpPort;
+    private int proxyPort;
 
-    private static Server httpServer;
-    private static Server proxy;
+    private Server httpServer;
+    private Server proxy;
 
-    @BeforeAll
-    public static void setUpGlobal() throws Exception {
+    @BeforeEach
+    public void setUpGlobal() throws Exception {
         // HTTP server
         httpServer = new Server();
         ServerConnector connector1 = addHttpsConnector(httpServer);
@@ -102,8 +104,8 @@ public class BasicHttpProxyToHttpsTest {
         LOGGER.info("Local HTTP Server (" + httpPort + "), Proxy (" + proxyPort + ") started successfully");
     }
 
-    @AfterAll
-    public static void tearDownGlobal() throws Exception {
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
         httpServer.stop();
         proxy.stop();
     }

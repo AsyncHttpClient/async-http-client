@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class MultipartUploadTest extends AbstractBasicTest {
 
-    @BeforeAll
+    @BeforeEach
     public void setUp() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
