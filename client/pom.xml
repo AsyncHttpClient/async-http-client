@@ -14,10 +14,10 @@
     <properties>
         <javaModuleName>org.asynchttpclient.client</javaModuleName>
 
-        <jetty.version>11.0.12</jetty.version>
+        <jetty.version>11.0.13</jetty.version>
         <tomcat.version>10.1.2</tomcat.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <mockito.version>4.9.0</mockito.version>
+        <mockito.version>4.11.0</mockito.version>
         <hamcrest.version>2.2</hamcrest.version>
         <kerby.version>2.0.2</kerby.version>
     </properties>
