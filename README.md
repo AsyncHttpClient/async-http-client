@@ -5,7 +5,7 @@ Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 The AsyncHttpClient (AHC) library allows Java applications to easily execute HTTP requests and asynchronously process HTTP responses.
 The library also supports the WebSocket Protocol.
 
-It's built on top of [Netty](https://github.com/netty/netty). It's currently compiled on Java 8 but runs on Java 9 too.
+It's built on top of [Netty](https://github.com/netty/netty). It's compiled with Java 11.
 
 ## Installation
 
