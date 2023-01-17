@@ -1,4 +1,6 @@
-# Async Http Client [![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
+# Async Http Client 
+[![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
 
 Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 
@@ -18,7 +20,7 @@ Add a dependency on the main AsyncHttpClient artifact:
     <dependency>
         <groupId>org.asynchttpclient</groupId>
         <artifactId>async-http-client</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.0.Beta1</version>
     </dependency>
 </dependencies>
 ```
@@ -140,17 +142,18 @@ The point of using a non blocking client is to *NOT BLOCK* the calling thread!
 You can configure listeners to be notified of the Future's completion.
 
 ```java
-ListenableFuture<Response> whenResponse=???;
-        Runnable callback=()->{
-        try{
-        Response response=whenResponse.get();
-        System.out.println(response);
-        }catch(InterruptedException|ExecutionException e){
-        e.printStackTrace();
-        }
+        ListenableFuture<Response> whenResponse = ???;
+        Runnable callback = () - > {
+            try {
+               Response response = whenResponse.get();
+               System.out.println(response);
+            } catch (InterruptedException | ExecutionException e) {
+               e.printStackTrace();
+            }
         };
-        java.util.concurrent.Executor executor=???;
-        whenResponse.addListener(()->???,executor);
+
+        java.util.concurrent.Executor executor = ???;
+        whenResponse.addListener(() - > ??? , executor);
 ```
 
 If the `executor` parameter is null, callback will be executed in the IO thread.
@@ -175,32 +178,38 @@ import static org.asynchttpclient.Dsl.*;
 import org.asynchttpclient.*;
 import io.netty.handler.codec.http.HttpHeaders;
 
-Future<Integer> whenStatusCode=asyncHttpClient.prepareGet("http://www.example.com/")
-        .execute(new AsyncHandler<Integer>(){
-private Integer status;
-@Override
-public State onStatusReceived(HttpResponseStatus responseStatus)throws Exception{
-        status=responseStatus.getStatusCode();
-        return State.ABORT;
-        }
-@Override
-public State onHeadersReceived(HttpHeaders headers)throws Exception{
-        return State.ABORT;
-        }
-@Override
-public State onBodyPartReceived(HttpResponseBodyPart bodyPart)throws Exception{
-        return State.ABORT;
-        }
-@Override
-public Integer onCompleted()throws Exception{
-        return status;
-        }
-@Override
-public void onThrowable(Throwable t){
-        }
+Future<Integer> whenStatusCode = asyncHttpClient.prepareGet("http://www.example.com/")
+        .execute(new AsyncHandler<Integer> () {
+            private Integer status;
+            
+            @Override
+            public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+                status = responseStatus.getStatusCode();
+                return State.ABORT;
+            }
+            
+            @Override
+            public State onHeadersReceived(HttpHeaders headers) throws Exception {
+              return State.ABORT;
+            }
+            
+            @Override
+            public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+                 return State.ABORT;
+            }
+        
+            @Override
+            public Integer onCompleted() throws Exception{
+                return status;
+            }
+        
+            @Override
+            public void onThrowable(Throwable t) {
+                t.printStackTrace();
+            }
         });
 
-        Integer statusCode=whenStatusCode.get();
+        Integer statusCode = whenStatusCode.get();
 ```
 
 #### Using Continuations
@@ -232,23 +241,25 @@ WebSocket websocket=c.prepareGet("ws://demos.kaazing.com/echo")
         .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
         new WebSocketListener(){
 
-@Override
-public void onOpen(WebSocket websocket){
-        websocket.sendTextFrame("...").sendTextFrame("...");
-        }
+            @Override
+            public void onOpen(WebSocket websocket){
+                websocket.sendTextFrame("...").sendTextFrame("...");
+            }
 
-@Override
-public void onClose(WebSocket websocket){
-        }
+            @Override
+            public void onClose(WebSocket websocket) {
+                // ...
+            }
 
-@Override
-public void onTextFrame(String payload,boolean finalFragment,int rsv){
-        System.out.println(payload);
-        }
+            @Override
+            public void onTextFrame(String payload,boolean finalFragment,int rsv){
+                 System.out.println(payload);
+            }
 
-@Override
-public void onError(Throwable t){
-        }
+            @Override
+            public void onError(Throwable t){
+                t.printStackTrace();
+            }
         }).build()).get();
 ```
 
@@ -258,16 +269,16 @@ AsyncHttpClient has build in support for the WebDAV protocol.
 The API can be used the same way normal HTTP request are made:
 
 ```java
-Request mkcolRequest=new RequestBuilder("MKCOL").setUrl("http://host:port/folder1").build();
+        Request mkcolRequest=new RequestBuilder("MKCOL").setUrl("http://host:port/folder1").build();
         Response response=c.executeRequest(mkcolRequest).get();
 ```
 
 or
 
 ```java
-Request propFindRequest=new RequestBuilder("PROPFIND").setUrl("http://host:port").build();
-        Response response=c.executeRequest(propFindRequest,new AsyncHandler(){
-        // ...
+        Request propFindRequest=new RequestBuilder("PROPFIND").setUrl("http://host:port").build();
+        Response response=c.executeRequest(propFindRequest,new AsyncHandler() {
+            // ...
         }).get();
 ```
 
