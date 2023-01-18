@@ -1,6 +1,6 @@
 # Async Http Client 
 [![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.asynchttpclient/async-http-client/)
+![Maven Central](https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client)
 
 Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
 
