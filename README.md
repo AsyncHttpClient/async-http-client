@@ -296,7 +296,7 @@ Code is sometimes not up-to-date but gives a pretty good idea of advanced featur
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
 
-[Google Group](http://groups.google.com/group/asynchttpclient)
+[GitHub Discussions](https://github.com/AsyncHttpClient/async-http-client/discussions)
 
 ## Contributing
 
