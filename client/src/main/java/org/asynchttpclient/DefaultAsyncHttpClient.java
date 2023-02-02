@@ -40,6 +40,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
+import static org.asynchttpclient.util.HttpConstants.Methods.DELETE;
+import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.HttpConstants.Methods.HEAD;
+import static org.asynchttpclient.util.HttpConstants.Methods.OPTIONS;
+import static org.asynchttpclient.util.HttpConstants.Methods.PATCH;
+import static org.asynchttpclient.util.HttpConstants.Methods.POST;
+import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
+import static org.asynchttpclient.util.HttpConstants.Methods.TRACE;
 
 /**
  * Default and threadsafe implementation of {@link AsyncHttpClient}.
@@ -158,47 +167,47 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public BoundRequestBuilder prepareGet(String url) {
-        return requestBuilder("GET", url);
+        return requestBuilder(GET, url);
     }
 
     @Override
     public BoundRequestBuilder prepareConnect(String url) {
-        return requestBuilder("CONNECT", url);
+        return requestBuilder(CONNECT, url);
     }
 
     @Override
     public BoundRequestBuilder prepareOptions(String url) {
-        return requestBuilder("OPTIONS", url);
+        return requestBuilder(OPTIONS, url);
     }
 
     @Override
     public BoundRequestBuilder prepareHead(String url) {
-        return requestBuilder("HEAD", url);
+        return requestBuilder(HEAD, url);
     }
 
     @Override
     public BoundRequestBuilder preparePost(String url) {
-        return requestBuilder("POST", url);
+        return requestBuilder(POST, url);
     }
 
     @Override
     public BoundRequestBuilder preparePut(String url) {
-        return requestBuilder("PUT", url);
+        return requestBuilder(PUT, url);
     }
 
     @Override
     public BoundRequestBuilder prepareDelete(String url) {
-        return requestBuilder("DELETE", url);
+        return requestBuilder(DELETE, url);
     }
 
     @Override
     public BoundRequestBuilder preparePatch(String url) {
-        return requestBuilder("PATCH", url);
+        return requestBuilder(PATCH, url);
     }
 
     @Override
     public BoundRequestBuilder prepareTrace(String url) {
-        return requestBuilder("TRACE", url);
+        return requestBuilder(TRACE, url);
     }
 
     @Override

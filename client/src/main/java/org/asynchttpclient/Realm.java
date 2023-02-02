@@ -29,6 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.MessageDigestUtils.pooledMd5MessageDigest;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.StringUtils.appendBase16;
@@ -266,7 +267,7 @@ public class Realm {
         private String nc = DEFAULT_NC;
         private String cnonce;
         private Uri uri;
-        private String methodName = "GET";
+        private String methodName = GET;
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
         private Charset charset = UTF_8;
