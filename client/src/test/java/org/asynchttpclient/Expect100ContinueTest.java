@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +43,7 @@ public class Expect100ContinueTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void Expect100Continue() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://localhost:" + port1 + '/')

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.ServletException;
@@ -71,7 +71,7 @@ public class ProxyTest extends AbstractBasicTest {
         return new ProxyHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testRequestLevelProxy() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:1234/";
@@ -83,7 +83,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void asyncDoPostProxyTest() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port2).build()))) {
             HttpHeaders h = new DefaultHttpHeaders();
@@ -113,7 +113,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGlobalProxy() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1)))) {
             String target = "http://localhost:1234/";
@@ -125,7 +125,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testBothProxies() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1 - 1)))) {
             String target = "http://localhost:1234/";
@@ -137,7 +137,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testNonProxyHost() {
         // // should avoid, it's in non-proxy hosts
         Request req = get("http://somewhere.com/foo").build();
@@ -155,7 +155,7 @@ public class ProxyTest extends AbstractBasicTest {
         assertTrue(proxyServer.isIgnoredForHost(req.getUri().getHost()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testNonProxyHostsRequestOverridesConfig() throws Exception {
         ProxyServer configProxy = proxyServer("localhost", port1 - 1).build();
         ProxyServer requestProxy = proxyServer("localhost", port1).setNonProxyHost("localhost").build();
@@ -167,7 +167,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testRequestNonProxyHost() throws Exception {
         ProxyServer proxy = proxyServer("localhost", port1 - 1).setNonProxyHost("localhost").build();
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -180,7 +180,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void runSequentiallyBecauseNotThreadSafe() throws Exception {
         testProxyProperties();
         testIgnoreProxyPropertiesByDefault();
@@ -189,7 +189,7 @@ public class ProxyTest extends AbstractBasicTest {
         testUseProxySelector();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -216,7 +216,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testIgnoreProxyPropertiesByDefault() throws IOException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -235,7 +235,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -262,7 +262,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWildcardNonProxyHosts() throws IOException, TimeoutException, InterruptedException {
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
@@ -281,7 +281,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
         ProxySelector originalProxySelector = ProxySelector.getDefault();
         ProxySelector.setDefault(new ProxySelector() {
@@ -317,7 +317,7 @@ public class ProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void runSocksProxy() throws Exception {
         new Thread(() -> {
             try {

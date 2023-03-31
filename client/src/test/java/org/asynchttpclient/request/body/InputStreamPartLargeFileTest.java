@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,7 +67,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutImageFile() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
@@ -77,7 +77,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutImageFileUnknownSize() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
@@ -87,7 +87,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -100,7 +100,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutLargeTextFileUnknownSize() throws Exception {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -46,7 +46,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         return new QueryStringHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testQueryParameters() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
@@ -58,7 +58,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUrlRequestParametersEncoding() throws Exception {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
@@ -72,7 +72,7 @@ public class QueryParametersTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void urlWithColonTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             String query = "test:colon:";

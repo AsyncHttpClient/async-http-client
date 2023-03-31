@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,7 +42,7 @@ public class Head302Test extends AbstractBasicTest {
         return new Head302handler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testHEAD302() throws Exception {
         AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,7 +67,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     /**
      * Tests that after a redirect the final url in the response reflect the redirect
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetRedirectFinalUrl() throws Exception {
 
         AsyncHttpClientConfig config = config()

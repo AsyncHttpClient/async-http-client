@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
@@ -125,7 +125,7 @@ public class MultipartBodyTest {
         return transferred.get();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void transferWithCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
@@ -135,7 +135,7 @@ public class MultipartBodyTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void transferZeroCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {

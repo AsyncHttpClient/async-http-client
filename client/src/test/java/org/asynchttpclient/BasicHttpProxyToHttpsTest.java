@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -110,7 +110,7 @@ public class BasicHttpProxyToHttpsTest {
         proxy.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void nonPreemptiveProxyAuthWithHttpsTarget() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setUseInsecureTrustManager(true))) {
             String targetUrl = "https://localhost:" + httpPort + "/foo/bar";

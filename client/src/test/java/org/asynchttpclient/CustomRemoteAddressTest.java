@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.util.internal.SocketUtils;
 import org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import org.asynchttpclient.testserver.HttpServer;
@@ -43,7 +43,7 @@ public class CustomRemoteAddressTest extends HttpTest {
         server.close();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void getRootUrlWithCustomRemoteAddress() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {

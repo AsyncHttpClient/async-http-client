@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -55,8 +55,8 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
-    // FIXME find a way to make this threadsafe, other, set @RepeatedIfExceptionsTest(repeats = 5)(singleThreaded = true)
+    @Test
+    // FIXME find a way to make this threadsafe, other, set @Test(singleThreaded = true)
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         httpToHttpsRedirect();
         httpToHttpsProperConfig();
@@ -64,7 +64,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     }
 
     //    @Disabled
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void httpToHttpsRedirect() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -81,7 +81,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void httpToHttpsProperConfig() throws Exception {
         redirectDone.getAndSet(false);
 
@@ -104,7 +104,7 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void relativeLocationUrl() throws Exception {
         redirectDone.getAndSet(false);
 

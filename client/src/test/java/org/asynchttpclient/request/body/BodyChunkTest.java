@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -35,7 +35,7 @@ public class BodyChunkTest extends AbstractBasicTest {
 
     private static final String MY_MESSAGE = "my message";
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void negativeContentTypeTest() throws Exception {
 
         AsyncHttpClientConfig config = config()

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.BasicAuthTest;
@@ -72,12 +72,12 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void noRealmCausesServerToCloseSocket() throws Throwable {
         expectHttpResponse(rb -> rb, 401);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void unauthorizedNonPreemptiveRealmCausesServerToCloseSocket() throws Throwable {
         expectHttpResponse(rb -> rb.setRealm(basicAuthRealm(USER, "NOT-ADMIN")), 401);
     }
@@ -96,12 +96,12 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void authorizedPreemptiveRealmWorks() throws Exception {
         expectSuccess(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN).setUsePreemptiveAuth(true)));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void authorizedNonPreemptiveRealmWorksWithExpectContinue() throws Exception {
         expectSuccess(rb -> rb.setRealm(basicAuthRealm(USER, ADMIN)).setHeader(EXPECT, CONTINUE));
     }

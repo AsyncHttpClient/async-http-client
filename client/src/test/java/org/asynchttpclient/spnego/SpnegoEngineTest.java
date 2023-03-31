@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.spnego;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import org.apache.commons.io.FileUtils;
 import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
 import org.asynchttpclient.AbstractBasicTest;
@@ -81,7 +81,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         FileUtils.copyInputStreamToFile(SpnegoEngine.class.getResourceAsStream("/kerberos.jaas"), loginConfig);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSpnegoGenerateTokenWithUsernamePassword() throws Exception {
         SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
                 "alice",
@@ -96,7 +96,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         assertTrue(token.startsWith("YII"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSpnegoGenerateTokenWithUsernamePasswordFail() throws Exception {
         SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
                 "wrong password",
@@ -109,7 +109,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         assertThrows(SpnegoEngineException.class, () -> spnegoEngine.generateToken("localhost"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSpnegoGenerateTokenWithCustomLoginConfig() throws Exception {
         Map<String, String> loginConfig = new HashMap<>();
         loginConfig.put("useKeyTab", "true");
@@ -132,7 +132,7 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         assertTrue(token.startsWith("YII"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetCompleteServicePrincipalName() throws Exception {
         {
             SpnegoEngine spnegoEngine = new SpnegoEngine(null,

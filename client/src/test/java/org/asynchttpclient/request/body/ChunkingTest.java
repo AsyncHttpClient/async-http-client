@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
@@ -43,22 +43,22 @@ public class ChunkingTest extends AbstractBasicTest {
 
     // So we can just test the returned data is the image,
     // and doesn't contain the chunked delimiters.
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testBufferLargerThanFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath()), 400000));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testBufferSmallThanFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath())));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testDirectFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testDirectFileWithFeedableBodyGenerator() throws Throwable {
         doTestWithFeedableBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
     }

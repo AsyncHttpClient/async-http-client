@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.junit.jupiter.api.Timeout;
 
@@ -34,7 +34,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
 
     private static final int COUNT = 10;
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 30 * 1000)
     public void testFollowRedirect() throws InterruptedException {
 

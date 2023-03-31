@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
@@ -40,12 +40,12 @@ public class PutFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutLargeFile() throws Exception {
         put(1024 * 1024);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutSmallFile() throws Exception {
         put(1024);
     }

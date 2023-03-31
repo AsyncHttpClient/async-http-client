@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -74,7 +74,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testRequestProxy() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));
@@ -83,7 +83,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testConfigProxy() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)
@@ -97,7 +97,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testNoDirectRequestBodyWithProxy() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)
@@ -111,7 +111,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testDecompressBodyWithProxy() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)
@@ -130,7 +130,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPooledConnectionsWithProxy() throws Exception {
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer("localhost", port1));

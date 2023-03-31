@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.oauth;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
@@ -106,7 +106,7 @@ public class OAuthSignatureCalculatorTest {
                 + "oauth_version%3D1.0", signatureBaseString);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSignatureBaseStringWithProperlyEncodedUri() throws NoSuchAlgorithmException {
         Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b")
                 .addFormParam("c2", "")
@@ -117,7 +117,7 @@ public class OAuthSignatureCalculatorTest {
         testSignatureBaseStringWithEncodableOAuthToken(request);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSignatureBaseStringWithRawUri() throws NoSuchAlgorithmException {
         // note: @ is legal so don't decode it into %40 because it won't be
         // encoded back
@@ -134,7 +134,7 @@ public class OAuthSignatureCalculatorTest {
 
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetCalculateSignature() throws Exception {
         Request request = get("http://photos.example.net/photos")
                 .addQueryParam("file", "vacation.jpg")
@@ -154,7 +154,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals("tR3+Ty81lMeYAr/Fid0kMTYa/WM=", signature);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPostCalculateSignature() throws UnsupportedEncodingException {
         StaticOAuthSignatureCalculator calc = //
                 new StaticOAuthSignatureCalculator(//
@@ -187,7 +187,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals("wPkvxykrw+BTdCcGqKr+3I+PsiM=", sig);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetWithRequestBuilder() throws UnsupportedEncodingException {
         StaticOAuthSignatureCalculator calc =
                 new StaticOAuthSignatureCalculator(
@@ -224,7 +224,7 @@ public class OAuthSignatureCalculatorTest {
         assertEquals(req.getUrl(), "http://photos.example.net/photos?file=vacation.jpg&size=original");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetWithRequestBuilderAndQuery() throws UnsupportedEncodingException {
         StaticOAuthSignatureCalculator calc = //
                 new StaticOAuthSignatureCalculator(//
@@ -262,7 +262,7 @@ public class OAuthSignatureCalculatorTest {
                 authHeader);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWithNullRequestToken() throws NoSuchAlgorithmException {
         final Request request = get("http://photos.example.net/photos?file=vacation.jpg&size=original").build();
 
@@ -286,7 +286,7 @@ public class OAuthSignatureCalculatorTest {
                 "oauth_version%3D1.0%26size%3Doriginal", signatureBaseString);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWithStarQueryParameterValue() throws NoSuchAlgorithmException {
         final Request request = get("http://term.ie/oauth/example/request_token.php?testvalue=*").build();
 
@@ -311,7 +311,7 @@ public class OAuthSignatureCalculatorTest {
                 + "testvalue%3D%252A", signatureBaseString);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSignatureGenerationWithAsteriskInPath() throws Exception {
         ConsumerKey consumerKey = new ConsumerKey("key", "secret");
         RequestToken requestToken = new RequestToken(null, null);
@@ -336,7 +336,7 @@ public class OAuthSignatureCalculatorTest {
         assertTrue(generatedAuthHeader.contains("oauth_signature=\"cswi%2Fv3ZqhVkTyy5MGqW841BxDA%3D\""));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPercentEncodeKeyValues() {
         // see https://github.com/AsyncHttpClient/async-http-client/issues/1415
         String keyValue = "\u3b05\u000c\u375b";

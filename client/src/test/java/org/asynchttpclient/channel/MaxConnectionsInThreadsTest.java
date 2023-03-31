@@ -16,7 +16,7 @@
  */
 package org.asynchttpclient.channel;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -61,7 +61,7 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testMaxConnectionsWithinThreads() throws Exception {
 
         String[] urls = {getTargetUrl(), getTargetUrl()};

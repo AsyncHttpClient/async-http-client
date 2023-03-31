@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -52,7 +52,7 @@ public class CookieStoreTest {
         System.out.println("--Stop");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         addCookieWithEmptyPath();
         dontReturnCookieForAnotherDomain();

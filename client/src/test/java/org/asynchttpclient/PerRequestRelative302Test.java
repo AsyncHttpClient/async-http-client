@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,7 +67,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         port2 = findFreePort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     // FIXME threadsafe
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
@@ -76,7 +76,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         redirected302InvalidTest();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -92,7 +92,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -112,7 +112,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         return url.substring(0, url.lastIndexOf(':') + String.valueOf(port).length() + 1);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
         Exception e = null;
@@ -129,7 +129,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 

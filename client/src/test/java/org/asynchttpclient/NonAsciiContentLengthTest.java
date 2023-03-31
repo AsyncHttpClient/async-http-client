@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,7 +65,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testNonAsciiContentLength() throws Exception {
         execute("test");
         execute("\u4E00"); // Unicode CJK ideograph for one

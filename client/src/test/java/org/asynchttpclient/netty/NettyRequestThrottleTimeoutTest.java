@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.netty;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +47,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
         return new SlowHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testRequestTimeout() throws IOException {
         final Semaphore requestThrottle = new Semaphore(1);
         final int samples = 10;

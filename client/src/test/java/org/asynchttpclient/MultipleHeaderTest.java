@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,7 +86,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         serverSocket.close();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testMultipleOtherHeaders() throws Exception {
         final String[] xffHeaders = {null, null};
 
@@ -140,7 +140,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testMultipleEntityHeaders() throws Exception {
         final String[] clHeaders = {null, null};
 

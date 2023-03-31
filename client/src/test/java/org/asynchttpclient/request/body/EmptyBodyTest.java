@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,7 +55,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
         return new NoBodyResponseHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testEmptyBody() throws IOException {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
@@ -118,7 +118,7 @@ public class EmptyBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutEmptyBody() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             Response response = ahc.preparePut(getTargetUrl()).setBody("String").execute().get();

@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient.ws;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import org.asynchttpclient.AsyncHttpClient;
 import org.junit.jupiter.api.Timeout;
 
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onCloseWithCode() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -45,7 +45,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onCloseWithCodeServerClose() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -59,7 +59,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void getWebSocketThrowsException() throws Throwable {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -86,7 +86,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
         latch.await();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void wrongStatusCode() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -115,7 +115,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void wrongProtocolCode() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {

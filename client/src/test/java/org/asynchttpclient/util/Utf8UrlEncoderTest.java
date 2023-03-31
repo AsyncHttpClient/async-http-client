@@ -15,20 +15,20 @@
  */
 package org.asynchttpclient.util;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Utf8UrlEncoderTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testBasics() {
         assertEquals("foobar", Utf8UrlEncoder.encodeQueryElement("foobar"));
         assertEquals("a%26b", Utf8UrlEncoder.encodeQueryElement("a&b"));
         assertEquals("a%2Bb", Utf8UrlEncoder.encodeQueryElement("a+b"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPercentageEncoding() {
         assertEquals("foobar", Utf8UrlEncoder.percentEncodeQueryElement("foobar"));
         assertEquals("foo%2Abar", Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"));

@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,7 +44,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
         return new NTLMProxyHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void ntlmProxyTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             org.asynchttpclient.Request request = get("http://localhost").setProxyServer(ntlmProxy()).build();
