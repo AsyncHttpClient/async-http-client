@@ -75,6 +75,8 @@ public class Relative302Test extends AbstractBasicTest {
 
     @Test
     public void redirected302Test() throws Exception {
+        registerRequest();
+
         isSet.getAndSet(false);
 
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -84,6 +86,8 @@ public class Relative302Test extends AbstractBasicTest {
 
             String baseUrl = getBaseUrl(response.getUri());
             assertTrue(baseUrl.startsWith("http://www.google."), "response does not show redirection to a google subdomain, got " + baseUrl);
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -93,10 +97,13 @@ public class Relative302Test extends AbstractBasicTest {
 
         Exception e = null;
 
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             c.prepareGet(getTargetUrl()).setHeader("X-redirect", String.format("http://localhost:%d/", port2)).execute().get();
         } catch (ExecutionException ex) {
             e = ex;
+        } finally {
+            deregisterRequest();
         }
 
         assertNotNull(e);
@@ -109,6 +116,7 @@ public class Relative302Test extends AbstractBasicTest {
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String redirectTarget = "/bar/test";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
@@ -119,6 +127,8 @@ public class Relative302Test extends AbstractBasicTest {
             assertEquals(response.getUri().toString(), destinationUrl);
 
             logger.debug("{} was redirected to {}", redirectTarget, destinationUrl);
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -126,6 +136,7 @@ public class Relative302Test extends AbstractBasicTest {
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String redirectTarget = "bar/test1";
             String destinationUrl = new URI(getTargetUrl()).resolve(redirectTarget).toString();
@@ -136,6 +147,8 @@ public class Relative302Test extends AbstractBasicTest {
             assertEquals(response.getUri().toString(), destinationUrl);
 
             logger.debug("{} was redirected to {}", redirectTarget, destinationUrl);
+        } finally {
+            deregisterRequest();
         }
     }
 

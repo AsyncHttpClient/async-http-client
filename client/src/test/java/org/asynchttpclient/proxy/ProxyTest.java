@@ -73,6 +73,8 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test
     public void testRequestLevelProxy() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("localhost", port1)).execute();
@@ -80,11 +82,15 @@ public class ProxyTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(HttpServletResponse.SC_OK, resp.getStatusCode());
             assertEquals("/", resp.getHeader("target"));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void asyncDoPostProxyTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port2).build()))) {
             HttpHeaders h = new DefaultHttpHeaders();
             h.add(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED);
@@ -110,11 +116,15 @@ public class ProxyTest extends AbstractBasicTest {
 
             assertEquals(200, response.getStatusCode());
             assertEquals(APPLICATION_X_WWW_FORM_URLENCODED.toString(), response.getHeader("X-" + CONTENT_TYPE));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testGlobalProxy() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1)))) {
             String target = "http://localhost:1234/";
             Future<Response> f = client.prepareGet(target).execute();
@@ -122,11 +132,15 @@ public class ProxyTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testBothProxies() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setProxyServer(proxyServer("localhost", port1 - 1)))) {
             String target = "http://localhost:1234/";
             Future<Response> f = client.prepareGet(target).setProxyServer(proxyServer("localhost", port1)).execute();
@@ -134,6 +148,8 @@ public class ProxyTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -157,6 +173,8 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test
     public void testNonProxyHostsRequestOverridesConfig() throws Exception {
+        registerRequest();
+
         ProxyServer configProxy = proxyServer("localhost", port1 - 1).build();
         ProxyServer requestProxy = proxyServer("localhost", port1).setNonProxyHost("localhost").build();
 
@@ -164,11 +182,15 @@ public class ProxyTest extends AbstractBasicTest {
             client.prepareGet("http://localhost:1234/").setProxyServer(requestProxy).execute().get();
         } catch (Exception ex) {
             assertInstanceOf(ConnectException.class, ex.getCause());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testRequestNonProxyHost() throws Exception {
+        registerRequest();
+
         ProxyServer proxy = proxyServer("localhost", port1 - 1).setNonProxyHost("localhost").build();
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:" + port1 + '/';
@@ -177,6 +199,8 @@ public class ProxyTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("target"), "/");
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -191,6 +215,8 @@ public class ProxyTest extends AbstractBasicTest {
 
     @Test
     public void testProxyProperties() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        registerRequest();
+
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
         originalProps.putAll(System.getProperties());
@@ -213,11 +239,14 @@ public class ProxyTest extends AbstractBasicTest {
             assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
+            deregisterRequest();
         }
     }
 
     @Test
     public void testIgnoreProxyPropertiesByDefault() throws IOException, TimeoutException, InterruptedException {
+        registerRequest();
+
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
         originalProps.putAll(System.getProperties());
@@ -232,11 +261,14 @@ public class ProxyTest extends AbstractBasicTest {
             assertThrows(Exception.class, () -> responseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
+            deregisterRequest();
         }
     }
 
     @Test
     public void testProxyActivationProperty() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        registerRequest();
+
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
         originalProps.putAll(System.getProperties());
@@ -259,11 +291,14 @@ public class ProxyTest extends AbstractBasicTest {
             assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
+            deregisterRequest();
         }
     }
 
     @Test
     public void testWildcardNonProxyHosts() throws IOException, TimeoutException, InterruptedException {
+        registerRequest();
+
         // FIXME not threadsafe!
         Properties originalProps = new Properties();
         originalProps.putAll(System.getProperties());
@@ -278,11 +313,14 @@ public class ProxyTest extends AbstractBasicTest {
             assertThrows(Exception.class, () -> secondResponseFuture.get(3, TimeUnit.SECONDS));
         } finally {
             System.setProperties(originalProps);
+            deregisterRequest();
         }
     }
 
     @Test
     public void testUseProxySelector() throws IOException, ExecutionException, TimeoutException, InterruptedException {
+        registerRequest();
+
         ProxySelector originalProxySelector = ProxySelector.getDefault();
         ProxySelector.setDefault(new ProxySelector() {
             @Override
@@ -314,11 +352,14 @@ public class ProxyTest extends AbstractBasicTest {
         } finally {
             // FIXME not threadsafe
             ProxySelector.setDefault(originalProxySelector);
+            deregisterRequest();
         }
     }
 
     @Test
     public void runSocksProxy() throws Exception {
+        registerRequest();
+
         new Thread(() -> {
             try {
                 new SocksProxy(60000);
@@ -334,6 +375,8 @@ public class ProxyTest extends AbstractBasicTest {
                     .execute();
 
             assertEquals(200, f.get(60, TimeUnit.SECONDS).getStatusCode());
+        } finally {
+            deregisterRequest();
         }
     }
 

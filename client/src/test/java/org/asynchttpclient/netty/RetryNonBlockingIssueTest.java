@@ -76,6 +76,8 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
 
     @Test
     public void testRetryNonBlocking() throws Exception {
+        registerRequest();
+
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
                 .setMaxConnections(100)
@@ -99,11 +101,15 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
             }
             System.out.println(b);
             System.out.flush();
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testRetryNonBlockingAsyncConnect() throws Exception {
+        registerRequest();
+
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
                 .setMaxConnections(100)
@@ -127,6 +133,8 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
             }
             System.out.println(b);
             System.out.flush();
+        } finally {
+            deregisterRequest();
         }
     }
 

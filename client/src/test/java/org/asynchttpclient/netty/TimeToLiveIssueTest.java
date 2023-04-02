@@ -31,6 +31,8 @@ public class TimeToLiveIssueTest extends AbstractBasicTest {
     @Disabled("https://github.com/AsyncHttpClient/async-http-client/issues/1113")
     @Test
     public void testTTLBug() throws Throwable {
+        registerRequest();
+
         // The purpose of this test is to reproduce two issues:
         // 1) Connections that are rejected by the pool are not closed and eventually use all available sockets.
         // 2) It is possible for a connection to be closed while active by the timer task that checks for expired connections.
@@ -49,6 +51,8 @@ public class TimeToLiveIssueTest extends AbstractBasicTest {
                     Thread.sleep(5);
                 }
             }
+        } finally {
+            deregisterRequest();
         }
     }
 }

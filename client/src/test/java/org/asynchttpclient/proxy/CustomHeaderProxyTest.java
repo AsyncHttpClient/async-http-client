@@ -85,6 +85,8 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
 
     @Test
     public void testHttpProxy() throws Exception {
+        registerRequest();
+
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)
                 .setProxyServer(
@@ -97,6 +99,8 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config)) {
             Response r = asyncHttpClient.executeRequest(post(getTargetUrl2()).setBody(new ByteArrayBodyGenerator(LARGE_IMAGE_BYTES))).get();
             assertEquals(200, r.getStatusCode());
+        } finally {
+            deregisterRequest();
         }
     }
 

@@ -63,6 +63,7 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
 
     @Test
     public void testMaxConnectionsWithinThreads() throws Exception {
+        registerRequest();
 
         String[] urls = {getTargetUrl(), getTargetUrl()};
 
@@ -129,6 +130,8 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
 
             notInThreadsLatch.await();
             assertEquals(failedCount.get(), 1, "Max Connections should have been reached when launching from main thread");
+        } finally {
+            deregisterRequest();
         }
     }
 

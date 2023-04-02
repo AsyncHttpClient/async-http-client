@@ -48,10 +48,14 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
     @Test
     public void idleStateTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(10 * 1000))) {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);
+        } finally {
+            deregisterRequest();
         }
     }
 

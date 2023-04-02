@@ -35,6 +35,8 @@ public class EventPipelineTest extends AbstractBasicTest {
 
     @Test
     public void asyncPipelineTest() throws Exception {
+        registerRequest();
+
         Consumer<Channel> httpAdditionalPipelineInitializer = channel -> channel.pipeline()
                 .addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
 
@@ -53,6 +55,8 @@ public class EventPipelineTest extends AbstractBasicTest {
                 }
             }).get();
             assertTrue(latch.await(TIMEOUT, TimeUnit.SECONDS));
+        } finally {
+            deregisterRequest();
         }
     }
 

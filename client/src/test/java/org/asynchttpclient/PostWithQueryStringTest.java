@@ -42,16 +42,22 @@ public class PostWithQueryStringTest extends AbstractBasicTest {
 
     @Test
     public void postWithQueryString() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b").setBody("abc".getBytes()).execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void postWithNullQueryParam() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
@@ -67,11 +73,15 @@ public class PostWithQueryStringTest extends AbstractBasicTest {
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void postWithEmptyParamsQueryString() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost("http://localhost:" + port1 + "/?a=b&c=&d=e").setBody("abc".getBytes()).execute(new AsyncCompletionHandlerBase() {
 
@@ -87,6 +97,8 @@ public class PostWithQueryStringTest extends AbstractBasicTest {
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            deregisterRequest();
         }
     }
 

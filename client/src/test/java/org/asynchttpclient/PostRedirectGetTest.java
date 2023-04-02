@@ -81,6 +81,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             }
         };
 
+        registerRequest();
         try (AsyncHttpClient p = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(strict).addResponseFilter(responseFilter))) {
             Request request = post(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").addHeader("x-negative", "true").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
@@ -99,6 +100,8 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             });
             int statusCode = responseFuture.get();
             assertEquals(statusCode, 200);
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -116,6 +119,7 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             }
         };
 
+        registerRequest();
         try (AsyncHttpClient p = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(responseFilter))) {
             Request request = post(getTargetUrl()).addFormParam("q", "a b").addHeader("x-redirect", +status + "@" + "http://localhost:" + port1 + "/foo/bar/baz").build();
             Future<Integer> responseFuture = p.executeRequest(request, new AsyncCompletionHandler<Integer>() {
@@ -134,6 +138,8 @@ public class PostRedirectGetTest extends AbstractBasicTest {
             });
             int statusCode = responseFuture.get();
             assertEquals(statusCode, 200);
+        } finally {
+            deregisterRequest();
         }
     }
 

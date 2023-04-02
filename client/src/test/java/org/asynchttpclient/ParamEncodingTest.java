@@ -35,6 +35,7 @@ public class ParamEncodingTest extends AbstractBasicTest {
 
     @Test
     public void testParameters() throws Exception {
+        registerRequest();
 
         String value = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKQLMNOPQRSTUVWXYZ1234567809`~!@#$%^&*()_+-=,.<>/?;:'\"[]{}\\| ";
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -43,6 +44,8 @@ public class ParamEncodingTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("X-Param"), value.trim());
+        } finally {
+            deregisterRequest();
         }
     }
 

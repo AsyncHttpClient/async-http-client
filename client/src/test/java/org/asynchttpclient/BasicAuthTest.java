@@ -108,6 +108,8 @@ public class BasicAuthTest extends AbstractBasicTest {
 
     @Test
     public void basicAuthTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())
                     .setRealm(basicAuthRealm(USER, ADMIN).build())
@@ -116,11 +118,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void redirectAndBasicAuthTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10))) {
             Future<Response> f = client.prepareGet(getTargetUrl2())
                     .setRealm(basicAuthRealm(USER, ADMIN).build())
@@ -129,11 +135,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basic401Test() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl())
                     .setHeader("X-401", "401")
@@ -176,11 +186,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             Integer statusCode = f.get(10, TimeUnit.SECONDS);
             assertNotNull(statusCode);
             assertEquals(statusCode.intValue(), 401);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthTestPreemptiveTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             // send the request to the no-auth endpoint to be able to verify the
             // auth header is really sent preemptively for the initial call.
@@ -192,11 +206,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthNegativeTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())
                     .setRealm(basicAuthRealm("fake", ADMIN).build())
@@ -205,11 +223,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 401);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthInputStreamTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())
                     .setBody(new ByteArrayInputStream("test".getBytes()))
@@ -221,11 +243,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), "test");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthFileTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())
                     .setBody(SIMPLE_TEXT_FILE)
@@ -237,11 +263,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthAsyncConfigTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN)))) {
             Future<Response> f = client.preparePost(getTargetUrl())
                     .setBody(SIMPLE_TEXT_FILE_STRING)
@@ -252,11 +282,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthFileNoKeepAliveTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
 
             Future<Response> f = client.preparePost(getTargetUrl())
@@ -269,11 +303,15 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void noneAuthTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(basicAuthRealm(USER, ADMIN).build());
 
@@ -282,6 +320,8 @@ public class BasicAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertNotNull(resp.getHeader("X-Auth"));
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
+        } finally {
+            deregisterRequest();
         }
     }
 

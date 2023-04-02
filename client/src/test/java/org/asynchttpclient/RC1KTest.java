@@ -94,6 +94,8 @@ public class RC1KTest extends AbstractBasicTest {
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 10 * 60 * 1000)
     public void rc10kProblem() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C1K).setKeepAlive(true))) {
             List<Future<Integer>> resps = new ArrayList<>(C1K);
             int i = 0;
@@ -106,6 +108,8 @@ public class RC1KTest extends AbstractBasicTest {
                 assertNotNull(resp);
                 assertEquals(resp.intValue(), i++);
             }
+        } finally {
+            deregisterRequest();
         }
     }
 

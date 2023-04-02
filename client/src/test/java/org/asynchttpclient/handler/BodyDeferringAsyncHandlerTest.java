@@ -66,6 +66,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     @Test
     public void deferredSimple() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl());
 
@@ -87,11 +89,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
             // it all should be here now
             assertEquals(cos.getByteCount(), CONTENT_LENGTH_VALUE);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void deferredSimpleWithFailure() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder requestBuilder = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
 
@@ -114,11 +120,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
                 assertInstanceOf(RemotelyClosedException.class, ex.getCause());
             }
             assertNotEquals(CONTENT_LENGTH_VALUE, cos.getByteCount());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void deferredInputStreamTrick() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl());
 
@@ -147,11 +157,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             // BodyDeferringInputStream does all.
             // it all should be here now
             assertEquals(CONTENT_LENGTH_VALUE, cos.getByteCount());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void deferredInputStreamTrickWithFailure() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
@@ -174,11 +188,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             } catch (Exception ex) {
                 assertInstanceOf(RemotelyClosedException.class, ex.getCause());
             }
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void deferredInputStreamTrickWithCloseConnectionAndRetry() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxRequestRetry(1).setRequestTimeout(10000).build())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-CLOSE-CONNECTION", Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
@@ -201,11 +219,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             } catch (Exception ex) {
                 assertInstanceOf(UnsupportedOperationException.class, ex.getCause());
             }
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testConnectionRefused() throws Exception {
+        registerRequest();
+
         int newPortWithoutAnyoneListening = findFreePort();
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet("http://localhost:" + newPortWithoutAnyoneListening + "/testConnectionRefused");
@@ -214,11 +236,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
             r.execute(bdah);
             assertThrows(IOException.class, () -> bdah.getResponse());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testPipedStreams() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             PipedOutputStream pout = new PipedOutputStream();
             try (PipedInputStream pin = new PipedInputStream(pout)) {
@@ -234,6 +260,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
                     assertTrue(body.contains("ABCDEF"));
                 }
             }
+        } finally {
+            deregisterRequest();
         }
     }
 

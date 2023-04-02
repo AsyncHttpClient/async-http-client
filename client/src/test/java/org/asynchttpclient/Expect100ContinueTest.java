@@ -45,6 +45,8 @@ public class Expect100ContinueTest extends AbstractBasicTest {
 
     @Test
     public void Expect100Continue() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://localhost:" + port1 + '/')
                     .setHeader(EXPECT, HttpHeaderValues.CONTINUE)
@@ -54,6 +56,8 @@ public class Expect100ContinueTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getResponseBody(), SIMPLE_TEXT_FILE_STRING);
+        } finally {
+            deregisterRequest();
         }
     }
 

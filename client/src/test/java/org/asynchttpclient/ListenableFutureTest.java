@@ -27,6 +27,8 @@ public class ListenableFutureTest extends AbstractBasicTest {
 
     @Test
     public void testListenableFuture() throws Exception {
+        registerRequest();
+
         final AtomicInteger statusCode = new AtomicInteger(500);
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -42,6 +44,8 @@ public class ListenableFutureTest extends AbstractBasicTest {
 
             latch.await(10, TimeUnit.SECONDS);
             assertEquals(statusCode.get(), 200);
+        } finally {
+            deregisterRequest();
         }
     }
 

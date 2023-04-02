@@ -42,11 +42,15 @@ public class RetryRequestTest extends AbstractBasicTest {
 
     @Test
     public void testMaxRetry() {
+        registerRequest();
+
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();
             fail();
         } catch (Exception t) {
             assertEquals(t.getCause(), RemotelyClosedException.INSTANCE);
+        } finally {
+            deregisterRequest();
         }
     }
 

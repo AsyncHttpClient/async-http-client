@@ -88,6 +88,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
 
     @Test
     public void testMultipleOtherHeaders() throws Exception {
+        registerRequest();
         final String[] xffHeaders = {null, null};
 
         try (AsyncHttpClient ahc = asyncHttpClient()) {
@@ -137,11 +138,14 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                 assertEquals(xffHeaders[1], "abc");
                 assertEquals(xffHeaders[0], "def");
             }
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testMultipleEntityHeaders() throws Exception {
+        registerRequest();
         final String[] clHeaders = {null, null};
 
         try (AsyncHttpClient ahc = asyncHttpClient()) {
@@ -196,6 +200,8 @@ public class MultipleHeaderTest extends AbstractBasicTest {
                 assertEquals(clHeaders[0], "1");
                 assertEquals(clHeaders[1], "2");
             }
+        } finally {
+            deregisterRequest();
         }
     }
 }

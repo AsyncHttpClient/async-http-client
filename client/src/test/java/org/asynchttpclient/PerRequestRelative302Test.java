@@ -79,6 +79,8 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
+
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient()) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "https://www.microsoft.com/").execute().get();
 
@@ -89,16 +91,22 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
             String baseUrl = getBaseUrl(response.getUri());
 
             assertTrue(baseUrl.matches(anyMicrosoftPage), "response does not show redirection to " + anyMicrosoftPage);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
+
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.prepareGet(getTargetUrl()).setFollowRedirect(false).setHeader("X-redirect", "http://www.microsoft.com/").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 302);
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -117,10 +125,13 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
         Exception e = null;
 
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient()) {
             c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", String.format("http://localhost:%d/", port2)).execute().get();
         } catch (ExecutionException ex) {
             e = ex;
+        } finally {
+            deregisterRequest();
         }
 
         assertNotNull(e);
@@ -133,11 +144,14 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 
+        registerRequest();
         try (AsyncHttpClient c = asyncHttpClient()) {
             Response response = c.preparePost(getTargetUrl()).setFollowRedirect(true).setHeader("X-redirect", "/foo/test").execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
             assertEquals(response.getUri().toString(), getTargetUrl());
+        } finally {
+            deregisterRequest();
         }
     }
 

@@ -40,6 +40,8 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
 
     @Test
     public void basicByteBufferTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             File largeFile = createTempFile(1024 * 100 * 10);
             final AtomicInteger byteReceived = new AtomicInteger();
@@ -57,6 +59,8 @@ public class ByteBufferCapacityTest extends AbstractBasicTest {
             assertEquals(response.getStatusCode(), 200);
             assertEquals(byteReceived.get(), largeFile.length());
             assertEquals(response.getResponseBody().length(), largeFile.length());
+        } finally {
+            deregisterRequest();
         }
     }
 

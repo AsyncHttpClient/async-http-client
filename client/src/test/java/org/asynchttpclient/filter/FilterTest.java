@@ -49,15 +49,21 @@ public class FilterTest extends AbstractBasicTest {
 
     @Test
     public void basicTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(100)))) {
             Response response = c.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void loadThrottleTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(10)))) {
             List<Future<Response>> futures = new ArrayList<>();
             for (int i = 0; i < 200; i++) {
@@ -69,18 +75,25 @@ public class FilterTest extends AbstractBasicTest {
                 assertNotNull(r);
                 assertEquals(200, r.getStatusCode());
             }
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void maxConnectionsText() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient(config().addRequestFilter(new ThrottleRequestFilter(0, 1000)))) {
             assertThrows(Exception.class, () -> client.preparePost(getTargetUrl()).execute().get());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicResponseFilterTest() throws Exception {
+        registerRequest();
 
         ResponseFilter responseFilter = new ResponseFilter() {
             @Override
@@ -93,11 +106,15 @@ public class FilterTest extends AbstractBasicTest {
             Response response = client.preparePost(getTargetUrl()).execute().get();
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void replayResponseFilterTest() throws Exception {
+        registerRequest();
+
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
 
@@ -116,11 +133,15 @@ public class FilterTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
             assertEquals("true", response.getHeader("X-Replay"));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void replayStatusCodeResponseFilterTest() throws Exception {
+        registerRequest();
+
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
 
@@ -139,11 +160,15 @@ public class FilterTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
             assertEquals("true", response.getHeader("X-Replay"));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void replayHeaderResponseFilterTest() throws Exception {
+        registerRequest();
+
         final AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter responseFilter = new ResponseFilter() {
             @Override
@@ -161,6 +186,8 @@ public class FilterTest extends AbstractBasicTest {
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
             assertEquals("Pong", response.getHeader("Ping"));
+        } finally {
+            deregisterRequest();
         }
     }
 

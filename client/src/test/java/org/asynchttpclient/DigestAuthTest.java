@@ -55,6 +55,8 @@ public class DigestAuthTest extends AbstractBasicTest {
 
     @Test
     public void digestAuthTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
                     .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())
@@ -63,11 +65,15 @@ public class DigestAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp.getHeader("X-Auth"));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void digestAuthTestWithoutScheme() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
                     .setRealm(digestAuthRealm(USER, ADMIN).setRealmName("MyRealm").build())
@@ -76,11 +82,15 @@ public class DigestAuthTest extends AbstractBasicTest {
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertNotNull(resp.getHeader("X-Auth"));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void digestAuthNegativeTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
                     .setRealm(digestAuthRealm("fake", ADMIN).build())
@@ -88,6 +98,8 @@ public class DigestAuthTest extends AbstractBasicTest {
             Response resp = f.get(20, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 401);
+        } finally {
+            deregisterRequest();
         }
     }
 

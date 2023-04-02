@@ -72,12 +72,16 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
     }
 
     protected void execute(String body) throws IOException, InterruptedException, ExecutionException {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.preparePost(getTargetUrl()).setBody(body).setCharset(UTF_8);
             Future<Response> f = r.execute();
             Response resp = f.get();
             assertEquals(resp.getStatusCode(), 200);
             assertEquals(body, resp.getResponseBody(UTF_8));
+        } finally {
+            deregisterRequest();
         }
     }
 }

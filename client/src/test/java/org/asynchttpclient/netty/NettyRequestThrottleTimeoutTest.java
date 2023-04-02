@@ -49,6 +49,8 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
     @Test
     public void testRequestTimeout() throws IOException {
+        registerRequest();
+
         final Semaphore requestThrottle = new Semaphore(1);
         final int samples = 10;
 
@@ -105,6 +107,8 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
             }
 
             assertTrue(tooManyConnections.isEmpty(), "Should not have any connection errors where too many connections have been attempted");
+        } finally {
+            deregisterRequest();
         }
     }
 

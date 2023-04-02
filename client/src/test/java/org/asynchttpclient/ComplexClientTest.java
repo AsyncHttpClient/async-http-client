@@ -26,6 +26,8 @@ public class ComplexClientTest extends AbstractBasicTest {
 
     @Test
     public void multipleRequestsTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             String body = "hello there";
 
@@ -46,11 +48,15 @@ public class ComplexClientTest extends AbstractBasicTest {
                     .get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(body, response.getResponseBody());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void urlWithoutSlashTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             String body = "hello there";
             Response response = client.preparePost(String.format("http://localhost:%d/foo/test", port1))
@@ -60,6 +66,8 @@ public class ComplexClientTest extends AbstractBasicTest {
                     .get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(body, response.getResponseBody());
+        } finally {
+            deregisterRequest();
         }
     }
 }

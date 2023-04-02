@@ -76,6 +76,8 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
     @Test
     public void regular301LosesBody() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
@@ -83,11 +85,15 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "301").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), "");
             assertNull(receivedContentType);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void regular302LosesBody() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
@@ -95,11 +101,15 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), "");
             assertNull(receivedContentType);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void regular302StrictKeepsBody() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
@@ -107,11 +117,15 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "302").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);
             assertEquals(receivedContentType, contentType);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void regular307KeepsBody() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
@@ -119,6 +133,8 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "307").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);
             assertEquals(receivedContentType, contentType);
+        } finally {
+            deregisterRequest();
         }
     }
 }

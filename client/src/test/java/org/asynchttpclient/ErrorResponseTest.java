@@ -48,12 +48,16 @@ public class ErrorResponseTest extends AbstractBasicTest {
 
     @Test
     public void testQueryParameters() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
             assertNotNull(resp);
             assertEquals(resp.getStatusCode(), 400);
             assertEquals(resp.getResponseBody(), BAD_REQUEST_STR);
+        } finally {
+            deregisterRequest();
         }
     }
 

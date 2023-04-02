@@ -46,11 +46,15 @@ public class NTLMProxyTest extends AbstractBasicTest {
 
     @Test
     public void ntlmProxyTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             org.asynchttpclient.Request request = get("http://localhost").setProxyServer(ntlmProxy()).build();
             Future<Response> responseFuture = client.executeRequest(request);
             int status = responseFuture.get().getStatusCode();
             assertEquals(200, status);
+        } finally {
+            deregisterRequest();
         }
     }
 

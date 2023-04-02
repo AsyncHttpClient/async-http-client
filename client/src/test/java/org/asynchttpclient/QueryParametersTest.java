@@ -48,6 +48,8 @@ public class QueryParametersTest extends AbstractBasicTest {
 
     @Test
     public void testQueryParameters() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1).addQueryParam("a", "1").addQueryParam("b", "2").execute();
             Response resp = f.get(3, TimeUnit.SECONDS);
@@ -55,6 +57,8 @@ public class QueryParametersTest extends AbstractBasicTest {
             assertEquals(resp.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(resp.getHeader("a"), "1");
             assertEquals(resp.getHeader("b"), "2");
+        } finally {
+            deregisterRequest();
         }
     }
 
@@ -63,22 +67,29 @@ public class QueryParametersTest extends AbstractBasicTest {
         String URL = getTargetUrl() + "?q=";
         String REQUEST_PARAM = "github github \ngithub";
 
+        registerRequest();
         try (AsyncHttpClient client = asyncHttpClient()) {
             String requestUrl2 = URL + URLEncoder.encode(REQUEST_PARAM, UTF_8);
             logger.info("Executing request [{}] ...", requestUrl2);
             Response response = client.prepareGet(requestUrl2).execute().get();
             String s = URLDecoder.decode(response.getHeader("q"), UTF_8);
             assertEquals(s, REQUEST_PARAM);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void urlWithColonTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             String query = "test:colon:";
             Response response = c.prepareGet(String.format("http://localhost:%d/foo/test/colon?q=%s", port1, query)).setHeader("Content-Type", "text/html").execute().get(TIMEOUT, TimeUnit.SECONDS);
 
             assertEquals(response.getHeader("q"), query);
+        } finally {
+            deregisterRequest();
         }
     }
 

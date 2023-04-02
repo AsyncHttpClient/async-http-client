@@ -37,6 +37,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
                 .setMaxConnections(-1)
                 .build();
 
+        registerRequest();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             final BoundRequestBuilder builder = client.prepareGet(GOOGLE_HTTPS_URL);
             final Response response1 = builder.execute().get();
@@ -44,6 +45,8 @@ public class NoNullResponseTest extends AbstractBasicTest {
             final Response response2 = builder.execute().get();
             assertNotNull(response1);
             assertNotNull(response2);
+        } finally {
+            deregisterRequest();
         }
     }
 }

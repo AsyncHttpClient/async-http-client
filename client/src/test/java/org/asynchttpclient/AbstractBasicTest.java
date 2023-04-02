@@ -25,10 +25,13 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Phaser;
+
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractBasicTest {
+    protected Phaser PENDING_REQUESTS = new Phaser();
     protected static final Logger logger = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected static final int TIMEOUT = 30;
 
@@ -55,8 +58,20 @@ public abstract class AbstractBasicTest {
         logger.debug("Shutting down local server: {}", server);
 
         if (server != null) {
+            // Wait for all requests to complete before shutting down the server
+            if (PENDING_REQUESTS.getRegisteredParties() > 0) {
+                PENDING_REQUESTS.arriveAndAwaitAdvance();
+            }
             server.stop();
         }
+    }
+
+    public void registerRequest() {
+        PENDING_REQUESTS.register();
+    }
+
+    public void deregisterRequest() {
+        PENDING_REQUESTS.arriveAndDeregister();
     }
 
     protected String getTargetUrl() {

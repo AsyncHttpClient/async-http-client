@@ -69,6 +69,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
      */
     @Test
     public void testGetRedirectFinalUrl() throws Exception {
+        registerRequest();
 
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
@@ -84,6 +85,8 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
             Response res = response.get();
             assertNotNull(res.getResponseBody());
             assertEquals(res.getUri().toString(), baseUrl + "/overthere");
+        } finally {
+            deregisterRequest();
         }
     }
 

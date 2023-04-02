@@ -39,6 +39,8 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
     @Test
     public void testMaxTotalConnectionsExceedingException() throws IOException {
+        registerRequest();
+
         String[] urls = {"https://google.com", "https://github.com"};
 
         AsyncHttpClientConfig config = config()
@@ -70,11 +72,15 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
             assertEquals(1, i);
             assertTrue(caughtError);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testMaxTotalConnections() throws Exception {
+        registerRequest();
+
         String[] urls = {"https://www.google.com", "https://www.youtube.com"};
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -113,6 +119,8 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
             latch.await();
             assertNull(ex.get());
             assertNull(failedUrl.get());
+        } finally {
+            deregisterRequest();
         }
     }
 }

@@ -44,6 +44,8 @@ public class Head302Test extends AbstractBasicTest {
 
     @Test
     public void testHEAD302() throws Exception {
+        registerRequest();
+
         AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {
             final CountDownLatch l = new CountDownLatch(1);
@@ -65,6 +67,8 @@ public class Head302Test extends AbstractBasicTest {
             } else {
                 fail("Timeout out");
             }
+        } finally {
+            deregisterRequest();
         }
     }
 

@@ -47,9 +47,13 @@ public class EofTerminatedTest extends AbstractBasicTest {
 
     @Test
     public void testEolTerminatedResponse() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).setHeader(ACCEPT_ENCODING, HttpHeaderValues.GZIP_DEFLATE).setHeader(CONNECTION, HttpHeaderValues.CLOSE).build())
                     .get();
+        } finally {
+            deregisterRequest();
         }
     }
 

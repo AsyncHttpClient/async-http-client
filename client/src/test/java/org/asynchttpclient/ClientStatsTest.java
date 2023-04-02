@@ -35,6 +35,8 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     @Test
     public void testClientStatus() throws Throwable {
+        registerRequest();
+
         try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(5000))) {
             final String url = getTargetUrl();
 
@@ -109,11 +111,15 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(0, timeoutStats.getTotalIdleConnectionCount());
             assertEquals(0, timeoutStats.getTotalConnectionCount());
             assertNull(timeoutStats.getStatsPerHost().get(hostname));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void testClientStatusNoKeepalive() throws Throwable {
+        registerRequest();
+
         try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setPooledConnectionIdleTimeout(1000))) {
             final String url = getTargetUrl();
 
@@ -178,6 +184,8 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(0, idleCachedStats.getTotalIdleConnectionCount());
             assertEquals(0, idleCachedStats.getTotalConnectionCount());
             assertNull(idleCachedStats.getStatsPerHost().get(hostname));
+        } finally {
+            deregisterRequest();
         }
     }
 }

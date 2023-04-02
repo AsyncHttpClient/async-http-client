@@ -78,65 +78,97 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
     @Test
     public void basicAuthTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
             assertInstanceOf(TimeoutException.class, ex.getCause());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicPreemptiveAuthTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
             assertInstanceOf(TimeoutException.class, ex.getCause());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void digestAuthTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
             assertInstanceOf(TimeoutException.class, ex.getCause());
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Disabled
     @Test
     public void digestPreemptiveAuthTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, false, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicAuthFutureTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, true, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void basicPreemptiveAuthFutureTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, true, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void digestAuthFutureTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, false, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Disabled
     @Test
     public void digestPreemptiveAuthFutureTimeoutTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, false, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
+        } finally {
+            deregisterRequest();
         }
     }
 

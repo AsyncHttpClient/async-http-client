@@ -33,6 +33,8 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onOpen() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -58,12 +60,16 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "OnOpen");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onEmptyListenerTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             WebSocket websocket = null;
             try {
@@ -72,24 +78,32 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
                 fail();
             }
             assertNotNull(websocket);
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onFailureTest() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
             if (!(e.getCause() instanceof UnknownHostException || e.getCause() instanceof ConnectException)) {
                 fail("Exception is not UnknownHostException or ConnectException but rather: " + e);
             }
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onTimeoutCloseTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -115,12 +129,16 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "OnClose");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onClose() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -148,12 +166,16 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "OnClose");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoText() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -186,12 +208,16 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "ECHO");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoDoubleListenerText() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -246,11 +272,15 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void echoTwoMessagesTest() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -283,11 +313,15 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     public void echoFragments() throws Exception {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<String> text = new AtomicReference<>("");
@@ -321,12 +355,16 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
 
             latch.await();
             assertEquals(text.get(), "ECHOECHO");
+        } finally {
+            deregisterRequest();
         }
     }
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoTextAndThenClose() throws Throwable {
+        registerRequest();
+
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch textLatch = new CountDownLatch(1);
             final CountDownLatch closeLatch = new CountDownLatch(1);
@@ -363,6 +401,8 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
             closeLatch.await();
 
             assertEquals(text.get(), "ECHO");
+        } finally {
+            deregisterRequest();
         }
     }
 }
