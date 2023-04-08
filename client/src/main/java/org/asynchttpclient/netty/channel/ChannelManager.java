@@ -113,6 +113,16 @@ public class ChannelManager {
 
     private AsyncHttpClientHandler wsHandler;
 
+    private boolean isInstanceof(Object object, String name) {
+        final Class<?> clazz;
+        try {
+            clazz = Class.forName(name, false, null);
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        }
+        return clazz.isInstance(object);
+    }
+
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
         this.config = config;
 
@@ -153,11 +163,11 @@ public class ChannelManager {
 
             if (eventLoopGroup instanceof NioEventLoopGroup) {
                 transportFactory = NioTransportFactory.INSTANCE;
-            } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
+            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
                 transportFactory = new EpollTransportFactory();
-            } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
+            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
                 transportFactory = new KQueueTransportFactory();
-            } else if (eventLoopGroup instanceof IOUringEventLoopGroup) {
+            } else if (isInstanceof(eventLoopGroup, "io.netty.incubator.channel.uring.IOUringEventLoopGroup")) {
                 transportFactory = new IoUringIncubatorTransportFactory();
             } else {
                 throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
