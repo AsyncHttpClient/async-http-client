@@ -40,12 +40,13 @@ public abstract class AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
-        server.setHandler(configureHandler());
-        ServerConnector connector2 = addHttpConnector(server);
-        server.start();
+        connector1.setIdleTimeout(1000 * 60);
 
-        port1 = connector1.getLocalPort();
-        port2 = connector2.getLocalPort();
+        server.setHandler(configureHandler());
+
+        ServerConnector connector2 = addHttpConnector(server);
+        connector2.setIdleTimeout(1000 * 60);
+        server.start();
 
         logger.info("Local HTTP server started successfully");
     }
