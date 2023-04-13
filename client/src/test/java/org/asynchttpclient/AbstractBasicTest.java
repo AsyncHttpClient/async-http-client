@@ -43,12 +43,12 @@ public abstract class AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
-        connector1.setIdleTimeout(1000 * 10);
+        connector1.setIdleTimeout(1000 * 60);
 
         server.setHandler(configureHandler());
 
         ServerConnector connector2 = addHttpConnector(server);
-        connector2.setIdleTimeout(1000 * 10);
+        connector2.setIdleTimeout(1000 * 60);
         server.start();
 
         port1 = connector1.getLocalPort();
