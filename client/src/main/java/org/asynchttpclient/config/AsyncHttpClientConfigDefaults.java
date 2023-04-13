@@ -309,7 +309,7 @@ public final class AsyncHttpClientConfigDefaults {
         if (threads == -1) {
             threads = Runtime.getRuntime().availableProcessors();
         }
-        return 128;
+        return threads;
     }
 
     public static int defaultHashedWheelTimerTickDuration() {
