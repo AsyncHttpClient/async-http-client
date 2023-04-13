@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConnectionPoolTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMaxTotalConnections() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
@@ -81,7 +81,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMaxTotalConnectionsException() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
             String url = getTargetUrl();
@@ -161,7 +161,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void multipleMaxConnectionOpenTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
@@ -178,7 +178,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
             String body = "hello there";
@@ -194,7 +194,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncHandlerOnThrowableTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicInteger count = new AtomicInteger();
@@ -228,7 +228,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void nonPoolableConnectionReleaseSemaphoresTest() throws Throwable {
 
         RequestBuilder request = get(getTargetUrl()).setHeader("Connection", "close");
@@ -244,7 +244,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPooledEventsFired() throws Exception {
         RequestBuilder request = get("http://localhost:" + port1 + "/Test");
 

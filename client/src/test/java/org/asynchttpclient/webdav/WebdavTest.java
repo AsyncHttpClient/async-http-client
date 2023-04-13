@@ -102,7 +102,7 @@ public class WebdavTest {
         }
     }
 
-//    @RepeatedIfExceptionsTest(repeats = 5)
+//    @RepeatedIfExceptionsTest(repeats = 10)
 //    public void mkcolWebDavTest1() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -111,7 +111,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @RepeatedIfExceptionsTest(repeats = 5)
+//    @RepeatedIfExceptionsTest(repeats = 10)
 //    public void mkcolWebDavTest2() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl() + "/folder2").build();
@@ -120,7 +120,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @RepeatedIfExceptionsTest(repeats = 5)
+//    @RepeatedIfExceptionsTest(repeats = 10)
 //    public void basicPropFindWebDavTest() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request propFindRequest = new RequestBuilder("PROPFIND").setUrl(getTargetUrl()).build();
@@ -130,7 +130,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @RepeatedIfExceptionsTest(repeats = 5)
+//    @RepeatedIfExceptionsTest(repeats = 10)
 //    public void propFindWebDavTest() throws Exception {
 //        try (AsyncHttpClient client = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();
@@ -150,7 +150,7 @@ public class WebdavTest {
 //        }
 //    }
 //
-//    @RepeatedIfExceptionsTest(repeats = 5)
+//    @RepeatedIfExceptionsTest(repeats = 10)
 //    public void propFindCompletionHandlerWebDavTest() throws Exception {
 //        try (AsyncHttpClient c = asyncHttpClient()) {
 //            Request mkcolRequest = new RequestBuilder("MKCOL").setUrl(getTargetUrl()).build();

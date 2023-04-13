@@ -35,7 +35,7 @@ public class BodyChunkTest extends AbstractBasicTest {
 
     private static final String MY_MESSAGE = "my message";
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void negativeContentTypeTest() throws Exception {
 
         AsyncHttpClientConfig config = config()

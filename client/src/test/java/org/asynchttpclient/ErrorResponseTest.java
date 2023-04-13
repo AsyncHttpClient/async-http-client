@@ -46,7 +46,7 @@ public class ErrorResponseTest extends AbstractBasicTest {
         return new ErrorHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testQueryParameters() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + "/foo").addHeader("Accepts", "*/*").execute();

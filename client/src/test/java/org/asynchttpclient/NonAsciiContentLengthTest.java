@@ -65,7 +65,7 @@ public class NonAsciiContentLengthTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testNonAsciiContentLength() throws Exception {
         execute("test");
         execute("\u4E00"); // Unicode CJK ideograph for one

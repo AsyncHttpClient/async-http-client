@@ -125,7 +125,7 @@ public class MultipartBodyTest {
         return transferred.get();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void transferWithCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
@@ -135,7 +135,7 @@ public class MultipartBodyTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void transferZeroCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {

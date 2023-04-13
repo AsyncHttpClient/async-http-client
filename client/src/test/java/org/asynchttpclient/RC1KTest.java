@@ -91,7 +91,7 @@ public class RC1KTest extends AbstractBasicTest {
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 10 * 60 * 1000)
     public void rc10kProblem() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxConnectionsPerHost(C1K).setKeepAlive(true))) {

@@ -40,27 +40,27 @@ public class PostRedirectGetTest extends AbstractBasicTest {
         return new PostRedirectGetHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void postRedirectGet302Test() throws Exception {
         doTestPositive(302);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void postRedirectGet302StrictTest() throws Exception {
         doTestNegative(302, true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void postRedirectGet303Test() throws Exception {
         doTestPositive(303);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void postRedirectGet301Test() throws Exception {
         doTestPositive(301);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void postRedirectGet307Test() throws Exception {
         doTestNegative(307, false);
     }

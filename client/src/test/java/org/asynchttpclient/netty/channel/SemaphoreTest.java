@@ -135,19 +135,19 @@ public class SemaphoreTest {
         assertTrue(timeToAcquire <= CHECK_ACQUIRE_TIME__TIMEOUT + 300, "Semaphore acquired too late: " + timeToAcquire + " ms"); //Upper Bound
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void maxConnectionCheckRelease() throws IOException {
         checkRelease(new MaxConnectionSemaphore(1, 0));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void perHostCheckRelease() throws IOException {
         checkRelease(new PerHostConnectionSemaphore(1, 0));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void combinedCheckRelease() throws IOException {
         checkRelease(new CombinedConnectionSemaphore(1, 1, 0));

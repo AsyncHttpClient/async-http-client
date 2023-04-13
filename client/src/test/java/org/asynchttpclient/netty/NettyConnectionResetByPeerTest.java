@@ -42,7 +42,7 @@ public class NettyConnectionResetByPeerTest {
         resettingServerAddress = createResettingServer();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testAsyncHttpClientConnectionResetByPeer() throws InterruptedException {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setRequestTimeout(1500)

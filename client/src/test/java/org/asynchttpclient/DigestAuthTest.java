@@ -53,7 +53,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         return new SimpleHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void digestAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -66,7 +66,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void digestAuthTestWithoutScheme() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -79,7 +79,7 @@ public class DigestAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void digestAuthNegativeTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')

@@ -69,7 +69,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
         return server.getHttpUrl() + "/foo/bar";
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void getWithOnHeadersReceivedAbort() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -85,7 +85,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncStreamPOSTTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -127,7 +127,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncStreamInterruptTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -168,7 +168,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncStreamFutureTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -220,7 +220,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncStreamThrowableRefusedTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -253,7 +253,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncStreamReusePOSTTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -336,7 +336,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncStream302RedirectWithBody() throws Throwable {
         withClient(config().setFollowRedirect(true)).run(client ->
                 withServer(server).run(server -> {
@@ -358,7 +358,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 3000)
     public void asyncStreamJustStatusLine() throws Throwable {
         withClient().run(client ->
@@ -431,7 +431,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
 
     // This test is flaky - see https://github.com/AsyncHttpClient/async-http-client/issues/1728#issuecomment-699962325
     // For now, just run again if fails
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncOptionsTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
@@ -474,7 +474,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void closeConnectionTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {

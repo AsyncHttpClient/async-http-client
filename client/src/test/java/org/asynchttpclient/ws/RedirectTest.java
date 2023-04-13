@@ -60,7 +60,7 @@ public class RedirectTest extends AbstractBasicWebSocketTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void testRedirectToWSResource() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {

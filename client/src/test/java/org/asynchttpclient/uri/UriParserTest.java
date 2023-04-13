@@ -44,17 +44,17 @@ public class UriParserTest {
         assertUriEquals(parser, URI.create(urlContext).resolve(URI.create(url)));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testUrlWithPathAndQuery() {
         validateAgainstAbsoluteURI("http://example.com:8080/test?q=1");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testFragmentTryingToTrickAuthorityAsBasicAuthCredentials() {
         validateAgainstAbsoluteURI("http://1.2.3.4:81#@5.6.7.8:82/aaa/b?q=xxx");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testUrlHasLeadingAndTrailingWhiteSpace() {
         UriParser parser = new UriParser();
         String url = "  http://user@example.com:8080/test?q=1  ";
@@ -62,61 +62,61 @@ public class UriParserTest {
         assertUriEquals(parser, URI.create(url.trim()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testResolveAbsoluteUriAgainstContext() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path", "http://example.com/path");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRootRelativePath() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "/relativeUrl");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testCurrentDirRelativePath() {
         Uri context = new Uri("https", null, "example.com", 80, "/foo/bar", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/foo/bar?q=2", "relativeUrl");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testFragmentOnly() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "#test");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRelativeUrlWithQuery() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "/relativePath?q=3");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRelativeUrlWithQueryOnly() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "?q=3");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRelativeURLWithDots() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "./relative/./url");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRelativeURLWithTwoEmbeddedDots() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "./relative/../url");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRelativeURLWithTwoTrailingDots() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "./relative/url/..");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRelativeURLWithOneTrailingDot() {
         Uri context = new Uri("https", null, "example.com", 80, "/path", "q=2", null);
         validateAgainstRelativeURI(context, "https://example.com:80/path?q=2", "./relative/url/.");

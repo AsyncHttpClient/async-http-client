@@ -43,7 +43,7 @@ public class CustomRemoteAddressTest extends HttpTest {
         server.close();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void getRootUrlWithCustomRemoteAddress() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {

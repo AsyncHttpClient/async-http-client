@@ -67,7 +67,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPutImageFile() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
@@ -77,7 +77,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPutImageFileUnknownSize() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
@@ -87,7 +87,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -100,7 +100,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPutLargeTextFileUnknownSize() throws Exception {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));

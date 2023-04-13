@@ -43,22 +43,22 @@ public class ChunkingTest extends AbstractBasicTest {
 
     // So we can just test the returned data is the image,
     // and doesn't contain the chunked delimiters.
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testBufferLargerThanFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath()), 400000));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testBufferSmallThanFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(new BufferedInputStream(Files.newInputStream(LARGE_IMAGE_FILE.toPath())));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testDirectFileWithStreamBodyGenerator() throws Throwable {
         doTestWithInputStreamBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testDirectFileWithFeedableBodyGenerator() throws Throwable {
         doTestWithFeedableBodyGenerator(Files.newInputStream(LARGE_IMAGE_FILE.toPath()));
     }

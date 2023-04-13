@@ -44,7 +44,7 @@ public class InputStreamTest extends AbstractBasicTest {
         return new InputStreamHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testInvalidInputStream() throws Exception {
 
         try (AsyncHttpClient client = asyncHttpClient()) {

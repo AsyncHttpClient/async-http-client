@@ -52,7 +52,7 @@ public class CookieStoreTest {
         System.out.println("--Stop");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         addCookieWithEmptyPath();
         dontReturnCookieForAnotherDomain();

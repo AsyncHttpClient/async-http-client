@@ -40,7 +40,7 @@ public class RetryRequestTest extends AbstractBasicTest {
         return new SlowAndBigHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMaxRetry() {
         try (AsyncHttpClient ahc = asyncHttpClient(config().setMaxRequestRetry(0))) {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build()).get();

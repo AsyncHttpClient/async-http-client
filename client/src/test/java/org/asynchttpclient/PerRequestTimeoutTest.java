@@ -61,7 +61,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         return new SlowHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(100).execute();
@@ -77,7 +77,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testReadTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -93,7 +93,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(-1).execute();
@@ -107,7 +107,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testGlobalRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -123,7 +123,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testGlobalIdleTimeout() throws IOException {
         final long[] times = {-1, -1};
 

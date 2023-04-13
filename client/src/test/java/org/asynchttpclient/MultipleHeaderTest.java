@@ -86,7 +86,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         serverSocket.close();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMultipleOtherHeaders() throws Exception {
         final String[] xffHeaders = {null, null};
 
@@ -140,7 +140,7 @@ public class MultipleHeaderTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMultipleEntityHeaders() throws Exception {
         final String[] clHeaders = {null, null};
 

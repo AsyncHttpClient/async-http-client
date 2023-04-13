@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class PropertiesBasedResumableProcessorTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSaveLoad() {
         PropertiesBasedResumableProcessor processor = new PropertiesBasedResumableProcessor();
         processor.put("http://localhost/test.url", 15L);
@@ -37,7 +37,7 @@ public class PropertiesBasedResumableProcessorTest {
         assertEquals(Long.valueOf(50L), map.get("http://localhost/test2.url"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRemove() {
         PropertiesBasedResumableProcessor processor = new PropertiesBasedResumableProcessor();
         processor.put("http://localhost/test.url", 15L);

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RealmTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testClone() {
         Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)
                 .setUsePreemptiveAuth(true)
@@ -44,12 +44,12 @@ public class RealmTest {
         assertEquals(clone.getScheme(), orig.getScheme());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testOldDigestEmptyString() throws Exception {
         testOldDigest("");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testOldDigestNull() throws Exception {
         testOldDigest(null);
     }
@@ -76,7 +76,7 @@ public class RealmTest {
         assertEquals(orig.getResponse(), expectedResponse);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testStrongDigest() throws Exception {
         String user = "user";
         String pass = "pass";

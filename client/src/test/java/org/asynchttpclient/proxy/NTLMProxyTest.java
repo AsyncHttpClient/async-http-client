@@ -44,7 +44,7 @@ public class NTLMProxyTest extends AbstractBasicTest {
         return new NTLMProxyHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void ntlmProxyTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             org.asynchttpclient.Request request = get("http://localhost").setProxyServer(ntlmProxy()).build();

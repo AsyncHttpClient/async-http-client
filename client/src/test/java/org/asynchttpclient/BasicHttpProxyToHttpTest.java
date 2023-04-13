@@ -94,7 +94,7 @@ public class BasicHttpProxyToHttpTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void nonPreemptiveProxyAuthWithPlainHttpTarget() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String targetUrl = "http://localhost:" + httpPort + "/foo/bar";

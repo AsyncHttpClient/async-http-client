@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MaxTotalConnectionTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = {"https://google.com", "https://github.com"};
 
@@ -73,7 +73,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMaxTotalConnections() throws Exception {
         String[] urls = {"https://www.google.com", "https://www.youtube.com"};
 

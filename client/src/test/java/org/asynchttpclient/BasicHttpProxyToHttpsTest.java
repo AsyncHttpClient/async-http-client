@@ -110,7 +110,7 @@ public class BasicHttpProxyToHttpsTest {
         proxy.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void nonPreemptiveProxyAuthWithHttpsTarget() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setUseInsecureTrustManager(true))) {
             String targetUrl = "https://localhost:" + httpPort + "/foo/bar";

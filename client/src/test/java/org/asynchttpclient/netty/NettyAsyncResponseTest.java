@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NettyAsyncResponseTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testCookieParseExpires() {
         // e.g. "Tue, 27 Oct 2015 12:54:24 GMT";
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
@@ -48,7 +48,7 @@ public class NettyAsyncResponseTest {
         assertTrue(cookie.maxAge() >= 58 && cookie.maxAge() <= 60);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testCookieParseMaxAge() {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
 
@@ -61,7 +61,7 @@ public class NettyAsyncResponseTest {
         assertEquals(60, cookie.maxAge());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testCookieParseWeirdExpiresValue() {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
         HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);

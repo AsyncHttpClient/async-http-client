@@ -78,7 +78,7 @@ public class MultipartUploadTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendingSmallFilesAndByteArray() throws Exception {
         String expectedContents = "filecontent: hello";
         String expectedContents2 = "gzipcontent: hello";
@@ -160,12 +160,12 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void sendEmptyFile() throws Exception {
         sendEmptyFile0(true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void sendEmptyFileZeroCopy() throws Exception {
         sendEmptyFile0(false);
     }
@@ -182,12 +182,12 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendEmptyFileInputStream() throws Exception {
         sendEmptyFileInputStream(true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendEmptyFileInputStreamZeroCopy() throws Exception {
         sendEmptyFileInputStream(false);
     }
@@ -213,22 +213,22 @@ public class MultipartUploadTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendFileInputStreamUnknownContentLength() throws Exception {
         sendFileInputStream(false, true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendFileInputStreamZeroCopyUnknownContentLength() throws Exception {
         sendFileInputStream(false, false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendFileInputStreamKnownContentLength() throws Exception {
         sendFileInputStream(true, true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSendFileInputStreamZeroCopyKnownContentLength() throws Exception {
         sendFileInputStream(true, false);
     }

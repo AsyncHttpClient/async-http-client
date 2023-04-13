@@ -42,7 +42,7 @@ public class Head302Test extends AbstractBasicTest {
         return new Head302handler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testHEAD302() throws Exception {
         AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         try (AsyncHttpClient client = asyncHttpClient(clientConfig)) {

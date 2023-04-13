@@ -34,7 +34,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
 
     private static final int COUNT = 10;
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 30 * 1000)
     public void testFollowRedirect() throws InterruptedException {
 

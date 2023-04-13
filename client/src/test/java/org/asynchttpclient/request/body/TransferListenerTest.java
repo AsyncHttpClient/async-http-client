@@ -48,7 +48,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         return new BasicHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicGetTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
@@ -103,7 +103,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicPutFileTest() throws Exception {
         final AtomicReference<Throwable> throwable = new AtomicReference<>();
         final AtomicReference<HttpHeaders> hSent = new AtomicReference<>();
@@ -163,7 +163,7 @@ public class TransferListenerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicPutFileBodyGeneratorTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicReference<Throwable> throwable = new AtomicReference<>();

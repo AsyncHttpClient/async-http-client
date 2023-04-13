@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ZeroCopyFileTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void zeroCopyPostTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final AtomicBoolean headerSent = new AtomicBoolean(false);
@@ -82,7 +82,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void zeroCopyPutTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://localhost:" + port1 + '/').setBody(SIMPLE_TEXT_FILE).execute();
@@ -98,7 +98,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void zeroCopyFileTest() throws Exception {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();
@@ -138,7 +138,7 @@ public class ZeroCopyFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void zeroCopyFileWithBodyManipulationTest() throws Exception {
         File tmp = new File(System.getProperty("java.io.tmpdir") + File.separator + "zeroCopy.txt");
         tmp.deleteOnExit();

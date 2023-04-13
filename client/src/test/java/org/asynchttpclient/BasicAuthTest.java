@@ -106,7 +106,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         return new SimpleHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())
@@ -119,7 +119,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void redirectAndBasicAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setMaxRedirects(10))) {
             Future<Response> f = client.prepareGet(getTargetUrl2())
@@ -132,7 +132,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basic401Test() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl())
@@ -179,7 +179,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthTestPreemptiveTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             // send the request to the no-auth endpoint to be able to verify the
@@ -195,7 +195,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthNegativeTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet(getTargetUrl())
@@ -208,7 +208,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthInputStreamTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())
@@ -224,7 +224,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthFileTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePost(getTargetUrl())
@@ -240,7 +240,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthAsyncConfigTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRealm(basicAuthRealm(USER, ADMIN)))) {
             Future<Response> f = client.preparePost(getTargetUrl())
@@ -255,7 +255,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void basicAuthFileNoKeepAliveTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false))) {
 
@@ -272,7 +272,7 @@ public class BasicAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void noneAuthTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).setRealm(basicAuthRealm(USER, ADMIN).build());

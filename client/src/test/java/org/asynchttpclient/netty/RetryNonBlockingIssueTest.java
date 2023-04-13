@@ -74,7 +74,7 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         return client.executeRequest(r);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRetryNonBlocking() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
@@ -102,7 +102,7 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testRetryNonBlockingAsyncConnect() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)

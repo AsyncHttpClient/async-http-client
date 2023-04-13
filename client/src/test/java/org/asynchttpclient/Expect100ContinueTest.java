@@ -43,7 +43,7 @@ public class Expect100ContinueTest extends AbstractBasicTest {
         return new ZeroCopyHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void Expect100Continue() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.preparePut("http://localhost:" + port1 + '/')

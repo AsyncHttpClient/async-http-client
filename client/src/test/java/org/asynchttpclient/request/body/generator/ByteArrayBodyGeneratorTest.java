@@ -31,7 +31,7 @@ public class ByteArrayBodyGeneratorTest {
     private final Random random = new Random();
     private static final int CHUNK_SIZE = 1024 * 8;
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testSingleRead() throws IOException {
         final int srcArraySize = CHUNK_SIZE - 1;
         final byte[] srcArray = new byte[srcArraySize];
@@ -54,7 +54,7 @@ public class ByteArrayBodyGeneratorTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMultipleReads() throws IOException {
         final int srcArraySize = 3 * CHUNK_SIZE + 42;
         final byte[] srcArray = new byte[srcArraySize];

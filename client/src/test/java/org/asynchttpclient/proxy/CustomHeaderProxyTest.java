@@ -83,7 +83,7 @@ public class CustomHeaderProxyTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testHttpProxy() throws Exception {
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)

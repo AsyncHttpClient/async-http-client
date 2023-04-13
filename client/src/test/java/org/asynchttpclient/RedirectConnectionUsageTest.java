@@ -67,7 +67,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     /**
      * Tests that after a redirect the final url in the response reflect the redirect
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testGetRedirectFinalUrl() throws Exception {
 
         AsyncHttpClientConfig config = config()

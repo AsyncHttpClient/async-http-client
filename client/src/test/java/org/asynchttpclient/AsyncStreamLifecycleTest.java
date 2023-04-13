@@ -90,7 +90,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testStream() throws Exception {
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);

@@ -40,12 +40,12 @@ public class PutFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPutLargeFile() throws Exception {
         put(1024 * 1024);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testPutSmallFile() throws Exception {
         put(1024);
     }

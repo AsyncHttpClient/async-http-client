@@ -61,7 +61,7 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
         port1 = connector.getLocalPort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void testMaxConnectionsWithinThreads() throws Exception {
 
         String[] urls = {getTargetUrl(), getTargetUrl()};

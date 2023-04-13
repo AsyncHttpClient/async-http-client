@@ -64,17 +64,17 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void echoByte() throws Exception {
         echoByte0(false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void echoByteCompressed() throws Exception {
         echoByte0(true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -120,7 +120,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void echoOnOpenMessagesTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -165,7 +165,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void echoFragments() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);

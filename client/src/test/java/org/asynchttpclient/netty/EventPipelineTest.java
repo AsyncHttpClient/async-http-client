@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EventPipelineTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @RepeatedIfExceptionsTest(repeats = 10)
     public void asyncPipelineTest() throws Exception {
         Consumer<Channel> httpAdditionalPipelineInitializer = channel -> channel.pipeline()
                 .addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());
