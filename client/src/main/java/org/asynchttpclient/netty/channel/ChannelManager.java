@@ -25,11 +25,9 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -44,7 +42,6 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -116,7 +113,7 @@ public class ChannelManager {
     private boolean isInstanceof(Object object, String name) {
         final Class<?> clazz;
         try {
-            clazz = Class.forName(name, false, null);
+            clazz = Class.forName(name, false, this.getClass().getClassLoader());
         } catch (ClassNotFoundException ignored) {
             return false;
         }
