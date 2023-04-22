@@ -211,8 +211,9 @@ public class ChannelManager {
                 .option(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive())
                 .option(ChannelOption.AUTO_CLOSE, false);
 
-        if (config.getConnectTimeout() > 0) {
-            bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+        final long connectTimeout = config.getConnectTimeout().toMillis();
+        if (connectTimeout > 0 && connectTimeout <= Integer.MAX_VALUE) {
+            bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout);
         }
 
         if (config.getSoLinger() >= 0) {

@@ -24,6 +24,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +43,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         String[] urls = {"https://google.com", "https://github.com"};
 
         AsyncHttpClientConfig config = config()
-                .setConnectTimeout(1000)
+                .setConnectTimeout(Duration.ofSeconds(1))
                 .setRequestTimeout(5000)
                 .setKeepAlive(false)
                 .setMaxConnections(1)
@@ -82,7 +83,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         final AtomicReference<String> failedUrl = new AtomicReference<>();
 
         AsyncHttpClientConfig config = config()
-                .setConnectTimeout(1000)
+                .setConnectTimeout(Duration.ofSeconds(1))
                 .setRequestTimeout(5000)
                 .setKeepAlive(false)
                 .setMaxConnections(2)

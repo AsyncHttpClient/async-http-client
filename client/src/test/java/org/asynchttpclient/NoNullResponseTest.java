@@ -18,6 +18,8 @@ package org.asynchttpclient;
 
 import org.junit.jupiter.api.RepeatedTest;
 
+import java.time.Duration;
+
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,7 +32,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = config()
                 .setFollowRedirect(true)
                 .setKeepAlive(true)
-                .setConnectTimeout(10000)
+                .setConnectTimeout(Duration.ofSeconds(10))
                 .setPooledConnectionIdleTimeout(60000)
                 .setRequestTimeout(10000)
                 .setMaxConnectionsPerHost(-1)

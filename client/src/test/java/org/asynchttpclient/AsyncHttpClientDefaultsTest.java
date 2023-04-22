@@ -20,6 +20,7 @@ import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,8 +50,8 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultConnectTimeOut() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 5 * 1000);
-        testIntegerSystemProperty("connectTimeout", "defaultConnectTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), Duration.ofSeconds(5));
+        testDurationSystemProperty("connectTimeout", "defaultConnectTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
@@ -196,6 +197,23 @@ public class AsyncHttpClientDefaultsTest {
         try {
             Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
             assertEquals(method.invoke(null), value);
+        } catch (Exception e) {
+            fail("Couldn't find or execute method : " + methodName, e);
+        }
+        if (previous != null) {
+            System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, previous);
+        } else {
+            System.clearProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        }
+    }
+
+    private static void testDurationSystemProperty(String propertyName, String methodName, String value) {
+        String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
+        AsyncHttpClientConfigHelper.reloadProperties();
+        try {
+            Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
+            assertEquals(method.invoke(null), Duration.parse(value));
         } catch (Exception e) {
             fail("Couldn't find or execute method : " + methodName, e);
         }

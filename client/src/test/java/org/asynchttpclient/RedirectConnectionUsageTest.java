@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.Date;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -74,7 +75,7 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
                 .setKeepAlive(true)
                 .setMaxConnectionsPerHost(1)
                 .setMaxConnections(1)
-                .setConnectTimeout(1000)
+                .setConnectTimeout(Duration.ofSeconds(1))
                 .setRequestTimeout(1000)
                 .setFollowRedirect(true)
                 .build();
