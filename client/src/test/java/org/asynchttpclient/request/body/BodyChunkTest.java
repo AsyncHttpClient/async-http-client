@@ -24,6 +24,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 
 import java.io.ByteArrayInputStream;
+import java.time.Duration;
 import java.util.concurrent.Future;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -39,7 +40,7 @@ public class BodyChunkTest extends AbstractBasicTest {
     public void negativeContentTypeTest() throws Exception {
 
         AsyncHttpClientConfig config = config()
-                .setConnectTimeout(100)
+                .setConnectTimeout(Duration.ofMillis(100))
                 .setMaxConnections(50)
                 .setRequestTimeout(5 * 60 * 1000) // 5 minutes
                 .build();

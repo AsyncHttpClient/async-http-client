@@ -35,6 +35,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -130,7 +131,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int webSocketMaxFrameSize;
 
     // timeouts
-    private final int connectTimeout;
+    private final Duration connectTimeout;
     private final int requestTimeout;
     private final int readTimeout;
     private final int shutdownQuietPeriod;
@@ -215,7 +216,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          boolean enablewebSocketCompression,
 
                                          // timeouts
-                                         int connectTimeout,
+                                         Duration connectTimeout,
                                          int requestTimeout,
                                          int readTimeout,
                                          int shutdownQuietPeriod,
@@ -472,7 +473,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     // timeouts
     @Override
-    public int getConnectTimeout() {
+    public Duration getConnectTimeout() {
         return connectTimeout;
     }
 
@@ -795,7 +796,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
 
         // timeouts
-        private int connectTimeout = defaultConnectTimeout();
+        private Duration connectTimeout = defaultConnectTimeout();
         private int requestTimeout = defaultRequestTimeout();
         private int readTimeout = defaultReadTimeout();
         private int shutdownQuietPeriod = defaultShutdownQuietPeriod();
@@ -1058,7 +1059,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         // timeouts
-        public Builder setConnectTimeout(int connectTimeout) {
+        public Builder setConnectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
             return this;
         }

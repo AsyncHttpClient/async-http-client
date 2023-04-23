@@ -28,6 +28,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -115,9 +116,9 @@ public class TransferListenerTest extends AbstractBasicTest {
 
         File file = createTempFile(1024 * 100 * 10);
 
-        int timeout = (int) (file.length() / 1000);
+        long timeout = file.length() / 1000;
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setConnectTimeout(timeout))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setConnectTimeout(Duration.ofMillis(timeout)))) {
             TransferCompletionHandler tl = new TransferCompletionHandler();
             tl.addTransferListener(new TransferListener() {
 

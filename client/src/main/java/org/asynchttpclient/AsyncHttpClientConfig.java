@@ -36,6 +36,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
@@ -78,11 +79,11 @@ public interface AsyncHttpClientConfig {
 
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+     * Return the maximum time an {@link AsyncHttpClient} can wait when connecting to a remote host
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a remote host
+     * @return the maximum time an {@link AsyncHttpClient} can wait when connecting to a remote host
      */
-    int getConnectTimeout();
+    Duration getConnectTimeout();
 
     /**
      * Return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
