@@ -93,11 +93,11 @@ public interface AsyncHttpClientConfig {
     Duration getReadTimeout();
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in pool.
+     * Return the maximum time an {@link AsyncHttpClient} will keep connection in pool.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in pool.
+     * @return the maximum time an {@link AsyncHttpClient} will keep connection in pool.
      */
-    int getPooledConnectionIdleTimeout();
+    Duration getPooledConnectionIdleTimeout();
 
     /**
      * @return the period in millis to clean the pool of dead and idle connections.
@@ -236,9 +236,9 @@ public interface AsyncHttpClientConfig {
     boolean isStrict302Handling();
 
     /**
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool, or -1 to keep connection while possible.
+     * @return the maximum time an {@link AsyncHttpClient} will keep connection in the pool, or negative value to keep connection while possible.
      */
-    int getConnectionTtl();
+    Duration getConnectionTtl();
 
     boolean isUseOpenSsl();
 
@@ -296,9 +296,9 @@ public interface AsyncHttpClientConfig {
 
     boolean isKeepEncodingHeader();
 
-    int getShutdownQuietPeriod();
+    Duration getShutdownQuietPeriod();
 
-    int getShutdownTimeout();
+    Duration getShutdownTimeout();
 
     Map<ChannelOption<Object>, Object> getChannelOptions();
 

@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -55,9 +56,9 @@ public final class DefaultChannelPool implements ChannelPool {
     private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<IdleChannel>> partitions = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
-    private final int connectionTtl;
+    private final long connectionTtl;
     private final boolean connectionTtlEnabled;
-    private final int maxIdleTime;
+    private final long maxIdleTime;
     private final boolean maxIdleTimeEnabled;
     private final long cleanerPeriod;
     private final PoolLeaseStrategy poolLeaseStrategy;
@@ -69,20 +70,20 @@ public final class DefaultChannelPool implements ChannelPool {
                 config.getConnectionPoolCleanerPeriod());
     }
 
-    public DefaultChannelPool(int maxIdleTime, int connectionTtl, Timer nettyTimer, int cleanerPeriod) {
+    public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, Timer nettyTimer, int cleanerPeriod) {
         this(maxIdleTime, connectionTtl, PoolLeaseStrategy.LIFO, nettyTimer, cleanerPeriod);
     }
 
-    public DefaultChannelPool(int maxIdleTime, int connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, int cleanerPeriod) {
-        this.maxIdleTime = maxIdleTime;
-        this.connectionTtl = connectionTtl;
-        connectionTtlEnabled = connectionTtl > 0;
+    public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, int cleanerPeriod) {
+        this.maxIdleTime = maxIdleTime.toMillis();
+        this.connectionTtl = connectionTtl.toMillis();
+        connectionTtlEnabled = this.connectionTtl > 0;
         this.nettyTimer = nettyTimer;
-        maxIdleTimeEnabled = maxIdleTime > 0;
+        maxIdleTimeEnabled = this.maxIdleTime > 0;
         this.poolLeaseStrategy = poolLeaseStrategy;
 
-        this.cleanerPeriod = Math.min(cleanerPeriod, Math.min(connectionTtlEnabled ? connectionTtl : Integer.MAX_VALUE,
-                maxIdleTimeEnabled ? maxIdleTime : Integer.MAX_VALUE));
+        this.cleanerPeriod = Math.min(cleanerPeriod, Math.min(connectionTtlEnabled ? this.connectionTtl : Integer.MAX_VALUE,
+                maxIdleTimeEnabled ? this.maxIdleTime : Integer.MAX_VALUE));
 
         if (connectionTtlEnabled || maxIdleTimeEnabled) {
             scheduleNewIdleChannelDetector(new IdleChannelDetector());

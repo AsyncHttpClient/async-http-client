@@ -132,7 +132,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testGlobalIdleTimeout() throws IOException {
         final long[] times = {-1, -1};
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(2000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(Duration.ofSeconds(2)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
                 @Override
                 public Response onCompleted(Response response) {

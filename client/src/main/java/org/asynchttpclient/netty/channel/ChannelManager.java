@@ -332,8 +332,10 @@ public class ChannelManager {
 
     public void close() {
         if (allowReleaseEventLoopGroup) {
+            final long shutdownQuietPeriod = config.getShutdownQuietPeriod().toMillis();
+            final long shutdownTimeout = config.getShutdownTimeout().toMillis();
             eventLoopGroup
-                    .shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)
+                    .shutdownGracefully(shutdownQuietPeriod, shutdownTimeout, TimeUnit.MILLISECONDS)
                     .addListener(future -> doClose());
         } else {
             doClose();

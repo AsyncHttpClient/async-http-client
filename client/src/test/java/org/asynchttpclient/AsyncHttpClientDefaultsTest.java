@@ -56,8 +56,8 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultPooledConnectionIdleTimeout() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), 60 * 1000);
-        testIntegerSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), Duration.ofMinutes(1));
+        testDurationSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
@@ -74,8 +74,8 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultConnectionTtl() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), -1);
-        testIntegerSystemProperty("connectionTtl", "defaultConnectionTtl", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), Duration.ofMillis(-1));
+        testDurationSystemProperty("connectionTtl", "defaultConnectionTtl", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
