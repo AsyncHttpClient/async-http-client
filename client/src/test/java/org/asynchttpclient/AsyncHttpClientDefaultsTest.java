@@ -62,8 +62,8 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultReadTimeout() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), 60 * 1000);
-        testIntegerSystemProperty("readTimeout", "defaultReadTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), Duration.ofSeconds(60));
+        testDurationSystemProperty("readTimeout", "defaultReadTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)

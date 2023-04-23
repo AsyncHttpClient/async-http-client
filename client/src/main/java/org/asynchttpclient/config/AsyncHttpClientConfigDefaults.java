@@ -123,8 +123,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_POOL_CLEANER_PERIOD_CONFIG);
     }
 
-    public static int defaultReadTimeout() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + READ_TIMEOUT_CONFIG);
+    public static Duration defaultReadTimeout() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + READ_TIMEOUT_CONFIG);
     }
 
     public static Duration defaultRequestTimeout() {

@@ -84,7 +84,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected File file;
     protected Boolean followRedirect;
     protected Duration requestTimeout;
-    protected int readTimeout;
+    protected Duration readTimeout;
     protected long rangeOffset;
     protected Charset charset;
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
@@ -509,7 +509,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setReadTimeout(int readTimeout) {
+    public T setReadTimeout(Duration readTimeout) {
         this.readTimeout = readTimeout;
         return asDerivedType();
     }

@@ -160,7 +160,7 @@ public interface Request {
     /**
      * @return the read timeout. Non zero values means "override config value".
      */
-    int getReadTimeout();
+    Duration getReadTimeout();
 
     /**
      * @return the range header value, or 0 is not set.

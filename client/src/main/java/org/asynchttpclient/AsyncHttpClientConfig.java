@@ -86,11 +86,11 @@ public interface AsyncHttpClientConfig {
     Duration getConnectTimeout();
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * Return the maximum time an {@link AsyncHttpClient} can stay idle.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * @return the maximum time an {@link AsyncHttpClient} can stay idle.
      */
-    int getReadTimeout();
+    Duration getReadTimeout();
 
     /**
      * Return the maximum time in millisecond an {@link AsyncHttpClient} will keep connection in pool.
