@@ -134,14 +134,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final Duration connectTimeout;
     private final Duration requestTimeout;
     private final Duration readTimeout;
-    private final int shutdownQuietPeriod;
-    private final int shutdownTimeout;
+    private final Duration shutdownQuietPeriod;
+    private final Duration shutdownTimeout;
 
     // keep-alive
     private final boolean keepAlive;
-    private final int pooledConnectionIdleTimeout;
-    private final int connectionPoolCleanerPeriod;
-    private final int connectionTtl;
+    private final Duration pooledConnectionIdleTimeout;
+    private final Duration connectionPoolCleanerPeriod;
+    private final Duration connectionTtl;
     private final int maxConnections;
     private final int maxConnectionsPerHost;
     private final int acquireFreeChannelTimeout;
@@ -219,14 +219,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          Duration connectTimeout,
                                          Duration requestTimeout,
                                          Duration readTimeout,
-                                         int shutdownQuietPeriod,
-                                         int shutdownTimeout,
+                                         Duration shutdownQuietPeriod,
+                                         Duration shutdownTimeout,
 
                                          // keep-alive
                                          boolean keepAlive,
-                                         int pooledConnectionIdleTimeout,
-                                         int connectionPoolCleanerPeriod,
-                                         int connectionTtl,
+                                         Duration pooledConnectionIdleTimeout,
+                                         Duration connectionPoolCleanerPeriod,
+                                         Duration connectionTtl,
                                          int maxConnections,
                                          int maxConnectionsPerHost,
                                          int acquireFreeChannelTimeout,
@@ -488,12 +488,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public int getShutdownQuietPeriod() {
+    public Duration getShutdownQuietPeriod() {
         return shutdownQuietPeriod;
     }
 
     @Override
-    public int getShutdownTimeout() {
+    public Duration getShutdownTimeout() {
         return shutdownTimeout;
     }
 
@@ -504,17 +504,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public int getPooledConnectionIdleTimeout() {
+    public Duration getPooledConnectionIdleTimeout() {
         return pooledConnectionIdleTimeout;
     }
 
     @Override
-    public int getConnectionPoolCleanerPeriod() {
+    public Duration getConnectionPoolCleanerPeriod() {
         return connectionPoolCleanerPeriod;
     }
 
     @Override
-    public int getConnectionTtl() {
+    public Duration getConnectionTtl() {
         return connectionTtl;
     }
 
@@ -799,14 +799,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private Duration connectTimeout = defaultConnectTimeout();
         private Duration requestTimeout = defaultRequestTimeout();
         private Duration readTimeout = defaultReadTimeout();
-        private int shutdownQuietPeriod = defaultShutdownQuietPeriod();
-        private int shutdownTimeout = defaultShutdownTimeout();
+        private Duration shutdownQuietPeriod = defaultShutdownQuietPeriod();
+        private Duration shutdownTimeout = defaultShutdownTimeout();
 
         // keep-alive
         private boolean keepAlive = defaultKeepAlive();
-        private int pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
-        private int connectionPoolCleanerPeriod = defaultConnectionPoolCleanerPeriod();
-        private int connectionTtl = defaultConnectionTtl();
+        private Duration pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
+        private Duration connectionPoolCleanerPeriod = defaultConnectionPoolCleanerPeriod();
+        private Duration connectionTtl = defaultConnectionTtl();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
         private int acquireFreeChannelTimeout = defaultAcquireFreeChannelTimeout();
@@ -1074,12 +1074,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setShutdownQuietPeriod(int shutdownQuietPeriod) {
+        public Builder setShutdownQuietPeriod(Duration shutdownQuietPeriod) {
             this.shutdownQuietPeriod = shutdownQuietPeriod;
             return this;
         }
 
-        public Builder setShutdownTimeout(int shutdownTimeout) {
+        public Builder setShutdownTimeout(Duration shutdownTimeout) {
             this.shutdownTimeout = shutdownTimeout;
             return this;
         }
@@ -1090,17 +1090,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setPooledConnectionIdleTimeout(int pooledConnectionIdleTimeout) {
+        public Builder setPooledConnectionIdleTimeout(Duration pooledConnectionIdleTimeout) {
             this.pooledConnectionIdleTimeout = pooledConnectionIdleTimeout;
             return this;
         }
 
-        public Builder setConnectionPoolCleanerPeriod(int connectionPoolCleanerPeriod) {
+        public Builder setConnectionPoolCleanerPeriod(Duration connectionPoolCleanerPeriod) {
             this.connectionPoolCleanerPeriod = connectionPoolCleanerPeriod;
             return this;
         }
 
-        public Builder setConnectionTtl(int connectionTtl) {
+        public Builder setConnectionTtl(Duration connectionTtl) {
             this.connectionTtl = connectionTtl;
             return this;
         }

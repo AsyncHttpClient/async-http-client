@@ -33,7 +33,7 @@ public class NoNullResponseTest extends AbstractBasicTest {
                 .setFollowRedirect(true)
                 .setKeepAlive(true)
                 .setConnectTimeout(Duration.ofSeconds(10))
-                .setPooledConnectionIdleTimeout(60000)
+                .setPooledConnectionIdleTimeout(Duration.ofMinutes(1))
                 .setRequestTimeout(Duration.ofSeconds(10))
                 .setMaxConnectionsPerHost(-1)
                 .setMaxConnections(-1)
