@@ -59,7 +59,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <netty.version>4.1.91.Final</netty.version>
-        <netty.iouring>0.0.19.Final</netty.iouring>
+        <netty.iouring>0.0.20.Final</netty.iouring>
         <slf4j.version>2.0.7</slf4j.version>
         <activation.version>2.0.1</activation.version>
         <logback.version>1.4.6</logback.version>
