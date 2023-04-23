@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.Exchanger;
 import java.util.function.Consumer;
@@ -45,7 +46,7 @@ public class NettyConnectionResetByPeerTest {
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testAsyncHttpClientConnectionResetByPeer() throws InterruptedException {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
-                .setRequestTimeout(1500)
+                .setRequestTimeout(Duration.ofMillis(1500))
                 .build();
         try (AsyncHttpClient asyncHttpClient = new DefaultAsyncHttpClient(config)) {
             asyncHttpClient.executeRequest(new RequestBuilder("GET").setUrl(resettingServerAddress)).get();

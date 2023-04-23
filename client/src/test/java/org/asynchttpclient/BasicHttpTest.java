@@ -43,6 +43,7 @@ import java.net.ConnectException;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -679,7 +680,7 @@ public class BasicHttpTest extends HttpTest {
     @RepeatedIfExceptionsTest(repeats = 5)
     public void configTimeoutNotifiesOnThrowableAndFuture() throws Throwable {
         assertThrows(TimeoutException.class, () -> {
-            withClient(config().setRequestTimeout(1_000)).run(client ->
+            withClient(config().setRequestTimeout(Duration.ofSeconds(1))).run(client ->
                     withServer(server).run(server -> {
                         HttpHeaders headers = new DefaultHttpHeaders();
                         headers.add("X-Delay", 5_000); // delay greater than timeout
@@ -724,7 +725,7 @@ public class BasicHttpTest extends HttpTest {
     @RepeatedIfExceptionsTest(repeats = 5)
     public void configRequestTimeoutHappensInDueTime() throws Throwable {
         assertThrows(TimeoutException.class, () -> {
-            withClient(config().setRequestTimeout(1_000)).run(client ->
+            withClient(config().setRequestTimeout(Duration.ofSeconds(1))).run(client ->
                     withServer(server).run(server -> {
                         HttpHeaders h = new DefaultHttpHeaders();
                         h.add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);

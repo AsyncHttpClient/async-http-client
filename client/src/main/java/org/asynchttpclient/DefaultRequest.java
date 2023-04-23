@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,7 +58,7 @@ public class DefaultRequest implements Request {
     private final Realm realm;
     private final File file;
     private final Boolean followRedirect;
-    private final int requestTimeout;
+    private final Duration requestTimeout;
     private final int readTimeout;
     private final long rangeOffset;
     private final Charset charset;
@@ -86,7 +87,7 @@ public class DefaultRequest implements Request {
                           Realm realm,
                           File file,
                           Boolean followRedirect,
-                          int requestTimeout,
+                          Duration requestTimeout,
                           int readTimeout,
                           long rangeOffset,
                           Charset charset,
@@ -111,7 +112,7 @@ public class DefaultRequest implements Request {
         this.realm = realm;
         this.file = file;
         this.followRedirect = followRedirect;
-        this.requestTimeout = requestTimeout;
+        this.requestTimeout = requestTimeout == null ? Duration.ZERO : requestTimeout;
         this.readTimeout = readTimeout;
         this.rangeOffset = rangeOffset;
         this.charset = charset;
@@ -220,7 +221,7 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public int getRequestTimeout() {
+    public Duration getRequestTimeout() {
         return requestTimeout;
     }
 

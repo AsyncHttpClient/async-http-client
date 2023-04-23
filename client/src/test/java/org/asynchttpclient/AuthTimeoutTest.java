@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuthTimeoutTest extends AbstractBasicTest {
 
-    private static final int REQUEST_TIMEOUT = 1000;
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(1);
     private static final int SHORT_FUTURE_TIMEOUT = 500; // shorter than REQUEST_TIMEOUT
     private static final int LONG_FUTURE_TIMEOUT = 1500; // longer than REQUEST_TIMEOUT
 

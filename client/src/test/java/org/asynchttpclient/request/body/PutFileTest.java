@@ -24,6 +24,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -34,7 +35,7 @@ public class PutFileTest extends AbstractBasicTest {
 
     private void put(int fileSize) throws Exception {
         File file = createTempFile(fileSize);
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(2000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(2)))) {
             Response response = client.preparePut(getTargetUrl()).setBody(file).execute().get();
             assertEquals(response.getStatusCode(), 200);
         }

@@ -105,11 +105,11 @@ public interface AsyncHttpClientConfig {
     int getConnectionPoolCleanerPeriod();
 
     /**
-     * Return the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
+     * Return the maximum time an {@link AsyncHttpClient} waits until the response is completed.
      *
-     * @return the maximum time in millisecond an {@link AsyncHttpClient} waits until the response is completed.
+     * @return the maximum time an {@link AsyncHttpClient} waits until the response is completed.
      */
-    int getRequestTimeout();
+    Duration getRequestTimeout();
 
     /**
      * Is HTTP redirect enabled

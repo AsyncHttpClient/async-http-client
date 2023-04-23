@@ -107,7 +107,7 @@ public class ChunkingTest extends AbstractBasicTest {
                 .setMaxConnectionsPerHost(1)
                 .setMaxConnections(1)
                 .setConnectTimeout(Duration.ofSeconds(1))
-                .setRequestTimeout(1000)
+                .setRequestTimeout(Duration.ofSeconds(1))
                 .setFollowRedirect(true);
     }
 

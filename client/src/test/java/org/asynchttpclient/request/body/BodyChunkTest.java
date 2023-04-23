@@ -42,7 +42,7 @@ public class BodyChunkTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(Duration.ofMillis(100))
                 .setMaxConnections(50)
-                .setRequestTimeout(5 * 60 * 1000) // 5 minutes
+                .setRequestTimeout(Duration.ofMinutes(5))
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
