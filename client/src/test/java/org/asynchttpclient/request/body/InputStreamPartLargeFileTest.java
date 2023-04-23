@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -69,7 +70,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testPutImageFile() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(),
                     LARGE_IMAGE_FILE.length(), "application/octet-stream", UTF_8)).execute().get();
@@ -79,7 +80,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testPutImageFileUnknownSize() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
             Response response = client.preparePut(getTargetUrl()).addBodyPart(new InputStreamPart("test", inputStream, LARGE_IMAGE_FILE.getName(),
                     -1, "application/octet-stream", UTF_8)).execute().get();
@@ -92,7 +93,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             Response response = client.preparePut(getTargetUrl())
                     .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), file.length(),
                             "application/octet-stream", UTF_8)).execute().get();
@@ -105,7 +106,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             Response response = client.preparePut(getTargetUrl())
                     .addBodyPart(new InputStreamPart("test", inputStream, file.getName(), -1,
                             "application/octet-stream", UTF_8)).execute().get();

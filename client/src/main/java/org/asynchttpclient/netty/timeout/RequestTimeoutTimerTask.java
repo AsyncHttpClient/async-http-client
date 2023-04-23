@@ -29,7 +29,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
     RequestTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture,
                             NettyRequestSender requestSender,
                             TimeoutsHolder timeoutsHolder,
-                            int requestTimeout) {
+                            long requestTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.requestTimeout = requestTimeout;
     }

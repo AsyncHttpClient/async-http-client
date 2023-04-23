@@ -53,12 +53,12 @@ public class TimeoutsHolder {
         final int readTimeoutInMs = targetRequest.getReadTimeout();
         readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
 
-        int requestTimeoutInMs = targetRequest.getRequestTimeout();
+        long requestTimeoutInMs = targetRequest.getRequestTimeout().toMillis();
         if (requestTimeoutInMs == 0) {
-            requestTimeoutInMs = config.getRequestTimeout();
+            requestTimeoutInMs = config.getRequestTimeout().toMillis();
         }
 
-        if (requestTimeoutInMs != -1) {
+        if (requestTimeoutInMs > -1) {
             requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
             requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs), requestTimeoutInMs);
         } else {

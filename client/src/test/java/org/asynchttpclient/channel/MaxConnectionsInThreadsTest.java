@@ -69,7 +69,7 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(Duration.ofSeconds(1))
-                .setRequestTimeout(5000)
+                .setRequestTimeout(Duration.ofSeconds(5))
                 .setKeepAlive(true)
                 .setMaxConnections(1)
                 .setMaxConnectionsPerHost(1)

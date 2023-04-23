@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -82,7 +83,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected Realm realm;
     protected File file;
     protected Boolean followRedirect;
-    protected int requestTimeout;
+    protected Duration requestTimeout;
     protected int readTimeout;
     protected long rangeOffset;
     protected Charset charset;
@@ -503,7 +504,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setRequestTimeout(int requestTimeout) {
+    public T setRequestTimeout(Duration requestTimeout) {
         this.requestTimeout = requestTimeout;
         return asDerivedType();
     }

@@ -120,7 +120,7 @@ import java.util.function.Predicate;
  * Finally, you can configure the AsyncHttpClient using an {@link DefaultAsyncHttpClientConfig} instance.
  * <br>
  * <blockquote><pre>
- *      AsyncHttpClient c = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().setRequestTimeoutInMs(...).build());
+ *      AsyncHttpClient c = new AsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(...).build());
  *      Future&lt;Response&gt; f = c.prepareGet(TARGET_URL).execute();
  *      Response r = f.get();
  * </pre></blockquote>

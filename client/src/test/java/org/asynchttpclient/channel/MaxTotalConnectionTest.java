@@ -44,7 +44,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(Duration.ofSeconds(1))
-                .setRequestTimeout(5000)
+                .setRequestTimeout(Duration.ofSeconds(5))
                 .setKeepAlive(false)
                 .setMaxConnections(1)
                 .setMaxConnectionsPerHost(1)
@@ -84,7 +84,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(Duration.ofSeconds(1))
-                .setRequestTimeout(5000)
+                .setRequestTimeout(Duration.ofSeconds(5))
                 .setKeepAlive(false)
                 .setMaxConnections(2)
                 .setMaxConnectionsPerHost(1)

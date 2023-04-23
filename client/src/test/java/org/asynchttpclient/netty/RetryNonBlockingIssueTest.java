@@ -81,7 +81,7 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
                 .setKeepAlive(true)
                 .setMaxConnections(100)
                 .setConnectTimeout(Duration.ofMinutes(1))
-                .setRequestTimeout(30000)
+                .setRequestTimeout(Duration.ofSeconds(30))
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
@@ -109,7 +109,7 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
                 .setKeepAlive(true)
                 .setMaxConnections(100)
                 .setConnectTimeout(Duration.ofMinutes(1))
-                .setRequestTimeout(30000)
+                .setRequestTimeout(Duration.ofSeconds(30))
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
