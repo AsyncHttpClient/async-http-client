@@ -70,20 +70,23 @@ public final class DefaultChannelPool implements ChannelPool {
                 config.getConnectionPoolCleanerPeriod());
     }
 
-    public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, Timer nettyTimer, int cleanerPeriod) {
+    public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, Timer nettyTimer, Duration cleanerPeriod) {
         this(maxIdleTime, connectionTtl, PoolLeaseStrategy.LIFO, nettyTimer, cleanerPeriod);
     }
 
-    public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, int cleanerPeriod) {
-        this.maxIdleTime = maxIdleTime.toMillis();
-        this.connectionTtl = connectionTtl.toMillis();
-        connectionTtlEnabled = this.connectionTtl > 0;
+    public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, Duration cleanerPeriod) {
+        final long maxIdleTimeInMs = maxIdleTime.toMillis();
+        final long connectionTtlInMs = connectionTtl.toMillis();
+        final long cleanerPeriodInMs = cleanerPeriod.toMillis();
+        this.maxIdleTime = maxIdleTimeInMs;
+        this.connectionTtl = connectionTtlInMs;
+        connectionTtlEnabled = connectionTtlInMs > 0;
         this.nettyTimer = nettyTimer;
-        maxIdleTimeEnabled = this.maxIdleTime > 0;
+        maxIdleTimeEnabled = maxIdleTimeInMs > 0;
         this.poolLeaseStrategy = poolLeaseStrategy;
 
-        this.cleanerPeriod = Math.min(cleanerPeriod, Math.min(connectionTtlEnabled ? this.connectionTtl : Integer.MAX_VALUE,
-                maxIdleTimeEnabled ? this.maxIdleTime : Integer.MAX_VALUE));
+        this.cleanerPeriod = Math.min(cleanerPeriodInMs, Math.min(connectionTtlEnabled ? connectionTtlInMs : Integer.MAX_VALUE,
+                maxIdleTimeEnabled ? maxIdleTimeInMs : Integer.MAX_VALUE));
 
         if (connectionTtlEnabled || maxIdleTimeEnabled) {
             scheduleNewIdleChannelDetector(new IdleChannelDetector());

@@ -119,8 +119,8 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG);
     }
 
-    public static int defaultConnectionPoolCleanerPeriod() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_POOL_CLEANER_PERIOD_CONFIG);
+    public static Duration defaultConnectionPoolCleanerPeriod() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_POOL_CLEANER_PERIOD_CONFIG);
     }
 
     public static Duration defaultReadTimeout() {

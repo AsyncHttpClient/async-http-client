@@ -100,9 +100,9 @@ public interface AsyncHttpClientConfig {
     Duration getPooledConnectionIdleTimeout();
 
     /**
-     * @return the period in millis to clean the pool of dead and idle connections.
+     * @return the period to clean the pool of dead and idle connections.
      */
-    int getConnectionPoolCleanerPeriod();
+    Duration getConnectionPoolCleanerPeriod();
 
     /**
      * Return the maximum time an {@link AsyncHttpClient} waits until the response is completed.

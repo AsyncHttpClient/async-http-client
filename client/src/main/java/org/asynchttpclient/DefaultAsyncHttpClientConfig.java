@@ -140,7 +140,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // keep-alive
     private final boolean keepAlive;
     private final Duration pooledConnectionIdleTimeout;
-    private final int connectionPoolCleanerPeriod;
+    private final Duration connectionPoolCleanerPeriod;
     private final Duration connectionTtl;
     private final int maxConnections;
     private final int maxConnectionsPerHost;
@@ -225,7 +225,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          // keep-alive
                                          boolean keepAlive,
                                          Duration pooledConnectionIdleTimeout,
-                                         int connectionPoolCleanerPeriod,
+                                         Duration connectionPoolCleanerPeriod,
                                          Duration connectionTtl,
                                          int maxConnections,
                                          int maxConnectionsPerHost,
@@ -509,7 +509,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public int getConnectionPoolCleanerPeriod() {
+    public Duration getConnectionPoolCleanerPeriod() {
         return connectionPoolCleanerPeriod;
     }
 
@@ -805,7 +805,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // keep-alive
         private boolean keepAlive = defaultKeepAlive();
         private Duration pooledConnectionIdleTimeout = defaultPooledConnectionIdleTimeout();
-        private int connectionPoolCleanerPeriod = defaultConnectionPoolCleanerPeriod();
+        private Duration connectionPoolCleanerPeriod = defaultConnectionPoolCleanerPeriod();
         private Duration connectionTtl = defaultConnectionTtl();
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
@@ -1095,7 +1095,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setConnectionPoolCleanerPeriod(int connectionPoolCleanerPeriod) {
+        public Builder setConnectionPoolCleanerPeriod(Duration connectionPoolCleanerPeriod) {
             this.connectionPoolCleanerPeriod = connectionPoolCleanerPeriod;
             return this;
         }
