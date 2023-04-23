@@ -133,7 +133,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     // timeouts
     private final Duration connectTimeout;
     private final Duration requestTimeout;
-    private final int readTimeout;
+    private final Duration readTimeout;
     private final int shutdownQuietPeriod;
     private final int shutdownTimeout;
 
@@ -218,7 +218,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          // timeouts
                                          Duration connectTimeout,
                                          Duration requestTimeout,
-                                         int readTimeout,
+                                         Duration readTimeout,
                                          int shutdownQuietPeriod,
                                          int shutdownTimeout,
 
@@ -483,7 +483,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public int getReadTimeout() {
+    public Duration getReadTimeout() {
         return readTimeout;
     }
 
@@ -798,7 +798,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         // timeouts
         private Duration connectTimeout = defaultConnectTimeout();
         private Duration requestTimeout = defaultRequestTimeout();
-        private int readTimeout = defaultReadTimeout();
+        private Duration readTimeout = defaultReadTimeout();
         private int shutdownQuietPeriod = defaultShutdownQuietPeriod();
         private int shutdownTimeout = defaultShutdownTimeout();
 
@@ -1069,7 +1069,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setReadTimeout(int readTimeout) {
+        public Builder setReadTimeout(Duration readTimeout) {
             this.readTimeout = readTimeout;
             return this;
         }

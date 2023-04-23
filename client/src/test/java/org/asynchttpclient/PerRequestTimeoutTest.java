@@ -82,7 +82,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testReadTimeout() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(100))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(Duration.ofMillis(100)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
