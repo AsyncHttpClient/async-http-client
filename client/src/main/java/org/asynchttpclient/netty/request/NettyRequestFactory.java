@@ -172,13 +172,10 @@ public final class NettyRequestFactory {
 
             String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
             if (userDefinedAcceptEncoding != null) {
-                if (config.isEnableAutomaticDecompression()) {
-                    // we don't support Brotly ATM, for automatic decompression.
-                    // For manual decompression by user, any encoding may suite, so leave untouched
-                    headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
-                }
+                // we don't support Brotly ATM
+                headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
+
             } else if (config.isCompressionEnforced()) {
-                // Add Accept Encoding header if compression is enforced
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
             }
         }
