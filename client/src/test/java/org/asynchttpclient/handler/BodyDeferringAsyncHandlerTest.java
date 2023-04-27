@@ -33,6 +33,7 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -61,7 +62,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     private static AsyncHttpClientConfig getAsyncHttpClientConfig() {
         // for this test brevity's sake, we are limiting to 1 retries
-        return config().setMaxRequestRetry(0).setRequestTimeout(10000).build();
+        return config().setMaxRequestRetry(0).setRequestTimeout(Duration.ofSeconds(10)).build();
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
@@ -179,7 +180,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void deferredInputStreamTrickWithCloseConnectionAndRetry() throws Throwable {
-        try (AsyncHttpClient client = asyncHttpClient(config().setMaxRequestRetry(1).setRequestTimeout(10000).build())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setMaxRequestRetry(1).setRequestTimeout(Duration.ofSeconds(10)).build())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-CLOSE-CONNECTION", Boolean.TRUE.toString());
             PipedOutputStream pos = new PipedOutputStream();
             PipedInputStream pis = new PipedInputStream(pos);

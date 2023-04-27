@@ -25,6 +25,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -63,7 +64,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testPutImageFile() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             Response response = client.preparePut(getTargetUrl())
                     .addBodyPart(new FilePart("test", LARGE_IMAGE_FILE, "application/octet-stream", UTF_8))
                     .execute()
@@ -76,7 +77,7 @@ public class FilePartLargeFileTest extends AbstractBasicTest {
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100 * 6000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             Response response = client.preparePut(getTargetUrl())
                     .addBodyPart(new FilePart("test", file, "application/octet-stream", UTF_8))
                     .execute()

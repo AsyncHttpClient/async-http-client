@@ -20,6 +20,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.junit.jupiter.api.Disabled;
 
+import java.time.Duration;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +36,10 @@ public class TimeToLiveIssueTest extends AbstractBasicTest {
         // 1) Connections that are rejected by the pool are not closed and eventually use all available sockets.
         // 2) It is possible for a connection to be closed while active by the timer task that checks for expired connections.
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectionTtl(1).setPooledConnectionIdleTimeout(1))) {
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setKeepAlive(true)
+                .setConnectionTtl(Duration.ofMillis(1))
+                .setPooledConnectionIdleTimeout(Duration.ofMillis(1)))) {
 
             for (int i = 0; i < 200000; ++i) {
                 Request request = new RequestBuilder().setUrl(String.format("http://localhost:%d/", port1)).build();

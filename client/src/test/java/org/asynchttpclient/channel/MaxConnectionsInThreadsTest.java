@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,8 +68,8 @@ public class MaxConnectionsInThreadsTest extends AbstractBasicTest {
         String[] urls = {getTargetUrl(), getTargetUrl()};
 
         AsyncHttpClientConfig config = config()
-                .setConnectTimeout(1000)
-                .setRequestTimeout(5000)
+                .setConnectTimeout(Duration.ofSeconds(1))
+                .setRequestTimeout(Duration.ofSeconds(5))
                 .setKeepAlive(true)
                 .setMaxConnections(1)
                 .setMaxConnectionsPerHost(1)

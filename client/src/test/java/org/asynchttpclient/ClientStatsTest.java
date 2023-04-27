@@ -17,6 +17,7 @@ package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,7 +36,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testClientStatus() throws Throwable {
-        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(5000))) {
+        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(Duration.ofSeconds(5)))) {
             final String url = getTargetUrl();
 
             final ClientStats emptyStats = client.getClientStats();
@@ -114,7 +115,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testClientStatusNoKeepalive() throws Throwable {
-        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setPooledConnectionIdleTimeout(1000))) {
+        try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setPooledConnectionIdleTimeout(Duration.ofSeconds(1)))) {
             final String url = getTargetUrl();
 
             final ClientStats emptyStats = client.getClientStats();

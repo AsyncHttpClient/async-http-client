@@ -25,6 +25,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +63,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                         requestThrottle.acquire();
                         Future<Response> responseFuture = null;
                         try {
-                            responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(SLEEPTIME_MS / 2)
+                            responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(Duration.ofMillis(SLEEPTIME_MS / 2))
                                     .execute(new AsyncCompletionHandler<Response>() {
 
                                         @Override

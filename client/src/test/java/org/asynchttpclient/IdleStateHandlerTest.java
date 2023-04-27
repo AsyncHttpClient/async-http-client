@@ -26,6 +26,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -48,7 +49,7 @@ public class IdleStateHandlerTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void idleStateTest() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(10 * 1000))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setPooledConnectionIdleTimeout(Duration.ofSeconds(10)))) {
             c.prepareGet(getTargetUrl()).execute().get();
         } catch (ExecutionException e) {
             fail("Should allow to finish processing request.", e);

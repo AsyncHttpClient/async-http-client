@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,8 +58,8 @@ public class DefaultRequest implements Request {
     private final Realm realm;
     private final File file;
     private final Boolean followRedirect;
-    private final int requestTimeout;
-    private final int readTimeout;
+    private final Duration requestTimeout;
+    private final Duration readTimeout;
     private final long rangeOffset;
     private final Charset charset;
     private final ChannelPoolPartitioning channelPoolPartitioning;
@@ -86,8 +87,8 @@ public class DefaultRequest implements Request {
                           Realm realm,
                           File file,
                           Boolean followRedirect,
-                          int requestTimeout,
-                          int readTimeout,
+                          Duration requestTimeout,
+                          Duration readTimeout,
                           long rangeOffset,
                           Charset charset,
                           ChannelPoolPartitioning channelPoolPartitioning,
@@ -111,8 +112,8 @@ public class DefaultRequest implements Request {
         this.realm = realm;
         this.file = file;
         this.followRedirect = followRedirect;
-        this.requestTimeout = requestTimeout;
-        this.readTimeout = readTimeout;
+        this.requestTimeout = requestTimeout == null ? Duration.ZERO : requestTimeout;
+        this.readTimeout = readTimeout == null ? Duration.ZERO : readTimeout;
         this.rangeOffset = rangeOffset;
         this.charset = charset;
         this.channelPoolPartitioning = channelPoolPartitioning;
@@ -220,12 +221,12 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public int getRequestTimeout() {
+    public Duration getRequestTimeout() {
         return requestTimeout;
     }
 
     @Override
-    public int getReadTimeout() {
+    public Duration getReadTimeout() {
         return readTimeout;
     }
 

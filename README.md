@@ -20,7 +20,7 @@ Add a dependency on the main AsyncHttpClient artifact:
     <dependency>
         <groupId>org.asynchttpclient</groupId>
         <artifactId>async-http-client</artifactId>
-        <version>3.0.0.Beta1</version>
+        <version>3.0.0.Beta2</version>
     </dependency>
 </dependencies>
 ```

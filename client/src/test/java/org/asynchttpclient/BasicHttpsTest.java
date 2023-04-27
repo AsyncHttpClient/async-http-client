@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -172,7 +173,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug(">>> failInstantlyIfNotAllowedSelfSignedCertificate");
 
         assertThrows(SSLHandshakeException.class, () -> {
-            withClient(config().setMaxRequestRetry(0).setRequestTimeout(2000)).run(client ->
+            withClient(config().setMaxRequestRetry(0).setRequestTimeout(Duration.ofSeconds(2))).run(client ->
                     withServer(server).run(server -> {
                         try {
                             client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, SECONDS);

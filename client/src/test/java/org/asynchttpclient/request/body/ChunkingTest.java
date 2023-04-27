@@ -27,6 +27,7 @@ import org.asynchttpclient.request.body.generator.UnboundedQueueFeedableBodyGene
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -105,8 +106,8 @@ public class ChunkingTest extends AbstractBasicTest {
                 .setKeepAlive(true)
                 .setMaxConnectionsPerHost(1)
                 .setMaxConnections(1)
-                .setConnectTimeout(1000)
-                .setRequestTimeout(1000)
+                .setConnectTimeout(Duration.ofSeconds(1))
+                .setRequestTimeout(Duration.ofSeconds(1))
                 .setFollowRedirect(true);
     }
 

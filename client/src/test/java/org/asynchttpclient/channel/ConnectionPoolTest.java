@@ -28,6 +28,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -163,7 +164,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void multipleMaxConnectionOpenTest() throws Exception {
-        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(Duration.ofSeconds(5)).setMaxConnections(1))) {
             String body = "hello there";
 
             // once
@@ -180,7 +181,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void multipleMaxConnectionOpenTestWithQuery() throws Exception {
-        try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(5000).setMaxConnections(1))) {
+        try (AsyncHttpClient c = asyncHttpClient(config().setKeepAlive(true).setConnectTimeout(Duration.ofSeconds(5)).setMaxConnections(1))) {
             String body = "hello there";
 
             // once

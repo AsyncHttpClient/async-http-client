@@ -20,6 +20,7 @@ import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,32 +50,32 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultConnectTimeOut() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), 5 * 1000);
-        testIntegerSystemProperty("connectTimeout", "defaultConnectTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectTimeout(), Duration.ofSeconds(5));
+        testDurationSystemProperty("connectTimeout", "defaultConnectTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultPooledConnectionIdleTimeout() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), 60 * 1000);
-        testIntegerSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout(), Duration.ofMinutes(1));
+        testDurationSystemProperty("pooledConnectionIdleTimeout", "defaultPooledConnectionIdleTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultReadTimeout() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), 60 * 1000);
-        testIntegerSystemProperty("readTimeout", "defaultReadTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultReadTimeout(), Duration.ofSeconds(60));
+        testDurationSystemProperty("readTimeout", "defaultReadTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultRequestTimeout() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultRequestTimeout(), 60 * 1000);
-        testIntegerSystemProperty("requestTimeout", "defaultRequestTimeout", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultRequestTimeout(), Duration.ofSeconds(60));
+        testDurationSystemProperty("requestTimeout", "defaultRequestTimeout", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultConnectionTtl() {
-        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), -1);
-        testIntegerSystemProperty("connectionTtl", "defaultConnectionTtl", "100");
+        assertEquals(AsyncHttpClientConfigDefaults.defaultConnectionTtl(), Duration.ofMillis(-1));
+        testDurationSystemProperty("connectionTtl", "defaultConnectionTtl", "PT0.1S");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
@@ -196,6 +197,23 @@ public class AsyncHttpClientDefaultsTest {
         try {
             Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
             assertEquals(method.invoke(null), value);
+        } catch (Exception e) {
+            fail("Couldn't find or execute method : " + methodName, e);
+        }
+        if (previous != null) {
+            System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, previous);
+        } else {
+            System.clearProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        }
+    }
+
+    private static void testDurationSystemProperty(String propertyName, String methodName, String value) {
+        String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
+        System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);
+        AsyncHttpClientConfigHelper.reloadProperties();
+        try {
+            Method method = AsyncHttpClientConfigDefaults.class.getMethod(methodName);
+            assertEquals(method.invoke(null), Duration.parse(value));
         } catch (Exception e) {
             fail("Couldn't find or execute method : " + methodName, e);
         }

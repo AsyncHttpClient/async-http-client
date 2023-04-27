@@ -17,6 +17,7 @@ package org.asynchttpclient.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -109,6 +110,10 @@ public final class AsyncHttpClientConfigHelper {
 
         public boolean getBoolean(String key) {
             return Boolean.parseBoolean(getString(key));
+        }
+
+        public Duration getDuration(String key) {
+            return Duration.parse(getString(key));
         }
     }
 }

@@ -31,6 +31,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,8 +80,8 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
                 .setMaxConnections(100)
-                .setConnectTimeout(60000)
-                .setRequestTimeout(30000)
+                .setConnectTimeout(Duration.ofMinutes(1))
+                .setRequestTimeout(Duration.ofSeconds(30))
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {
@@ -107,8 +108,8 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
         AsyncHttpClientConfig config = config()
                 .setKeepAlive(true)
                 .setMaxConnections(100)
-                .setConnectTimeout(60000)
-                .setRequestTimeout(30000)
+                .setConnectTimeout(Duration.ofMinutes(1))
+                .setRequestTimeout(Duration.ofSeconds(30))
                 .build();
 
         try (AsyncHttpClient client = asyncHttpClient(config)) {

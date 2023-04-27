@@ -20,7 +20,7 @@
 
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
-    <version>3.0.0.Beta1</version>
+    <version>3.0.0.Beta2</version>
     <packaging>pom</packaging>
 
     <name>AHC/Project</name>
@@ -58,8 +58,8 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.87.Final</netty.version>
-        <netty.iouring>0.0.16.Final</netty.iouring>
+        <netty.version>4.1.91.Final</netty.version>
+        <netty.iouring>0.0.20.Final</netty.iouring>
         <slf4j.version>2.0.5</slf4j.version>
         <activation.version>2.0.1</activation.version>
         <logback.version>1.4.5</logback.version>
@@ -220,7 +220,7 @@
                 <version>2.22.2</version>
                 <configuration>
                     <argLine>
-                        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+                        @{argLine} --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
                     </argLine>
                 </configuration>
             </plugin>
@@ -228,7 +228,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.7</version>
+                <version>0.8.9</version>
                 <executions>
                     <execution>
                         <goals>

@@ -25,11 +25,9 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -44,7 +42,6 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -113,6 +110,16 @@ public class ChannelManager {
 
     private AsyncHttpClientHandler wsHandler;
 
+    private boolean isInstanceof(Object object, String name) {
+        final Class<?> clazz;
+        try {
+            clazz = Class.forName(name, false, this.getClass().getClassLoader());
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        }
+        return clazz.isInstance(object);
+    }
+
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
         this.config = config;
 
@@ -153,11 +160,11 @@ public class ChannelManager {
 
             if (eventLoopGroup instanceof NioEventLoopGroup) {
                 transportFactory = NioTransportFactory.INSTANCE;
-            } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
+            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
                 transportFactory = new EpollTransportFactory();
-            } else if (eventLoopGroup instanceof KQueueEventLoopGroup) {
+            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
                 transportFactory = new KQueueTransportFactory();
-            } else if (eventLoopGroup instanceof IOUringEventLoopGroup) {
+            } else if (isInstanceof(eventLoopGroup, "io.netty.incubator.channel.uring.IOUringEventLoopGroup")) {
                 transportFactory = new IoUringIncubatorTransportFactory();
             } else {
                 throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
@@ -204,8 +211,10 @@ public class ChannelManager {
                 .option(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive())
                 .option(ChannelOption.AUTO_CLOSE, false);
 
-        if (config.getConnectTimeout() > 0) {
-            bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectTimeout());
+        long connectTimeout = config.getConnectTimeout().toMillis();
+        if (connectTimeout > 0) {
+            connectTimeout = Math.min(connectTimeout, Integer.MAX_VALUE);
+            bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout);
         }
 
         if (config.getSoLinger() >= 0) {
@@ -323,8 +332,10 @@ public class ChannelManager {
 
     public void close() {
         if (allowReleaseEventLoopGroup) {
+            final long shutdownQuietPeriod = config.getShutdownQuietPeriod().toMillis();
+            final long shutdownTimeout = config.getShutdownTimeout().toMillis();
             eventLoopGroup
-                    .shutdownGracefully(config.getShutdownQuietPeriod(), config.getShutdownTimeout(), TimeUnit.MILLISECONDS)
+                    .shutdownGracefully(shutdownQuietPeriod, shutdownTimeout, TimeUnit.MILLISECONDS)
                     .addListener(future -> doClose());
         } else {
             doClose();

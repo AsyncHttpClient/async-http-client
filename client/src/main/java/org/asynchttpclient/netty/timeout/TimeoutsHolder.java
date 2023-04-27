@@ -36,7 +36,7 @@ public class TimeoutsHolder {
     private final Timer nettyTimer;
     private final NettyRequestSender requestSender;
     private final long requestTimeoutMillisTime;
-    private final int readTimeoutValue;
+    private final long readTimeoutValue;
     private volatile Timeout readTimeout;
     private final NettyResponseFuture<?> nettyResponseFuture;
     private volatile InetSocketAddress remoteAddress;
@@ -50,15 +50,15 @@ public class TimeoutsHolder {
 
         final Request targetRequest = nettyResponseFuture.getTargetRequest();
 
-        final int readTimeoutInMs = targetRequest.getReadTimeout();
-        readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout() : readTimeoutInMs;
+        final long readTimeoutInMs = targetRequest.getReadTimeout().toMillis();
+        readTimeoutValue = readTimeoutInMs == 0 ? config.getReadTimeout().toMillis() : readTimeoutInMs;
 
-        int requestTimeoutInMs = targetRequest.getRequestTimeout();
+        long requestTimeoutInMs = targetRequest.getRequestTimeout().toMillis();
         if (requestTimeoutInMs == 0) {
-            requestTimeoutInMs = config.getRequestTimeout();
+            requestTimeoutInMs = config.getRequestTimeout().toMillis();
         }
 
-        if (requestTimeoutInMs != -1) {
+        if (requestTimeoutInMs > -1) {
             requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
             requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs), requestTimeoutInMs);
         } else {

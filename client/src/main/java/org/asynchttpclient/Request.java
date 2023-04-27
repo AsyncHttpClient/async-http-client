@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -154,12 +155,12 @@ public interface Request {
     /**
      * @return the request timeout. Non zero values means "override config value".
      */
-    int getRequestTimeout();
+    Duration getRequestTimeout();
 
     /**
      * @return the read timeout. Non zero values means "override config value".
      */
-    int getReadTimeout();
+    Duration getReadTimeout();
 
     /**
      * @return the range header value, or 0 is not set.

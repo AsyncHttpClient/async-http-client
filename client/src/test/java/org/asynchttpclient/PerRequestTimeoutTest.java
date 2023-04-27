@@ -24,6 +24,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +65,9 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient()) {
-            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(100).execute();
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl())
+                    .setRequestTimeout(Duration.ofMillis(100))
+                    .execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
         } catch (InterruptedException e) {
@@ -79,7 +82,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testReadTimeout() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(100))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(Duration.ofMillis(100)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
@@ -95,8 +98,10 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
-            Future<Response> responseFuture = client.prepareGet(getTargetUrl()).setRequestTimeout(-1).execute();
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMillis(100)))) {
+            Future<Response> responseFuture = client.prepareGet(getTargetUrl())
+                    .setRequestTimeout(Duration.ofMillis(-1))
+                    .execute();
             Response response = responseFuture.get();
             assertNotNull(response);
         } catch (InterruptedException e) {
@@ -109,7 +114,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testGlobalRequestTimeout() throws IOException {
-        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(100))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMillis(100)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
             Response response = responseFuture.get(2000, TimeUnit.MILLISECONDS);
             assertNull(response);
@@ -127,7 +132,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
     public void testGlobalIdleTimeout() throws IOException {
         final long[] times = {-1, -1};
 
-        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(2000))) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setPooledConnectionIdleTimeout(Duration.ofSeconds(2)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandler<Response>() {
                 @Override
                 public Response onCompleted(Response response) {
