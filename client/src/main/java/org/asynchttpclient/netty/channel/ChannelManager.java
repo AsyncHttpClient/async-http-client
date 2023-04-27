@@ -244,8 +244,14 @@ public class ChannelManager {
             @Override
             protected void initChannel(Channel ch) {
                 ChannelPipeline pipeline = ch.pipeline()
-                        .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
-                        .addLast(INFLATER_HANDLER, newHttpContentDecompressor())
+                        .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec());
+
+                if (config.isEnableAutomaticDecompression()) {
+                    // Add automatic decompression if desired
+                    pipeline = pipeline.addLast(INFLATER_HANDLER, newHttpContentDecompressor());
+                }
+
+                pipeline = pipeline
                         .addLast(CHUNKED_WRITER_HANDLER, new ChunkedWriteHandler())
                         .addLast(AHC_HTTP_HANDLER, httpHandler);
 
