@@ -146,6 +146,13 @@ public interface AsyncHttpClientConfig {
     boolean isCompressionEnforced();
 
     /**
+     * If automatic content decompression is enabled.
+     *
+     * @return true if content decompression is enabled
+     */
+    boolean isEnableAutomaticDecompression();
+
+    /**
      * Return the {@link ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response.
      *
      * @return the {@link ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response. If no {@link ThreadFactory} has been explicitly
