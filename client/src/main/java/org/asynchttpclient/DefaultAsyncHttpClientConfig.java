@@ -44,62 +44,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultAcquireFreeChannelTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultAggregateWebSocketFrameFragments;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultChunkedFileChunkSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultCompressionEnforced;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectionPoolCleanerPeriod;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectionTtl;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableHttpsEndpointIdentificationAlgorithm;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableZeroCopy;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnableWebSocketCompression;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledCipherSuites;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledProtocols;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHandshakeTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecInitialBufferSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxChunkSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxHeaderSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxInitialLineLength;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultIoThreadsCount;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultKeepAlive;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultKeepEncodingHeader;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxConnections;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxConnectionsPerHost;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRedirects;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoKeepAlive;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoLinger;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoRcvBuf;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoReuseAddress;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoSndBuf;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionCacheSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultStrict302Handling;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTcpNoDelay;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultThreadPoolName;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseLaxCookieEncoder;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseNativeTransport;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOnlyEpollNativeTransport;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOpenSsl;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseProxyProperties;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseProxySelector;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUserAgent;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultValidateResponseHeaders;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxBufferSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxFrameSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this object default behavior by doing: <br>
@@ -114,6 +59,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int maxRedirects;
     private final boolean strict302Handling;
     private final boolean compressionEnforced;
+
+    private final boolean enableAutomaticDecompression;
     private final String userAgent;
     private final Realm realm;
     private final int maxRequestRetry;
@@ -203,6 +150,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int maxRedirects,
                                          boolean strict302Handling,
                                          boolean compressionEnforced,
+                                         boolean enableAutomaticDecompression,
                                          String userAgent,
                                          Realm realm,
                                          int maxRequestRetry,
@@ -292,6 +240,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.maxRedirects = maxRedirects;
         this.strict302Handling = strict302Handling;
         this.compressionEnforced = compressionEnforced;
+        this.enableAutomaticDecompression = enableAutomaticDecompression;
         this.userAgent = userAgent;
         this.realm = realm;
         this.maxRequestRetry = maxRequestRetry;
@@ -408,6 +357,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public boolean isCompressionEnforced() {
         return compressionEnforced;
+    }
+
+    @Override
+    public boolean isEnableAutomaticDecompression() {
+        return enableAutomaticDecompression;
     }
 
     @Override
@@ -777,6 +731,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int maxRedirects = defaultMaxRedirects();
         private boolean strict302Handling = defaultStrict302Handling();
         private boolean compressionEnforced = defaultCompressionEnforced();
+        private boolean enableAutomaticDecompression = defaultEnableAutomaticDecompression();
         private String userAgent = defaultUserAgent();
         private Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
@@ -869,6 +824,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             maxRedirects = config.getMaxRedirects();
             strict302Handling = config.isStrict302Handling();
             compressionEnforced = config.isCompressionEnforced();
+            enableAutomaticDecompression = config.isEnableAutomaticDecompression();
             userAgent = config.getUserAgent();
             realm = config.getRealm();
             maxRequestRetry = config.getMaxRequestRetry();
@@ -963,8 +919,28 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        /**
+         * If true, AHC will  add Accept-Encoding HTTP header to each request
+         *
+         * If false (default), AHC will either leave AcceptEncoding header as is
+         * (if enableAutomaticDecompression is false) or will remove unsupported
+         * algorithms (if enableAutomaticDecompression is true)
+         */
         public Builder setCompressionEnforced(boolean compressionEnforced) {
             this.compressionEnforced = compressionEnforced;
+            return this;
+        }
+
+
+        /*
+         * If true (default), AHC will add a Netty HttpContentDecompressor, so compressed
+         * content will automatically get decompressed.
+         *
+         * If set to false, response will be delivered as is received. Decompression must
+         * be done by calling code.
+         */
+        public Builder setEnableAutomaticDecompression(boolean enable) {
+            this.enableAutomaticDecompression = enable;
             return this;
         }
 
@@ -1390,6 +1366,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     maxRedirects,
                     strict302Handling,
                     compressionEnforced,
+                    enableAutomaticDecompression,
                     userAgent,
                     realm,
                     maxRequestRetry,

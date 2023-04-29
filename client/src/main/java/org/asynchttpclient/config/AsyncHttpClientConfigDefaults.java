@@ -36,6 +36,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String FOLLOW_REDIRECT_CONFIG = "followRedirect";
     public static final String MAX_REDIRECTS_CONFIG = "maxRedirects";
     public static final String COMPRESSION_ENFORCED_CONFIG = "compressionEnforced";
+
+    public static final String ENABLE_AUTOMATIC_DECOMPRESSION_CONFIG = "enableAutomaticDecompression";
     public static final String USER_AGENT_CONFIG = "userAgent";
     public static final String ENABLED_PROTOCOLS_CONFIG = "enabledProtocols";
     public static final String ENABLED_CIPHER_SUITES_CONFIG = "enabledCipherSuites";
@@ -145,6 +147,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultCompressionEnforced() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + COMPRESSION_ENFORCED_CONFIG);
+    }
+
+    public static boolean defaultEnableAutomaticDecompression() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + ENABLE_AUTOMATIC_DECOMPRESSION_CONFIG);
     }
 
     public static String defaultUserAgent() {
