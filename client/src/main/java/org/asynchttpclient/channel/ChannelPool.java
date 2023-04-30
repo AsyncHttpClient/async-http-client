@@ -16,6 +16,7 @@
 package org.asynchttpclient.channel;
 
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -37,7 +38,7 @@ public interface ChannelPool {
      * @param partitionKey the partition used when invoking offer
      * @return the channel associated with the uri
      */
-    Channel poll(Object partitionKey);
+    @Nullable Channel poll(Object partitionKey);
 
     /**
      * Remove all channels from the cache. A channel might have been associated
