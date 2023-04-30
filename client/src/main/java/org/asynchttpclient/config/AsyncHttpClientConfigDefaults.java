@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.config;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
@@ -157,11 +159,11 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + USER_AGENT_CONFIG);
     }
 
-    public static String[] defaultEnabledProtocols() {
+    public static @Nullable String[] defaultEnabledProtocols() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + ENABLED_PROTOCOLS_CONFIG);
     }
 
-    public static String[] defaultEnabledCipherSuites() {
+    public static @Nullable String[] defaultEnabledCipherSuites() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + ENABLED_CIPHER_SUITES_CONFIG);
     }
 

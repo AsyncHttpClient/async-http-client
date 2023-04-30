@@ -12,6 +12,9 @@
  */
 package org.asynchttpclient.util;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -23,35 +26,37 @@ public final class MiscUtils {
         // Prevent outside initialization
     }
 
-    public static boolean isNonEmpty(String string) {
+    // NullAway is not powerful enough to recognise that if the values has passed the check, it's not null
+    @Contract(value = "null -> false", pure = true)
+    public static boolean isNonEmpty(@Nullable String string) {
         return !isEmpty(string);
     }
 
-    public static boolean isEmpty(String string) {
+    public static boolean isEmpty(@Nullable String string) {
         return string == null || string.isEmpty();
     }
 
-    public static boolean isNonEmpty(Object[] array) {
+    public static boolean isNonEmpty(@Nullable Object[] array) {
         return array != null && array.length != 0;
     }
 
-    public static boolean isNonEmpty(byte[] array) {
+    public static boolean isNonEmpty(byte @Nullable [] array) {
         return array != null && array.length != 0;
     }
 
-    public static boolean isNonEmpty(Collection<?> collection) {
+    public static boolean isNonEmpty(@Nullable Collection<?> collection) {
         return collection != null && !collection.isEmpty();
     }
 
-    public static boolean isNonEmpty(Map<?, ?> map) {
+    public static boolean isNonEmpty(@Nullable Map<?, ?> map) {
         return map != null && !map.isEmpty();
     }
 
-    public static <T> T withDefault(T value, T def) {
+    public static <T> T withDefault(@Nullable T value, T def) {
         return value == null ? def : value;
     }
 
-    public static void closeSilently(Closeable closeable) {
+    public static void closeSilently(@Nullable Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();

@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.config;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
@@ -23,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class AsyncHttpClientConfigHelper {
 
-    private static volatile Config config;
+    private static volatile @Nullable Config config;
 
     private AsyncHttpClientConfigHelper() {
     }
@@ -41,8 +43,9 @@ public final class AsyncHttpClientConfigHelper {
      * getAsyncHttpClientConfig() to get the new property values.
      */
     public static void reloadProperties() {
-        if (config != null) {
-            config.reload();
+        final Config localInstance = config;
+        if (localInstance != null) {
+            localInstance.reload();
         }
     }
 
@@ -90,7 +93,7 @@ public final class AsyncHttpClientConfigHelper {
             });
         }
 
-        public String[] getStringArray(String key) {
+        public @Nullable String[] getStringArray(String key) {
             String s = getString(key);
             s = s.trim();
             if (s.isEmpty()) {
