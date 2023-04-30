@@ -21,6 +21,7 @@ import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
@@ -95,7 +96,7 @@ public final class AuthenticatorUtils {
         builder.setLength(builder.length() - 2); // remove tailing ", "
 
         // FIXME isn't there a more efficient way?
-        return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1));
+        return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1), StandardCharsets.UTF_8);
     }
 
     private static void append(StringBuilder builder, String name, String value, boolean quoted) {

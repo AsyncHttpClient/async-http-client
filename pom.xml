@@ -211,6 +211,31 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <arg>-Xplugin:ErrorProne
+                            -Xep:JavaTimeDefaultTimeZone:ERROR
+                            -Xep:JavaUtilDate:ERROR
+                            -Xep:DateChecker:ERROR
+                            -Xep:DateFormatConstant:ERROR
+                            -Xep:EmptyBlockTag:ERROR
+                            -Xep:VariableNameSameAsType:ERROR
+                            -Xep:DoubleCheckedLocking:ERROR
+                            -Xep:DefaultCharset:ERROR
+                            -Xep:NullablePrimitive:ERROR
+                            -Xep:NullOptional:ERROR
+                            -XepExcludedPaths:.*/src/test/java/.*
+                        </arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>2.18.0</version>
+                        </path>
+                        <!-- Other annotation processors go here -->
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
