@@ -231,7 +231,7 @@
                             -Xep:NullablePrimitive:ERROR
                             -Xep:NullOptional:ERROR
                             -XepExcludedPaths:.*/src/test/java/.*
-                            -XepOpt:NullAway:AnnotatedPackages=org.asynchttpclient.channel
+                            -XepOpt:NullAway:AnnotatedPackages=org.asynchttpclient.channel,org.asynchttpclient.config,org.asynchttpclient.cookie,org.asynchttpclient.exception
                             -XepOpt:NullAway:AcknowledgeRestrictiveAnnotations=true
                             -Xep:NullAway:ERROR
                         </arg>

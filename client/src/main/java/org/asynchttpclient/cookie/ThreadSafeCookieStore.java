@@ -19,6 +19,8 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.Assertions;
 import org.asynchttpclient.util.MiscUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -119,7 +121,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
     // rfc6265#section-5.2.3
     // Let cookie-domain be the attribute-value without the leading %x2E (".") character.
-    private static AbstractMap.SimpleEntry<String, Boolean> cookieDomain(String cookieDomain, String requestDomain) {
+    private static AbstractMap.SimpleEntry<String, Boolean> cookieDomain(@Nullable String cookieDomain, String requestDomain) {
         if (cookieDomain != null) {
             String normalizedCookieDomain = cookieDomain.toLowerCase();
             return new AbstractMap.SimpleEntry<>(
@@ -132,7 +134,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
     }
 
     // rfc6265#section-5.2.4
-    private static String cookiePath(String rawCookiePath, String requestPath) {
+    private static String cookiePath(@Nullable String rawCookiePath, String requestPath) {
         if (MiscUtils.isNonEmpty(rawCookiePath) && rawCookiePath.charAt(0) == '/') {
             return rawCookiePath;
         } else {
@@ -242,7 +244,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
         }
 
         @Override
-        public int compareTo(CookieKey o) {
+        public int compareTo(@NotNull CookieKey o) {
             Assertions.assertNotNull(o, "Parameter can't be null");
             int result;
             if ((result = name.compareTo(o.name)) == 0) {
@@ -291,7 +293,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
     public static final class DomainUtils {
         private static final char DOT = '.';
 
-        public static String getSubDomain(String domain) {
+        public static @Nullable String getSubDomain(@Nullable String domain) {
             if (domain == null || domain.isEmpty()) {
                 return null;
             }
