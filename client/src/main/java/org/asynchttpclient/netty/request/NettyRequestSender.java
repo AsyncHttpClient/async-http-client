@@ -501,8 +501,8 @@ public final class NettyRequestSender {
 
         boolean replayed = false;
         @SuppressWarnings({"unchecked", "rawtypes"})
-        FilterContext<?> fc = new FilterContext.FilterContextBuilder().asyncHandler(future.getAsyncHandler())
-                .request(future.getCurrentRequest()).ioException(e).build();
+        FilterContext<?> fc = new FilterContext.FilterContextBuilder(future.getAsyncHandler(), future.getCurrentRequest())
+                .ioException(e).build();
         for (IOExceptionFilter asyncFilter : config.getIoExceptionFilters()) {
             try {
                 fc = asyncFilter.filter(fc);

@@ -105,7 +105,7 @@ public class FilterTest extends AbstractBasicTest {
             public <T> FilterContext<T> filter(FilterContext<T> ctx) {
                 if (replay.getAndSet(false)) {
                     org.asynchttpclient.Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
-                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<T>(ctx.getAsyncHandler(), request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -128,7 +128,7 @@ public class FilterTest extends AbstractBasicTest {
             public <T> FilterContext<T> filter(FilterContext<T> ctx) {
                 if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 200 && replay.getAndSet(false)) {
                     org.asynchttpclient.Request request = ctx.getRequest().toBuilder().addHeader("X-Replay", "true").build();
-                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<T>(ctx.getAsyncHandler(), request).replayRequest(true).build();
                 }
                 return ctx;
             }
@@ -150,7 +150,7 @@ public class FilterTest extends AbstractBasicTest {
             public <T> FilterContext<T> filter(FilterContext<T> ctx) {
                 if (ctx.getResponseHeaders() != null && "Pong".equals(ctx.getResponseHeaders().get("Ping")) && replay.getAndSet(false)) {
                     org.asynchttpclient.Request request = ctx.getRequest().toBuilder().addHeader("Ping", "Pong").build();
-                    return new FilterContext.FilterContextBuilder<T>().asyncHandler(ctx.getAsyncHandler()).request(request).replayRequest(true).build();
+                    return new FilterContext.FilterContextBuilder<T>(ctx.getAsyncHandler(), request).replayRequest(true).build();
                 }
                 return ctx;
             }
