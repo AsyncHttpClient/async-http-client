@@ -16,6 +16,7 @@
 package org.asynchttpclient.channel;
 
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -31,7 +32,7 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     @Override
-    public Channel poll(Object partitionKey) {
+    public @Nullable Channel poll(Object partitionKey) {
         return null;
     }
 

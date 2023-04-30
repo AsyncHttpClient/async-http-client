@@ -18,6 +18,7 @@ package org.asynchttpclient.channel;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -31,7 +32,7 @@ public interface ChannelPoolPartitioning {
         INSTANCE;
 
         @Override
-        public Object getPartitionKey(Uri uri, String virtualHost, ProxyServer proxyServer) {
+        public Object getPartitionKey(Uri uri, @Nullable String virtualHost, @Nullable ProxyServer proxyServer) {
             String targetHostBaseUrl = uri.getBaseUrl();
             if (proxyServer == null) {
                 if (virtualHost == null) {
@@ -59,12 +60,13 @@ public interface ChannelPoolPartitioning {
 
     class CompositePartitionKey {
         private final String targetHostBaseUrl;
-        private final String virtualHost;
-        private final String proxyHost;
+        private final @Nullable String virtualHost;
+        private final @Nullable String proxyHost;
         private final int proxyPort;
-        private final ProxyType proxyType;
+        private final @Nullable ProxyType proxyType;
 
-        CompositePartitionKey(String targetHostBaseUrl, String virtualHost, String proxyHost, int proxyPort, ProxyType proxyType) {
+        CompositePartitionKey(String targetHostBaseUrl, @Nullable String virtualHost,
+                              @Nullable String proxyHost, int proxyPort, @Nullable ProxyType proxyType) {
             this.targetHostBaseUrl = targetHostBaseUrl;
             this.virtualHost = virtualHost;
             this.proxyHost = proxyHost;
