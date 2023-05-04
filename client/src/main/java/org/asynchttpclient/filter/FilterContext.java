@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -64,14 +65,14 @@ public class FilterContext<T> {
     /**
      * @return the unprocessed response's {@link HttpResponseStatus}
      */
-    public HttpResponseStatus getResponseStatus() {
+    public @Nullable HttpResponseStatus getResponseStatus() {
         return builder.responseStatus;
     }
 
     /**
      * @return the response {@link HttpHeaders}
      */
-    public HttpHeaders getResponseHeaders() {
+    public @Nullable HttpHeaders getResponseHeaders() {
         return builder.headers;
     }
 
@@ -85,19 +86,21 @@ public class FilterContext<T> {
     /**
      * @return the {@link IOException}
      */
-    public IOException getIOException() {
+    public @Nullable IOException getIOException() {
         return builder.ioException;
     }
 
     public static class FilterContextBuilder<T> {
         private AsyncHandler<T> asyncHandler;
         private Request request;
-        private HttpResponseStatus responseStatus;
+        private @Nullable HttpResponseStatus responseStatus;
         private boolean replayRequest;
-        private IOException ioException;
-        private HttpHeaders headers;
+        private @Nullable IOException ioException;
+        private @Nullable HttpHeaders headers;
 
-        public FilterContextBuilder() {
+        public FilterContextBuilder(AsyncHandler<T> asyncHandler, Request request) {
+            this.asyncHandler = asyncHandler;
+            this.request = request;
         }
 
         public FilterContextBuilder(FilterContext<T> clone) {

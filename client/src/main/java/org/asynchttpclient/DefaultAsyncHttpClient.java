@@ -241,7 +241,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         if (noRequestFilters) {
             return execute(request, handler);
         } else {
-            FilterContext<T> fc = new FilterContext.FilterContextBuilder<T>().asyncHandler(handler).request(request).build();
+            FilterContext<T> fc = new FilterContext.FilterContextBuilder<>(handler, request).build();
             try {
                 fc = preProcessRequest(fc);
             } catch (Exception e) {

@@ -43,7 +43,7 @@ public class ResponseFiltersInterceptor {
                                               HttpResponseStatus status,
                                               HttpHeaders responseHeaders) {
 
-        FilterContext fc = new FilterContext.FilterContextBuilder().asyncHandler(handler).request(future.getCurrentRequest()).responseStatus(status)
+        FilterContext fc = new FilterContext.FilterContextBuilder(handler, future.getCurrentRequest()).responseStatus(status)
                 .responseHeaders(responseHeaders).build();
 
         for (ResponseFilter asyncFilter : config.getResponseFilters()) {
