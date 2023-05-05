@@ -16,6 +16,7 @@
 package org.asynchttpclient.proxy;
 
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Selector for a proxy server
@@ -34,5 +35,5 @@ public interface ProxyServerSelector {
      * @param uri The URI to select a proxy server for.
      * @return The proxy server to use, if any.  May return null.
      */
-    ProxyServer select(Uri uri);
+    @Nullable ProxyServer select(Uri uri);
 }
