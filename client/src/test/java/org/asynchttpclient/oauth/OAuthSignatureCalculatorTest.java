@@ -20,6 +20,7 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.util.Utf8UrlEncoder;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -124,6 +125,20 @@ public class OAuthSignatureCalculatorTest {
         // note: we don't know how to fix a = that should have been encoded as
         // %3D but who would be stupid enough to do that?
         Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r b")
+                .addFormParam("c2", "")
+                .addFormParam("a3", "2 q")
+                .build();
+
+        testSignatureBaseString(request);
+        testSignatureBaseStringWithEncodableOAuthToken(request);
+    }
+
+    @Test
+    public void testSignatureBaseStringWithNoValueQueryParameter() throws NoSuchAlgorithmException {
+        // Query parameter with no value in OAuth1 should be treated the same as query parameter with an empty value.
+        // i.e."http://example.com/request?b5" == "http://example.com/request?b5="
+        // Tested with http://lti.tools/oauth/
+        Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40&a2=r%20b")
                 .addFormParam("c2", "")
                 .addFormParam("a3", "2 q")
                 .build();
