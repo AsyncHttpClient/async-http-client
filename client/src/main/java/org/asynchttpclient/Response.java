@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.netty.NettyResponse;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -176,8 +177,8 @@ public interface Response {
 
     class ResponseBuilder {
         private final List<HttpResponseBodyPart> bodyParts = new ArrayList<>(1);
-        private HttpResponseStatus status;
-        private HttpHeaders headers;
+        private @Nullable HttpResponseStatus status;
+        private @Nullable HttpHeaders headers;
 
         public void accumulate(HttpResponseStatus status) {
             this.status = status;
@@ -201,7 +202,7 @@ public interface Response {
          *
          * @return a {@link Response} instance
          */
-        public Response build() {
+        public @Nullable Response build() {
             return status == null ? null : new NettyResponse(status, headers, bodyParts);
         }
 

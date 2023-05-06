@@ -30,6 +30,7 @@ import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +69,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
      * Default signature calculator to use for all requests constructed by this
      * client instance.
      */
-    private SignatureCalculator signatureCalculator;
+    private @Nullable SignatureCalculator signatureCalculator;
 
     /**
      * Create a new HTTP Asynchronous Client using the default
@@ -95,8 +96,14 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
         this.config = config;
         noRequestFilters = config.getRequestFilters().isEmpty();
-        allowStopNettyTimer = config.getNettyTimer() == null;
-        nettyTimer = allowStopNettyTimer ? newNettyTimer(config) : config.getNettyTimer();
+        final Timer configTimer = config.getNettyTimer();
+        if (configTimer == null) {
+            allowStopNettyTimer = true;
+            nettyTimer = newNettyTimer(config);
+        } else {
+            allowStopNettyTimer = false;
+            nettyTimer = configTimer;
+        }
 
         channelManager = new ChannelManager(config, nettyTimer);
         requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));

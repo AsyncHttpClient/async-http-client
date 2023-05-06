@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,14 +29,14 @@ import java.util.Map;
 public class Param {
 
     private final String name;
-    private final String value;
+    private final @Nullable String value;
 
-    public Param(String name, String value) {
+    public Param(String name, @Nullable String value) {
         this.name = name;
         this.value = value;
     }
 
-    public static List<Param> map2ParamList(Map<String, List<String>> map) {
+    public static @Nullable List<Param> map2ParamList(Map<String, List<String>> map) {
         if (map == null) {
             return null;
         }
@@ -53,7 +55,7 @@ public class Param {
         return name;
     }
 
-    public String getValue() {
+    public @Nullable String getValue() {
         return value;
     }
 

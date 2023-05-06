@@ -34,6 +34,7 @@ import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -44,7 +45,63 @@ import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultAcquireFreeChannelTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultAggregateWebSocketFrameFragments;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultChunkedFileChunkSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultCompressionEnforced;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectionPoolCleanerPeriod;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultConnectionTtl;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableHttpsEndpointIdentificationAlgorithm;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableUrlEncodingForBoundRequests;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultDisableZeroCopy;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnableAutomaticDecompression;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnableWebSocketCompression;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledCipherSuites;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledProtocols;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHandshakeTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecInitialBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxChunkSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxHeaderSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxInitialLineLength;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultIoThreadsCount;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultKeepAlive;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultKeepEncodingHeader;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxConnections;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxConnectionsPerHost;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRedirects;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoKeepAlive;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoLinger;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoRcvBuf;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoReuseAddress;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoSndBuf;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionCacheSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultStrict302Handling;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTcpNoDelay;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultThreadPoolName;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseLaxCookieEncoder;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseNativeTransport;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOnlyEpollNativeTransport;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseOpenSsl;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseProxyProperties;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseProxySelector;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUserAgent;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultValidateResponseHeaders;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxFrameSize;
 
 /**
  * Configuration class to use with a {@link AsyncHttpClient}. System property can be also used to configure this object default behavior by doing: <br>
@@ -62,7 +119,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     private final boolean enableAutomaticDecompression;
     private final String userAgent;
-    private final Realm realm;
+    private final @Nullable Realm realm;
     private final int maxRequestRetry;
     private final boolean disableUrlEncodingForBoundRequests;
     private final boolean useLaxCookieEncoder;
@@ -92,8 +149,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int maxConnections;
     private final int maxConnectionsPerHost;
     private final int acquireFreeChannelTimeout;
-    private final ChannelPool channelPool;
-    private final ConnectionSemaphoreFactory connectionSemaphoreFactory;
+    private final @Nullable ChannelPool channelPool;
+    private final @Nullable ConnectionSemaphoreFactory connectionSemaphoreFactory;
     private final KeepAliveStrategy keepAliveStrategy;
 
     // ssl
@@ -101,13 +158,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean useInsecureTrustManager;
     private final boolean disableHttpsEndpointIdentificationAlgorithm;
     private final int handshakeTimeout;
-    private final String[] enabledProtocols;
-    private final String[] enabledCipherSuites;
+    private final @Nullable String[] enabledProtocols;
+    private final @Nullable String[] enabledCipherSuites;
     private final boolean filterInsecureCipherSuites;
     private final int sslSessionCacheSize;
     private final int sslSessionTimeout;
-    private final SslContext sslContext;
-    private final SslEngineFactory sslEngineFactory;
+    private final @Nullable SslContext sslContext;
+    private final @Nullable SslEngineFactory sslEngineFactory;
 
     // filters
     private final List<RequestFilter> requestFilters;
@@ -126,20 +183,20 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int httpClientCodecInitialBufferSize;
     private final int chunkedFileChunkSize;
     private final Map<ChannelOption<Object>, Object> channelOptions;
-    private final EventLoopGroup eventLoopGroup;
+    private final @Nullable EventLoopGroup eventLoopGroup;
     private final boolean useNativeTransport;
     private final boolean useOnlyEpollNativeTransport;
-    private final ByteBufAllocator allocator;
+    private final @Nullable ByteBufAllocator allocator;
     private final boolean tcpNoDelay;
     private final boolean soReuseAddress;
     private final boolean soKeepAlive;
     private final int soLinger;
     private final int soSndBuf;
     private final int soRcvBuf;
-    private final Timer nettyTimer;
-    private final ThreadFactory threadFactory;
-    private final Consumer<Channel> httpAdditionalChannelInitializer;
-    private final Consumer<Channel> wsAdditionalChannelInitializer;
+    private final @Nullable Timer nettyTimer;
+    private final @Nullable ThreadFactory threadFactory;
+    private final @Nullable Consumer<Channel> httpAdditionalChannelInitializer;
+    private final @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
     private final int ioThreadsCount;
     private final long hashedWheelTimerTickDuration;
@@ -152,7 +209,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          boolean compressionEnforced,
                                          boolean enableAutomaticDecompression,
                                          String userAgent,
-                                         Realm realm,
+                                         @Nullable Realm realm,
                                          int maxRequestRetry,
                                          boolean disableUrlEncodingForBoundRequests,
                                          boolean useLaxCookieEncoder,
@@ -178,8 +235,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int maxConnections,
                                          int maxConnectionsPerHost,
                                          int acquireFreeChannelTimeout,
-                                         ChannelPool channelPool,
-                                         ConnectionSemaphoreFactory connectionSemaphoreFactory,
+                                         @Nullable ChannelPool channelPool,
+                                         @Nullable ConnectionSemaphoreFactory connectionSemaphoreFactory,
                                          KeepAliveStrategy keepAliveStrategy,
 
                                          // ssl
@@ -187,13 +244,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          boolean useInsecureTrustManager,
                                          boolean disableHttpsEndpointIdentificationAlgorithm,
                                          int handshakeTimeout,
-                                         String[] enabledProtocols,
-                                         String[] enabledCipherSuites,
+                                         @Nullable String[] enabledProtocols,
+                                         @Nullable String[] enabledCipherSuites,
                                          boolean filterInsecureCipherSuites,
                                          int sslSessionCacheSize,
                                          int sslSessionTimeout,
-                                         SslContext sslContext,
-                                         SslEngineFactory sslEngineFactory,
+                                         @Nullable SslContext sslContext,
+                                         @Nullable SslEngineFactory sslEngineFactory,
 
                                          // filters
                                          List<RequestFilter> requestFilters,
@@ -222,14 +279,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int webSocketMaxBufferSize,
                                          int webSocketMaxFrameSize,
                                          Map<ChannelOption<Object>, Object> channelOptions,
-                                         EventLoopGroup eventLoopGroup,
+                                         @Nullable EventLoopGroup eventLoopGroup,
                                          boolean useNativeTransport,
                                          boolean useOnlyEpollNativeTransport,
-                                         ByteBufAllocator allocator,
-                                         Timer nettyTimer,
-                                         ThreadFactory threadFactory,
-                                         Consumer<Channel> httpAdditionalChannelInitializer,
-                                         Consumer<Channel> wsAdditionalChannelInitializer,
+                                         @Nullable ByteBufAllocator allocator,
+                                         @Nullable Timer nettyTimer,
+                                         @Nullable ThreadFactory threadFactory,
+                                         @Nullable Consumer<Channel> httpAdditionalChannelInitializer,
+                                         @Nullable Consumer<Channel> wsAdditionalChannelInitializer,
                                          ResponseBodyPartFactory responseBodyPartFactory,
                                          int ioThreadsCount,
                                          long hashedWheelTimerTickDuration,
@@ -370,7 +427,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public Realm getRealm() {
+    public @Nullable Realm getRealm() {
         return realm;
     }
 
@@ -488,12 +545,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public ChannelPool getChannelPool() {
+    public @Nullable ChannelPool getChannelPool() {
         return channelPool;
     }
 
     @Override
-    public ConnectionSemaphoreFactory getConnectionSemaphoreFactory() {
+    public @Nullable ConnectionSemaphoreFactory getConnectionSemaphoreFactory() {
         return connectionSemaphoreFactory;
     }
 
@@ -529,12 +586,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public String[] getEnabledProtocols() {
+    public @Nullable String[] getEnabledProtocols() {
         return enabledProtocols;
     }
 
     @Override
-    public String[] getEnabledCipherSuites() {
+    public @Nullable String[] getEnabledCipherSuites() {
         return enabledCipherSuites;
     }
 
@@ -554,12 +611,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public SslContext getSslContext() {
+    public @Nullable SslContext getSslContext() {
         return sslContext;
     }
 
     @Override
-    public SslEngineFactory getSslEngineFactory() {
+    public @Nullable SslEngineFactory getSslEngineFactory() {
         return sslEngineFactory;
     }
 
@@ -658,7 +715,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public EventLoopGroup getEventLoopGroup() {
+    public @Nullable EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
     }
 
@@ -673,12 +730,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public ByteBufAllocator getAllocator() {
+    public @Nullable ByteBufAllocator getAllocator() {
         return allocator;
     }
 
     @Override
-    public Timer getNettyTimer() {
+    public @Nullable Timer getNettyTimer() {
         return nettyTimer;
     }
 
@@ -693,17 +750,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public ThreadFactory getThreadFactory() {
+    public @Nullable ThreadFactory getThreadFactory() {
         return threadFactory;
     }
 
     @Override
-    public Consumer<Channel> getHttpAdditionalChannelInitializer() {
+    public @Nullable Consumer<Channel> getHttpAdditionalChannelInitializer() {
         return httpAdditionalChannelInitializer;
     }
 
     @Override
-    public Consumer<Channel> getWsAdditionalChannelInitializer() {
+    public @Nullable Consumer<Channel> getWsAdditionalChannelInitializer() {
         return wsAdditionalChannelInitializer;
     }
 
@@ -733,13 +790,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean compressionEnforced = defaultCompressionEnforced();
         private boolean enableAutomaticDecompression = defaultEnableAutomaticDecompression();
         private String userAgent = defaultUserAgent();
-        private Realm realm;
+        private @Nullable Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
         private boolean disableZeroCopy = defaultDisableZeroCopy();
         private boolean keepEncodingHeader = defaultKeepEncodingHeader();
-        private ProxyServerSelector proxyServerSelector;
+        private @Nullable ProxyServerSelector proxyServerSelector;
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean validateResponseHeaders = defaultValidateResponseHeaders();
@@ -765,8 +822,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int maxConnections = defaultMaxConnections();
         private int maxConnectionsPerHost = defaultMaxConnectionsPerHost();
         private int acquireFreeChannelTimeout = defaultAcquireFreeChannelTimeout();
-        private ChannelPool channelPool;
-        private ConnectionSemaphoreFactory connectionSemaphoreFactory;
+        private @Nullable ChannelPool channelPool;
+        private @Nullable ConnectionSemaphoreFactory connectionSemaphoreFactory;
         private KeepAliveStrategy keepAliveStrategy = new DefaultKeepAliveStrategy();
 
         // ssl
@@ -774,13 +831,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean useInsecureTrustManager = defaultUseInsecureTrustManager();
         private boolean disableHttpsEndpointIdentificationAlgorithm = defaultDisableHttpsEndpointIdentificationAlgorithm();
         private int handshakeTimeout = defaultHandshakeTimeout();
-        private String[] enabledProtocols = defaultEnabledProtocols();
-        private String[] enabledCipherSuites = defaultEnabledCipherSuites();
+        private @Nullable String[] enabledProtocols = defaultEnabledProtocols();
+        private @Nullable String[] enabledCipherSuites = defaultEnabledCipherSuites();
         private boolean filterInsecureCipherSuites = defaultFilterInsecureCipherSuites();
         private int sslSessionCacheSize = defaultSslSessionCacheSize();
         private int sslSessionTimeout = defaultSslSessionTimeout();
-        private SslContext sslContext;
-        private SslEngineFactory sslEngineFactory;
+        private @Nullable SslContext sslContext;
+        private @Nullable SslEngineFactory sslEngineFactory;
 
         // cookie store
         private CookieStore cookieStore = new ThreadSafeCookieStore();
@@ -803,13 +860,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
         private boolean useOnlyEpollNativeTransport = defaultUseOnlyEpollNativeTransport();
-        private ByteBufAllocator allocator;
+        private @Nullable ByteBufAllocator allocator;
         private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
-        private EventLoopGroup eventLoopGroup;
-        private Timer nettyTimer;
-        private ThreadFactory threadFactory;
-        private Consumer<Channel> httpAdditionalChannelInitializer;
-        private Consumer<Channel> wsAdditionalChannelInitializer;
+        private @Nullable EventLoopGroup eventLoopGroup;
+        private @Nullable Timer nettyTimer;
+        private @Nullable ThreadFactory threadFactory;
+        private @Nullable Consumer<Channel> httpAdditionalChannelInitializer;
+        private @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
         private int ioThreadsCount = defaultIoThreadsCount();
         private long hashedWheelTickDuration = defaultHashedWheelTimerTickDuration();

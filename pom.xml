@@ -63,6 +63,7 @@
         <slf4j.version>2.0.5</slf4j.version>
         <activation.version>2.0.1</activation.version>
         <logback.version>1.4.5</logback.version>
+        <jetbrains-annotations.version>24.0.1</jetbrains-annotations.version>
     </properties>
 
     <scm>
@@ -203,7 +204,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>24.0.1</version>
+            <version>${jetbrains-annotations.version}</version>
         </dependency>
     </dependencies>
 
@@ -231,7 +232,8 @@
                             -Xep:NullablePrimitive:ERROR
                             -Xep:NullOptional:ERROR
                             -XepExcludedPaths:.*/src/test/java/.*
-                            -XepOpt:NullAway:AnnotatedPackages=org.asynchttpclient.channel,org.asynchttpclient.config,org.asynchttpclient.cookie,org.asynchttpclient.exception,org.asynchttpclient.filter,org.asynchttpclient.oauth,org.asynchttpclient.proxy,org.asynchttpclient.resolver
+                            -XepOpt:NullAway:AnnotatedPackages=org.asynchttpclient
+                            -XepOpt:NullAway:UnannotatedSubPackages=org.asynchttpclient.handler,org.asynchttpclient.netty,org.asynchttpclient.ntlm,org.asynchttpclient.request,org.asynchttpclient.spnego,org.asynchttpclient.uri,org.asynchttpclient.util,org.asynchttpclient.webdav,org.asynchttpclient.ws
                             -XepOpt:NullAway:AcknowledgeRestrictiveAnnotations=true
                             -Xep:NullAway:ERROR
                         </arg>

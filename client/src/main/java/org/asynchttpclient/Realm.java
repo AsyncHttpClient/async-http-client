@@ -20,6 +20,7 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.util.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -45,51 +46,51 @@ public class Realm {
     // MD5("")
     private static final String EMPTY_ENTITY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 
-    private final String principal;
-    private final String password;
+    private final @Nullable String principal;
+    private final @Nullable String password;
     private final AuthScheme scheme;
-    private final String realmName;
-    private final String nonce;
-    private final String algorithm;
-    private final String response;
-    private final String opaque;
-    private final String qop;
+    private final @Nullable String realmName;
+    private final @Nullable String nonce;
+    private final @Nullable String algorithm;
+    private final @Nullable String response;
+    private final @Nullable String opaque;
+    private final @Nullable String qop;
     private final String nc;
-    private final String cnonce;
-    private final Uri uri;
+    private final @Nullable String cnonce;
+    private final @Nullable Uri uri;
     private final boolean usePreemptiveAuth;
     private final Charset charset;
     private final String ntlmHost;
     private final String ntlmDomain;
     private final boolean useAbsoluteURI;
     private final boolean omitQuery;
-    private final Map<String, String> customLoginConfig;
-    private final String servicePrincipalName;
+    private final @Nullable Map<String, String> customLoginConfig;
+    private final @Nullable String servicePrincipalName;
     private final boolean useCanonicalHostname;
-    private final String loginContextName;
+    private final @Nullable String loginContextName;
 
-    private Realm(AuthScheme scheme,
-                  String principal,
-                  String password,
-                  String realmName,
-                  String nonce,
-                  String algorithm,
-                  String response,
-                  String opaque,
-                  String qop,
+    private Realm(@Nullable AuthScheme scheme,
+                  @Nullable String principal,
+                  @Nullable String password,
+                  @Nullable String realmName,
+                  @Nullable String nonce,
+                  @Nullable String algorithm,
+                  @Nullable String response,
+                  @Nullable String opaque,
+                  @Nullable String qop,
                   String nc,
-                  String cnonce,
-                  Uri uri,
+                  @Nullable String cnonce,
+                  @Nullable Uri uri,
                   boolean usePreemptiveAuth,
                   Charset charset,
                   String ntlmDomain,
                   String ntlmHost,
                   boolean useAbsoluteURI,
                   boolean omitQuery,
-                  String servicePrincipalName,
+                  @Nullable String servicePrincipalName,
                   boolean useCanonicalHostname,
-                  Map<String, String> customLoginConfig,
-                  String loginContextName) {
+                  @Nullable Map<String, String> customLoginConfig,
+                  @Nullable String loginContextName) {
 
         this.scheme = assertNotNull(scheme, "scheme");
         this.principal = principal;
@@ -115,11 +116,11 @@ public class Realm {
         this.loginContextName = loginContextName;
     }
 
-    public String getPrincipal() {
+    public @Nullable String getPrincipal() {
         return principal;
     }
 
-    public String getPassword() {
+    public @Nullable String getPassword() {
         return password;
     }
 
@@ -127,27 +128,27 @@ public class Realm {
         return scheme;
     }
 
-    public String getRealmName() {
+    public @Nullable String getRealmName() {
         return realmName;
     }
 
-    public String getNonce() {
+    public @Nullable String getNonce() {
         return nonce;
     }
 
-    public String getAlgorithm() {
+    public @Nullable String getAlgorithm() {
         return algorithm;
     }
 
-    public String getResponse() {
+    public @Nullable String getResponse() {
         return response;
     }
 
-    public String getOpaque() {
+    public @Nullable String getOpaque() {
         return opaque;
     }
 
-    public String getQop() {
+    public @Nullable String getQop() {
         return qop;
     }
 
@@ -155,11 +156,11 @@ public class Realm {
         return nc;
     }
 
-    public String getCnonce() {
+    public @Nullable String getCnonce() {
         return cnonce;
     }
 
-    public Uri getUri() {
+    public @Nullable Uri getUri() {
         return uri;
     }
 
@@ -202,11 +203,11 @@ public class Realm {
         return omitQuery;
     }
 
-    public Map<String, String> getCustomLoginConfig() {
+    public @Nullable Map<String, String> getCustomLoginConfig() {
         return customLoginConfig;
     }
 
-    public String getServicePrincipalName() {
+    public @Nullable String getServicePrincipalName() {
         return servicePrincipalName;
     }
 
@@ -214,7 +215,7 @@ public class Realm {
         return useCanonicalHostname;
     }
 
-    public String getLoginContextName() {
+    public @Nullable String getLoginContextName() {
         return loginContextName;
     }
 
@@ -255,18 +256,18 @@ public class Realm {
      */
     public static class Builder {
 
-        private final String principal;
-        private final String password;
-        private AuthScheme scheme;
-        private String realmName;
-        private String nonce;
-        private String algorithm;
-        private String response;
-        private String opaque;
-        private String qop;
+        private final @Nullable String principal;
+        private final @Nullable String password;
+        private @Nullable AuthScheme scheme;
+        private @Nullable String realmName;
+        private @Nullable String nonce;
+        private @Nullable String algorithm;
+        private @Nullable String response;
+        private @Nullable String opaque;
+        private @Nullable String qop;
         private String nc = DEFAULT_NC;
-        private String cnonce;
-        private Uri uri;
+        private @Nullable String cnonce;
+        private @Nullable Uri uri;
         private String methodName = GET;
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
@@ -277,17 +278,17 @@ public class Realm {
         /**
          * Kerberos/Spnego properties
          */
-        private Map<String, String> customLoginConfig;
-        private String servicePrincipalName;
+        private @Nullable Map<String, String> customLoginConfig;
+        private @Nullable String servicePrincipalName;
         private boolean useCanonicalHostname;
-        private String loginContextName;
+        private @Nullable String loginContextName;
 
         public Builder() {
             principal = null;
             password = null;
         }
 
-        public Builder(String principal, String password) {
+        public Builder(@Nullable String principal, @Nullable String password) {
             this.principal = principal;
             this.password = password;
         }
@@ -307,17 +308,17 @@ public class Realm {
             return this;
         }
 
-        public Builder setRealmName(String realmName) {
+        public Builder setRealmName(@Nullable String realmName) {
             this.realmName = realmName;
             return this;
         }
 
-        public Builder setNonce(String nonce) {
+        public Builder setNonce(@Nullable String nonce) {
             this.nonce = nonce;
             return this;
         }
 
-        public Builder setAlgorithm(String algorithm) {
+        public Builder setAlgorithm(@Nullable String algorithm) {
             this.algorithm = algorithm;
             return this;
         }
@@ -327,12 +328,12 @@ public class Realm {
             return this;
         }
 
-        public Builder setOpaque(String opaque) {
+        public Builder setOpaque(@Nullable String opaque) {
             this.opaque = opaque;
             return this;
         }
 
-        public Builder setQop(String qop) {
+        public Builder setQop(@Nullable String qop) {
             if (isNonEmpty(qop)) {
                 this.qop = qop;
             }
@@ -344,7 +345,7 @@ public class Realm {
             return this;
         }
 
-        public Builder setUri(Uri uri) {
+        public Builder setUri(@Nullable Uri uri) {
             this.uri = uri;
             return this;
         }
@@ -374,12 +375,12 @@ public class Realm {
             return this;
         }
 
-        public Builder setCustomLoginConfig(Map<String, String> customLoginConfig) {
+        public Builder setCustomLoginConfig(@Nullable Map<String, String> customLoginConfig) {
             this.customLoginConfig = customLoginConfig;
             return this;
         }
 
-        public Builder setServicePrincipalName(String servicePrincipalName) {
+        public Builder setServicePrincipalName(@Nullable String servicePrincipalName) {
             this.servicePrincipalName = servicePrincipalName;
             return this;
         }
@@ -389,12 +390,12 @@ public class Realm {
             return this;
         }
 
-        public Builder setLoginContextName(String loginContextName) {
+        public Builder setLoginContextName(@Nullable String loginContextName) {
             this.loginContextName = loginContextName;
             return this;
         }
 
-        private static String parseRawQop(String rawQop) {
+        private static @Nullable String parseRawQop(String rawQop) {
             String[] rawServerSupportedQops = rawQop.split(",");
             String[] serverSupportedQops = new String[rawServerSupportedQops.length];
             for (int i = 0; i < rawServerSupportedQops.length; i++) {
@@ -461,7 +462,7 @@ public class Realm {
         /**
          * TODO: A Pattern/Matcher may be better.
          */
-        private static String match(String headerLine, String token) {
+        private static @Nullable String match(String headerLine, String token) {
             if (headerLine == null) {
                 return null;
             }
