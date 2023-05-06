@@ -19,6 +19,7 @@ package org.asynchttpclient.proxy;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,12 +37,13 @@ public class ProxyServer {
     private final String host;
     private final int port;
     private final int securedPort;
-    private final Realm realm;
+    private final @Nullable Realm realm;
     private final List<String> nonProxyHosts;
     private final ProxyType proxyType;
-    private final Function<Request, HttpHeaders> customHeaders;
+    private final @Nullable Function<Request, HttpHeaders> customHeaders;
 
-    public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts, ProxyType proxyType, Function<Request, HttpHeaders> customHeaders) {
+    public ProxyServer(String host, int port, int securedPort, @Nullable Realm realm, List<String> nonProxyHosts, ProxyType proxyType,
+                       @Nullable Function<Request, HttpHeaders> customHeaders) {
         this.host = host;
         this.port = port;
         this.securedPort = securedPort;
@@ -71,7 +73,7 @@ public class ProxyServer {
         return nonProxyHosts;
     }
 
-    public Realm getRealm() {
+    public @Nullable Realm getRealm() {
         return realm;
     }
 
@@ -79,7 +81,7 @@ public class ProxyServer {
         return proxyType;
     }
 
-    public Function<Request, HttpHeaders> getCustomHeaders() {
+    public @Nullable Function<Request, HttpHeaders> getCustomHeaders() {
         return customHeaders;
     }
 
@@ -129,10 +131,10 @@ public class ProxyServer {
         private final String host;
         private final int port;
         private int securedPort;
-        private Realm realm;
-        private List<String> nonProxyHosts;
-        private ProxyType proxyType;
-        private Function<Request, HttpHeaders> customHeaders;
+        private @Nullable Realm realm;
+        private @Nullable List<String> nonProxyHosts;
+        private @Nullable ProxyType proxyType;
+        private @Nullable Function<Request, HttpHeaders> customHeaders;
 
         public Builder(String host, int port) {
             this.host = host;
