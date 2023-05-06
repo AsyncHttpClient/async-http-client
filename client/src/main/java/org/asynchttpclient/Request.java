@@ -24,6 +24,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.InputStream;
@@ -65,12 +66,12 @@ public interface Request {
     /**
      * @return the InetAddress to be used to bypass uri's hostname resolution
      */
-    InetAddress getAddress();
+    @Nullable InetAddress getAddress();
 
     /**
      * @return the local address to bind from
      */
-    InetAddress getLocalAddress();
+    @Nullable InetAddress getLocalAddress();
 
     /**
      * @return the HTTP headers
@@ -85,32 +86,32 @@ public interface Request {
     /**
      * @return the request's body byte array (only non null if it was set this way)
      */
-    byte[] getByteData();
+    byte @Nullable [] getByteData();
 
     /**
      * @return the request's body array of byte arrays (only non null if it was set this way)
      */
-    List<byte[]> getCompositeByteData();
+    @Nullable List<byte[]> getCompositeByteData();
 
     /**
      * @return the request's body string (only non null if it was set this way)
      */
-    String getStringData();
+    @Nullable String getStringData();
 
     /**
      * @return the request's body ByteBuffer (only non null if it was set this way)
      */
-    ByteBuffer getByteBufferData();
+    @Nullable ByteBuffer getByteBufferData();
 
     /**
      * @return the request's body InputStream (only non null if it was set this way)
      */
-    InputStream getStreamData();
+    @Nullable InputStream getStreamData();
 
     /**
      * @return the request's body BodyGenerator (only non null if it was set this way)
      */
-    BodyGenerator getBodyGenerator();
+    @Nullable BodyGenerator getBodyGenerator();
 
     /**
      * @return the request's form parameters
@@ -125,7 +126,7 @@ public interface Request {
     /**
      * @return the virtual host to connect to
      */
-    String getVirtualHost();
+    @Nullable String getVirtualHost();
 
     /**
      * @return the query params resolved from the url/uri
@@ -135,22 +136,22 @@ public interface Request {
     /**
      * @return the proxy server to be used to perform this request (overrides the one defined in config)
      */
-    ProxyServer getProxyServer();
+    @Nullable ProxyServer getProxyServer();
 
     /**
      * @return the realm to be used to perform this request (overrides the one defined in config)
      */
-    Realm getRealm();
+    @Nullable Realm getRealm();
 
     /**
      * @return the file to be uploaded
      */
-    File getFile();
+    @Nullable File getFile();
 
     /**
      * @return if this request is to follow redirects. Non null values means "override config value".
      */
-    Boolean getFollowRedirect();
+    @Nullable Boolean getFollowRedirect();
 
     /**
      * @return the request timeout. Non zero values means "override config value".
@@ -170,7 +171,7 @@ public interface Request {
     /**
      * @return the charset value used when decoding the request's body.
      */
-    Charset getCharset();
+    @Nullable Charset getCharset();
 
     /**
      * @return the strategy to compute ChannelPool's keys

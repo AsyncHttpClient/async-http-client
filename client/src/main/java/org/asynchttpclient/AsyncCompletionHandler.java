@@ -18,6 +18,7 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
     }
 
     @Override
-    public final T onCompleted() throws Exception {
+    public final @Nullable T onCompleted() throws Exception {
         return onCompleted(builder.build());
     }
 
@@ -83,7 +84,7 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
      * {@link Future}
      * @throws Exception if something wrong happens
      */
-    public abstract T onCompleted(Response response) throws Exception;
+    public abstract @Nullable T onCompleted(@Nullable Response response) throws Exception;
 
     /**
      * Invoked when the HTTP headers have been fully written on the I/O socket.

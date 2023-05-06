@@ -21,6 +21,7 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.util.StringUtils;
 import org.asynchttpclient.util.Utf8UrlEncoder;
+import org.jetbrains.annotations.Nullable;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -155,7 +156,7 @@ public class OAuthSignatureCalculatorInstance {
         return parameters.sortAndConcat();
     }
 
-    private static String percentEncodeAlreadyFormUrlEncoded(String s) {
+    private static String percentEncodeAlreadyFormUrlEncoded(@Nullable String s) {
         if (s == null) {
             return "";
         }

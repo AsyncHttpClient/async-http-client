@@ -23,6 +23,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.InputStream;
@@ -39,58 +40,58 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public class DefaultRequest implements Request {
 
-    public final ProxyServer proxyServer;
+    public final @Nullable ProxyServer proxyServer;
     private final String method;
     private final Uri uri;
-    private final InetAddress address;
-    private final InetAddress localAddress;
+    private final @Nullable InetAddress address;
+    private final @Nullable InetAddress localAddress;
     private final HttpHeaders headers;
     private final List<Cookie> cookies;
-    private final byte[] byteData;
-    private final List<byte[]> compositeByteData;
-    private final String stringData;
-    private final ByteBuffer byteBufferData;
-    private final InputStream streamData;
-    private final BodyGenerator bodyGenerator;
+    private final byte @Nullable [] byteData;
+    private final @Nullable List<byte[]> compositeByteData;
+    private final @Nullable String stringData;
+    private final @Nullable ByteBuffer byteBufferData;
+    private final @Nullable InputStream streamData;
+    private final @Nullable BodyGenerator bodyGenerator;
     private final List<Param> formParams;
     private final List<Part> bodyParts;
-    private final String virtualHost;
-    private final Realm realm;
-    private final File file;
-    private final Boolean followRedirect;
+    private final @Nullable String virtualHost;
+    private final @Nullable Realm realm;
+    private final @Nullable File file;
+    private final @Nullable Boolean followRedirect;
     private final Duration requestTimeout;
     private final Duration readTimeout;
     private final long rangeOffset;
-    private final Charset charset;
+    private final @Nullable Charset charset;
     private final ChannelPoolPartitioning channelPoolPartitioning;
     private final NameResolver<InetAddress> nameResolver;
 
     // lazily loaded
-    private List<Param> queryParams;
+    private @Nullable List<Param> queryParams;
 
     public DefaultRequest(String method,
                           Uri uri,
-                          InetAddress address,
-                          InetAddress localAddress,
+                          @Nullable InetAddress address,
+                          @Nullable InetAddress localAddress,
                           HttpHeaders headers,
                           List<Cookie> cookies,
-                          byte[] byteData,
-                          List<byte[]> compositeByteData,
-                          String stringData,
-                          ByteBuffer byteBufferData,
-                          InputStream streamData,
-                          BodyGenerator bodyGenerator,
+                          byte @Nullable [] byteData,
+                          @Nullable List<byte[]> compositeByteData,
+                          @Nullable String stringData,
+                          @Nullable ByteBuffer byteBufferData,
+                          @Nullable InputStream streamData,
+                          @Nullable BodyGenerator bodyGenerator,
                           List<Param> formParams,
                           List<Part> bodyParts,
-                          String virtualHost,
-                          ProxyServer proxyServer,
-                          Realm realm,
-                          File file,
-                          Boolean followRedirect,
-                          Duration requestTimeout,
-                          Duration readTimeout,
+                          @Nullable String virtualHost,
+                          @Nullable ProxyServer proxyServer,
+                          @Nullable Realm realm,
+                          @Nullable File file,
+                          @Nullable Boolean followRedirect,
+                          @Nullable Duration requestTimeout,
+                          @Nullable Duration readTimeout,
                           long rangeOffset,
-                          Charset charset,
+                          @Nullable Charset charset,
                           ChannelPoolPartitioning channelPoolPartitioning,
                           NameResolver<InetAddress> nameResolver) {
         this.method = method;
@@ -136,12 +137,12 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public InetAddress getAddress() {
+    public @Nullable InetAddress getAddress() {
         return address;
     }
 
     @Override
-    public InetAddress getLocalAddress() {
+    public @Nullable InetAddress getLocalAddress() {
         return localAddress;
     }
 
@@ -156,32 +157,32 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public byte[] getByteData() {
+    public byte @Nullable [] getByteData() {
         return byteData;
     }
 
     @Override
-    public List<byte[]> getCompositeByteData() {
+    public @Nullable List<byte[]> getCompositeByteData() {
         return compositeByteData;
     }
 
     @Override
-    public String getStringData() {
+    public @Nullable String getStringData() {
         return stringData;
     }
 
     @Override
-    public ByteBuffer getByteBufferData() {
+    public @Nullable ByteBuffer getByteBufferData() {
         return byteBufferData;
     }
 
     @Override
-    public InputStream getStreamData() {
+    public @Nullable InputStream getStreamData() {
         return streamData;
     }
 
     @Override
-    public BodyGenerator getBodyGenerator() {
+    public @Nullable BodyGenerator getBodyGenerator() {
         return bodyGenerator;
     }
 
@@ -196,27 +197,27 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public String getVirtualHost() {
+    public @Nullable String getVirtualHost() {
         return virtualHost;
     }
 
     @Override
-    public ProxyServer getProxyServer() {
+    public @Nullable ProxyServer getProxyServer() {
         return proxyServer;
     }
 
     @Override
-    public Realm getRealm() {
+    public @Nullable Realm getRealm() {
         return realm;
     }
 
     @Override
-    public File getFile() {
+    public @Nullable File getFile() {
         return file;
     }
 
     @Override
-    public Boolean getFollowRedirect() {
+    public @Nullable Boolean getFollowRedirect() {
         return followRedirect;
     }
 
@@ -236,7 +237,7 @@ public class DefaultRequest implements Request {
     }
 
     @Override
-    public Charset getCharset() {
+    public @Nullable Charset getCharset() {
         return charset;
     }
 

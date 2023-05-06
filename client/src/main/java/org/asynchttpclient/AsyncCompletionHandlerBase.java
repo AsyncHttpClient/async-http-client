@@ -17,12 +17,14 @@
 package org.asynchttpclient;
 
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Simple {@link AsyncHandler} of type {@link Response}
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response> {
     @Override
-    public Response onCompleted(Response response) throws Exception {
+    public @Nullable Response onCompleted(@Nullable Response response) throws Exception {
         return response;
     }
 }

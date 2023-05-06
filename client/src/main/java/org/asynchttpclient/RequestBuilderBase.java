@@ -26,7 +26,9 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.EnsuresNonNull;
 import org.asynchttpclient.util.UriEncoder;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,33 +62,33 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public static final NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
     // builder only fields
     protected UriEncoder uriEncoder;
-    protected List<Param> queryParams;
-    protected SignatureCalculator signatureCalculator;
+    protected @Nullable List<Param> queryParams;
+    protected @Nullable SignatureCalculator signatureCalculator;
 
     // request fields
     protected String method;
-    protected Uri uri;
-    protected InetAddress address;
-    protected InetAddress localAddress;
+    protected @Nullable Uri uri;
+    protected @Nullable InetAddress address;
+    protected @Nullable InetAddress localAddress;
     protected HttpHeaders headers;
-    protected ArrayList<Cookie> cookies;
-    protected byte[] byteData;
-    protected List<byte[]> compositeByteData;
-    protected String stringData;
-    protected ByteBuffer byteBufferData;
-    protected InputStream streamData;
-    protected BodyGenerator bodyGenerator;
-    protected List<Param> formParams;
-    protected List<Part> bodyParts;
-    protected String virtualHost;
-    protected ProxyServer proxyServer;
-    protected Realm realm;
-    protected File file;
-    protected Boolean followRedirect;
-    protected Duration requestTimeout;
-    protected Duration readTimeout;
+    protected @Nullable ArrayList<Cookie> cookies;
+    protected byte @Nullable [] byteData;
+    protected @Nullable List<byte[]> compositeByteData;
+    protected @Nullable String stringData;
+    protected @Nullable ByteBuffer byteBufferData;
+    protected @Nullable InputStream streamData;
+    protected @Nullable BodyGenerator bodyGenerator;
+    protected @Nullable List<Param> formParams;
+    protected @Nullable List<Part> bodyParts;
+    protected @Nullable String virtualHost;
+    protected @Nullable ProxyServer proxyServer;
+    protected @Nullable Realm realm;
+    protected @Nullable File file;
+    protected @Nullable Boolean followRedirect;
+    protected @Nullable Duration requestTimeout;
+    protected @Nullable Duration readTimeout;
     protected long rangeOffset;
-    protected Charset charset;
+    protected @Nullable Charset charset;
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
     protected NameResolver<InetAddress> nameResolver = DEFAULT_NAME_RESOLVER;
 
@@ -293,6 +295,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    @EnsuresNonNull("cookies")
     private void lazyInitCookies() {
         if (cookies == null) {
             cookies = new ArrayList<>(3);
@@ -413,6 +416,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    @EnsuresNonNull("queryParams")
     public T addQueryParam(String name, String value) {
         if (queryParams == null) {
             queryParams = new ArrayList<>(1);
@@ -421,6 +425,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    @EnsuresNonNull("queryParams")
     public T addQueryParams(List<Param> params) {
         if (queryParams == null) {
             queryParams = params;
@@ -434,7 +439,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return setQueryParams(Param.map2ParamList(map));
     }
 
-    public T setQueryParams(List<Param> params) {
+    public T setQueryParams(@Nullable List<Param> params) {
         // reset existing query
         if (uri != null && isNonEmpty(uri.getQuery())) {
             uri = uri.withNewQuery(null);
@@ -443,6 +448,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    @EnsuresNonNull("formParams")
     public T addFormParam(String name, String value) {
         resetNonMultipartData();
         resetMultipartData();
@@ -457,13 +463,14 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return setFormParams(Param.map2ParamList(map));
     }
 
-    public T setFormParams(List<Param> params) {
+    public T setFormParams(@Nullable List<Param> params) {
         resetNonMultipartData();
         resetMultipartData();
         formParams = params;
         return asDerivedType();
     }
 
+    @EnsuresNonNull("bodyParts")
     public T addBodyPart(Part bodyPart) {
         resetFormParams();
         resetNonMultipartData();
@@ -474,6 +481,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    @EnsuresNonNull("bodyParts")
     public T setBodyParts(List<Part> bodyParts) {
         this.bodyParts = new ArrayList<>(bodyParts);
         return asDerivedType();
@@ -539,7 +547,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
-    public T setSignatureCalculator(SignatureCalculator signatureCalculator) {
+    public T setSignatureCalculator(@Nullable SignatureCalculator signatureCalculator) {
         this.signatureCalculator = signatureCalculator;
         return asDerivedType();
     }
@@ -595,6 +603,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return rb;
     }
 
+    @EnsuresNonNull("charset")
     private void updateCharset() {
         String contentTypeHeader = headers.get(CONTENT_TYPE);
         Charset contentTypeCharset = extractContentTypeCharsetAttribute(contentTypeHeader);
