@@ -156,6 +156,9 @@ public class OAuthSignatureCalculatorInstance {
     }
 
     private static String percentEncodeAlreadyFormUrlEncoded(String s) {
+        if (s == null) {
+            return "";
+        }
         s = STAR_CHAR_PATTERN.matcher(s).replaceAll("%2A");
         s = PLUS_CHAR_PATTERN.matcher(s).replaceAll("%20");
         s = ENCODED_TILDE_PATTERN.matcher(s).replaceAll("~");
