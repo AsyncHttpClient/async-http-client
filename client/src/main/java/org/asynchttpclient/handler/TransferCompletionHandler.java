@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.Response;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +60,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
 
     private final ConcurrentLinkedQueue<TransferListener> listeners = new ConcurrentLinkedQueue<>();
     private final boolean accumulateResponseBytes;
-    private HttpHeaders headers;
+    private @Nullable HttpHeaders headers;
 
     /**
      * Create a TransferCompletionHandler that will not accumulate bytes. The resulting {@link Response#getResponseBody()},
@@ -116,7 +117,7 @@ public class TransferCompletionHandler extends AsyncCompletionHandlerBase {
     }
 
     @Override
-    public Response onCompleted(Response response) throws Exception {
+    public @Nullable Response onCompleted(@Nullable Response response) throws Exception {
         fireOnEnd();
         return response;
     }

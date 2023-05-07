@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -88,8 +89,8 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     private final OutputStream output;
     private final Semaphore semaphore = new Semaphore(1);
     private boolean responseSet;
-    private volatile Response response;
-    private volatile Throwable throwable;
+    private volatile @Nullable Response response;
+    private volatile @Nullable Throwable throwable;
 
     public BodyDeferringAsyncHandler(final OutputStream os) {
         output = os;
@@ -166,7 +167,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     @Override
-    public Response onCompleted() throws IOException {
+    public @Nullable Response onCompleted() throws IOException {
 
         if (!responseSet) {
             response = responseBuilder.build();
@@ -217,7 +218,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * @throws InterruptedException if the latch is interrupted
      * @throws IOException          if the handler completed with an exception
      */
-    public Response getResponse() throws InterruptedException, IOException {
+    public @Nullable Response getResponse() throws InterruptedException, IOException {
         // block here as long as headers arrive
         headersArrived.await();
 
@@ -278,7 +279,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
          * @throws InterruptedException if the latch is interrupted
          * @throws IOException          if the handler completed with an exception
          */
-        public Response getAsapResponse() throws InterruptedException, IOException {
+        public @Nullable Response getAsapResponse() throws InterruptedException, IOException {
             return bdah.getResponse();
         }
 
