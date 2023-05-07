@@ -21,11 +21,13 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.Response.ResponseBuilder;
 import org.asynchttpclient.handler.TransferCompletionHandler;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -47,18 +49,18 @@ import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
     private static final Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
     private static final ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
-    private static Map<String, Long> resumableIndex;
+    private static Map<String, Long> resumableIndex = Collections.emptyMap();
 
     private final AtomicLong byteTransferred;
     private final ResumableProcessor resumableProcessor;
-    private final AsyncHandler<Response> decoratedAsyncHandler;
+    private final @Nullable AsyncHandler<Response> decoratedAsyncHandler;
     private final boolean accumulateBody;
-    private String url;
+    private String url = "";
     private final ResponseBuilder responseBuilder = new ResponseBuilder();
     private ResumableListener resumableListener = new NULLResumableListener();
 
-    private ResumableAsyncHandler(long byteTransferred, ResumableProcessor resumableProcessor,
-                                  AsyncHandler<Response> decoratedAsyncHandler, boolean accumulateBody) {
+    private ResumableAsyncHandler(long byteTransferred, @Nullable ResumableProcessor resumableProcessor,
+                                  @Nullable AsyncHandler<Response> decoratedAsyncHandler, boolean accumulateBody) {
 
         this.byteTransferred = new AtomicLong(byteTransferred);
 
@@ -152,7 +154,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     }
 
     @Override
-    public Response onCompleted() throws Exception {
+    public @Nullable Response onCompleted() throws Exception {
         resumableProcessor.remove(url);
         resumableListener.onAllBytesReceived();
 
