@@ -33,14 +33,12 @@ public class UriParserTest {
     }
 
     private static void validateAgainstAbsoluteURI(String url) {
-        UriParser parser = new UriParser();
-        parser.parse(null, url);
+        final UriParser parser = UriParser.parse(null, url);
         assertUriEquals(parser, URI.create(url));
     }
 
     private static void validateAgainstRelativeURI(Uri uriContext, String urlContext, String url) {
-        UriParser parser = new UriParser();
-        parser.parse(uriContext, url);
+        final UriParser parser = UriParser.parse(uriContext, url);
         assertUriEquals(parser, URI.create(urlContext).resolve(URI.create(url)));
     }
 
@@ -56,9 +54,8 @@ public class UriParserTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testUrlHasLeadingAndTrailingWhiteSpace() {
-        UriParser parser = new UriParser();
         String url = "  http://user@example.com:8080/test?q=1  ";
-        parser.parse(null, url);
+        final UriParser parser = UriParser.parse(null, url);
         assertUriEquals(parser, URI.create(url.trim()));
     }
 

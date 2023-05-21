@@ -32,6 +32,7 @@ public final class MiscUtils {
         return !isEmpty(string);
     }
 
+    @Contract(value = "null -> true", pure = true)
     public static boolean isEmpty(@Nullable String string) {
         return string == null || string.isEmpty();
     }
