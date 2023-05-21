@@ -15,22 +15,28 @@
  */
 package org.asynchttpclient.uri;
 
+import org.jetbrains.annotations.Nullable;
+
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 final class UriParser {
 
-    public String scheme;
-    public String host;
+    public @Nullable String scheme;
+    public @Nullable String host;
     public int port = -1;
-    public String query;
-    public String fragment;
-    private String authority;
-    public String path;
-    public String userInfo;
+    public @Nullable String query;
+    public @Nullable String fragment;
+    private @Nullable String authority;
+    public String path = "";
+    public @Nullable String userInfo;
 
-    private String originalUrl;
+    private final String originalUrl;
     private int start, end, currentIndex;
+
+    private UriParser(final String originalUrl) {
+        this.originalUrl = originalUrl;
+    }
 
     private void trimLeft() {
         while (start < end && originalUrl.charAt(start) <= ' ') {
@@ -86,7 +92,7 @@ final class UriParser {
         }
     }
 
-    private boolean overrideWithContext(Uri context) {
+    private boolean overrideWithContext(@Nullable Uri context) {
 
         boolean isRelative = false;
 
@@ -126,7 +132,9 @@ final class UriParser {
         }
     }
 
-    private void inheritContextQuery(Uri context, boolean isRelative) {
+    // isRelative can be true only when context is not null
+    @SuppressWarnings("NullAway")
+    private void inheritContextQuery(@Nullable Uri context, boolean isRelative) {
         // see RFC2396 5.2.2: query and fragment inheritance
         if (isRelative && currentIndex == end) {
             query = context.getQuery();
@@ -156,7 +164,7 @@ final class UriParser {
         return originalUrl.regionMatches(currentIndex, "//", 0, 2);
     }
 
-    private void computeAuthority() {
+    private String computeAuthority() {
         int authorityEndPosition = findWithinCurrentRange('/');
         if (authorityEndPosition == -1) {
             authorityEndPosition = findWithinCurrentRange('?');
@@ -166,59 +174,60 @@ final class UriParser {
         }
         host = authority = originalUrl.substring(currentIndex, authorityEndPosition);
         currentIndex = authorityEndPosition;
+        return authority;
     }
 
-    private void computeUserInfo() {
-        int atPosition = authority.indexOf('@');
+    private void computeUserInfo(String nonNullAuthority) {
+        int atPosition = nonNullAuthority.indexOf('@');
         if (atPosition != -1) {
-            userInfo = authority.substring(0, atPosition);
-            host = authority.substring(atPosition + 1);
+            userInfo = nonNullAuthority.substring(0, atPosition);
+            host = nonNullAuthority.substring(atPosition + 1);
         } else {
             userInfo = null;
         }
     }
 
-    private boolean isMaybeIPV6() {
+    private boolean isMaybeIPV6(String nonNullHost) {
         // If the host is surrounded by [ and ] then its an IPv6
         // literal address as specified in RFC2732
-        return host.length() > 0 && host.charAt(0) == '[';
+        return nonNullHost.length() > 0 && nonNullHost.charAt(0) == '[';
     }
 
-    private void computeIPV6() {
-        int positionAfterClosingSquareBrace = host.indexOf(']') + 1;
+    private void computeIPV6(String nonNullHost) {
+        int positionAfterClosingSquareBrace = nonNullHost.indexOf(']') + 1;
         if (positionAfterClosingSquareBrace > 1) {
 
             port = -1;
 
-            if (host.length() > positionAfterClosingSquareBrace) {
-                if (host.charAt(positionAfterClosingSquareBrace) == ':') {
+            if (nonNullHost.length() > positionAfterClosingSquareBrace) {
+                if (nonNullHost.charAt(positionAfterClosingSquareBrace) == ':') {
                     // see RFC2396: port can be null
                     int portPosition = positionAfterClosingSquareBrace + 1;
-                    if (host.length() > portPosition) {
-                        port = Integer.parseInt(host.substring(portPosition));
+                    if (nonNullHost.length() > portPosition) {
+                        port = Integer.parseInt(nonNullHost.substring(portPosition));
                     }
                 } else {
                     throw new IllegalArgumentException("Invalid authority field: " + authority);
                 }
             }
 
-            host = host.substring(0, positionAfterClosingSquareBrace);
+            host = nonNullHost.substring(0, positionAfterClosingSquareBrace);
 
         } else {
             throw new IllegalArgumentException("Invalid authority field: " + authority);
         }
     }
 
-    private void computeRegularHostPort() {
-        int colonPosition = host.indexOf(':');
+    private void computeRegularHostPort(String nonNullHost) {
+        int colonPosition = nonNullHost.indexOf(':');
         port = -1;
         if (colonPosition >= 0) {
             // see RFC2396: port can be null
             int portPosition = colonPosition + 1;
-            if (host.length() > portPosition) {
-                port = Integer.parseInt(host.substring(portPosition));
+            if (nonNullHost.length() > portPosition) {
+                port = Integer.parseInt(nonNullHost.substring(portPosition));
             }
-            host = host.substring(0, colonPosition);
+            host = nonNullHost.substring(0, colonPosition);
         }
     }
 
@@ -293,14 +302,15 @@ final class UriParser {
         if (!currentPositionStartsWith4Slashes() && currentPositionStartsWith2Slashes()) {
             currentIndex += 2;
 
-            computeAuthority();
-            computeUserInfo();
+            String nonNullAuthority = computeAuthority();
+            computeUserInfo(nonNullAuthority);
 
             if (host != null) {
-                if (isMaybeIPV6()) {
-                    computeIPV6();
+                String nonNullHost = host;
+                if (isMaybeIPV6(nonNullHost)) {
+                    computeIPV6(nonNullHost);
                 } else {
-                    computeRegularHostPort();
+                    computeRegularHostPort(nonNullHost);
                 }
             }
 
@@ -336,17 +346,12 @@ final class UriParser {
         // Parse the file path if any
         if (currentIndex < end) {
             computeRegularPath();
-        } else if (queryOnly && path != null) {
+        } else if (queryOnly) {
             computeQueryOnlyPath();
-        } else if (path == null) {
-            path = "";
         }
     }
 
-    public void parse(Uri context, final String originalUrl) {
-
-        assertNotNull(originalUrl, "originalUrl");
-        this.originalUrl = originalUrl;
+    private void parse(@Nullable Uri context) {
         end = originalUrl.length();
 
         trimLeft();
@@ -361,5 +366,12 @@ final class UriParser {
         boolean queryOnly = computeQuery();
         parseAuthority();
         computePath(queryOnly);
+    }
+
+    public static UriParser parse(@Nullable Uri context, final String originalUrl) {
+        assertNotNull(originalUrl, "originalUrl");
+        final UriParser parser = new UriParser(originalUrl);
+        parser.parse(context);
+        return parser;
     }
 }

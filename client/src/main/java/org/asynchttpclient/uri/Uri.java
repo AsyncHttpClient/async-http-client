@@ -16,6 +16,7 @@
 package org.asynchttpclient.uri;
 
 import org.asynchttpclient.util.StringBuilderPool;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,17 +32,17 @@ public class Uri {
     public static final String WS = "ws";
     public static final String WSS = "wss";
     private final String scheme;
-    private final String userInfo;
+    private final @Nullable String userInfo;
     private final String host;
     private final int port;
-    private final String query;
+    private final @Nullable String query;
     private final String path;
-    private final String fragment;
-    private String url;
+    private final @Nullable String fragment;
+    private @Nullable String url;
     private final boolean secured;
     private final boolean webSocket;
 
-    public Uri(String scheme, String userInfo, String host, int port, String path, String query, String fragment) {
+    public Uri(String scheme, @Nullable String userInfo, String host, int port, String path, @Nullable String query, @Nullable String fragment) {
         this.scheme = assertNotEmpty(scheme, "scheme");
         this.userInfo = userInfo;
         this.host = assertNotEmpty(host, "host");
@@ -57,10 +58,8 @@ public class Uri {
         return create(null, originalUrl);
     }
 
-    public static Uri create(Uri context, final String originalUrl) {
-        UriParser parser = new UriParser();
-        parser.parse(context, originalUrl);
-
+    public static Uri create(@Nullable Uri context, final String originalUrl) {
+        UriParser parser = UriParser.parse(context, originalUrl);
         if (isEmpty(parser.scheme)) {
             throw new IllegalArgumentException(originalUrl + " could not be parsed into a proper Uri, missing scheme");
         }
@@ -71,7 +70,7 @@ public class Uri {
         return new Uri(parser.scheme, parser.userInfo, parser.host, parser.port, parser.path, parser.query, parser.fragment);
     }
 
-    public String getQuery() {
+    public @Nullable String getQuery() {
         return query;
     }
 
@@ -79,7 +78,7 @@ public class Uri {
         return path;
     }
 
-    public String getUserInfo() {
+    public @Nullable String getUserInfo() {
         return userInfo;
     }
 
@@ -95,7 +94,7 @@ public class Uri {
         return host;
     }
 
-    public String getFragment() {
+    public @Nullable String getFragment() {
         return fragment;
     }
 
@@ -203,7 +202,7 @@ public class Uri {
         return new Uri(newScheme, userInfo, host, port, path, query, fragment);
     }
 
-    public Uri withNewQuery(String newQuery) {
+    public Uri withNewQuery(@Nullable String newQuery) {
         return new Uri(scheme, userInfo, host, port, path, newQuery, fragment);
     }
 
