@@ -143,7 +143,8 @@ public class OAuthSignatureCalculatorInstance {
         if (formParams != null) {
             for (Param param : formParams) {
                 // formParams are not already encoded
-                parameters.add(Utf8UrlEncoder.percentEncodeQueryElement(param.getName()), Utf8UrlEncoder.percentEncodeQueryElement(param.getValue()));
+                String value = param.getValue() != null ? Utf8UrlEncoder.percentEncodeQueryElement(param.getValue()) : "";
+                parameters.add(Utf8UrlEncoder.percentEncodeQueryElement(param.getName()), value);
             }
         }
         if (queryParams != null) {
