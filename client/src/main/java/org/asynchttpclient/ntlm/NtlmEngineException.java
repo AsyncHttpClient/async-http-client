@@ -26,6 +26,8 @@
 package org.asynchttpclient.ntlm;
 
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Signals NTLM protocol failure.
  */
@@ -49,7 +51,7 @@ class NtlmEngineException extends RuntimeException {
      * @param cause   the <tt>Throwable</tt> that caused this exception, or <tt>null</tt>
      *                if the cause is unavailable, unknown, or not a <tt>Throwable</tt>
      */
-    NtlmEngineException(String message, Throwable cause) {
+    NtlmEngineException(@Nullable String message, Throwable cause) {
         super(message, cause);
     }
 }

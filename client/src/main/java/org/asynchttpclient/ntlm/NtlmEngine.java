@@ -27,11 +27,14 @@
 // fork from Apache HttpComponents
 package org.asynchttpclient.ntlm;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -55,17 +58,7 @@ public final class NtlmEngine {
     /**
      * Unicode encoding
      */
-    private static final Charset UNICODE_LITTLE_UNMARKED;
-
-    static {
-        Charset c;
-        try {
-            c = Charset.forName("UnicodeLittleUnmarked");
-        } catch (UnsupportedCharsetException e) {
-            c = null;
-        }
-        UNICODE_LITTLE_UNMARKED = c;
-    }
+    private static final Charset UNICODE_LITTLE_UNMARKED = StandardCharsets.UTF_16LE;
 
     private static final byte[] MAGIC_CONSTANT = "KGS!@#$%".getBytes(US_ASCII);
 
@@ -92,7 +85,7 @@ public final class NtlmEngine {
     /**
      * Secure random generator
      */
-    private static final SecureRandom RND_GEN;
+    private static final @Nullable SecureRandom RND_GEN;
 
     static {
         SecureRandom rnd = null;
@@ -132,7 +125,7 @@ public final class NtlmEngine {
      * @throws NtlmEngineException If {@encrypt(byte[],byte[])} fails.
      */
     private static String getType3Message(final String user, final String password, final String host, final String domain, final byte[] nonce,
-                                          final int type2Flags, final String target, final byte[] targetInformation) {
+                                          final int type2Flags, final @Nullable String target, final byte @Nullable [] targetInformation) {
         return new Type3Message(domain, host, user, password, nonce, type2Flags, target, targetInformation).getResponse();
     }
 
@@ -140,9 +133,6 @@ public final class NtlmEngine {
      * Strip dot suffix from a name
      */
     private static String stripDotSuffix(final String value) {
-        if (value == null) {
-            return null;
-        }
         final int index = value.indexOf('.');
         if (index != -1) {
             return value.substring(0, index);
@@ -153,14 +143,16 @@ public final class NtlmEngine {
     /**
      * Convert host to standard form
      */
-    private static String convertHost(final String host) {
+    @Contract(value = "!null -> !null", pure = true)
+    private static @Nullable String convertHost(final String host) {
         return host != null ? stripDotSuffix(host).toUpperCase() : null;
     }
 
     /**
      * Convert domain to standard form
      */
-    private static String convertDomain(final String domain) {
+    @Contract(value = "!null -> !null", pure = true)
+    private static @Nullable String convertDomain(final String domain) {
         return domain != null ? stripDotSuffix(domain).toUpperCase() : null;
     }
 
@@ -223,36 +215,36 @@ public final class NtlmEngine {
         protected final String user;
         protected final String password;
         protected final byte[] challenge;
-        protected final String target;
-        protected final byte[] targetInformation;
+        protected final @Nullable String target;
+        protected final byte @Nullable [] targetInformation;
 
         // Information we can generate but may be passed in (for testing)
-        protected byte[] clientChallenge;
-        protected byte[] clientChallenge2;
-        protected byte[] secondaryKey;
-        protected byte[] timestamp;
+        protected byte @Nullable [] clientChallenge;
+        protected byte @Nullable [] clientChallenge2;
+        protected byte @Nullable [] secondaryKey;
+        protected byte @Nullable [] timestamp;
 
         // Stuff we always generate
-        protected byte[] lmHash;
-        protected byte[] lmResponse;
-        protected byte[] ntlmHash;
-        protected byte[] ntlmResponse;
-        protected byte[] ntlmv2Hash;
-        protected byte[] lmv2Hash;
-        protected byte[] lmv2Response;
-        protected byte[] ntlmv2Blob;
-        protected byte[] ntlmv2Response;
-        protected byte[] ntlm2SessionResponse;
-        protected byte[] lm2SessionResponse;
-        protected byte[] lmUserSessionKey;
-        protected byte[] ntlmUserSessionKey;
-        protected byte[] ntlmv2UserSessionKey;
-        protected byte[] ntlm2SessionResponseUserSessionKey;
-        protected byte[] lanManagerSessionKey;
+        protected byte @Nullable [] lmHash;
+        protected byte @Nullable [] lmResponse;
+        protected byte @Nullable [] ntlmHash;
+        protected byte @Nullable [] ntlmResponse;
+        protected byte @Nullable [] ntlmv2Hash;
+        protected byte @Nullable [] lmv2Hash;
+        protected byte @Nullable [] lmv2Response;
+        protected byte @Nullable [] ntlmv2Blob;
+        protected byte @Nullable [] ntlmv2Response;
+        protected byte @Nullable [] ntlm2SessionResponse;
+        protected byte @Nullable [] lm2SessionResponse;
+        protected byte @Nullable [] lmUserSessionKey;
+        protected byte @Nullable [] ntlmUserSessionKey;
+        protected byte @Nullable [] ntlmv2UserSessionKey;
+        protected byte @Nullable [] ntlm2SessionResponseUserSessionKey;
+        protected byte @Nullable [] lanManagerSessionKey;
 
-        CipherGen(final String domain, final String user, final String password, final byte[] challenge, final String target,
-                         final byte[] targetInformation, final byte[] clientChallenge, final byte[] clientChallenge2, final byte[] secondaryKey,
-                         final byte[] timestamp) {
+        CipherGen(final String domain, final String user, final String password, final byte[] challenge, final @Nullable String target,
+                  final byte @Nullable [] targetInformation, final byte @Nullable [] clientChallenge, final byte @Nullable [] clientChallenge2,
+                  final byte @Nullable [] secondaryKey, final byte @Nullable [] timestamp) {
             this.domain = domain;
             this.target = target;
             this.user = user;
@@ -265,8 +257,8 @@ public final class NtlmEngine {
             this.timestamp = timestamp;
         }
 
-        CipherGen(final String domain, final String user, final String password, final byte[] challenge, final String target,
-                         final byte[] targetInformation) {
+        CipherGen(final String domain, final String user, final String password, final byte[] challenge, final @Nullable String target,
+                  final byte @Nullable [] targetInformation) {
             this(domain, user, password, challenge, target, targetInformation, null, null, null, null);
         }
 
@@ -381,9 +373,9 @@ public final class NtlmEngine {
         /**
          * Calculate the NTLMv2Blob
          */
-        public byte[] getNTLMv2Blob() {
+        public byte[] getNTLMv2Blob(byte[] nonNullTargetInformation) {
             if (ntlmv2Blob == null) {
-                ntlmv2Blob = createBlob(getClientChallenge2(), targetInformation, getTimestamp());
+                ntlmv2Blob = createBlob(getClientChallenge2(), nonNullTargetInformation, getTimestamp());
             }
             return ntlmv2Blob;
         }
@@ -391,9 +383,9 @@ public final class NtlmEngine {
         /**
          * Calculate the NTLMv2Response
          */
-        public byte[] getNTLMv2Response() {
+        public byte[] getNTLMv2Response(byte[] nonNullTargetInformation) {
             if (ntlmv2Response == null) {
-                ntlmv2Response = lmv2Response(getNTLMv2Hash(), challenge, getNTLMv2Blob());
+                ntlmv2Response = lmv2Response(getNTLMv2Hash(), challenge, getNTLMv2Blob(nonNullTargetInformation));
             }
             return ntlmv2Response;
         }
@@ -458,11 +450,11 @@ public final class NtlmEngine {
         /**
          * GetNTLMv2UserSessionKey
          */
-        public byte[] getNTLMv2UserSessionKey() {
+        public byte[] getNTLMv2UserSessionKey(byte[] nonNullTargetInformation) {
             if (ntlmv2UserSessionKey == null) {
                 final byte[] ntlmv2hash = getNTLMv2Hash();
                 final byte[] truncatedResponse = new byte[16];
-                System.arraycopy(getNTLMv2Response(), 0, truncatedResponse, 0, 16);
+                System.arraycopy(getNTLMv2Response(nonNullTargetInformation), 0, truncatedResponse, 0, 16);
                 ntlmv2UserSessionKey = hmacMD5(truncatedResponse, ntlmv2hash);
             }
             return ntlmv2UserSessionKey;
@@ -597,9 +589,6 @@ public final class NtlmEngine {
      * the NTLM Response and the NTLMv2 and LMv2 Hashes.
      */
     private static byte[] ntlmHash(final String password) {
-        if (UNICODE_LITTLE_UNMARKED == null) {
-            throw new NtlmEngineException("Unicode not supported");
-        }
         final byte[] unicodePassword = password.getBytes(UNICODE_LITTLE_UNMARKED);
         final MD4 md4 = new MD4();
         md4.update(unicodePassword);
@@ -613,9 +602,6 @@ public final class NtlmEngine {
      * Responses.
      */
     private static byte[] lmv2Hash(final String domain, final String user, final byte[] ntlmHash) {
-        if (UNICODE_LITTLE_UNMARKED == null) {
-            throw new NtlmEngineException("Unicode not supported");
-        }
         final HMACMD5 hmacMD5 = new HMACMD5(ntlmHash);
         // Upper case username, upper case domain!
         hmacMD5.update(user.toUpperCase(Locale.ROOT).getBytes(UNICODE_LITTLE_UNMARKED));
@@ -632,9 +618,6 @@ public final class NtlmEngine {
      * Responses.
      */
     private static byte[] ntlmv2Hash(final String domain, final String user, final byte[] ntlmHash) {
-        if (UNICODE_LITTLE_UNMARKED == null) {
-            throw new NtlmEngineException("Unicode not supported");
-        }
         final HMACMD5 hmacMD5 = new HMACMD5(ntlmHash);
         // Upper case username, mixed case target!!
         hmacMD5.update(user.toUpperCase(Locale.ROOT).getBytes(UNICODE_LITTLE_UNMARKED));
@@ -777,7 +760,7 @@ public final class NtlmEngine {
         /**
          * The current response
          */
-        private byte[] messageContents;
+        private byte[] messageContents = new byte[]{};
 
         /**
          * The current output position
@@ -902,7 +885,7 @@ public final class NtlmEngine {
          *
          * @param bytes the bytes to add.
          */
-        protected void addBytes(final byte[] bytes) {
+        protected void addBytes(final byte @Nullable [] bytes) {
             if (bytes == null) {
                 return;
             }
@@ -1022,8 +1005,8 @@ public final class NtlmEngine {
      */
     static class Type2Message extends NTLMMessage {
         protected byte[] challenge;
-        protected String target;
-        protected byte[] targetInfo;
+        protected @Nullable String target;
+        protected byte @Nullable [] targetInfo;
         protected int flags;
 
         Type2Message(final String message) {
@@ -1090,14 +1073,14 @@ public final class NtlmEngine {
         /**
          * Retrieve the target
          */
-        String getTarget() {
+        @Nullable String getTarget() {
             return target;
         }
 
         /**
          * Retrieve the target info
          */
-        byte[] getTargetInfo() {
+        byte @Nullable [] getTargetInfo() {
             return targetInfo;
         }
 
@@ -1117,19 +1100,19 @@ public final class NtlmEngine {
         // Response flags from the type2 message
         protected int type2Flags;
 
-        protected byte[] domainBytes;
-        protected byte[] hostBytes;
+        protected byte @Nullable [] domainBytes;
+        protected byte @Nullable [] hostBytes;
         protected byte[] userBytes;
 
         protected byte[] lmResp;
         protected byte[] ntResp;
-        protected byte[] sessionKey;
+        protected byte @Nullable [] sessionKey;
 
         /**
          * Constructor. Pass the arguments we will need
          */
         Type3Message(final String domain, final String host, final String user, final String password, final byte[] nonce,
-                     final int type2Flags, final String target, final byte[] targetInformation) {
+                     final int type2Flags, final @Nullable String target, final byte @Nullable [] targetInformation) {
             // Save the flags
             this.type2Flags = type2Flags;
 
@@ -1149,12 +1132,13 @@ public final class NtlmEngine {
                 // been tested
                 if ((type2Flags & FLAG_TARGETINFO_PRESENT) != 0 && targetInformation != null && target != null) {
                     // NTLMv2
-                    ntResp = gen.getNTLMv2Response();
+                    final byte[] nonNullTargetInformation = targetInformation;
+                    ntResp = gen.getNTLMv2Response(nonNullTargetInformation);
                     lmResp = gen.getLMv2Response();
                     if ((type2Flags & FLAG_REQUEST_LAN_MANAGER_KEY) != 0) {
                         userSessionKey = gen.getLanManagerSessionKey();
                     } else {
-                        userSessionKey = gen.getNTLMv2UserSessionKey();
+                        userSessionKey = gen.getNTLMv2UserSessionKey(nonNullTargetInformation);
                     }
                 } else {
                     // NTLMv1
@@ -1197,9 +1181,6 @@ public final class NtlmEngine {
                 }
             } else {
                 sessionKey = null;
-            }
-            if (UNICODE_LITTLE_UNMARKED == null) {
-                throw new NtlmEngineException("Unicode not supported");
             }
             hostBytes = unqualifiedHost != null ? unqualifiedHost.getBytes(UNICODE_LITTLE_UNMARKED) : null;
             domainBytes = unqualifiedDomain != null ? unqualifiedDomain.toUpperCase(Locale.ROOT).getBytes(UNICODE_LITTLE_UNMARKED) : null;
