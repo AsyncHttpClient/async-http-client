@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.spnego;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Signals SPNEGO protocol failure.
  */
@@ -22,11 +24,11 @@ public class SpnegoEngineException extends Exception {
 
     private static final long serialVersionUID = -3123799505052881438L;
 
-    public SpnegoEngineException(String message) {
+    public SpnegoEngineException(@Nullable String message) {
         super(message);
     }
 
-    public SpnegoEngineException(String message, Throwable cause) {
+    public SpnegoEngineException(@Nullable String message, Throwable cause) {
         super(message, cause);
     }
 }
