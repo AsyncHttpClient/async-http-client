@@ -17,6 +17,7 @@ package org.asynchttpclient.util;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -31,7 +32,7 @@ public enum UriEncoder {
             return Utf8UrlEncoder.encodePath(path);
         }
 
-        private void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final CharSequence value) {
+        private void encodeAndAppendQueryParam(final StringBuilder sb, final CharSequence name, final @Nullable CharSequence value) {
             Utf8UrlEncoder.encodeAndAppendQueryElement(sb, name);
             if (value != null) {
                 sb.append('=');
@@ -81,7 +82,7 @@ public enum UriEncoder {
             return path;
         }
 
-        private void appendRawQueryParam(StringBuilder sb, String name, String value) {
+        private void appendRawQueryParam(StringBuilder sb, String name, @Nullable String value) {
             sb.append(name);
             if (value != null) {
                 sb.append('=').append(value);
@@ -131,15 +132,15 @@ public enum UriEncoder {
 
     protected abstract String withoutQueryWithParams(List<Param> queryParams);
 
-    private String withQuery(final String query, final List<Param> queryParams) {
+    private String withQuery(final String query, final @Nullable List<Param> queryParams) {
         return isNonEmpty(queryParams) ? withQueryWithParams(query, queryParams) : withQueryWithoutParams(query);
     }
 
-    private String withoutQuery(final List<Param> queryParams) {
+    private @Nullable String withoutQuery(final @Nullable List<Param> queryParams) {
         return isNonEmpty(queryParams) ? withoutQueryWithParams(queryParams) : null;
     }
 
-    public Uri encode(Uri uri, List<Param> queryParams) {
+    public Uri encode(Uri uri, @Nullable List<Param> queryParams) {
         String newPath = encodePath(uri.getPath());
         String newQuery = encodeQuery(uri.getQuery(), queryParams);
         return new Uri(uri.getScheme(),
@@ -153,7 +154,7 @@ public enum UriEncoder {
 
     protected abstract String encodePath(String path);
 
-    private String encodeQuery(final String query, final List<Param> queryParams) {
+    private @Nullable String encodeQuery(final @Nullable String query, final @Nullable List<Param> queryParams) {
         return isNonEmpty(query) ? withQuery(query, queryParams) : withoutQuery(queryParams);
     }
 }

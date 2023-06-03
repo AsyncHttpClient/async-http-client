@@ -19,6 +19,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -59,16 +60,16 @@ public final class HttpUtils {
         return sb.toString();
     }
 
-    public static Charset extractContentTypeCharsetAttribute(String contentType) {
+    public static @Nullable Charset extractContentTypeCharsetAttribute(String contentType) {
         String charsetName = extractContentTypeAttribute(contentType, CONTENT_TYPE_CHARSET_ATTRIBUTE);
         return charsetName != null ? Charset.forName(charsetName) : null;
     }
 
-    public static String extractContentTypeBoundaryAttribute(String contentType) {
+    public static @Nullable String extractContentTypeBoundaryAttribute(String contentType) {
         return extractContentTypeAttribute(contentType, CONTENT_TYPE_BOUNDARY_ATTRIBUTE);
     }
 
-    private static String extractContentTypeAttribute(String contentType, String attribute) {
+    private static @Nullable String extractContentTypeAttribute(@Nullable String contentType, String attribute) {
         if (contentType == null) {
             return null;
         }
@@ -147,7 +148,7 @@ public final class HttpUtils {
         return sb;
     }
 
-    private static void encodeAndAppendFormParam(StringBuilder sb, String name, String value, Charset charset) {
+    private static void encodeAndAppendFormParam(StringBuilder sb, String name, @Nullable String value, Charset charset) {
         encodeAndAppendFormField(sb, name, charset);
         if (value != null) {
             sb.append('=');

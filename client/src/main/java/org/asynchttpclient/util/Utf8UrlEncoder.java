@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient.util;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.BitSet;
 
 public final class Utf8UrlEncoder {
@@ -144,7 +147,8 @@ public final class Utf8UrlEncoder {
         return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, true);
     }
 
-    public static String percentEncodeQueryElement(String input) {
+    @Contract(value = "!null -> !null")
+    public static @Nullable String percentEncodeQueryElement(@Nullable String input) {
         if (input == null) {
             return null;
         }
@@ -165,7 +169,7 @@ public final class Utf8UrlEncoder {
         return sb;
     }
 
-    private static StringBuilder lazyAppendEncoded(StringBuilder sb, CharSequence input, BitSet dontNeedEncoding, boolean encodeSpaceAsPlus) {
+    private static @Nullable StringBuilder lazyAppendEncoded(@Nullable StringBuilder sb, CharSequence input, BitSet dontNeedEncoding, boolean encodeSpaceAsPlus) {
         int c;
         for (int i = 0; i < input.length(); i += Character.charCount(c)) {
             c = Character.codePointAt(input, i);

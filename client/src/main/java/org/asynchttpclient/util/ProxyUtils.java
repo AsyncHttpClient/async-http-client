@@ -17,6 +17,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +81,7 @@ public final class ProxyUtils {
      * @param request the request
      * @return the proxy server to be used for this request (can be null)
      */
-    public static ProxyServer getProxyServer(AsyncHttpClientConfig config, Request request) {
+    public static @Nullable ProxyServer getProxyServer(AsyncHttpClientConfig config, Request request) {
         ProxyServer proxyServer = request.getProxyServer();
         if (proxyServer == null) {
             ProxyServerSelector selector = config.getProxyServerSelector();

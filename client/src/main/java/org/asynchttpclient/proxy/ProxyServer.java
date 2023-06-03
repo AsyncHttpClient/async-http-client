@@ -147,7 +147,7 @@ public class ProxyServer {
             return this;
         }
 
-        public Builder setRealm(Realm realm) {
+        public Builder setRealm(@Nullable Realm realm) {
             this.realm = realm;
             return this;
         }
