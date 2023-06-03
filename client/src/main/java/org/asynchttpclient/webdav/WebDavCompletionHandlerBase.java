@@ -18,6 +18,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.netty.NettyResponse;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -45,8 +46,8 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebDavCompletionHandlerBase.class);
     private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY;
     private final List<HttpResponseBodyPart> bodyParts = Collections.synchronizedList(new ArrayList<>());
-    private HttpResponseStatus status;
-    private HttpHeaders headers;
+    private @Nullable HttpResponseStatus status;
+    private @Nullable HttpHeaders headers;
 
     static {
         DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
@@ -78,11 +79,11 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         return State.CONTINUE;
     }
 
-    private Document readXMLResponse(InputStream stream) {
+    private Document readXMLResponse(InputStream stream, HttpResponseStatus initialStatus) {
         Document document;
         try {
             document = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(stream);
-            parse(document);
+            status = parse(document, initialStatus);
         } catch (SAXException | IOException | ParserConfigurationException e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -90,7 +91,8 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         return document;
     }
 
-    private void parse(Document document) {
+    private static HttpResponseStatus parse(Document document, HttpResponseStatus initialStatus) {
+        HttpResponseStatus status = initialStatus;
         Element element = document.getDocumentElement();
         NodeList statusNode = element.getElementsByTagName("status");
         for (int i = 0; i < statusNode.getLength(); i++) {
@@ -101,6 +103,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
             String statusText = value.substring(value.lastIndexOf(' '));
             status = new HttpStatusWrapper(status, statusText, statusCode);
         }
+        return status;
     }
 
     @Override
@@ -108,7 +111,7 @@ public abstract class WebDavCompletionHandlerBase<T> implements AsyncHandler<T> 
         if (status != null) {
             Document document = null;
             if (status.getStatusCode() == 207) {
-                document = readXMLResponse(new NettyResponse(status, headers, bodyParts).getResponseBodyAsStream());
+                document = readXMLResponse(new NettyResponse(status, headers, bodyParts).getResponseBodyAsStream(), status);
             }
             // recompute response as readXMLResponse->parse might have updated it
             return onCompleted(new WebDavResponse(new NettyResponse(status, headers, bodyParts), document));

@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 
 import java.io.InputStream;
@@ -30,9 +31,9 @@ import java.util.List;
 public class WebDavResponse implements Response {
 
     private final Response response;
-    private final Document document;
+    private final @Nullable Document document;
 
-    WebDavResponse(Response response, Document document) {
+    WebDavResponse(Response response, @Nullable Document document) {
         this.response = response;
         this.document = document;
     }
@@ -132,7 +133,7 @@ public class WebDavResponse implements Response {
         return response.getLocalAddress();
     }
 
-    public Document getBodyAsXML() {
+    public @Nullable Document getBodyAsXML() {
         return document;
     }
 }
