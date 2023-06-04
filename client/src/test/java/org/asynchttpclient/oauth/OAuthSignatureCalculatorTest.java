@@ -147,6 +147,43 @@ public class OAuthSignatureCalculatorTest {
         testSignatureBaseStringWithEncodableOAuthToken(request);
     }
 
+    @Test
+    public void testDuplicatingNullValueFormParameter() throws Exception {
+        // Form parameter with no value in OAuth1 should be treated the same as form parameter with an empty value.
+        // Tested with http://lti.tools/oauth/
+        Request request = post("http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b")
+                .addFormParam("c2", "")
+                .addFormParam("a3", "2 q")
+                .addFormParam("c2", null)
+                .build();
+
+        String signatureBaseString = new OAuthSignatureCalculatorInstance()
+                .signatureBaseString(//
+                        new ConsumerKey(CONSUMER_KEY, CONSUMER_SECRET),
+                        new RequestToken(TOKEN_KEY, TOKEN_SECRET),
+                        request.getUri(),
+                        request.getMethod(),
+                        request.getFormParams(),
+                        request.getQueryParams(),
+                        TIMESTAMP,
+                        NONCE).toString();
+        assertEquals("POST&" +
+                "http%3A%2F%2Fexample.com%2Frequest" +
+                "&a2%3Dr%2520b%26" +
+                "a3%3D2%2520q%26" +
+                "a3%3Da%26" +
+                "b5%3D%253D%25253D%26" +
+                "c%2540%3D%26" +
+                "c2%3D%26" +
+                "c2%3D%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26" +
+                "oauth_nonce%3Dkllo9940pd9333jh%26" +
+                "oauth_signature_method%3DHMAC-SHA1%26" +
+                "oauth_timestamp%3D1191242096%26" +
+                "oauth_token%3Dnnch734d00sl2jdk%26" +
+                "oauth_version%3D1.0", signatureBaseString);
+    }
+
     // based on the reference test case from
     // http://oauth.pbwiki.com/TestCases
     @RepeatedIfExceptionsTest(repeats = 5)
