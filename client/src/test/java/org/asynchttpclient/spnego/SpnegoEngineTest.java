@@ -21,6 +21,7 @@ import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
 import org.asynchttpclient.AbstractBasicTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.HashMap;
@@ -94,6 +95,19 @@ public class SpnegoEngineTest extends AbstractBasicTest {
         String token = spnegoEngine.generateToken("localhost");
         assertNotNull(token);
         assertTrue(token.startsWith("YII"));
+    }
+
+    @Test
+    public void testSpnegoGenerateTokenWithNullPasswordFail() {
+        SpnegoEngine spnegoEngine = new SpnegoEngine("alice",
+                null,
+                "bob",
+                "service.ws.apache.org",
+                false,
+                null,
+                "alice",
+                null);
+        assertThrows(SpnegoEngineException.class, () -> spnegoEngine.generateToken("localhost"), "No password provided");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)

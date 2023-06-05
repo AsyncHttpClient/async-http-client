@@ -42,6 +42,7 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,17 +71,19 @@ public class SpnegoEngine {
     private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
     private static final Map<String, SpnegoEngine> instances = new HashMap<>();
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final SpnegoTokenGenerator spnegoGenerator;
-    private final String username;
-    private final String password;
-    private final String servicePrincipalName;
-    private final String realmName;
+    private final @Nullable SpnegoTokenGenerator spnegoGenerator;
+    private final @Nullable String username;
+    private final @Nullable String password;
+    private final @Nullable String servicePrincipalName;
+    private final @Nullable String realmName;
     private final boolean useCanonicalHostname;
-    private final String loginContextName;
-    private final Map<String, String> customLoginConfig;
+    private final @Nullable String loginContextName;
+    private final @Nullable Map<String, String> customLoginConfig;
 
-    public SpnegoEngine(final String username, final String password, final String servicePrincipalName, final String realmName, final boolean useCanonicalHostname,
-                        final Map<String, String> customLoginConfig, final String loginContextName, final SpnegoTokenGenerator spnegoGenerator) {
+    public SpnegoEngine(final @Nullable String username, final @Nullable String password,
+                        final @Nullable String servicePrincipalName, final @Nullable String realmName,
+                        final boolean useCanonicalHostname, final @Nullable Map<String, String> customLoginConfig,
+                        final @Nullable String loginContextName, final @Nullable SpnegoTokenGenerator spnegoGenerator) {
         this.username = username;
         this.password = password;
         this.servicePrincipalName = servicePrincipalName;
@@ -95,8 +98,10 @@ public class SpnegoEngine {
         this(null, null, null, null, true, null, null, null);
     }
 
-    public static SpnegoEngine instance(final String username, final String password, final String servicePrincipalName, final String realmName,
-                                        final boolean useCanonicalHostname, final Map<String, String> customLoginConfig, final String loginContextName) {
+    public static SpnegoEngine instance(final @Nullable String username, final @Nullable String password,
+                                        final @Nullable String servicePrincipalName, final @Nullable String realmName,
+                                        final boolean useCanonicalHostname, final @Nullable Map<String, String> customLoginConfig,
+                                        final @Nullable String loginContextName) {
         String key = "";
         if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
             StringBuilder customLoginConfigKeyValues = new StringBuilder();
@@ -151,7 +156,6 @@ public class SpnegoEngine {
             // Try SPNEGO by default, fall back to Kerberos later if error
             negotiationOid = new Oid(SPNEGO_OID);
 
-            boolean tryKerberos = false;
             String spn = getCompleteServicePrincipalName(host);
             try {
                 GSSManager manager = GSSManager.getInstance();
@@ -181,13 +185,12 @@ public class SpnegoEngine {
                 // Rethrow any other exception.
                 if (ex.getMajor() == GSSException.BAD_MECH) {
                     log.debug("GSSException BAD_MECH, retry with Kerberos MECH");
-                    tryKerberos = true;
                 } else {
                     throw ex;
                 }
 
             }
-            if (tryKerberos) {
+            if (gssContext == null) {
                 /* Kerberos v5 GSS-API mechanism defined in RFC 1964. */
                 log.debug("Using Kerberos MECH {}", KERBEROS_OID);
                 negotiationOid = new Oid(KERBEROS_OID);
@@ -270,14 +273,14 @@ public class SpnegoEngine {
         return canonicalHostname;
     }
 
-    private CallbackHandler getUsernamePasswordHandler() {
+    private @Nullable CallbackHandler getUsernamePasswordHandler() {
         if (username == null) {
             return null;
         }
         return new NamePasswordCallbackHandler(username, password);
     }
 
-    public Configuration getLoginConfiguration() {
+    public @Nullable Configuration getLoginConfiguration() {
         if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
             return new Configuration() {
                 @Override

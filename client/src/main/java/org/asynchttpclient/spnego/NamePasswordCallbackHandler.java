@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.spnego;
 
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,14 +33,14 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
     private static final Class<?>[] PASSWORD_CALLBACK_TYPES = new Class<?>[]{Object.class, char[].class, String.class};
 
     private final String username;
-    private final String password;
-    private final String passwordCallbackName;
+    private final @Nullable String password;
+    private final @Nullable String passwordCallbackName;
 
-    public NamePasswordCallbackHandler(String username, String password) {
+    public NamePasswordCallbackHandler(String username, @Nullable String password) {
         this(username, password, null);
     }
 
-    public NamePasswordCallbackHandler(String username, String password, String passwordCallbackName) {
+    public NamePasswordCallbackHandler(String username, @Nullable String password, @Nullable String passwordCallbackName) {
         this.username = username;
         this.password = password;
         this.passwordCallbackName = passwordCallbackName;
@@ -54,7 +55,7 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
                 ((NameCallback) callback).setName(username);
             } else if (callback instanceof PasswordCallback) {
                 PasswordCallback pwCallback = (PasswordCallback) callback;
-                pwCallback.setPassword(password.toCharArray());
+                pwCallback.setPassword(password != null ? password.toCharArray() : null);
             } else if (!invokePasswordCallback(callback)) {
                 String errorMsg = "Unsupported callback type " + callback.getClass().getName();
                 log.info(errorMsg);
@@ -80,7 +81,7 @@ public class NamePasswordCallbackHandler implements CallbackHandler {
             try {
                 Method method = callback.getClass().getMethod(cbname, arg);
                 Object[] args = {
-                        arg == String.class ? password : password.toCharArray()
+                        arg == String.class ? password : password != null ? password.toCharArray() : null
                 };
                 method.invoke(callback, args);
                 return true;
