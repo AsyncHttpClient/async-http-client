@@ -19,6 +19,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +39,7 @@ public final class AuthenticatorUtils {
         // Prevent outside initialization
     }
 
-    public static String getHeaderWithPrefix(List<String> authenticateHeaders, String prefix) {
+    public static @Nullable String getHeaderWithPrefix(@Nullable List<String> authenticateHeaders, String prefix) {
         if (authenticateHeaders != null) {
             for (String authenticateHeader : authenticateHeaders) {
                 if (authenticateHeader.regionMatches(true, 0, prefix, 0, prefix.length())) {
@@ -50,11 +51,11 @@ public final class AuthenticatorUtils {
         return null;
     }
 
-    private static String computeBasicAuthentication(Realm realm) {
+    private static @Nullable String computeBasicAuthentication(@Nullable Realm realm) {
         return realm != null ? computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset()) : null;
     }
 
-    private static String computeBasicAuthentication(String principal, String password, Charset charset) {
+    private static String computeBasicAuthentication(@Nullable String principal, @Nullable String password, Charset charset) {
         String s = principal + ':' + password;
         return "Basic " + Base64.getEncoder().encodeToString(s.getBytes(charset));
     }
@@ -68,9 +69,9 @@ public final class AuthenticatorUtils {
         }
     }
 
-    private static String computeDigestAuthentication(Realm realm) {
+    private static String computeDigestAuthentication(Realm realm, Uri uri) {
 
-        String realmUri = computeRealmURI(realm.getUri(), realm.isUseAbsoluteURI(), realm.isOmitQuery());
+        String realmUri = computeRealmURI(uri, realm.isUseAbsoluteURI(), realm.isOmitQuery());
 
         StringBuilder builder = new StringBuilder().append("Digest ");
         append(builder, "username", realm.getPrincipal(), true);
@@ -99,7 +100,7 @@ public final class AuthenticatorUtils {
         return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1), StandardCharsets.UTF_8);
     }
 
-    private static void append(StringBuilder builder, String name, String value, boolean quoted) {
+    private static void append(StringBuilder builder, String name, @Nullable String value, boolean quoted) {
         builder.append(name).append('=');
         if (quoted) {
             builder.append('"').append(value).append('"');
@@ -109,7 +110,7 @@ public final class AuthenticatorUtils {
         builder.append(", ");
     }
 
-    public static String perConnectionProxyAuthorizationHeader(Request request, Realm proxyRealm) {
+    public static @Nullable String perConnectionProxyAuthorizationHeader(Request request, @Nullable Realm proxyRealm) {
         String proxyAuthorization = null;
         if (proxyRealm != null && proxyRealm.isUsePreemptiveAuth()) {
             switch (proxyRealm.getScheme()) {
@@ -130,7 +131,7 @@ public final class AuthenticatorUtils {
         return proxyAuthorization;
     }
 
-    public static String perRequestProxyAuthorizationHeader(Request request, Realm proxyRealm) {
+    public static @Nullable String perRequestProxyAuthorizationHeader(Request request, @Nullable Realm proxyRealm) {
         String proxyAuthorization = null;
         if (proxyRealm != null && proxyRealm.isUsePreemptiveAuth()) {
 
@@ -141,11 +142,12 @@ public final class AuthenticatorUtils {
                 case DIGEST:
                     if (isNonEmpty(proxyRealm.getNonce())) {
                         // update realm with request information
+                        final Uri uri = request.getUri();
                         proxyRealm = realm(proxyRealm)
-                                .setUri(request.getUri())
+                                .setUri(uri)
                                 .setMethodName(request.getMethod())
                                 .build();
-                        proxyAuthorization = computeDigestAuthentication(proxyRealm);
+                        proxyAuthorization = computeDigestAuthentication(proxyRealm, uri);
                     }
                     break;
                 case NTLM:
@@ -162,7 +164,8 @@ public final class AuthenticatorUtils {
         return proxyAuthorization;
     }
 
-    public static String perConnectionAuthorizationHeader(Request request, ProxyServer proxyServer, Realm realm) {
+    public static @Nullable String perConnectionAuthorizationHeader(Request request, @Nullable ProxyServer proxyServer,
+                                                                    @Nullable Realm realm) {
         String authorizationHeader = null;
 
         if (realm != null && realm.isUsePreemptiveAuth()) {
@@ -203,7 +206,7 @@ public final class AuthenticatorUtils {
         return authorizationHeader;
     }
 
-    public static String perRequestAuthorizationHeader(Request request, Realm realm) {
+    public static @Nullable String perRequestAuthorizationHeader(Request request, @Nullable Realm realm) {
         String authorizationHeader = null;
         if (realm != null && realm.isUsePreemptiveAuth()) {
 
@@ -214,11 +217,12 @@ public final class AuthenticatorUtils {
                 case DIGEST:
                     if (isNonEmpty(realm.getNonce())) {
                         // update realm with request information
+                        final Uri uri = request.getUri();
                         realm = realm(realm)
-                                .setUri(request.getUri())
+                                .setUri(uri)
                                 .setMethodName(request.getMethod())
                                 .build();
-                        authorizationHeader = computeDigestAuthentication(realm);
+                        authorizationHeader = computeDigestAuthentication(realm, uri);
                     }
                     break;
                 case NTLM:

@@ -233,7 +233,7 @@
                             -Xep:NullOptional:ERROR
                             -XepExcludedPaths:.*/src/test/java/.*
                             -XepOpt:NullAway:AnnotatedPackages=org.asynchttpclient
-                            -XepOpt:NullAway:UnannotatedSubPackages=org.asynchttpclient.netty,org.asynchttpclient.ntlm,org.asynchttpclient.request,org.asynchttpclient.spnego,org.asynchttpclient.util,org.asynchttpclient.webdav,org.asynchttpclient.ws
+                            -XepOpt:NullAway:UnannotatedSubPackages=org.asynchttpclient.netty,org.asynchttpclient.ntlm,org.asynchttpclient.request,org.asynchttpclient.spnego,org.asynchttpclient.webdav,org.asynchttpclient.ws
                             -XepOpt:NullAway:AcknowledgeRestrictiveAnnotations=true
                             -Xep:NullAway:ERROR
                         </arg>
