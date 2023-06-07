@@ -372,20 +372,26 @@ public final class NtlmEngine {
 
         /**
          * Calculate the NTLMv2Blob
+         *
+         * @param targetInformation this parameter is the same object as the field targetInformation,
+         *                          but guaranteed to be not null. This is done to satisfy NullAway requirements
          */
-        public byte[] getNTLMv2Blob(byte[] nonNullTargetInformation) {
+        public byte[] getNTLMv2Blob(byte[] targetInformation) {
             if (ntlmv2Blob == null) {
-                ntlmv2Blob = createBlob(getClientChallenge2(), nonNullTargetInformation, getTimestamp());
+                ntlmv2Blob = createBlob(getClientChallenge2(), targetInformation, getTimestamp());
             }
             return ntlmv2Blob;
         }
 
         /**
          * Calculate the NTLMv2Response
+         *
+         * @param targetInformation this parameter is the same object as the field targetInformation,
+         *                          but guaranteed to be not null. This is done to satisfy NullAway requirements
          */
-        public byte[] getNTLMv2Response(byte[] nonNullTargetInformation) {
+        public byte[] getNTLMv2Response(byte[] targetInformation) {
             if (ntlmv2Response == null) {
-                ntlmv2Response = lmv2Response(getNTLMv2Hash(), challenge, getNTLMv2Blob(nonNullTargetInformation));
+                ntlmv2Response = lmv2Response(getNTLMv2Hash(), challenge, getNTLMv2Blob(targetInformation));
             }
             return ntlmv2Response;
         }
@@ -449,12 +455,15 @@ public final class NtlmEngine {
 
         /**
          * GetNTLMv2UserSessionKey
+         *
+         * @param targetInformation this parameter is the same object as the field targetInformation,
+         *                          but guaranteed to be not null. This is done to satisfy NullAway requirements
          */
-        public byte[] getNTLMv2UserSessionKey(byte[] nonNullTargetInformation) {
+        public byte[] getNTLMv2UserSessionKey(byte[] targetInformation) {
             if (ntlmv2UserSessionKey == null) {
                 final byte[] ntlmv2hash = getNTLMv2Hash();
                 final byte[] truncatedResponse = new byte[16];
-                System.arraycopy(getNTLMv2Response(nonNullTargetInformation), 0, truncatedResponse, 0, 16);
+                System.arraycopy(getNTLMv2Response(targetInformation), 0, truncatedResponse, 0, 16);
                 ntlmv2UserSessionKey = hmacMD5(truncatedResponse, ntlmv2hash);
             }
             return ntlmv2UserSessionKey;
@@ -757,10 +766,11 @@ public final class NtlmEngine {
      * NTLM message generation, base class
      */
     private static class NTLMMessage {
+        private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
         /**
          * The current response
          */
-        private byte[] messageContents = new byte[]{};
+        private byte[] messageContents = EMPTY_BYTE_ARRAY;
 
         /**
          * The current output position
@@ -1132,13 +1142,12 @@ public final class NtlmEngine {
                 // been tested
                 if ((type2Flags & FLAG_TARGETINFO_PRESENT) != 0 && targetInformation != null && target != null) {
                     // NTLMv2
-                    final byte[] nonNullTargetInformation = targetInformation;
-                    ntResp = gen.getNTLMv2Response(nonNullTargetInformation);
+                    ntResp = gen.getNTLMv2Response(targetInformation);
                     lmResp = gen.getLMv2Response();
                     if ((type2Flags & FLAG_REQUEST_LAN_MANAGER_KEY) != 0) {
                         userSessionKey = gen.getLanManagerSessionKey();
                     } else {
-                        userSessionKey = gen.getNTLMv2UserSessionKey(nonNullTargetInformation);
+                        userSessionKey = gen.getNTLMv2UserSessionKey(targetInformation);
                     }
                 } else {
                     // NTLMv1
