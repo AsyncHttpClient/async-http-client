@@ -27,9 +27,11 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.ntlm.NtlmEngine.Type2Message;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.ExecutionException;
@@ -68,6 +70,14 @@ public class NtlmTest extends AbstractBasicTest {
             int status = responseFuture.get().getStatusCode();
             assertEquals(200, status);
         }
+    }
+
+    @Test
+    public void testUnicodeLittleUnmarkedEncoding() {
+        final Charset unicodeLittleUnmarked = Charset.forName("UnicodeLittleUnmarked");
+        final Charset utf16le = StandardCharsets.UTF_16LE;
+        assertEquals(unicodeLittleUnmarked, utf16le);
+        assertArrayEquals("Test @ テスト".getBytes(unicodeLittleUnmarked), "Test @ テスト".getBytes(utf16le));
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
