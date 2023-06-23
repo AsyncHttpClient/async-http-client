@@ -69,6 +69,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String HTTP_CLIENT_CODEC_MAX_HEADER_SIZE_CONFIG = "httpClientCodecMaxHeaderSize";
     public static final String HTTP_CLIENT_CODEC_MAX_CHUNK_SIZE_CONFIG = "httpClientCodecMaxChunkSize";
     public static final String HTTP_CLIENT_CODEC_INITIAL_BUFFER_SIZE_CONFIG = "httpClientCodecInitialBufferSize";
+    public static final String HTTP_CLIENT_CODEC_PARSE_HTTP_AFTER_CONNECT_REQUEST = "httpClientCodecParseHttpAfterConnectRequest";
+    public static final String HTTP_CLIENT_CODEC_ALLOW_DUPLICATE_CONTENT_LENGTHS = "httpClientCodecAllowDuplicateContentLengths";
     public static final String DISABLE_ZERO_COPY_CONFIG = "disableZeroCopy";
     public static final String HANDSHAKE_TIMEOUT_CONFIG = "handshakeTimeout";
     public static final String CHUNKED_FILE_CHUNK_SIZE_CONFIG = "chunkedFileChunkSize";
@@ -269,6 +271,14 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static int defaultHttpClientCodecInitialBufferSize() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP_CLIENT_CODEC_INITIAL_BUFFER_SIZE_CONFIG);
+    }
+
+    public static boolean defaultHttpClientParseHttpAfterConnectRequest() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP_CLIENT_CODEC_PARSE_HTTP_AFTER_CONNECT_REQUEST);
+    }
+
+    public static boolean defaultHttpClientAllowDuplicateContentLengths() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP_CLIENT_CODEC_ALLOW_DUPLICATE_CONTENT_LENGTHS);
     }
 
     public static boolean defaultDisableZeroCopy() {

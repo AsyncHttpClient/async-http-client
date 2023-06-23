@@ -66,6 +66,8 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecInitialBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientParseHttpAfterConnectRequest;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientAllowDuplicateContentLengths;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxChunkSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxHeaderSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxInitialLineLength;
@@ -181,6 +183,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int httpClientCodecMaxHeaderSize;
     private final int httpClientCodecMaxChunkSize;
     private final int httpClientCodecInitialBufferSize;
+    private final boolean httpClientParseHttpAfterConnectRequest;
+    private final boolean httpClientAllowDuplicateContentLengths;
     private final int chunkedFileChunkSize;
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final @Nullable EventLoopGroup eventLoopGroup;
@@ -275,6 +279,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int httpClientCodecMaxHeaderSize,
                                          int httpClientCodecMaxChunkSize,
                                          int httpClientCodecInitialBufferSize,
+                                         boolean httpClientParseHttpAfterConnectRequest,
+                                         boolean httpClientAllowDuplicateContentLengths,
                                          int chunkedFileChunkSize,
                                          int webSocketMaxBufferSize,
                                          int webSocketMaxFrameSize,
@@ -369,6 +375,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
         this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
         this.httpClientCodecInitialBufferSize = httpClientCodecInitialBufferSize;
+        this.httpClientParseHttpAfterConnectRequest = httpClientParseHttpAfterConnectRequest;
+        this.httpClientAllowDuplicateContentLengths = httpClientAllowDuplicateContentLengths;
         this.chunkedFileChunkSize = chunkedFileChunkSize;
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
@@ -705,6 +713,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public boolean getHttpClientParseHttpAfterConnectRequest() {
+        return httpClientParseHttpAfterConnectRequest;
+    }
+
+    @Override
+    public boolean getHttpClientAllowDuplicateContentLengths() {
+        return httpClientAllowDuplicateContentLengths;
+    }
+
+
+    @Override
     public int getChunkedFileChunkSize() {
         return chunkedFileChunkSize;
     }
@@ -857,6 +876,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
         private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
         private int httpClientCodecInitialBufferSize = defaultHttpClientCodecInitialBufferSize();
+        private boolean httpClientParseHttpAfterConnectRequest = defaultHttpClientParseHttpAfterConnectRequest();
+        private boolean httpClientAllowDuplicateContentLengths = defaultHttpClientAllowDuplicateContentLengths();
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
         private boolean useOnlyEpollNativeTransport = defaultUseOnlyEpollNativeTransport();
@@ -1329,6 +1350,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setHttpClientParseHttpAfterConnectRequest(boolean httpClientParseHttpAfterConnectRequest) {
+            this.httpClientParseHttpAfterConnectRequest = httpClientParseHttpAfterConnectRequest;
+            return this;
+        }
+
+        public Builder setHttpClientAllowDuplicateContentLengths(boolean httpClientAllowDuplicateContentLengths) {
+            this.httpClientAllowDuplicateContentLengths = httpClientAllowDuplicateContentLengths;
+            return this;
+        }
+
         public Builder setChunkedFileChunkSize(int chunkedFileChunkSize) {
             this.chunkedFileChunkSize = chunkedFileChunkSize;
             return this;
@@ -1477,6 +1508,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     httpClientCodecMaxHeaderSize,
                     httpClientCodecMaxChunkSize,
                     httpClientCodecInitialBufferSize,
+                    httpClientParseHttpAfterConnectRequest,
+                    httpClientAllowDuplicateContentLengths,
                     chunkedFileChunkSize,
                     webSocketMaxBufferSize,
                     webSocketMaxFrameSize,
