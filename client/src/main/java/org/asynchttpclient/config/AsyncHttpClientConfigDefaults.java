@@ -273,11 +273,11 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP_CLIENT_CODEC_INITIAL_BUFFER_SIZE_CONFIG);
     }
 
-    public static boolean defaultHttpClientParseHttpAfterConnectRequest() {
+    public static boolean defaultHttpClientCodecParseHttpAfterConnectRequest() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP_CLIENT_CODEC_PARSE_HTTP_AFTER_CONNECT_REQUEST);
     }
 
-    public static boolean defaultHttpClientAllowDuplicateContentLengths() {
+    public static boolean defaultHttpClientCodecAllowDuplicateContentLengths() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP_CLIENT_CODEC_ALLOW_DUPLICATE_CONTENT_LENGTHS);
     }
 

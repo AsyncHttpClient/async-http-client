@@ -367,8 +367,8 @@ public class ChannelManager {
                 false,
                 config.isValidateResponseHeaders(),
                 config.getHttpClientCodecInitialBufferSize(),
-                config.getHttpClientParseHttpAfterConnectRequest(),
-                config.getHttpClientAllowDuplicateContentLengths());
+                config.getHttpClientCodecParseHttpAfterConnectRequest(),
+                config.getHttpClientCodecAllowDuplicateContentLengths());
     }
 
     private SslHandler createSslHandler(String peerHost, int peerPort) {

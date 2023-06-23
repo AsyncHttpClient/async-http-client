@@ -66,8 +66,8 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecInitialBufferSize;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientParseHttpAfterConnectRequest;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientAllowDuplicateContentLengths;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecParseHttpAfterConnectRequest;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecAllowDuplicateContentLengths;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxChunkSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxHeaderSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttpClientCodecMaxInitialLineLength;
@@ -183,8 +183,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int httpClientCodecMaxHeaderSize;
     private final int httpClientCodecMaxChunkSize;
     private final int httpClientCodecInitialBufferSize;
-    private final boolean httpClientParseHttpAfterConnectRequest;
-    private final boolean httpClientAllowDuplicateContentLengths;
+    private final boolean httpClientCodecParseHttpAfterConnectRequest;
+    private final boolean httpClientCodecAllowDuplicateContentLengths;
     private final int chunkedFileChunkSize;
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final @Nullable EventLoopGroup eventLoopGroup;
@@ -279,8 +279,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int httpClientCodecMaxHeaderSize,
                                          int httpClientCodecMaxChunkSize,
                                          int httpClientCodecInitialBufferSize,
-                                         boolean httpClientParseHttpAfterConnectRequest,
-                                         boolean httpClientAllowDuplicateContentLengths,
+                                         boolean httpClientCodecParseHttpAfterConnectRequest,
+                                         boolean httpClientCodecAllowDuplicateContentLengths,
                                          int chunkedFileChunkSize,
                                          int webSocketMaxBufferSize,
                                          int webSocketMaxFrameSize,
@@ -375,8 +375,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.httpClientCodecMaxHeaderSize = httpClientCodecMaxHeaderSize;
         this.httpClientCodecMaxChunkSize = httpClientCodecMaxChunkSize;
         this.httpClientCodecInitialBufferSize = httpClientCodecInitialBufferSize;
-        this.httpClientParseHttpAfterConnectRequest = httpClientParseHttpAfterConnectRequest;
-        this.httpClientAllowDuplicateContentLengths = httpClientAllowDuplicateContentLengths;
+        this.httpClientCodecParseHttpAfterConnectRequest = httpClientCodecParseHttpAfterConnectRequest;
+        this.httpClientCodecAllowDuplicateContentLengths = httpClientCodecAllowDuplicateContentLengths;
         this.chunkedFileChunkSize = chunkedFileChunkSize;
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
@@ -713,13 +713,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean getHttpClientParseHttpAfterConnectRequest() {
-        return httpClientParseHttpAfterConnectRequest;
+    public boolean getHttpClientCodecParseHttpAfterConnectRequest() {
+        return httpClientCodecParseHttpAfterConnectRequest;
     }
 
     @Override
-    public boolean getHttpClientAllowDuplicateContentLengths() {
-        return httpClientAllowDuplicateContentLengths;
+    public boolean getHttpClientCodecAllowDuplicateContentLengths() {
+        return httpClientCodecAllowDuplicateContentLengths;
     }
 
 
@@ -876,8 +876,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int httpClientCodecMaxHeaderSize = defaultHttpClientCodecMaxHeaderSize();
         private int httpClientCodecMaxChunkSize = defaultHttpClientCodecMaxChunkSize();
         private int httpClientCodecInitialBufferSize = defaultHttpClientCodecInitialBufferSize();
-        private boolean httpClientParseHttpAfterConnectRequest = defaultHttpClientParseHttpAfterConnectRequest();
-        private boolean httpClientAllowDuplicateContentLengths = defaultHttpClientAllowDuplicateContentLengths();
+        private boolean httpClientCodecParseHttpAfterConnectRequest = defaultHttpClientCodecParseHttpAfterConnectRequest();
+        private boolean httpClientCodecAllowDuplicateContentLengths = defaultHttpClientCodecAllowDuplicateContentLengths();
         private int chunkedFileChunkSize = defaultChunkedFileChunkSize();
         private boolean useNativeTransport = defaultUseNativeTransport();
         private boolean useOnlyEpollNativeTransport = defaultUseOnlyEpollNativeTransport();
@@ -1350,13 +1350,13 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-        public Builder setHttpClientParseHttpAfterConnectRequest(boolean httpClientParseHttpAfterConnectRequest) {
-            this.httpClientParseHttpAfterConnectRequest = httpClientParseHttpAfterConnectRequest;
+        public Builder setHttpClientCodecParseHttpAfterConnectRequest(boolean httpClientCodecParseHttpAfterConnectRequest) {
+            this.httpClientCodecParseHttpAfterConnectRequest = httpClientCodecParseHttpAfterConnectRequest;
             return this;
         }
 
-        public Builder setHttpClientAllowDuplicateContentLengths(boolean httpClientAllowDuplicateContentLengths) {
-            this.httpClientAllowDuplicateContentLengths = httpClientAllowDuplicateContentLengths;
+        public Builder setHttpClientCodecAllowDuplicateContentLengths(boolean httpClientCodecAllowDuplicateContentLengths) {
+            this.httpClientCodecAllowDuplicateContentLengths = httpClientCodecAllowDuplicateContentLengths;
             return this;
         }
 
@@ -1508,8 +1508,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     httpClientCodecMaxHeaderSize,
                     httpClientCodecMaxChunkSize,
                     httpClientCodecInitialBufferSize,
-                    httpClientParseHttpAfterConnectRequest,
-                    httpClientAllowDuplicateContentLengths,
+                    httpClientCodecParseHttpAfterConnectRequest,
+                    httpClientCodecAllowDuplicateContentLengths,
                     chunkedFileChunkSize,
                     webSocketMaxBufferSize,
                     webSocketMaxFrameSize,
