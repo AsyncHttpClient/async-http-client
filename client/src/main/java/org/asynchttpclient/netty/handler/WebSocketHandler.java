@@ -80,13 +80,14 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         // if it comes in the same frame as the HTTP Upgrade response
         Channels.setAttribute(channel, future);
 
-        handler.setWebSocket(new NettyWebSocket(channel, responseHeaders));
+        final NettyWebSocket webSocket = new NettyWebSocket(channel, responseHeaders);
+        handler.setWebSocket(webSocket);
         channelManager.upgradePipelineForWebSockets(channel.pipeline());
 
         // We don't need to synchronize as replacing the "ws-decoder" will
         // process using the same thread.
         try {
-            handler.onOpen();
+            handler.onOpen(webSocket);
         } catch (Exception ex) {
             logger.warn("onSuccess unexpected exception", ex);
         }
