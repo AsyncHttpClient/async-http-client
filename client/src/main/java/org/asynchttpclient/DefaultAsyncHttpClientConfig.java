@@ -978,7 +978,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         /**
          * If true, AHC will  add Accept-Encoding HTTP header to each request
-         *
+         * <p>
          * If false (default), AHC will either leave AcceptEncoding header as is
          * (if enableAutomaticDecompression is false) or will remove unsupported
          * algorithms (if enableAutomaticDecompression is true)
@@ -988,7 +988,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
-
         /*
          * If true (default), AHC will add a Netty HttpContentDecompressor, so compressed
          * content will automatically get decompressed.
@@ -997,7 +996,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          * be done by calling code.
          */
         public Builder setEnableAutomaticDecompression(boolean enable) {
-            this.enableAutomaticDecompression = enable;
+            enableAutomaticDecompression = enable;
             return this;
         }
 

@@ -21,7 +21,7 @@ import org.asynchttpclient.uri.Uri;
 import java.net.SocketAddress;
 
 /**
- * A class that represent the HTTP response' status line (code + text)
+ * A class that represent the HTTP response status line (code + text)
  */
 public abstract class HttpResponseStatus {
 

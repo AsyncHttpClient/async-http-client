@@ -19,9 +19,8 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
-@SuppressWarnings("serial")
 public class PoolAlreadyClosedException extends IOException {
-
+    private static final long serialVersionUID = -3883404852005245296L;
     public static final PoolAlreadyClosedException INSTANCE = unknownStackTrace(new PoolAlreadyClosedException(), PoolAlreadyClosedException.class, "INSTANCE");
 
     private PoolAlreadyClosedException() {

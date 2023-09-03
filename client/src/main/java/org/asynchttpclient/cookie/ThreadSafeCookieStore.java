@@ -54,8 +54,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
     @Override
     public List<Cookie> getAll() {
-        return cookieJar
-                .values()
+        return cookieJar.values()
                 .stream()
                 .flatMap(map -> map.values().stream())
                 .filter(pair -> !hasCookieExpired(pair.cookie, pair.createdAt))
@@ -260,10 +259,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
         @Override
         public int hashCode() {
-            int result = 17;
-            result = 31 * result + name.hashCode();
-            result = 31 * result + path.hashCode();
-            return result;
+            return Objects.hash(name, path);
         }
 
         @Override

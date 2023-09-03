@@ -147,7 +147,7 @@ public final class Utf8UrlEncoder {
         return appendEncoded(sb, input, FORM_URL_ENCODED_SAFE_CHARS, true);
     }
 
-    @Contract(value = "!null -> !null")
+    @Contract("!null -> !null")
     public static @Nullable String percentEncodeQueryElement(@Nullable String input) {
         if (input == null) {
             return null;

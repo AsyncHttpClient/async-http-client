@@ -17,8 +17,9 @@ package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
-@SuppressWarnings("serial")
 public class TooManyConnectionsPerHostException extends IOException {
+
+    private static final long serialVersionUID = 5702859695179937503L;
 
     public TooManyConnectionsPerHostException(int max) {
         super("Too many connections: " + max);

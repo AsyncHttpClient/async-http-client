@@ -24,7 +24,7 @@ import java.io.InputStream;
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
  * <br>
  * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
- * resumable download will not works.
+ * resumable download will not work.
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 

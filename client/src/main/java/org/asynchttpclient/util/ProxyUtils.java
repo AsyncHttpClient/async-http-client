@@ -94,7 +94,7 @@ public final class ProxyUtils {
 
     /**
      * Creates a proxy server instance from the given properties.
-     * Currently the default http.* proxy properties are supported as well as properties specific for AHC.
+     * Currently, the default http.* proxy properties are supported as well as properties specific for AHC.
      *
      * @param properties the properties to evaluate. Must not be null.
      * @return a ProxyServer instance or null, if no valid properties were set.

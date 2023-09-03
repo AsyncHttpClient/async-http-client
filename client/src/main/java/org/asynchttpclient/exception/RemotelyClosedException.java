@@ -19,9 +19,8 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
-@SuppressWarnings("serial")
 public final class RemotelyClosedException extends IOException {
-
+    private static final long serialVersionUID = 5634105738124356785L;
     public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
 
     private RemotelyClosedException() {

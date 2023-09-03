@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * all class's fields defined in "param" will be @NotNull.
  */
 @Retention(RetentionPolicy.CLASS)
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 public @interface EnsuresNonNull {
     String[] value();
 }

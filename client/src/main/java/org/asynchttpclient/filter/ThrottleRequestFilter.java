@@ -12,6 +12,7 @@
  */
 package org.asynchttpclient.filter;
 
+import org.asynchttpclient.exception.FilterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
