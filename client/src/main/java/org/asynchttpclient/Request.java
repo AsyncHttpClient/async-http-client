@@ -84,32 +84,32 @@ public interface Request {
     List<Cookie> getCookies();
 
     /**
-     * @return the request's body byte array (only non null if it was set this way)
+     * @return the request's body byte array (only non-null if it was set this way)
      */
     byte @Nullable [] getByteData();
 
     /**
-     * @return the request's body array of byte arrays (only non null if it was set this way)
+     * @return the request's body array of byte arrays (only non-null if it was set this way)
      */
     @Nullable List<byte[]> getCompositeByteData();
 
     /**
-     * @return the request's body string (only non null if it was set this way)
+     * @return the request's body string (only non-null if it was set this way)
      */
     @Nullable String getStringData();
 
     /**
-     * @return the request's body ByteBuffer (only non null if it was set this way)
+     * @return the request's body ByteBuffer (only non-null if it was set this way)
      */
     @Nullable ByteBuffer getByteBufferData();
 
     /**
-     * @return the request's body InputStream (only non null if it was set this way)
+     * @return the request's body InputStream (only non-null if it was set this way)
      */
     @Nullable InputStream getStreamData();
 
     /**
-     * @return the request's body BodyGenerator (only non null if it was set this way)
+     * @return the request's body BodyGenerator (only non-null if it was set this way)
      */
     @Nullable BodyGenerator getBodyGenerator();
 
@@ -159,7 +159,7 @@ public interface Request {
     Duration getRequestTimeout();
 
     /**
-     * @return the read timeout. Non zero values means "override config value".
+     * @return the read timeout. Non-zero values means "override config value".
      */
     Duration getReadTimeout();
 

@@ -65,8 +65,7 @@ public interface ChannelPoolPartitioning {
         private final int proxyPort;
         private final @Nullable ProxyType proxyType;
 
-        CompositePartitionKey(String targetHostBaseUrl, @Nullable String virtualHost,
-                              @Nullable String proxyHost, int proxyPort, @Nullable ProxyType proxyType) {
+        CompositePartitionKey(String targetHostBaseUrl, @Nullable String virtualHost, @Nullable String proxyHost, int proxyPort, @Nullable ProxyType proxyType) {
             this.targetHostBaseUrl = targetHostBaseUrl;
             this.virtualHost = virtualHost;
             this.proxyHost = proxyHost;
@@ -102,12 +101,7 @@ public interface ChannelPoolPartitioning {
 
         @Override
         public int hashCode() {
-            int result = targetHostBaseUrl != null ? targetHostBaseUrl.hashCode() : 0;
-            result = 31 * result + (virtualHost != null ? virtualHost.hashCode() : 0);
-            result = 31 * result + (proxyHost != null ? proxyHost.hashCode() : 0);
-            result = 31 * result + proxyPort;
-            result = 31 * result + (proxyType != null ? proxyType.hashCode() : 0);
-            return result;
+            return Objects.hash(targetHostBaseUrl, virtualHost, proxyHost, proxyPort, proxyType);
         }
 
         @Override

@@ -25,7 +25,7 @@ import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.netty.channel.ChannelManager;

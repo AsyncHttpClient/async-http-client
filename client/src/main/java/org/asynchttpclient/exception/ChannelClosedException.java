@@ -19,9 +19,8 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
-@SuppressWarnings("serial")
 public final class ChannelClosedException extends IOException {
-
+    private static final long serialVersionUID = -2528693697240456658L;
     public static final ChannelClosedException INSTANCE = unknownStackTrace(new ChannelClosedException(), ChannelClosedException.class, "INSTANCE");
 
     private ChannelClosedException() {

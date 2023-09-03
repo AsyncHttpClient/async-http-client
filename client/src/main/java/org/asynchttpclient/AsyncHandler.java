@@ -54,7 +54,7 @@ import java.util.concurrent.Future;
  * <p>
  * Do NOT perform any blocking operations in any of these methods. A typical example would be trying to send another
  * request and calling get() on its future.
- * There's a chance you might end up in a dead lock.
+ * There's a chance you might end up in a deadlock.
  * If you really need to perform a blocking operation, execute it in a different dedicated thread pool.
  *
  * @param <T> Type of object returned by the {@link Future#get}
@@ -151,7 +151,7 @@ public interface AsyncHandler<T> {
     /**
      * Notify the callback when trying to open a new connection.
      * <p>
-     * Might be called several times if the name was resolved to multiple addresses and we failed to connect to the first(s) one(s).
+     * Might be called several times if the name was resolved to multiple addresses, and we failed to connect to the first(s) one(s).
      *
      * @param remoteAddress the address we try to connect to
      */

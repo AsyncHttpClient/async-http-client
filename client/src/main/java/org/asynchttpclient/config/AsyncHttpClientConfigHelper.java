@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class AsyncHttpClientConfigHelper {
 
-    private static volatile @Nullable Config config;
+    @Nullable
+    private static volatile Config config;
 
     private AsyncHttpClientConfigHelper() {
     }
@@ -93,7 +94,8 @@ public final class AsyncHttpClientConfigHelper {
             });
         }
 
-        public @Nullable String[] getStringArray(String key) {
+        @Nullable
+        public String[] getStringArray(String key) {
             String s = getString(key);
             s = s.trim();
             if (s.isEmpty()) {

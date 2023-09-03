@@ -37,9 +37,9 @@ import java.util.concurrent.Semaphore;
  * long as headers are received, and return Response as soon as possible, but
  * still pouring response body into supplied output stream. This handler is
  * meant for situations when the "recommended" way (using
- * {@code client.prepareGet("http://foo.com/aResource").execute().get()}
+ * {@code client.prepareGet("http://foo.com/aResource").execute().get()}), which
  * would not work for you, since a potentially large response body is about to
- * be GETted, but you need headers first, or you don't know yet (depending on
+ * be GET-ted, but you need headers first, or you don't know yet (depending on
  * some logic, maybe coming from headers) where to save the body, or you just
  * want to leave body stream to some other component to consume it.
  * <br>
@@ -211,7 +211,7 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      * 1st cached, probably incomplete one. Note: the response returned by this
      * method will contain everything <em>except</em> the response body itself,
      * so invoking any method like Response.getResponseBodyXXX() will result in
-     * error! Also, please not that this method might return {@code null}
+     * error! Also, please note that this method might return {@code null}
      * in case of some errors.
      *
      * @return a {@link Response}

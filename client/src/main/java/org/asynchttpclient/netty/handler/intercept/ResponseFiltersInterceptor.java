@@ -21,7 +21,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;

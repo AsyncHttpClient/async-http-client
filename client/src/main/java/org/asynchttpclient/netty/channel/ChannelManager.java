@@ -113,7 +113,7 @@ public class ChannelManager {
     private boolean isInstanceof(Object object, String name) {
         final Class<?> clazz;
         try {
-            clazz = Class.forName(name, false, this.getClass().getClassLoader());
+            clazz = Class.forName(name, false, getClass().getClassLoader());
         } catch (ClassNotFoundException ignored) {
             return false;
         }

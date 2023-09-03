@@ -115,7 +115,7 @@ public class OAuthSignatureCalculatorInstance {
         String encodedParams = encodedParams(consumerAuth, userAuth, oauthTimestamp, percentEncodedNonce, formParams, queryParams);
 
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
-        sb.append(method); // POST / GET etc (nothing to URL encode)
+        sb.append(method); // POST / GET etc. (nothing to URL encode)
         sb.append('&');
         Utf8UrlEncoder.encodeAndAppendPercentEncoded(sb, baseUrl);
 

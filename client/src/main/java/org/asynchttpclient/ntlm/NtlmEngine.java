@@ -116,7 +116,7 @@ public final class NtlmEngine {
      * username and the result of encrypting the nonce sent by the server using
      * the user's password as the key.
      *
-     * @param user     The user name. This should not include the domain name.
+     * @param user     The username. This should not include the domain name.
      * @param password The password.
      * @param host     The host that is originating the authentication request.
      * @param domain   The domain to authenticate within.
@@ -766,7 +766,7 @@ public final class NtlmEngine {
      * NTLM message generation, base class
      */
     private static class NTLMMessage {
-        private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
+        private static final byte[] EMPTY_BYTE_ARRAY = {};
         /**
          * The current response
          */
@@ -846,14 +846,14 @@ public final class NtlmEngine {
         }
 
         /**
-         * Read a ushort from a position within the message buffer
+         * Read an ushort from a position within the message buffer
          */
         protected int readUShort(final int position) {
             return NtlmEngine.readUShort(messageContents, position);
         }
 
         /**
-         * Read a ulong from a position within the message buffer
+         * Read an ulong from a position within the message buffer
          */
         protected final int readULong(final int position) {
             return NtlmEngine.readULong(messageContents, position);
@@ -1033,7 +1033,7 @@ public final class NtlmEngine {
             // Next 2 bytes, major/minor version number (e.g. 0x05 0x02)
             // Next 8 bytes, build number
             // Next 2 bytes, protocol version number (e.g. 0x00 0x0f)
-            // Next, various text fields, and a ushort of value 0 at the end
+            // Next, various text fields, and an ushort of value 0 at the end
 
             // Parse out the rest of the info we need from the message
             // The nonce is the 8 bytes starting from the byte in position 24.
@@ -1566,7 +1566,7 @@ public final class NtlmEngine {
 
     /**
      * Creates the first message (type 1 message) in the NTLM authentication
-     * sequence. This message includes the user name, domain and host for the
+     * sequence. This message includes the username, domain and host for the
      * authentication session.
      *
      * @return String the message to add to the HTTP request header.

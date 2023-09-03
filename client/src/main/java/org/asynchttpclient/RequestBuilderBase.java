@@ -226,7 +226,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
-     * Add a header value for the request. If a header with {@code name} was setup for this request already -
+     * Add a header value for the request. If a header with {@code name} was set up for this request already -
      * call will add one more header value and convert it to multi-value header
      *
      * @param name  header name
@@ -244,7 +244,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
-     * Add header values for the request. If a header with {@code name} was setup for this request already -
+     * Add header values for the request. If a header with {@code name} was set up for this request already -
      * call will add more header values and convert it to multi-value header
      *
      * @param name   header name
@@ -267,7 +267,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     /**
      * Set request headers using a map {@code headers} of pair (Header name, Header values)
-     * This method could be used to setup multi-valued headers
+     * This method could be used to set up multivalued headers
      *
      * @param headers map of header names as the map keys and header values {@link Iterable} as the map values
      * @return {@code this}
@@ -559,7 +559,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
         // build a first version of the request, without signatureCalculator in play
         RequestBuilder rb = new RequestBuilder(method);
-        // make copy of mutable collections so we don't risk affecting
+        // make copy of mutable collections, so we don't risk affecting
         // original RequestBuilder
         // call setFormParams first as it resets other fields
         if (formParams != null) {

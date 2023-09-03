@@ -66,7 +66,7 @@ import java.util.function.Predicate;
  * The {@link AsyncCompletionHandler#onCompleted(Response)} method will be invoked once the http response has been fully read.
  * The {@link Response} object includes the http headers and the response body. Note that the entire response will be buffered in memory.
  * <br>
- * You can also have more control about the how the response is asynchronously processed by using an {@link AsyncHandler}
+ * You can also have more control about how the response is asynchronously processed by using an {@link AsyncHandler}
  * <blockquote><pre>
  *      AsyncHttpClient c = new AsyncHttpClient();
  *      Future&lt;String&gt; f = c.prepareGet(TARGET_URL).execute(new AsyncHandler&lt;String&gt;() &#123;
@@ -149,7 +149,7 @@ public interface AsyncHttpClient extends Closeable {
      * Prepare an HTTP client request.
      *
      * @param method HTTP request method type. MUST BE in upper case
-     * @param url    A well formed URL.
+     * @param url    A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepare(String method, String url);
@@ -158,7 +158,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client GET request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareGet(String url);
@@ -166,7 +166,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client CONNECT request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareConnect(String url);
@@ -174,7 +174,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client OPTIONS request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareOptions(String url);
@@ -182,7 +182,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client HEAD request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareHead(String url);
@@ -190,7 +190,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client POST request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder preparePost(String url);
@@ -198,7 +198,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client PUT request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder preparePut(String url);
@@ -206,7 +206,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client DELETE request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareDelete(String url);
@@ -214,7 +214,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client PATCH request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder preparePatch(String url);
@@ -222,7 +222,7 @@ public interface AsyncHttpClient extends Closeable {
     /**
      * Prepare an HTTP client TRACE request.
      *
-     * @param url A well formed URL.
+     * @param url A well-formed URL.
      * @return {@link RequestBuilder}
      */
     BoundRequestBuilder prepareTrace(String url);

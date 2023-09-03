@@ -187,8 +187,8 @@ final class UriParser {
         }
     }
 
-    private boolean isMaybeIPV6(String nonNullHost) {
-        // If the host is surrounded by [ and ] then its an IPv6
+    private static boolean isMaybeIPV6(String nonNullHost) {
+        // If the host is surrounded by [ and ] then it's an IPv6
         // literal address as specified in RFC2732
         return nonNullHost.length() > 0 && nonNullHost.charAt(0) == '[';
     }

@@ -132,7 +132,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
                 webSocket.handleFrame(frame);
             } else {
                 // WebSocket hasn't been opened yet, but upgrading the pipeline triggered a read and a frame was sent along the HTTP upgrade response
-                // as we want to keep sequential order (but can't notify user of open before upgrading so he doesn't to try send immediately), we have to buffer
+                // as we want to keep sequential order (but can't notify user of open before upgrading, so he doesn't try to send immediately), we have to buffer
                 webSocket.bufferFrame(frame);
             }
 
