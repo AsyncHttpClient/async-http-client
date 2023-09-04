@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
@@ -34,7 +34,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
     private static final String hostname = "localhost";
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testClientStatus() throws Throwable {
         try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setPooledConnectionIdleTimeout(Duration.ofSeconds(5)))) {
             final String url = getTargetUrl();
@@ -51,7 +51,7 @@ public class ClientStatsTest extends AbstractBasicTest {
                     .limit(5)
                     .collect(Collectors.toList());
 
-            Thread.sleep(2000 + 1000);
+            Thread.sleep(2000);
 
             final ClientStats activeStats = client.getClientStats();
 
@@ -63,7 +63,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
             futures.forEach(future -> future.toCompletableFuture().join());
 
-            Thread.sleep(1000 + 1000);
+            Thread.sleep(1000);
 
             final ClientStats idleStats = client.getClientStats();
 
@@ -79,7 +79,7 @@ public class ClientStatsTest extends AbstractBasicTest {
                     .limit(3)
                     .collect(Collectors.toList());
 
-            Thread.sleep(2000 + 1000);
+            Thread.sleep(2000);
 
             final ClientStats activeCachedStats = client.getClientStats();
 
@@ -91,7 +91,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
             repeatedFutures.forEach(future -> future.toCompletableFuture().join());
 
-            Thread.sleep(1000 + 1000);
+            Thread.sleep(1000);
 
             final ClientStats idleCachedStats = client.getClientStats();
 
@@ -101,7 +101,7 @@ public class ClientStatsTest extends AbstractBasicTest {
             assertEquals(3, idleCachedStats.getTotalConnectionCount());
             assertEquals(3, idleCachedStats.getStatsPerHost().get(hostname).getHostConnectionCount());
 
-            Thread.sleep(5000 + 1000);
+            Thread.sleep(5000);
 
             final ClientStats timeoutStats = client.getClientStats();
 
@@ -113,7 +113,7 @@ public class ClientStatsTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testClientStatusNoKeepalive() throws Throwable {
         try (final AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setPooledConnectionIdleTimeout(Duration.ofSeconds(1)))) {
             final String url = getTargetUrl();
@@ -130,7 +130,7 @@ public class ClientStatsTest extends AbstractBasicTest {
                     .limit(5)
                     .collect(Collectors.toList());
 
-            Thread.sleep(2000 + 1000);
+            Thread.sleep(2000);
 
             final ClientStats activeStats = client.getClientStats();
 
@@ -142,7 +142,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
             futures.forEach(future -> future.toCompletableFuture().join());
 
-            Thread.sleep(1000 + 1000);
+            Thread.sleep(1000);
 
             final ClientStats idleStats = client.getClientStats();
 
@@ -158,7 +158,7 @@ public class ClientStatsTest extends AbstractBasicTest {
                     .limit(3)
                     .collect(Collectors.toList());
 
-            Thread.sleep(2000 + 1000);
+            Thread.sleep(2000);
 
             final ClientStats activeCachedStats = client.getClientStats();
 
@@ -170,7 +170,7 @@ public class ClientStatsTest extends AbstractBasicTest {
 
             repeatedFutures.forEach(future -> future.toCompletableFuture().join());
 
-            Thread.sleep(1000 + 1000);
+            Thread.sleep(1000);
 
             final ClientStats idleCachedStats = client.getClientStats();
 
