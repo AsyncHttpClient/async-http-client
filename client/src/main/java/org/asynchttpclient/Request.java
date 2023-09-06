@@ -186,7 +186,6 @@ public interface Request {
     /**
      * @return a new request builder using this request as a prototype
      */
-    @SuppressWarnings("deprecation")
     default RequestBuilder toBuilder() {
         return new RequestBuilder(this);
     }
