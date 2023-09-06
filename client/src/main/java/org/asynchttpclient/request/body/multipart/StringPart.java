@@ -18,7 +18,7 @@ package org.asynchttpclient.request.body.multipart;
 import java.nio.charset.Charset;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 public class StringPart extends PartBase {
@@ -51,7 +51,7 @@ public class StringPart extends PartBase {
 
     public StringPart(String name, String value, String contentType, Charset charset, String contentId, String transferEncoding) {
         super(name, contentType, charsetOrDefault(charset), contentId, transferEncoding);
-        assertNotNull(value, "value");
+        requireNonNull(value, "value");
 
         // See RFC 2048, 2.8. "8bit Data"
         if (value.indexOf(0) != -1) {

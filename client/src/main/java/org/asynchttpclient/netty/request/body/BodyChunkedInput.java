@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
 import org.asynchttpclient.request.body.Body;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Adapts a {@link Body} to Netty's {@link ChunkedInput}.
@@ -37,7 +37,7 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     private long progress;
 
     BodyChunkedInput(Body body) {
-        this.body = assertNotNull(body, "body");
+        this.body = requireNonNull(body, "body");
         contentLength = body.getContentLength();
         if (contentLength <= 0) {
             chunkSize = DEFAULT_CHUNK_SIZE;

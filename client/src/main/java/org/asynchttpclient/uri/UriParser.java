@@ -17,7 +17,7 @@ package org.asynchttpclient.uri;
 
 import org.jetbrains.annotations.Nullable;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 final class UriParser {
@@ -369,7 +369,7 @@ final class UriParser {
     }
 
     public static UriParser parse(@Nullable Uri context, final String originalUrl) {
-        assertNotNull(originalUrl, "originalUrl");
+        requireNonNull(originalUrl, "originalUrl");
         final UriParser parser = new UriParser(originalUrl);
         parser.parse(context);
         return parser;

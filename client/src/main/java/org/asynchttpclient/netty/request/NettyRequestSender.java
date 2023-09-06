@@ -67,7 +67,7 @@ import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
@@ -506,7 +506,7 @@ public final class NettyRequestSender {
         for (IOExceptionFilter asyncFilter : config.getIoExceptionFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
-                assertNotNull(fc, "filterContext");
+                requireNonNull(fc, "filterContext");
             } catch (FilterException efe) {
                 abort(channel, future, efe);
             }

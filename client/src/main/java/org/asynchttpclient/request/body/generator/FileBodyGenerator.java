@@ -16,7 +16,7 @@ import org.asynchttpclient.request.body.RandomAccessBody;
 
 import java.io.File;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Creates a request body from the contents of a file.
@@ -32,7 +32,7 @@ public final class FileBodyGenerator implements BodyGenerator {
     }
 
     public FileBodyGenerator(File file, long regionSeek, long regionLength) {
-        this.file = assertNotNull(file, "file");
+        this.file = requireNonNull(file, "file");
         this.regionLength = regionLength;
         this.regionSeek = regionSeek;
     }

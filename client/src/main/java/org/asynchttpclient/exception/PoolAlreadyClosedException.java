@@ -19,7 +19,11 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
+/**
+ * This exception is thrown when a channel pool is already closed.
+ */
 public class PoolAlreadyClosedException extends IOException {
+
     private static final long serialVersionUID = -3883404852005245296L;
     public static final PoolAlreadyClosedException INSTANCE = unknownStackTrace(new PoolAlreadyClosedException(), PoolAlreadyClosedException.class, "INSTANCE");
 

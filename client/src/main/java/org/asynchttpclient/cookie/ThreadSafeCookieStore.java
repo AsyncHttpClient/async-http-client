@@ -17,7 +17,6 @@ package org.asynchttpclient.cookie;
 
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.Assertions;
 import org.asynchttpclient.util.MiscUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ThreadSafeCookieStore implements CookieStore {
 
@@ -87,7 +88,6 @@ public final class ThreadSafeCookieStore implements CookieStore {
     public void evictExpired() {
         removeExpired();
     }
-
 
     @Override
     public int incrementAndGet() {
@@ -226,8 +226,11 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
     private void removeExpired() {
         final boolean[] removed = {false};
-        cookieJar.values().forEach(cookieMap -> removed[0] |= cookieMap.entrySet().removeIf(
-                v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt)));
+
+        cookieJar.values()
+                .forEach(cookieMap -> removed[0] |= cookieMap.entrySet()
+                .removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt)));
+
         if (removed[0]) {
             cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());
         }
@@ -243,11 +246,12 @@ public final class ThreadSafeCookieStore implements CookieStore {
         }
 
         @Override
-        public int compareTo(@NotNull CookieKey o) {
-            Assertions.assertNotNull(o, "Parameter can't be null");
+        public int compareTo(@NotNull CookieKey cookieKey) {
+            requireNonNull(cookieKey, "Parameter can't be null");
+
             int result;
-            if ((result = name.compareTo(o.name)) == 0) {
-                result = path.compareTo(o.path);
+            if ((result = name.compareTo(cookieKey.name)) == 0) {
+                result = path.compareTo(cookieKey.path);
             }
             return result;
         }
