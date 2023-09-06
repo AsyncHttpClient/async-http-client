@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.MessageDigestUtils.pooledMd5MessageDigest;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -92,7 +92,7 @@ public class Realm {
                   @Nullable Map<String, String> customLoginConfig,
                   @Nullable String loginContextName) {
 
-        this.scheme = assertNotNull(scheme, "scheme");
+        this.scheme = requireNonNull(scheme, "scheme");
         this.principal = principal;
         this.password = password;
         this.realmName = realmName;

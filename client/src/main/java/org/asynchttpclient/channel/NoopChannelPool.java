@@ -22,38 +22,69 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Predicate;
 
+/**
+ * A {@link ChannelPool} implementation that doesn't pool anything.
+ */
 public enum NoopChannelPool implements ChannelPool {
 
     INSTANCE;
 
+    /**
+     *
+     * @return always false since this is a {@link NoopChannelPool}
+     */
     @Override
     public boolean offer(Channel channel, Object partitionKey) {
         return false;
     }
 
+    /**
+     *
+     * @return always null since this is a {@link NoopChannelPool}
+     */
     @Override
     public @Nullable Channel poll(Object partitionKey) {
         return null;
     }
 
+    /**
+     *
+     * @return always false since this is a {@link NoopChannelPool}
+     */
     @Override
     public boolean removeAll(Channel channel) {
         return false;
     }
 
+    /**
+     *
+     * @return always true since this is a {@link NoopChannelPool}
+     */
     @Override
     public boolean isOpen() {
         return true;
     }
 
+    /**
+     *
+     * Does nothing since this is a {@link NoopChannelPool}
+     */
     @Override
     public void destroy() {
     }
 
+    /**
+     *
+     * Does nothing since this is a {@link NoopChannelPool}
+     */
     @Override
     public void flushPartitions(Predicate<Object> predicate) {
     }
 
+    /**
+     *
+     * @return always {@link Collections#emptyMap()} since this is a {@link NoopChannelPool}
+     */
     @Override
     public Map<String, Long> getIdleChannelCountPerHost() {
         return Collections.emptyMap();

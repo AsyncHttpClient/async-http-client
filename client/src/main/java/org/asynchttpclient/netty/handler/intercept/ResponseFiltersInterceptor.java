@@ -50,7 +50,7 @@ public class ResponseFiltersInterceptor {
             try {
                 fc = asyncFilter.filter(fc);
                 // FIXME Is it worth protecting against this?
-//                assertNotNull(fc, "filterContext");
+//                requireNonNull(fc, "filterContext");
             } catch (FilterException fe) {
                 requestSender.abort(channel, future, fe);
             }

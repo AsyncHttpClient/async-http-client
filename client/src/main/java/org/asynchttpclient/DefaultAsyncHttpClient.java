@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import static org.asynchttpclient.util.HttpConstants.Methods.DELETE;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
@@ -294,7 +294,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     private <T> FilterContext<T> preProcessRequest(FilterContext<T> fc) throws FilterException {
         for (RequestFilter asyncFilter : config.getRequestFilters()) {
             fc = asyncFilter.filter(fc);
-            assertNotNull(fc, "filterContext");
+            requireNonNull(fc, "filterContext");
         }
 
         Request request = fc.getRequest();

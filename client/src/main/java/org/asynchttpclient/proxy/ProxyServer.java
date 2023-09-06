@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
@@ -100,7 +100,7 @@ public class ProxyServer {
      * Properties</a>
      */
     public boolean isIgnoredForHost(String hostname) {
-        assertNotNull(hostname, "hostname");
+        requireNonNull(hostname, "hostname");
         if (isNonEmpty(nonProxyHosts)) {
             for (String nonProxyHost : nonProxyHosts) {
                 if (matchNonProxyHost(hostname, nonProxyHost)) {

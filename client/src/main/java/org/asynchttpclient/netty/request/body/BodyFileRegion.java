@@ -22,7 +22,7 @@ import org.asynchttpclient.request.body.RandomAccessBody;
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 /**
@@ -34,7 +34,7 @@ class BodyFileRegion extends AbstractReferenceCounted implements FileRegion {
     private long transferred;
 
     BodyFileRegion(RandomAccessBody body) {
-        this.body = assertNotNull(body, "body");
+        this.body = requireNonNull(body, "body");
     }
 
     @Override
