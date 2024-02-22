@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -24,12 +25,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith(NettyLeakDetectorExtension.class)
 public abstract class AbstractBasicTest {
     protected static final Logger logger = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected static final int TIMEOUT = 30;
