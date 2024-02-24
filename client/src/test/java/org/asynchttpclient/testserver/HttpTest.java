@@ -15,15 +15,18 @@
  */
 package org.asynchttpclient.testserver;
 
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 
+@ExtendWith(NettyLeakDetectorExtension.class)
 public abstract class HttpTest {
 
     protected static final String COMPLETED_EVENT = "Completed";
