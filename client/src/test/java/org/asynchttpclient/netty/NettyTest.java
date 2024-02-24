@@ -2,6 +2,7 @@ package org.asynchttpclient.netty;
 
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.kqueue.KQueue;
+import io.netty.incubator.channel.uring.IOUring;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -13,6 +14,12 @@ public class NettyTest {
     @EnabledOnOs(value = OS.LINUX)
     public void epollIsAvailableOnLinux() {
         assertTrue(Epoll.isAvailable());
+    }
+
+    @Test
+    @EnabledOnOs(value = OS.LINUX)
+    public void ioUringIsAvailableOnLinux() {
+        assertTrue(IOUring.isAvailable());
     }
 
     @Test
