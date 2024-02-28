@@ -17,6 +17,7 @@ package org.asynchttpclient.netty.request;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -173,13 +174,18 @@ public final class NettyRequestFactory {
             String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
             if (userDefinedAcceptEncoding != null) {
                 if (config.isEnableAutomaticDecompression()) {
-                    // we don't support Brotli ATM, for automatic decompression.
-                    // For manual decompression by user, any encoding may suite, so leave untouched
-                    headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
+                    if (!Brotli.isAvailable()) {
+                        // Brotli is not available.
+                        // For manual decompression by user, any encoding may suite, so leave untouched
+                        headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
+                    }
                 }
             } else if (config.isCompressionEnforced()) {
                 // Add Accept Encoding header if compression is enforced
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
+                if (Brotli.isAvailable()) {
+                    headers.add(ACCEPT_ENCODING, HttpHeaderValues.BR);
+                }
             }
         }
 
