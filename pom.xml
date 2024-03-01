@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~    Copyright (c) 2023 AsyncHttpClient Project. All rights reserved.
+  ~    Copyright (c) 2024 AsyncHttpClient Project. All rights reserved.
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -118,41 +118,6 @@
                 <artifactId>netty-leak-detector-junit-extension</artifactId>
                 <version>0.0.2</version>
             </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>brotli4j</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>native-linux-x86_64</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>native-linux-aarch64</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>native-linux-riscv64</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>native-osx-x86_64</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>native-osx-aarch64</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aayushatharva.brotli4j</groupId>
-                <artifactId>native-windows-x86_64</artifactId>
-                <version>${brotli4j.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -262,36 +227,43 @@
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>brotli4j</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>native-linux-x86_64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>native-linux-aarch64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>native-linux-riscv64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>native-osx-x86_64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>native-osx-aarch64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
             <artifactId>native-windows-x86_64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
 
