@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~    Copyright (c) 2023 AsyncHttpClient Project. All rights reserved.
+  ~    Copyright (c) 2024 AsyncHttpClient Project. All rights reserved.
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@
 
         <netty.version>4.1.107.Final</netty.version>
         <netty.iouring>0.0.25.Final</netty.iouring>
+        <brotli4j.version>1.16.0</brotli4j.version>
         <slf4j.version>2.0.12</slf4j.version>
         <activation.version>2.0.1</activation.version>
         <logback.version>1.4.11</logback.version>
@@ -220,6 +221,49 @@
             <artifactId>netty-incubator-transport-native-io_uring</artifactId>
             <version>${netty.iouring}</version>
             <classifier>linux-aarch_64</classifier>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>brotli4j</artifactId>
+            <version>${brotli4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>native-linux-x86_64</artifactId>
+            <version>${brotli4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>native-linux-aarch64</artifactId>
+            <version>${brotli4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>native-linux-riscv64</artifactId>
+            <version>${brotli4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>native-osx-x86_64</artifactId>
+            <version>${brotli4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>native-osx-aarch64</artifactId>
+            <version>${brotli4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.aayushatharva.brotli4j</groupId>
+            <artifactId>native-windows-x86_64</artifactId>
+            <version>${brotli4j.version}</version>
             <optional>true</optional>
         </dependency>
 
