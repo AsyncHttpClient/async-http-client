@@ -50,6 +50,10 @@
             <name>Aayush Atharva</name>
             <email>aayush@shieldblaze.com</email>
         </developer>
+        <developer>
+            <id>sullis</id>
+            <name>Sean Sullivan</name>
+        </developer>
     </developers>
 
     <properties>
