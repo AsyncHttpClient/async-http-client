@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient.netty;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
@@ -190,6 +193,15 @@ public class NettyResponse implements Response {
 
         target.flip();
         return target;
+    }
+
+    @Override
+    public ByteBuf getResponseBodyAsByteBuf() {
+        CompositeByteBuf compositeByteBuf = ByteBufAllocator.DEFAULT.compositeBuffer(bodyParts.size());
+        for (HttpResponseBodyPart part : bodyParts) {
+            compositeByteBuf.addComponent(true, part.getBodyByteBuf());
+        }
+        return compositeByteBuf;
     }
 
     @Override

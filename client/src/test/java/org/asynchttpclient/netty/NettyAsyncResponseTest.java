@@ -13,15 +13,16 @@
 package org.asynchttpclient.netty;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
+import org.asynchttpclient.HttpResponseBodyPart;
 
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,5 +73,17 @@ public class NettyAsyncResponseTest {
 
         Cookie cookie = cookies.get(0);
         assertEquals(Long.MIN_VALUE, cookie.maxAge());
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testGetResponseBodyAsByteBuffer() {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes()), false));
+        bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes()), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        ByteBuf body = response.getResponseBodyAsByteBuf();
+        assertEquals("Hello World", body.toString(StandardCharsets.UTF_8));
+        body.release();
     }
 }
