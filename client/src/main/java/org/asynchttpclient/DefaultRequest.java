@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
@@ -51,6 +52,7 @@ public class DefaultRequest implements Request {
     private final @Nullable List<byte[]> compositeByteData;
     private final @Nullable String stringData;
     private final @Nullable ByteBuffer byteBufferData;
+    private final @Nullable ByteBuf byteBufData;
     private final @Nullable InputStream streamData;
     private final @Nullable BodyGenerator bodyGenerator;
     private final List<Param> formParams;
@@ -79,6 +81,7 @@ public class DefaultRequest implements Request {
                           @Nullable List<byte[]> compositeByteData,
                           @Nullable String stringData,
                           @Nullable ByteBuffer byteBufferData,
+                          @Nullable ByteBuf byteBufData,
                           @Nullable InputStream streamData,
                           @Nullable BodyGenerator bodyGenerator,
                           List<Param> formParams,
@@ -104,6 +107,7 @@ public class DefaultRequest implements Request {
         this.compositeByteData = compositeByteData;
         this.stringData = stringData;
         this.byteBufferData = byteBufferData;
+        this.byteBufData = byteBufData;
         this.streamData = streamData;
         this.bodyGenerator = bodyGenerator;
         this.formParams = formParams;
@@ -174,6 +178,11 @@ public class DefaultRequest implements Request {
     @Override
     public @Nullable ByteBuffer getByteBufferData() {
         return byteBufferData;
+    }
+
+    @Override
+    public @Nullable ByteBuf getByteBufData() {
+        return byteBufData;
     }
 
     @Override

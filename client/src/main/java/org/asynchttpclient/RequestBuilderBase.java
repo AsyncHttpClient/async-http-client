@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -76,6 +77,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected @Nullable List<byte[]> compositeByteData;
     protected @Nullable String stringData;
     protected @Nullable ByteBuffer byteBufferData;
+    protected @Nullable ByteBuf byteBufData;
     protected @Nullable InputStream streamData;
     protected @Nullable BodyGenerator bodyGenerator;
     protected @Nullable List<Param> formParams;
@@ -121,6 +123,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         compositeByteData = prototype.getCompositeByteData();
         stringData = prototype.getStringData();
         byteBufferData = prototype.getByteBufferData();
+        byteBufData = prototype.getByteBufData();
         streamData = prototype.getStreamData();
         bodyGenerator = prototype.getBodyGenerator();
         if (isNonEmpty(prototype.getFormParams())) {
@@ -361,6 +364,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         byteData = null;
         compositeByteData = null;
         byteBufferData = null;
+        byteBufData = null;
         stringData = null;
         streamData = null;
         bodyGenerator = null;
@@ -402,6 +406,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setBody(ByteBuffer data) {
         resetBody();
         byteBufferData = data;
+        return asDerivedType();
+    }
+
+    public T setBody(ByteBuf data) {
+        resetBody();
+        byteBufData = data;
         return asDerivedType();
     }
 
@@ -586,6 +596,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.compositeByteData = compositeByteData;
         rb.stringData = stringData;
         rb.byteBufferData = byteBufferData;
+        rb.byteBufData = byteBufData;
         rb.streamData = streamData;
         rb.bodyGenerator = bodyGenerator;
         rb.virtualHost = virtualHost;
@@ -647,6 +658,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.compositeByteData,
                 rb.stringData,
                 rb.byteBufferData,
+                rb.byteBufData,
                 rb.streamData,
                 rb.bodyGenerator,
                 formParamsCopy,

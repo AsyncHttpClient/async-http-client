@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.resolver.NameResolver;
@@ -102,6 +103,11 @@ public interface Request {
      * @return the request's body ByteBuffer (only non-null if it was set this way)
      */
     @Nullable ByteBuffer getByteBufferData();
+
+    /**
+     * @return the request's body ByteBuf (only non-null if it was set this way)
+     */
+    @Nullable ByteBuf getByteBufData();
 
     /**
      * @return the request's body InputStream (only non-null if it was set this way)
