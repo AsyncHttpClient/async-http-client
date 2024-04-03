@@ -98,7 +98,7 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
     }
 
     /**
-     * Invoked when the content (a {@link File}, {@link String} or
+     * Invoked when the content (a {@link File}, {@link String}) or
      * {@link InputStream} has been fully written on the I/O socket.
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE

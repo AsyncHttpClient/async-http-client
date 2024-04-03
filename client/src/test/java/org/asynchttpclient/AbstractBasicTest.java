@@ -15,19 +15,24 @@
  */
 package org.asynchttpclient;
 
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import org.asynchttpclient.test.EchoHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith(NettyLeakDetectorExtension.class)
 public abstract class AbstractBasicTest {
     protected static final Logger logger = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected static final int TIMEOUT = 30;
@@ -36,7 +41,7 @@ public abstract class AbstractBasicTest {
     protected int port1 = -1;
     protected int port2 = -1;
 
-    @BeforeEach
+    @BeforeAll
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
@@ -50,7 +55,7 @@ public abstract class AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
-    @AfterEach
+    @AfterAll
     public void tearDownGlobal() throws Exception {
         logger.debug("Shutting down local server: {}", server);
 

@@ -21,7 +21,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -50,7 +50,7 @@ public class ResponseFiltersInterceptor {
             try {
                 fc = asyncFilter.filter(fc);
                 // FIXME Is it worth protecting against this?
-//                assertNotNull(fc, "filterContext");
+//                requireNonNull(fc, "filterContext");
             } catch (FilterException fe) {
                 requestSender.abort(channel, future, fe);
             }

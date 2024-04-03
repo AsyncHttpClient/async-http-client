@@ -13,6 +13,7 @@
 package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.exception.FilterException;
 
 /**
  * A Filter interface that gets invoked before making an actual request.

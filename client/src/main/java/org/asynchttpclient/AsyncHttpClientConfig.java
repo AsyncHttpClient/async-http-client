@@ -231,7 +231,7 @@ public interface AsyncHttpClientConfig {
     boolean isDisableUrlEncodingForBoundRequests();
 
     /**
-     * @return true if AHC is to use a LAX cookie encoder, eg accept illegal chars in cookie value
+     * @return true if AHC is to use a LAX cookie encoder, e.g. accept illegal chars in cookie value
      */
     boolean isUseLaxCookieEncoder();
 

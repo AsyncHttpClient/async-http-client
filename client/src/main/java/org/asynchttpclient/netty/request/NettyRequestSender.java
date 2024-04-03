@@ -39,7 +39,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.filter.FilterContext;
-import org.asynchttpclient.filter.FilterException;
+import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -67,7 +67,7 @@ import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
@@ -114,7 +114,7 @@ public final class NettyRequestSender {
                 // Perform CONNECT
                 return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, true);
             } else {
-                // CONNECT will depend if we can pool or connection or if we have to open a new one
+                // CONNECT will depend on if we can pool or connection or if we have to open a new one
                 return sendRequestThroughProxy(request, asyncHandler, future, proxyServer);
             }
         } else {
@@ -145,8 +145,8 @@ public final class NettyRequestSender {
     }
 
     /**
-     * Using CONNECT depends on wither we can fetch a valid channel or not Loop
-     * until we get a valid channel from the pool and it's still valid once the
+     * Using CONNECT depends on whether we can fetch a valid channel or not Loop
+     * until we get a valid channel from the pool, and it's still valid once the
      * request is built @
      */
     private <T> ListenableFuture<T> sendRequestThroughProxy(Request request,
@@ -506,7 +506,7 @@ public final class NettyRequestSender {
         for (IOExceptionFilter asyncFilter : config.getIoExceptionFilters()) {
             try {
                 fc = asyncFilter.filter(fc);
-                assertNotNull(fc, "filterContext");
+                requireNonNull(fc, "filterContext");
             } catch (FilterException efe) {
                 abort(channel, future, efe);
             }

@@ -179,16 +179,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.read();
-//        if (!isHandledByReactiveStreams(ctx)) {
-//            ctx.read();
-//        } else {
-//            ctx.fireChannelReadComplete();
-//        }
     }
-
-//    private static boolean isHandledByReactiveStreams(ChannelHandlerContext ctx) {
-//        return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
-//    }
 
     void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) {
         future.cancelTimeouts();

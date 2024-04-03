@@ -205,7 +205,7 @@ public class ProxyUnauthorized407Interceptor {
             future.setInProxyAuth(false);
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
-            String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(proxyRealm.getPrincipal(), proxyRealm.getPassword(), proxyRealm.getNtlmDomain(),
+            String challengeHeader = NtlmEngine.generateType3Msg(proxyRealm.getPrincipal(), proxyRealm.getPassword(), proxyRealm.getNtlmDomain(),
                     proxyRealm.getNtlmHost(), serverChallenge);
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)

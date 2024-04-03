@@ -29,7 +29,7 @@ import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.HttpUtils.computeMultipartBoundary;
 import static org.asynchttpclient.util.HttpUtils.patchContentTypeWithBoundaryAttribute;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -48,7 +48,7 @@ public final class MultipartUtils {
      * @return a MultipartBody
      */
     public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
-        assertNotNull(parts, "parts");
+        requireNonNull(parts, "parts");
 
         byte[] boundary;
         String contentType;

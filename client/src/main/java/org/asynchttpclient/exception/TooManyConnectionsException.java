@@ -17,8 +17,11 @@ package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
-@SuppressWarnings("serial")
+/**
+ * This exception is thrown when too many connections are opened.
+ */
 public class TooManyConnectionsException extends IOException {
+    private static final long serialVersionUID = 8645586459539317237L;
 
     public TooManyConnectionsException(int max) {
         super("Too many connections: " + max);

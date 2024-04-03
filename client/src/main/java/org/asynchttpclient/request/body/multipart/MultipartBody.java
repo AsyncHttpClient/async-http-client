@@ -28,7 +28,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class MultipartBody implements RandomAccessBody {
@@ -46,7 +46,7 @@ public class MultipartBody implements RandomAccessBody {
     public MultipartBody(List<MultipartPart<? extends Part>> parts, String contentType, byte[] boundary) {
         this.boundary = boundary;
         this.contentType = contentType;
-        this.parts = assertNotNull(parts, "parts");
+        this.parts = requireNonNull(parts, "parts");
         contentLength = computeContentLength();
     }
 

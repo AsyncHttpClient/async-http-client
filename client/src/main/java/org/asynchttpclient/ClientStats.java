@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A record class representing the state of an (@link org.asynchttpclient.AsyncHttpClient).
+ * A record class representing the state of a (@link org.asynchttpclient.AsyncHttpClient).
  */
 public class ClientStats {
 

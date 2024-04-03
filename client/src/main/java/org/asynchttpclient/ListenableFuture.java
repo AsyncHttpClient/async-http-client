@@ -70,7 +70,7 @@ public interface ListenableFuture<V> extends Future<V> {
      * in the thread where completion happens.
      * <br>
      * There is no guaranteed ordering of execution of listeners, they may get
-     * called in the order they were added and they may get called out of order,
+     * called in the order they were added, and they may get called out of order,
      * but any listener added through this method is guaranteed to be called once
      * the computation is complete.
      *

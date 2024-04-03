@@ -18,7 +18,7 @@ package org.asynchttpclient.request.body.multipart;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class InputStreamPart extends FileLikePart {
 
@@ -48,7 +48,7 @@ public class InputStreamPart extends FileLikePart {
     public InputStreamPart(String name, InputStream inputStream, String fileName, long contentLength, String contentType, Charset charset, String contentId,
                            String transferEncoding) {
         super(name, contentType, charset, fileName, contentId, transferEncoding);
-        this.inputStream = assertNotNull(inputStream, "inputStream");
+        this.inputStream = requireNonNull(inputStream, "inputStream");
         this.contentLength = contentLength;
     }
 

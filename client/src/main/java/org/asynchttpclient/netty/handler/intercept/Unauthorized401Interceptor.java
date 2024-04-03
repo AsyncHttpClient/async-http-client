@@ -179,7 +179,7 @@ public class Unauthorized401Interceptor {
                                       NettyResponseFuture<?> future) {
 
         if ("NTLM".equals(authenticateHeader)) {
-            // server replied bare NTLM => we didn't preemptively sent Type1Msg
+            // server replied bare NTLM => we didn't preemptively send Type1Msg
             String challengeHeader = NtlmEngine.INSTANCE.generateType1Msg();
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
@@ -188,7 +188,7 @@ public class Unauthorized401Interceptor {
 
         } else {
             String serverChallenge = authenticateHeader.substring("NTLM ".length()).trim();
-            String challengeHeader = NtlmEngine.INSTANCE.generateType3Msg(realm.getPrincipal(), realm.getPassword(),
+            String challengeHeader = NtlmEngine.generateType3Msg(realm.getPrincipal(), realm.getPassword(),
                     realm.getNtlmDomain(), realm.getNtlmHost(), serverChallenge);
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)

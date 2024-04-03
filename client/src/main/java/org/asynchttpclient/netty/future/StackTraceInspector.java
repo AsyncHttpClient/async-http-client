@@ -38,8 +38,12 @@ public final class StackTraceInspector {
 
     private static boolean recoverOnConnectCloseException(Throwable t) {
         while (true) {
-            if (exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")) return true;
-            if (t.getCause() == null) return false;
+            if (exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")) {
+                return true;
+            }
+            if (t.getCause() == null) {
+                return false;
+            }
             t = t.getCause();
         }
     }
@@ -67,7 +71,9 @@ public final class StackTraceInspector {
             } catch (Throwable ignore) {
             }
 
-            if (t.getCause() == null) return false;
+            if (t.getCause() == null) {
+                return false;
+            }
             t = t.getCause();
         }
     }

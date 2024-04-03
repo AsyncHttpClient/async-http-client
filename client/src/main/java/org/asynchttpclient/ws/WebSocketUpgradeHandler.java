@@ -20,6 +20,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.netty.ws.NettyWebSocket;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.SWITCHI
 public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
 
     private final List<WebSocketListener> listeners;
-    private NettyWebSocket webSocket;
+    private @Nullable NettyWebSocket webSocket;
 
     public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
         this.listeners = listeners;
@@ -78,7 +79,7 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
     }
 
     @Override
-    public final NettyWebSocket onCompleted() throws Exception {
+    public final @Nullable NettyWebSocket onCompleted() throws Exception {
         onCompleted0();
         return webSocket;
     }
@@ -99,7 +100,11 @@ public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
         setWebSocket0(webSocket);
     }
 
-    public final void onOpen() {
+    /**
+     * @param webSocket this parameter is the same object as the field webSocket,
+     *                  but guaranteed to be not null. This is done to satisfy NullAway requirements
+     */
+    public final void onOpen(NettyWebSocket webSocket) {
         onOpen0();
         for (WebSocketListener listener : listeners) {
             webSocket.addWebSocketListener(listener);

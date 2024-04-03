@@ -17,7 +17,7 @@ package org.asynchttpclient.request.body.multipart;
 
 import java.nio.charset.Charset;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class ByteArrayPart extends FileLikePart {
 
@@ -45,7 +45,7 @@ public class ByteArrayPart extends FileLikePart {
 
     public ByteArrayPart(String name, byte[] bytes, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
         super(name, contentType, charset, fileName, contentId, transferEncoding);
-        this.bytes = assertNotNull(bytes, "bytes");
+        this.bytes = requireNonNull(bytes, "bytes");
     }
 
     public byte[] getBytes() {

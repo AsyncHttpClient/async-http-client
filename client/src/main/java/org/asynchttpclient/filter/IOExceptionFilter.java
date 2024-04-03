@@ -14,11 +14,12 @@ package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.exception.FilterException;
 
 import java.io.IOException;
 
 /**
- * This filter is invoked when an {@link IOException} occurs during an http transaction.
+ * This filter is invoked when an {@link IOException} occurs during a http transaction.
  */
 public interface IOExceptionFilter {
 

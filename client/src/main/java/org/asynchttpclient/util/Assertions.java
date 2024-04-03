@@ -18,23 +18,16 @@ package org.asynchttpclient.util;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
+import static java.util.Objects.requireNonNull;
+
 public final class Assertions {
 
     private Assertions() {
     }
 
     @Contract(value = "null, _ -> fail", pure = true)
-    public static <T> T assertNotNull(@Nullable T value, String name) {
-        if (value == null) {
-            throw new NullPointerException(name);
-        }
-        return value;
-
-    }
-
-    @Contract(value = "null, _ -> fail", pure = true)
     public static String assertNotEmpty(@Nullable String value, String name) {
-        assertNotNull(value, name);
+        requireNonNull(value, name);
         if (value.length() == 0) {
             throw new IllegalArgumentException("empty " + name);
         }

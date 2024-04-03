@@ -14,15 +14,22 @@ It's built on top of [Netty](https://github.com/netty/netty). It's compiled with
 Binaries are deployed on Maven Central.
 Add a dependency on the main AsyncHttpClient artifact:
 
+Maven:
 ```xml
-
 <dependencies>
     <dependency>
         <groupId>org.asynchttpclient</groupId>
         <artifactId>async-http-client</artifactId>
-        <version>3.0.0.Beta2</version>
+        <version>3.0.0.Beta3</version>
     </dependency>
 </dependencies>
+```
+
+Gradle:
+```groovy
+dependencies {
+    implementation 'org.asynchttpclient:async-http-client:3.0.0.Beta3'
+}
 ```
 
 ## Version

@@ -50,7 +50,7 @@ public interface ChannelPool {
     boolean removeAll(Channel channel);
 
     /**
-     * Return true if a channel can be cached. A implementation can decide based
+     * Return true if a channel can be cached. An implementation can decide based
      * on some rules to allow caching Calling this method is equivalent of
      * checking the returned value of {@link ChannelPool#offer(Channel, Object)}
      *

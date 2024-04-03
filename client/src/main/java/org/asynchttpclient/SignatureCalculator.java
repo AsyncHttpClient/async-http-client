@@ -25,6 +25,7 @@ package org.asynchttpclient;
  */
 @FunctionalInterface
 public interface SignatureCalculator {
+
     /**
      * Method called when {@link RequestBuilder#build} method is called.
      * Should first calculate signature information and then modify request

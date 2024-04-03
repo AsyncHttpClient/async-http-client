@@ -37,8 +37,8 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
 
 /**
- * An {@link AsyncHandler} which support resumable download, e.g when used with an {@link ResumableIOExceptionFilter},
- * this handler can resume the download operation at the point it was before the interruption occurred. This prevent having to
+ * An {@link AsyncHandler} which support resumable download, e.g. when used with an {@link ResumableIOExceptionFilter},
+ * this handler can resume the download operation at the point it was before the interruption occurred. This prevents having to
  * download the entire file again. It's the responsibility of the {@link ResumableAsyncHandler}
  * to track how many bytes has been transferred and to properly adjust the file's write position.
  * <br>

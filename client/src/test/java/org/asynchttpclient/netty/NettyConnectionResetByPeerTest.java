@@ -16,11 +16,13 @@
 package org.asynchttpclient.netty;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+@ExtendWith(NettyLeakDetectorExtension.class)
 public class NettyConnectionResetByPeerTest {
 
     private String resettingServerAddress;

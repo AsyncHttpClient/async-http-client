@@ -25,7 +25,7 @@ import java.io.FileInputStream;
 public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
 
     /**
-     * Invoked when the content (a {@link File}, {@link String} or {@link FileInputStream} has been fully
+     * Invoked when the content (a {@link File}, {@link String} or {@link FileInputStream}) has been fully
      * written on the I/O socket.
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
@@ -33,7 +33,7 @@ public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
     State onHeadersWritten();
 
     /**
-     * Invoked when the content (a {@link File}, {@link String} or {@link FileInputStream} has been fully
+     * Invoked when the content (a {@link File}, {@link String} or {@link FileInputStream}) has been fully
      * written on the I/O socket.
      *
      * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.

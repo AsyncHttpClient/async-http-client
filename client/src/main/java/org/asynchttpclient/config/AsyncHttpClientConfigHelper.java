@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class AsyncHttpClientConfigHelper {
 
-    private static volatile @Nullable Config config;
+    @Nullable
+    private static volatile Config config;
 
     private AsyncHttpClientConfigHelper() {
     }
@@ -63,18 +64,29 @@ public final class AsyncHttpClientConfigHelper {
             propsCache.clear();
         }
 
+        /**
+         * Parse a property file.
+         *
+         * @param file     the file to parse
+         * @param required if true, the file must be present
+         * @return the parsed properties
+         * @throws RuntimeException if the file is required and not present or if the file can't be parsed
+         */
         private Properties parsePropertiesFile(String file, boolean required) {
             Properties props = new Properties();
 
-            InputStream is = getClass().getResourceAsStream(file);
-            if (is != null) {
-                try {
-                    props.load(is);
-                } catch (IOException e) {
-                    throw new IllegalArgumentException("Can't parse config file " + file, e);
+            try (InputStream is = getClass().getResourceAsStream(file)) {
+                if (is != null) {
+                    try {
+                        props.load(is);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Can't parse config file " + file, e);
+                    }
+                } else if (required) {
+                    throw new IllegalArgumentException("Can't locate config file " + file);
                 }
-            } else if (required) {
-                throw new IllegalArgumentException("Can't locate config file " + file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
             return props;
@@ -93,7 +105,8 @@ public final class AsyncHttpClientConfigHelper {
             });
         }
 
-        public @Nullable String[] getStringArray(String key) {
+        @Nullable
+        public String[] getStringArray(String key) {
             String s = getString(key);
             s = s.trim();
             if (s.isEmpty()) {

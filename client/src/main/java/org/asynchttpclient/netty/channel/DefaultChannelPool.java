@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 /**
@@ -260,7 +260,7 @@ public final class DefaultChannelPool implements ChannelPool {
         private volatile int owned;
 
         IdleChannel(Channel channel, long start) {
-            this.channel = assertNotNull(channel, "channel");
+            this.channel = requireNonNull(channel, "channel");
             this.start = start;
         }
 

@@ -47,12 +47,12 @@ public final class MiscUtils {
         return array != null && array.length != 0;
     }
 
-    @Contract(value = "null -> false")
+    @Contract("null -> false")
     public static boolean isNonEmpty(@Nullable Collection<?> collection) {
         return collection != null && !collection.isEmpty();
     }
 
-    @Contract(value = "null -> false")
+    @Contract("null -> false")
     public static boolean isNonEmpty(@Nullable Map<?, ?> map) {
         return map != null && !map.isEmpty();
     }

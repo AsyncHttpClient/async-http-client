@@ -17,7 +17,7 @@ package org.asynchttpclient.uri;
 
 import org.jetbrains.annotations.Nullable;
 
-import static org.asynchttpclient.util.Assertions.assertNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 final class UriParser {
@@ -187,8 +187,8 @@ final class UriParser {
         }
     }
 
-    private boolean isMaybeIPV6(String nonNullHost) {
-        // If the host is surrounded by [ and ] then its an IPv6
+    private static boolean isMaybeIPV6(String nonNullHost) {
+        // If the host is surrounded by [ and ] then it's an IPv6
         // literal address as specified in RFC2732
         return nonNullHost.length() > 0 && nonNullHost.charAt(0) == '[';
     }
@@ -369,7 +369,7 @@ final class UriParser {
     }
 
     public static UriParser parse(@Nullable Uri context, final String originalUrl) {
-        assertNotNull(originalUrl, "originalUrl");
+        requireNonNull(originalUrl, "originalUrl");
         final UriParser parser = new UriParser(originalUrl);
         parser.parse(context);
         return parser;

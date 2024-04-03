@@ -15,7 +15,7 @@ package org.asynchttpclient.handler;
 import io.netty.handler.codec.http.HttpHeaders;
 
 /**
- * A simple interface an application can implements in order to received byte transfer information.
+ * A simple interface an application can implement in order to received byte transfer information.
  */
 public interface TransferListener {
 

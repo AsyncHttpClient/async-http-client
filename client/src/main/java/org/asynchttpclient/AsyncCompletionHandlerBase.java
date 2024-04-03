@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * Simple {@link AsyncHandler} of type {@link Response}
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response> {
+
     @Override
     public @Nullable Response onCompleted(@Nullable Response response) throws Exception {
         return response;
