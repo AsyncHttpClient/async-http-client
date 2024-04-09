@@ -15,7 +15,6 @@ package org.asynchttpclient.request.body;
 import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
@@ -24,10 +23,10 @@ import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.Random;
+import java.util.Arrays;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -51,8 +50,8 @@ public class PutByteBufTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testPutBigBody() throws Exception {
-        byte[] array = new byte[2048]; // length is bounded by 7
-        new Random().nextBytes(array);
+        byte[] array = new byte[2048];
+        Arrays.fill(array, (byte) 97);
         String longString = new String(array, Charset.forName("UTF-8"));
 
         put(longString);
@@ -63,7 +62,7 @@ public class PutByteBufTest extends AbstractBasicTest {
         return new AbstractHandler() {
 
             @Override
-            public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse response) throws IOException, ServletException {
+            public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse response) throws IOException {
                 int size = 1024;
                 if (request.getContentLength() > 0) {
                     size = request.getContentLength();
