@@ -16,6 +16,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.netty.NettyResponse;
@@ -60,6 +61,13 @@ public interface Response {
      * @return the entire response body as a ByteBuffer.
      */
     ByteBuffer getResponseBodyAsByteBuffer();
+
+    /**
+     * Return the entire response body as a ByteBuf.
+     *
+     * @return the entire response body as a ByteBuf.
+     */
+    ByteBuf getResponseBodyAsByteBuf();
 
     /**
      * Returns an input stream for the response body. Note that you should not try to get this more than once, and that you should not close the stream.
