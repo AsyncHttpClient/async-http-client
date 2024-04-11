@@ -33,7 +33,8 @@ public class LazyResponseBodyPart extends HttpResponseBodyPart {
         this.buf = buf;
     }
 
-    public ByteBuf getBuf() {
+    @Override
+    public ByteBuf getBodyByteBuf() {
         return buf;
     }
 
