@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient;
 
+import io.netty.buffer.ByteBuf;
 import java.nio.ByteBuffer;
 
 /**
@@ -43,6 +44,12 @@ public abstract class HttpResponseBodyPart {
      * The {@link ByteBuffer}'s capacity is equal to the number of bytes available.
      */
     public abstract ByteBuffer getBodyByteBuffer();
+
+    /**
+     * @return the {@link ByteBuf} of the bytes read from the response's chunk.
+     * The {@link ByteBuf}'s capacity is equal to the number of bytes available.
+     */
+    public abstract ByteBuf getBodyByteBuf();
 
     /**
      * @return true if this is the last part.

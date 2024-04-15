@@ -17,6 +17,7 @@ package org.asynchttpclient.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import org.asynchttpclient.HttpResponseBodyPart;
 
 import java.nio.ByteBuffer;
@@ -52,5 +53,10 @@ public class EagerResponseBodyPart extends HttpResponseBodyPart {
     @Override
     public ByteBuffer getBodyByteBuffer() {
         return ByteBuffer.wrap(bytes);
+    }
+
+    @Override
+    public ByteBuf getBodyByteBuf() {
+        return Unpooled.wrappedBuffer(bytes);
     }
 }
