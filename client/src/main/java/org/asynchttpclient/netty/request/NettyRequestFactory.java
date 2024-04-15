@@ -32,6 +32,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyBodyBody;
 import org.asynchttpclient.netty.request.body.NettyByteArrayBody;
+import org.asynchttpclient.netty.request.body.NettyByteBufBody;
 import org.asynchttpclient.netty.request.body.NettyByteBufferBody;
 import org.asynchttpclient.netty.request.body.NettyCompositeByteArrayBody;
 import org.asynchttpclient.netty.request.body.NettyDirectBody;
@@ -96,6 +97,8 @@ public final class NettyRequestFactory {
             nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
         } else if (request.getByteBufferData() != null) {
             nettyBody = new NettyByteBufferBody(request.getByteBufferData());
+        } else if (request.getByteBufData() != null) {
+            nettyBody = new NettyByteBufBody(request.getByteBufData());
         } else if (request.getStreamData() != null) {
             nettyBody = new NettyInputStreamBody(request.getStreamData());
         } else if (isNonEmpty(request.getFormParams())) {
