@@ -890,6 +890,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             disableZeroCopy = config.isDisableZeroCopy();
             keepEncodingHeader = config.isKeepEncodingHeader();
             proxyServerSelector = config.getProxyServerSelector();
+            validateResponseHeaders = config.isValidateResponseHeaders();
 
             // websocket
             aggregateWebSocketFrameFragments = config.isAggregateWebSocketFrameFragments();
@@ -907,15 +908,19 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             // keep-alive
             keepAlive = config.isKeepAlive();
             pooledConnectionIdleTimeout = config.getPooledConnectionIdleTimeout();
+            connectionPoolCleanerPeriod = config.getConnectionPoolCleanerPeriod();
             connectionTtl = config.getConnectionTtl();
             maxConnections = config.getMaxConnections();
             maxConnectionsPerHost = config.getMaxConnectionsPerHost();
             channelPool = config.getChannelPool();
             connectionSemaphoreFactory = config.getConnectionSemaphoreFactory();
             keepAliveStrategy = config.getKeepAliveStrategy();
+            acquireFreeChannelTimeout = config.getAcquireFreeChannelTimeout();
 
             // ssl
+            useOpenSsl = config.isUseOpenSsl();
             useInsecureTrustManager = config.isUseInsecureTrustManager();
+            disableHttpsEndpointIdentificationAlgorithm = config.isDisableHttpsEndpointIdentificationAlgorithm();
             handshakeTimeout = config.getHandshakeTimeout();
             enabledProtocols = config.getEnabledProtocols();
             enabledCipherSuites = config.getEnabledCipherSuites();
@@ -930,6 +935,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             responseFilters.addAll(config.getResponseFilters());
             ioExceptionFilters.addAll(config.getIoExceptionFilters());
 
+            // cookie store
+            cookieStore = config.getCookieStore();
+            expiredCookieEvictionDelay = config.expiredCookieEvictionDelay();
+
             // tuning
             tcpNoDelay = config.isTcpNoDelay();
             soReuseAddress = config.isSoReuseAddress();
@@ -943,6 +952,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             httpClientCodecMaxInitialLineLength = config.getHttpClientCodecMaxInitialLineLength();
             httpClientCodecMaxHeaderSize = config.getHttpClientCodecMaxHeaderSize();
             httpClientCodecMaxChunkSize = config.getHttpClientCodecMaxChunkSize();
+            httpClientCodecInitialBufferSize = config.getHttpClientCodecInitialBufferSize();
             chunkedFileChunkSize = config.getChunkedFileChunkSize();
             channelOptions.putAll(config.getChannelOptions());
             eventLoopGroup = config.getEventLoopGroup();
