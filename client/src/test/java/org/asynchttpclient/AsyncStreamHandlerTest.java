@@ -441,7 +441,7 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     // Some responses contain the TRACE method, some do not - account for both
                     final String[] expected = {"GET", "HEAD", "OPTIONS", "POST"};
                     final String[] expectedWithTrace = {"GET", "HEAD", "OPTIONS", "POST", "TRACE"};
-                    Future<String> f = client.prepareOptions("https://www.shieldblaze.com/").execute(new AsyncHandlerAdapter() {
+                    Future<String> f = client.prepareOptions("https://www.google.com/").execute(new AsyncHandlerAdapter() {
 
                         @Override
                         public State onHeadersReceived(HttpHeaders headers) {
