@@ -61,7 +61,6 @@ public class AutomaticDecompressionTest {
         out.write(compressedData, 0, (int) n);
         out.flush();
         out.close();
-        exchange.close();
       }
     });
 
@@ -72,14 +71,10 @@ public class AutomaticDecompressionTest {
         exchange.getResponseHeaders().set("Content-Encoding", "gzip");
         exchange.sendResponseHeaders(200, 0);
         OutputStream out = exchange.getResponseBody();
-        try {
-          GZIPOutputStream gzip = new GZIPOutputStream(out);
-          gzip.write(UNCOMPRESSED_PAYLOAD.getBytes(StandardCharsets.UTF_8));
-          gzip.flush();
-          gzip.close();
-        } catch (Exception exception) {
-          exception.printStackTrace();
-        }
+        GZIPOutputStream gzip = new GZIPOutputStream(out);
+        gzip.write(UNCOMPRESSED_PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        gzip.flush();
+        gzip.close();
       }
     });
 
