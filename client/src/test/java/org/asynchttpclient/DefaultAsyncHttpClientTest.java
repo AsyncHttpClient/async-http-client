@@ -50,7 +50,7 @@ public class DefaultAsyncHttpClientTest {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build();
 
         try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
-            assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
+            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
             assertInstanceOf(EpollEventLoopGroup.class, client.channelManager().getEventLoopGroup());
         }
     }
@@ -60,7 +60,7 @@ public class DefaultAsyncHttpClientTest {
     public void testNativeTransportWithoutEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
         try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
-            assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
+            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
             assertInstanceOf(IOUringEventLoopGroup.class, client.channelManager().getEventLoopGroup());
         }
     }
@@ -70,7 +70,7 @@ public class DefaultAsyncHttpClientTest {
     public void testNativeTransportKQueueOnMacOs() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
         try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
-            assertDoesNotThrow(() -> client.prepareGet("https://www.shieldblaze.com").execute().get());
+            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
             assertInstanceOf(KQueueEventLoopGroup.class, client.channelManager().getEventLoopGroup());
         }
     }
