@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,6 +29,7 @@ public class AutomaticDecompressionTest {
   private static AsyncHttpClient createClient() {
     AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
         .setEnableAutomaticDecompression(true)
+        .setCompressionEnforced(true)
         .build();
     return new DefaultAsyncHttpClient(config);
   }
@@ -38,6 +42,7 @@ public class AutomaticDecompressionTest {
       @Override
       public void handle(HttpExchange exchange)
           throws IOException {
+        validateAcceptEncodingHeader(exchange);
         exchange.getResponseHeaders().set("Content-Encoding", "br");
         exchange.sendResponseHeaders(200, 0);
         OutputStream out = exchange.getResponseBody();
@@ -53,6 +58,7 @@ public class AutomaticDecompressionTest {
       @Override
       public void handle(HttpExchange exchange)
           throws IOException {
+        validateAcceptEncodingHeader(exchange);
         exchange.getResponseHeaders().set("Content-Encoding", "zstd");
         byte[] compressedData = new byte[UNCOMPRESSED_PAYLOAD.length()];
         long n = Zstd.compress(compressedData, UNCOMPRESSED_PAYLOAD.getBytes(StandardCharsets.UTF_8), 2, true);
@@ -68,6 +74,7 @@ public class AutomaticDecompressionTest {
       @Override
       public void handle(HttpExchange exchange)
           throws IOException {
+        validateAcceptEncodingHeader(exchange);
         exchange.getResponseHeaders().set("Content-Encoding", "gzip");
         exchange.sendResponseHeaders(200, 0);
         OutputStream out = exchange.getResponseBody();
@@ -79,6 +86,15 @@ public class AutomaticDecompressionTest {
     });
 
     HTTP_SERVER.start();
+  }
+
+  private static void validateAcceptEncodingHeader(HttpExchange exchange) {
+    Headers requestHeaders = exchange.getRequestHeaders();
+    List<String> acceptEncodingList = requestHeaders.get("Accept-Encoding")
+        .stream()
+        .flatMap(x -> Arrays.asList(x.split(",")).stream())
+        .collect(Collectors.toList());
+    assertEquals(List.of("gzip", "deflate", "br", "zstd"), acceptEncodingList);
   }
 
   @AfterAll
