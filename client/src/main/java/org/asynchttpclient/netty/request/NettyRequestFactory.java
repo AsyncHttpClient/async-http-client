@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.request;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.Brotli;
+import io.netty.handler.codec.compression.Zstd;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -67,6 +68,7 @@ import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthori
 import static org.asynchttpclient.util.HttpUtils.ACCEPT_ALL_HEADER_VALUE;
 import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
 import static org.asynchttpclient.util.HttpUtils.filterOutBrotliFromAcceptEncoding;
+import static org.asynchttpclient.util.HttpUtils.filterOutZstdFromAcceptEncoding;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.HttpUtils.originHeader;
 import static org.asynchttpclient.util.HttpUtils.urlEncodeFormParams;
@@ -182,12 +184,20 @@ public final class NettyRequestFactory {
                         // For manual decompression by user, any encoding may suite, so leave untouched
                         headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
                     }
+                    if (!Zstd.isAvailable()) {
+                        // zstd is not available.
+                        // For manual decompression by user, any encoding may suit, so leave untouched
+                        headers.set(ACCEPT_ENCODING, filterOutZstdFromAcceptEncoding(userDefinedAcceptEncoding));
+                    }
                 }
             } else if (config.isCompressionEnforced()) {
                 // Add Accept Encoding header if compression is enforced
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
                 if (Brotli.isAvailable()) {
                     headers.add(ACCEPT_ENCODING, HttpHeaderValues.BR);
+                }
+                if (Zstd.isAvailable()) {
+                    headers.add(ACCEPT_ENCODING, HttpHeaderValues.ZSTD);
                 }
             }
         }

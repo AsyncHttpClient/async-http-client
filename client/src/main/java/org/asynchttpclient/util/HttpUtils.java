@@ -40,6 +40,7 @@ public final class HttpUtils {
     private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
     private static final String CONTENT_TYPE_BOUNDARY_ATTRIBUTE = "boundary=";
     private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
+    private static final String ZSTD_ACCEPT_ENCODING_SUFFIX = ", zstd";
 
     private HttpUtils() {
         // Prevent outside initialization
@@ -170,6 +171,14 @@ public final class HttpUtils {
         // we don't support Brotly ATM
         if (acceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
             return acceptEncoding.subSequence(0, acceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length());
+        }
+        return acceptEncoding;
+    }
+
+    public static CharSequence filterOutZstdFromAcceptEncoding(String acceptEncoding) {
+        // we don't support zstd ATM
+        if (acceptEncoding.endsWith(ZSTD_ACCEPT_ENCODING_SUFFIX)) {
+            return acceptEncoding.subSequence(0, acceptEncoding.length() - ZSTD_ACCEPT_ENCODING_SUFFIX.length());
         }
         return acceptEncoding;
     }
