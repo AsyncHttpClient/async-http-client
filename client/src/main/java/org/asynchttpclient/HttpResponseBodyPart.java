@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import io.netty.buffer.ByteBuf;
+
 import java.nio.ByteBuffer;
 
 /**

@@ -13,43 +13,43 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NettyTest {
     @Test
-    @EnabledOnOs(value = OS.LINUX)
+    @EnabledOnOs(OS.LINUX)
     public void epollIsAvailableOnLinux() {
         assertTrue(Epoll.isAvailable());
     }
 
     @Test
-    @EnabledOnOs(value = OS.LINUX)
+    @EnabledOnOs(OS.LINUX)
     public void ioUringIsAvailableOnLinux() {
         assertTrue(IOUring.isAvailable());
     }
 
     @Test
-    @EnabledOnOs(value = OS.MAC)
+    @EnabledOnOs(OS.MAC)
     public void kqueueIsAvailableOnMac() {
         assertTrue(KQueue.isAvailable());
     }
 
     @Test
-    @EnabledOnOs(value = OS.LINUX)
+    @EnabledOnOs(OS.LINUX)
     public void brotliIsAvailableOnLinux() {
         assertTrue(Brotli.isAvailable());
     }
 
     @Test
-    @EnabledOnOs(value = OS.MAC)
+    @EnabledOnOs(OS.MAC)
     public void brotliIsAvailableOnMac() {
         assertTrue(Brotli.isAvailable());
     }
 
     @Test
-    @EnabledOnOs(value = OS.LINUX)
+    @EnabledOnOs(OS.LINUX)
     public void zstdIsAvailableOnLinux() {
         assertTrue(Zstd.isAvailable());
     }
 
     @Test
-    @EnabledOnOs(value = OS.MAC)
+    @EnabledOnOs(OS.MAC)
     public void zstdIsAvailableOnMac() {
         assertTrue(Zstd.isAvailable());
     }

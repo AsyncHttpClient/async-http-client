@@ -38,7 +38,8 @@ public interface ChannelPool {
      * @param partitionKey the partition used when invoking offer
      * @return the channel associated with the uri
      */
-    @Nullable Channel poll(Object partitionKey);
+    @Nullable
+    Channel poll(Object partitionKey);
 
     /**
      * Remove all channels from the cache. A channel might have been associated

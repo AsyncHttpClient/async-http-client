@@ -38,6 +38,7 @@ import static org.asynchttpclient.test.TestUtils.TEXT_HTML_CONTENT_TYPE_WITH_UTF
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.findFreePort;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -125,7 +126,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
 
         assertNotNull(e);
         Throwable cause = e.getCause();
-        assertTrue(cause instanceof ConnectException);
+        assertInstanceOf(ConnectException.class, cause);
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 

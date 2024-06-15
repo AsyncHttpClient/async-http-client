@@ -116,7 +116,8 @@ public interface AsyncHandler<T> {
      * @return T Value that will be returned by the associated {@link Future}
      * @throws Exception if something wrong happens
      */
-    @Nullable T onCompleted() throws Exception;
+    @Nullable
+    T onCompleted() throws Exception;
 
     /**
      * Notify the callback before hostname resolution
