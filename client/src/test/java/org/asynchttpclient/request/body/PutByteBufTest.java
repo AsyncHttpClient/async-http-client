@@ -25,6 +25,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 
@@ -52,7 +53,7 @@ public class PutByteBufTest extends AbstractBasicTest {
     public void testPutBigBody() throws Exception {
         byte[] array = new byte[2048];
         Arrays.fill(array, (byte) 97);
-        String longString = new String(array, Charset.forName("UTF-8"));
+        String longString = new String(array, StandardCharsets.UTF_8);
 
         put(longString);
     }

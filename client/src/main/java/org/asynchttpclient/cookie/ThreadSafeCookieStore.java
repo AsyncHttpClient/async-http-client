@@ -229,7 +229,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
         cookieJar.values()
                 .forEach(cookieMap -> removed[0] |= cookieMap.entrySet()
-                .removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt)));
+                        .removeIf(v -> hasCookieExpired(v.getValue().cookie, v.getValue().createdAt)));
 
         if (removed[0]) {
             cookieJar.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().isEmpty());

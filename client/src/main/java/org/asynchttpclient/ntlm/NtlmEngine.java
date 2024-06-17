@@ -1083,7 +1083,8 @@ public final class NtlmEngine {
         /**
          * Retrieve the target
          */
-        @Nullable String getTarget() {
+        @Nullable
+        String getTarget() {
             return target;
         }
 

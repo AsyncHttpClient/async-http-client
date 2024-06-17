@@ -67,12 +67,14 @@ public interface Request {
     /**
      * @return the InetAddress to be used to bypass uri's hostname resolution
      */
-    @Nullable InetAddress getAddress();
+    @Nullable
+    InetAddress getAddress();
 
     /**
      * @return the local address to bind from
      */
-    @Nullable InetAddress getLocalAddress();
+    @Nullable
+    InetAddress getLocalAddress();
 
     /**
      * @return the HTTP headers
@@ -92,32 +94,38 @@ public interface Request {
     /**
      * @return the request's body array of byte arrays (only non-null if it was set this way)
      */
-    @Nullable List<byte[]> getCompositeByteData();
+    @Nullable
+    List<byte[]> getCompositeByteData();
 
     /**
      * @return the request's body string (only non-null if it was set this way)
      */
-    @Nullable String getStringData();
+    @Nullable
+    String getStringData();
 
     /**
      * @return the request's body ByteBuffer (only non-null if it was set this way)
      */
-    @Nullable ByteBuffer getByteBufferData();
+    @Nullable
+    ByteBuffer getByteBufferData();
 
     /**
      * @return the request's body ByteBuf (only non-null if it was set this way)
      */
-    @Nullable ByteBuf getByteBufData();
+    @Nullable
+    ByteBuf getByteBufData();
 
     /**
      * @return the request's body InputStream (only non-null if it was set this way)
      */
-    @Nullable InputStream getStreamData();
+    @Nullable
+    InputStream getStreamData();
 
     /**
      * @return the request's body BodyGenerator (only non-null if it was set this way)
      */
-    @Nullable BodyGenerator getBodyGenerator();
+    @Nullable
+    BodyGenerator getBodyGenerator();
 
     /**
      * @return the request's form parameters
@@ -132,7 +140,8 @@ public interface Request {
     /**
      * @return the virtual host to connect to
      */
-    @Nullable String getVirtualHost();
+    @Nullable
+    String getVirtualHost();
 
     /**
      * @return the query params resolved from the url/uri
@@ -142,22 +151,26 @@ public interface Request {
     /**
      * @return the proxy server to be used to perform this request (overrides the one defined in config)
      */
-    @Nullable ProxyServer getProxyServer();
+    @Nullable
+    ProxyServer getProxyServer();
 
     /**
      * @return the realm to be used to perform this request (overrides the one defined in config)
      */
-    @Nullable Realm getRealm();
+    @Nullable
+    Realm getRealm();
 
     /**
      * @return the file to be uploaded
      */
-    @Nullable File getFile();
+    @Nullable
+    File getFile();
 
     /**
      * @return if this request is to follow redirects. Non null values means "override config value".
      */
-    @Nullable Boolean getFollowRedirect();
+    @Nullable
+    Boolean getFollowRedirect();
 
     /**
      * @return the request timeout. Non zero values means "override config value".
@@ -177,7 +190,8 @@ public interface Request {
     /**
      * @return the charset value used when decoding the request's body.
      */
-    @Nullable Charset getCharset();
+    @Nullable
+    Charset getCharset();
 
     /**
      * @return the strategy to compute ChannelPool's keys

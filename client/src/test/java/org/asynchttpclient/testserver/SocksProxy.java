@@ -39,15 +39,17 @@ public class SocksProxy {
             Set<SelectionKey> keys = select.selectedKeys();
             for (SelectionKey k : keys) {
 
-                if (!k.isValid())
+                if (!k.isValid()) {
                     continue;
+                }
 
                 // new connection?
                 if (k.isAcceptable() && k.channel() == socks) {
                     // server socket
                     SocketChannel csock = socks.accept();
-                    if (csock == null)
+                    if (csock == null) {
                         continue;
+                    }
                     addClient(csock);
                     csock.register(select, SelectionKey.OP_READ);
                 } else if (k.isReadable()) {
@@ -56,14 +58,16 @@ public class SocksProxy {
                         SocksClient cl = clients.get(i);
                         try {
                             if (k.channel() == cl.client) // from client (e.g. socks client)
+                            {
                                 cl.newClientData(select);
-                            else if (k.channel() == cl.remote) {  // from server client is connected to (e.g. website)
+                            } else if (k.channel() == cl.remote) {  // from server client is connected to (e.g. website)
                                 cl.newRemoteData();
                             }
                         } catch (IOException e) { // error occurred - remove client
                             cl.client.close();
-                            if (cl.remote != null)
+                            if (cl.remote != null) {
                                 cl.remote.close();
+                            }
                             k.cancel();
                             clients.remove(cl);
                         }
@@ -75,10 +79,11 @@ public class SocksProxy {
             // client timeout check
             for (int i = 0; i < clients.size(); i++) {
                 SocksClient cl = clients.get(i);
-                if ((System.currentTimeMillis() - cl.lastData) > 30000L) {
+                if (System.currentTimeMillis() - cl.lastData > 30000L) {
                     cl.client.close();
-                    if (cl.remote != null)
+                    if (cl.remote != null) {
                         cl.remote.close();
+                    }
                     clients.remove(cl);
                 }
             }
@@ -115,8 +120,9 @@ public class SocksProxy {
 
         void newRemoteData() throws IOException {
             ByteBuffer buf = ByteBuffer.allocate(1024);
-            if (remote.read(buf) == -1)
+            if (remote.read(buf) == -1) {
                 throw new IOException("disconnected");
+            }
             lastData = System.currentTimeMillis();
             buf.flip();
             client.write(buf);
@@ -125,8 +131,9 @@ public class SocksProxy {
         void newClientData(Selector selector) throws IOException {
             if (!connected) {
                 ByteBuffer inbuf = ByteBuffer.allocate(512);
-                if (client.read(inbuf) < 1)
+                if (client.read(inbuf) < 1) {
                     return;
+                }
                 inbuf.flip();
 
                 // read socks header
@@ -143,13 +150,15 @@ public class SocksProxy {
 
                 final int port = inbuf.getShort() & 0xffff;
 
-                final byte ip[] = new byte[4];
+                final byte[] ip = new byte[4];
                 // fetch IP
                 inbuf.get(ip);
 
                 InetAddress remoteAddr = InetAddress.getByAddress(ip);
 
-                while ((inbuf.get()) != 0) ; // username
+                while (inbuf.get() != 0) {
+                    ; // username
+                }
 
                 // hostname provided, not IP
                 if (ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] != 0) { // host provided
@@ -172,8 +181,9 @@ public class SocksProxy {
                 out.flip();
                 client.write(out);
 
-                if (!remote.isConnected())
+                if (!remote.isConnected()) {
                     throw new IOException("connect failed");
+                }
 
                 remote.configureBlocking(false);
                 remote.register(selector, SelectionKey.OP_READ);
@@ -181,8 +191,9 @@ public class SocksProxy {
                 connected = true;
             } else {
                 ByteBuffer buf = ByteBuffer.allocate(1024);
-                if (client.read(buf) == -1)
+                if (client.read(buf) == -1) {
                     throw new IOException("disconnected");
+                }
                 lastData = System.currentTimeMillis();
                 buf.flip();
                 remote.write(buf);

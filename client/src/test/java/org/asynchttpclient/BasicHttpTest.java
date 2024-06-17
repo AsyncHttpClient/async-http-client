@@ -79,6 +79,7 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -559,7 +560,7 @@ public class BasicHttpTest extends HttpTest {
                         @Override
                         public void onThrowable(Throwable t) {
                             try {
-                                assertTrue(t instanceof ConnectException);
+                                assertInstanceOf(ConnectException.class, t);
                             } finally {
                                 l.countDown();
                             }
@@ -962,8 +963,8 @@ public class BasicHttpTest extends HttpTest {
                         client.prepareGet(getTargetUrl().replace("http", "https")).execute().get();
                         fail("Request shouldn't succeed");
                     } catch (ExecutionException e) {
-                        assertTrue(e.getCause() instanceof ConnectException, "Cause should be a ConnectException");
-                        assertTrue(e.getCause().getCause() instanceof SSLException, "Root cause should be a SslException");
+                        assertInstanceOf(ConnectException.class, e.getCause(), "Cause should be a ConnectException");
+                        assertInstanceOf(SSLException.class, e.getCause().getCause(), "Root cause should be a SslException");
                     }
                 }));
     }

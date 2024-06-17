@@ -34,6 +34,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -73,7 +74,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof TimeoutException);
+            assertInstanceOf(TimeoutException.class, e.getCause());
             checkTimeoutMessage(e.getCause().getMessage(), true);
         } catch (TimeoutException e) {
             fail("Timeout.", e);
@@ -89,7 +90,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof TimeoutException);
+            assertInstanceOf(TimeoutException.class, e.getCause());
             checkTimeoutMessage(e.getCause().getMessage(), false);
         } catch (TimeoutException e) {
             fail("Timeout.", e);
@@ -107,7 +108,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof TimeoutException);
+            assertInstanceOf(TimeoutException.class, e.getCause());
             checkTimeoutMessage(e.getCause().getMessage(), true);
         }
     }
@@ -121,7 +122,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         } catch (InterruptedException e) {
             fail("Interrupted.", e);
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof TimeoutException);
+            assertInstanceOf(TimeoutException.class, e.getCause());
             checkTimeoutMessage(e.getCause().getMessage(), true);
         } catch (TimeoutException e) {
             fail("Timeout.", e);

@@ -160,7 +160,8 @@ public interface AsyncHttpClientConfig {
      * @return the {@link ThreadFactory} an {@link AsyncHttpClient} use for handling asynchronous response. If no {@link ThreadFactory} has been explicitly
      * provided, this method will return {@code null}
      */
-    @Nullable ThreadFactory getThreadFactory();
+    @Nullable
+    ThreadFactory getThreadFactory();
 
     /**
      * An instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
@@ -174,14 +175,16 @@ public interface AsyncHttpClientConfig {
      *
      * @return an instance of {@link SslContext} used for SSL connection.
      */
-    @Nullable SslContext getSslContext();
+    @Nullable
+    SslContext getSslContext();
 
     /**
      * Return the current {@link Realm}
      *
      * @return the current {@link Realm}
      */
-    @Nullable Realm getRealm();
+    @Nullable
+    Realm getRealm();
 
     /**
      * Return the list of {@link RequestFilter}
@@ -260,12 +263,14 @@ public interface AsyncHttpClientConfig {
     /**
      * @return the array of enabled protocols
      */
-    @Nullable String[] getEnabledProtocols();
+    @Nullable
+    String[] getEnabledProtocols();
 
     /**
      * @return the array of enabled cipher suites
      */
-    @Nullable String[] getEnabledCipherSuites();
+    @Nullable
+    String[] getEnabledCipherSuites();
 
     /**
      * @return if insecure cipher suites must be filtered out (only used when not explicitly passing enabled cipher suites)
@@ -294,7 +299,8 @@ public interface AsyncHttpClientConfig {
 
     int getHandshakeTimeout();
 
-    @Nullable SslEngineFactory getSslEngineFactory();
+    @Nullable
+    SslEngineFactory getSslEngineFactory();
 
     int getChunkedFileChunkSize();
 
@@ -310,23 +316,29 @@ public interface AsyncHttpClientConfig {
 
     Map<ChannelOption<Object>, Object> getChannelOptions();
 
-    @Nullable EventLoopGroup getEventLoopGroup();
+    @Nullable
+    EventLoopGroup getEventLoopGroup();
 
     boolean isUseNativeTransport();
 
     boolean isUseOnlyEpollNativeTransport();
 
-    @Nullable Consumer<Channel> getHttpAdditionalChannelInitializer();
+    @Nullable
+    Consumer<Channel> getHttpAdditionalChannelInitializer();
 
-    @Nullable Consumer<Channel> getWsAdditionalChannelInitializer();
+    @Nullable
+    Consumer<Channel> getWsAdditionalChannelInitializer();
 
     ResponseBodyPartFactory getResponseBodyPartFactory();
 
-    @Nullable ChannelPool getChannelPool();
+    @Nullable
+    ChannelPool getChannelPool();
 
-    @Nullable ConnectionSemaphoreFactory getConnectionSemaphoreFactory();
+    @Nullable
+    ConnectionSemaphoreFactory getConnectionSemaphoreFactory();
 
-    @Nullable Timer getNettyTimer();
+    @Nullable
+    Timer getNettyTimer();
 
     /**
      * @return the duration between tick of {@link HashedWheelTimer}
@@ -358,7 +370,8 @@ public interface AsyncHttpClientConfig {
 
     int getSoRcvBuf();
 
-    @Nullable ByteBufAllocator getAllocator();
+    @Nullable
+    ByteBufAllocator getAllocator();
 
     int getIoThreadsCount();
 

@@ -30,7 +30,6 @@ public enum NoopChannelPool implements ChannelPool {
     INSTANCE;
 
     /**
-     *
      * @return always false since this is a {@link NoopChannelPool}
      */
     @Override
@@ -39,7 +38,6 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     /**
-     *
      * @return always null since this is a {@link NoopChannelPool}
      */
     @Override
@@ -48,7 +46,6 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     /**
-     *
      * @return always false since this is a {@link NoopChannelPool}
      */
     @Override
@@ -57,7 +54,6 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     /**
-     *
      * @return always true since this is a {@link NoopChannelPool}
      */
     @Override
@@ -66,7 +62,6 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     /**
-     *
      * Does nothing since this is a {@link NoopChannelPool}
      */
     @Override
@@ -74,7 +69,6 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     /**
-     *
      * Does nothing since this is a {@link NoopChannelPool}
      */
     @Override
@@ -82,7 +76,6 @@ public enum NoopChannelPool implements ChannelPool {
     }
 
     /**
-     *
      * @return always {@link Collections#emptyMap()} since this is a {@link NoopChannelPool}
      */
     @Override
