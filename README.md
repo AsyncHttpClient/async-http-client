@@ -32,20 +32,6 @@ dependencies {
 }
 ```
 
-## Version
-
-AHC doesn't use SEMVER, and won't.
-
-* MAJOR = huge refactoring
-* MINOR = new features and minor API changes, upgrading should require 1 hour of work to adapt sources
-* FIX = no API change, just bug fixes, only those are source and binary compatible with same minor version
-
-Check CHANGES.md for migration path between versions.
-
-## Basics
-
-Feel free to check the [Javadoc](http://www.javadoc.io/doc/org.asynchttpclient/async-http-client/) or the code for more information.
-
 ### Dsl
 
 Import the Dsl helpers to use convenient methods to bootstrap components:
@@ -112,7 +98,7 @@ This body can be of type:
 * `String`
 * `java.nio.ByteBuffer`
 * `java.io.InputStream`
-* `Publisher<io.netty.bufferByteBuf>`
+* `Publisher<io.netty.buffer.ByteBuf>`
 * `org.asynchttpclient.request.body.generator.BodyGenerator`
 
 `BodyGenerator` is a generic abstraction that let you create request bodies on the fly.
@@ -244,75 +230,34 @@ Async Http Client also supports WebSocket.
 You need to pass a `WebSocketUpgradeHandler` where you would register a `WebSocketListener`.
 
 ```java
-WebSocket websocket=c.prepareGet("ws://demos.kaazing.com/echo")
+WebSocket websocket = c.prepareGet("ws://demos.kaazing.com/echo")
         .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
-        new WebSocketListener(){
+                new WebSocketListener() {
 
-            @Override
-            public void onOpen(WebSocket websocket){
-                websocket.sendTextFrame("...").sendTextFrame("...");
-            }
+                  @Override
+                  public void onOpen(WebSocket websocket) {
+                    websocket.sendTextFrame("...").sendTextFrame("...");
+                  }
 
-            @Override
-            public void onClose(WebSocket websocket) {
-                // ...
-            }
+                  @Override
+                  public void onClose(WebSocket websocket) {
+                    // ...
+                  }
 
-            @Override
-            public void onTextFrame(String payload,boolean finalFragment,int rsv){
-                 System.out.println(payload);
-            }
+                  @Override
+                  public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                    System.out.println(payload);
+                  }
 
-            @Override
-            public void onError(Throwable t){
-                t.printStackTrace();
-            }
-        }).build()).get();
+                  @Override
+                  public void onError(Throwable t) {
+                    t.printStackTrace();
+                  }
+                }).build()).get();
 ```
-
-## WebDAV
-
-AsyncHttpClient has build in support for the WebDAV protocol.
-The API can be used the same way normal HTTP request are made:
-
-```java
-        Request mkcolRequest=new RequestBuilder("MKCOL").setUrl("http://host:port/folder1").build();
-        Response response=c.executeRequest(mkcolRequest).get();
-```
-
-or
-
-```java
-        Request propFindRequest=new RequestBuilder("PROPFIND").setUrl("http://host:port").build();
-        Response response=c.executeRequest(propFindRequest,new AsyncHandler() {
-            // ...
-        }).get();
-```
-
-## More
-
-You can find more information on Jean-François Arcand's blog. Jean-François is the original author of this library.
-Code is sometimes not up-to-date but gives a pretty good idea of advanced features.
-
-* http://web.archive.org/web/20111224171448/http://jfarcand.wordpress.com/2011/01/12/going-asynchronous-using-asynchttpclient-for-dummies/
-* http://web.archive.org/web/20111224171241/http://jfarcand.wordpress.com/2010/12/21/going-asynchronous-using-asynchttpclient-the-basic/
-* http://web.archive.org/web/20111224162752/http://jfarcand.wordpress.com/2011/01/04/going-asynchronous-using-asynchttpclient-the-complex/
-* http://web.archive.org/web/20120218183108/http://jfarcand.wordpress.com/2011/12/21/writing-websocket-clients-using-asynchttpclient/
 
 ## User Group
 
 Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
 
 [GitHub Discussions](https://github.com/AsyncHttpClient/async-http-client/discussions)
-
-## Contributing
-
-Of course, Pull Requests are welcome.
-
-Here are the few rules we'd like you to respect if you do so:
-
-* Only edit the code related to the suggested change, so DON'T automatically format the classes you've edited.
-* Use IntelliJ default formatting rules.
-* Regarding licensing:
-    * You must be the original author of the code you suggest.
-    * You must give the copyright to "the AsyncHttpClient Project"
