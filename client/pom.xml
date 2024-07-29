@@ -38,6 +38,14 @@
         <kerby.version>2.0.2</kerby.version>
     </properties>
 
+    <developers>
+        <developer>
+            <id>hyperxpro</id>
+            <name>Aayush Atharva</name>
+            <email>aayush@shieldblaze.com</email>
+        </developer>
+    </developers>
+
     <dependencies>
         <!-- https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload -->
         <dependency>
