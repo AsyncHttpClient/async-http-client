@@ -39,19 +39,6 @@
         </license>
     </licenses>
 
-    <developers>
-        <developer>
-            <id>slandelle</id>
-            <name>Stephane Landelle</name>
-            <email>slandelle@gatling.io</email>
-        </developer>
-        <developer>
-            <id>hyperxpro</id>
-            <name>Aayush Atharva</name>
-            <email>aayush@shieldblaze.com</email>
-        </developer>
-    </developers>
-
     <properties>
         <java.version>11</java.version>
         <maven.compiler.source>11</maven.compiler.source>
