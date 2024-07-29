@@ -20,7 +20,7 @@
 
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
-    <version>3.0.0.Beta3</version>
+    <version>3.0.0</version>
     <packaging>pom</packaging>
 
     <name>AHC/Project</name>
@@ -38,19 +38,6 @@
             <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
-
-    <developers>
-        <developer>
-            <id>slandelle</id>
-            <name>Stephane Landelle</name>
-            <email>slandelle@gatling.io</email>
-        </developer>
-        <developer>
-            <id>hyperxpro</id>
-            <name>Aayush Atharva</name>
-            <email>aayush@shieldblaze.com</email>
-        </developer>
-    </developers>
 
     <properties>
         <java.version>11</java.version>
