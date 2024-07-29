@@ -55,6 +55,14 @@
         <jetbrains-annotations.version>24.0.1</jetbrains-annotations.version>
     </properties>
 
+    <developers>
+        <developer>
+            <id>hyperxpro</id>
+            <name>Aayush Atharva</name>
+            <email>aayush@shieldblaze.com</email>
+        </developer>
+    </developers>
+
     <scm>
         <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
         <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
