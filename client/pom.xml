@@ -32,7 +32,7 @@
 
         <jetty.version>11.0.23</jetty.version>
         <tomcat.version>10.1.25</tomcat.version>
-        <commons-io.version>2.11.0</commons-io.version>
+        <commons-io.version>2.16.1</commons-io.version>
         <mockito.version>4.11.0</mockito.version>
         <hamcrest.version>3.0</hamcrest.version>
         <kerby.version>2.0.2</kerby.version>
