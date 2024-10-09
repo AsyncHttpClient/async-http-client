@@ -52,7 +52,7 @@
         <zstd-jni.version>1.5.6-5</zstd-jni.version>
         <activation.version>2.0.1</activation.version>
         <logback.version>1.5.8</logback.version>
-        <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
+        <jetbrains-annotations.version>26.0.0</jetbrains-annotations.version>
     </properties>
 
     <developers>
