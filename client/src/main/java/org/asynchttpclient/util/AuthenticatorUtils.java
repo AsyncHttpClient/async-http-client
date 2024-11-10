@@ -19,7 +19,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

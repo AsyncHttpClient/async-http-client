@@ -18,7 +18,7 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.handler.ProgressAsyncHandler;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

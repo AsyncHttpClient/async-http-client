@@ -34,7 +34,7 @@ import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -158,8 +158,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean useInsecureTrustManager;
     private final boolean disableHttpsEndpointIdentificationAlgorithm;
     private final int handshakeTimeout;
-    private final @Nullable String[] enabledProtocols;
-    private final @Nullable String[] enabledCipherSuites;
+    private final String @Nullable[] enabledProtocols;
+    private final String @Nullable[] enabledCipherSuites;
     private final boolean filterInsecureCipherSuites;
     private final int sslSessionCacheSize;
     private final int sslSessionTimeout;
@@ -244,8 +244,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          boolean useInsecureTrustManager,
                                          boolean disableHttpsEndpointIdentificationAlgorithm,
                                          int handshakeTimeout,
-                                         @Nullable String[] enabledProtocols,
-                                         @Nullable String[] enabledCipherSuites,
+            String @Nullable[] enabledProtocols,
+            String @Nullable[] enabledCipherSuites,
                                          boolean filterInsecureCipherSuites,
                                          int sslSessionCacheSize,
                                          int sslSessionTimeout,
@@ -586,12 +586,12 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public @Nullable String[] getEnabledProtocols() {
+    public String @Nullable[] getEnabledProtocols() {
         return enabledProtocols;
     }
 
     @Override
-    public @Nullable String[] getEnabledCipherSuites() {
+    public String @Nullable[] getEnabledCipherSuites() {
         return enabledCipherSuites;
     }
 
@@ -831,8 +831,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean useInsecureTrustManager = defaultUseInsecureTrustManager();
         private boolean disableHttpsEndpointIdentificationAlgorithm = defaultDisableHttpsEndpointIdentificationAlgorithm();
         private int handshakeTimeout = defaultHandshakeTimeout();
-        private @Nullable String[] enabledProtocols = defaultEnabledProtocols();
-        private @Nullable String[] enabledCipherSuites = defaultEnabledCipherSuites();
+        private String @Nullable[] enabledProtocols = defaultEnabledProtocols();
+        private String @Nullable[] enabledCipherSuites = defaultEnabledCipherSuites();
         private boolean filterInsecureCipherSuites = defaultFilterInsecureCipherSuites();
         private int sslSessionCacheSize = defaultSslSessionCacheSize();
         private int sslSessionTimeout = defaultSslSessionTimeout();

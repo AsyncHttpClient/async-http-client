@@ -18,7 +18,7 @@ package org.asynchttpclient.channel;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 

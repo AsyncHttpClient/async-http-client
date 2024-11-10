@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.uri;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;

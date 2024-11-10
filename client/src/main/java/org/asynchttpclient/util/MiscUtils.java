@@ -13,7 +13,7 @@
 package org.asynchttpclient.util;
 
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public final class MiscUtils {
     }
 
     @Contract(value = "null -> false", pure = true)
-    public static boolean isNonEmpty(@Nullable Object[] array) {
+    public static boolean isNonEmpty(Object @Nullable[] array) {
         return array != null && array.length != 0;
     }
 

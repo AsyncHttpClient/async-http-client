@@ -18,8 +18,8 @@ package org.asynchttpclient.cookie;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.MiscUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -246,7 +246,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
         }
 
         @Override
-        public int compareTo(@NotNull CookieKey cookieKey) {
+        public int compareTo(@NonNull CookieKey cookieKey) {
             requireNonNull(cookieKey, "Parameter can't be null");
 
             int result;

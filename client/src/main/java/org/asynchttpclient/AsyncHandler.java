@@ -18,7 +18,7 @@ package org.asynchttpclient;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.netty.request.NettyRequest;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;

@@ -19,7 +19,7 @@ package org.asynchttpclient.proxy;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -16,8 +16,7 @@
  */
 package org.asynchttpclient;
 
-
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Simple {@link AsyncHandler} of type {@link Response}

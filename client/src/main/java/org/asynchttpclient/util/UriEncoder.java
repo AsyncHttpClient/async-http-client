@@ -17,7 +17,7 @@ package org.asynchttpclient.util;
 
 import org.asynchttpclient.Param;
 import org.asynchttpclient.uri.Uri;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

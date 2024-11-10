@@ -21,7 +21,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.netty.NettyResponse;
 import org.asynchttpclient.uri.Uri;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.net.SocketAddress;

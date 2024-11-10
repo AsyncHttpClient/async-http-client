@@ -34,7 +34,7 @@ import org.asynchttpclient.netty.LazyResponseBodyPart;
 import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyServerSelector;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -263,14 +263,12 @@ public interface AsyncHttpClientConfig {
     /**
      * @return the array of enabled protocols
      */
-    @Nullable
-    String[] getEnabledProtocols();
+    String @Nullable[] getEnabledProtocols();
 
     /**
      * @return the array of enabled cipher suites
      */
-    @Nullable
-    String[] getEnabledCipherSuites();
+    String @Nullable[] getEnabledCipherSuites();
 
     /**
      * @return if insecure cipher suites must be filtered out (only used when not explicitly passing enabled cipher suites)

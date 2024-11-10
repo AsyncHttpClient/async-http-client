@@ -25,8 +25,7 @@
  */
 package org.asynchttpclient.ntlm;
 
-
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Signals NTLM protocol failure.
