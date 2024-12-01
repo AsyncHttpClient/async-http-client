@@ -235,7 +235,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
                 if (!cookies.isEmpty()) {
                     RequestBuilder requestBuilder = request.toBuilder();
                     for (Cookie cookie : cookies) {
-                        requestBuilder.addOrReplaceCookie(cookie);
+                        requestBuilder.addCookieIfUnset(cookie);
                     }
                     request = requestBuilder.build();
                 }

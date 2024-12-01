@@ -323,6 +323,21 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      * @return this
      */
     public T addOrReplaceCookie(Cookie cookie) {
+        return maybeAddOrReplaceCookie(cookie, true);
+    }
+
+    /**
+     * Add a cookie based on its name, if it does not exist yet. Cookies that
+     * are already set will be ignored.
+     *
+     * @param cookie the new cookie
+     * @return this
+     */
+    public T addCookieIfUnset(Cookie cookie) {
+        return maybeAddOrReplaceCookie(cookie, false);
+    }
+
+    private T maybeAddOrReplaceCookie(Cookie cookie, boolean allowReplace) {
         String cookieKey = cookie.name();
         boolean replace = false;
         int index = 0;
@@ -335,10 +350,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
             index++;
         }
-        if (replace) {
-            cookies.set(index, cookie);
-        } else {
+        if (!replace) {
             cookies.add(cookie);
+        } else if (allowReplace) {
+            cookies.set(index, cookie);
         }
         return asDerivedType();
     }
