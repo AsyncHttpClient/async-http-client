@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.spnego;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Signals SPNEGO protocol failure.
