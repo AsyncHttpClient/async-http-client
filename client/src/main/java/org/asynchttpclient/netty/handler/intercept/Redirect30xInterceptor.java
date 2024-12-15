@@ -135,8 +135,9 @@ public class Redirect30xInterceptor {
           // Update request's cookies assuming that cookie store is already updated by Interceptors
           List<Cookie> cookies = cookieStore.get(newUri);
           if (!cookies.isEmpty())
-            for (Cookie cookie : cookies)
-              requestBuilder.addOrReplaceCookie(cookie);
+            for (Cookie cookie : cookieStore.get(newUri)) {
+              requestBuilder.addCookieIfUnset(cookie);
+            }
         }
 
         boolean sameBase = request.getUri().isSameBase(newUri);
