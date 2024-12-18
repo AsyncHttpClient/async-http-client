@@ -28,7 +28,7 @@
 package org.asynchttpclient.ntlm;
 
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;

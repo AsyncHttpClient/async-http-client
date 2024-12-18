@@ -20,7 +20,7 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.util.StringUtils;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
