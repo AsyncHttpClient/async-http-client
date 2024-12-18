@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.asynchttpclient</groupId>
         <artifactId>async-http-client-project</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -31,8 +31,8 @@
         <javaModuleName>org.asynchttpclient.client</javaModuleName>
 
         <jetty.version>11.0.24</jetty.version>
-        <tomcat.version>10.1.30</tomcat.version>
-        <commons-io.version>2.16.1</commons-io.version>
+        <tomcat.version>10.1.34</tomcat.version>
+        <commons-io.version>2.18.0</commons-io.version>
         <mockito.version>4.11.0</mockito.version>
         <hamcrest.version>3.0</hamcrest.version>
         <kerby.version>2.1.0</kerby.version>

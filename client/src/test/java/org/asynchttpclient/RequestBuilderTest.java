@@ -167,6 +167,40 @@ public class RequestBuilderTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testAddIfUnsetCookies() {
+        RequestBuilder requestBuilder = new RequestBuilder();
+        Cookie cookie = new DefaultCookie("name", "value");
+        cookie.setDomain("google.com");
+        cookie.setPath("/");
+        cookie.setMaxAge(1000);
+        cookie.setSecure(true);
+        cookie.setHttpOnly(true);
+        requestBuilder.addCookieIfUnset(cookie);
+        assertEquals(requestBuilder.cookies.size(), 1, "cookies size should be 1 after adding one cookie");
+        assertEquals(requestBuilder.cookies.get(0), cookie, "cookie does not match");
+
+        Cookie cookie2 = new DefaultCookie("name", "value");
+        cookie2.setDomain("google2.com");
+        cookie2.setPath("/path");
+        cookie2.setMaxAge(1001);
+        cookie2.setSecure(false);
+        cookie2.setHttpOnly(false);
+
+        requestBuilder.addCookieIfUnset(cookie2);
+        assertEquals(requestBuilder.cookies.size(), 1, "cookies size should remain 1 as we just ignored cookie2 because of a cookie with same name");
+        assertEquals(requestBuilder.cookies.get(0), cookie, "cookie does not match");
+
+        Cookie cookie3 = new DefaultCookie("name2", "value");
+        cookie3.setDomain("google.com");
+        cookie3.setPath("/");
+        cookie3.setMaxAge(1000);
+        cookie3.setSecure(true);
+        cookie3.setHttpOnly(true);
+        requestBuilder.addCookieIfUnset(cookie3);
+        assertEquals(requestBuilder.cookies.size(), 2, "cookie size must be 2 after adding 1 more cookie i.e. cookie3");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testSettingQueryParamsBeforeUrlShouldNotProduceNPE() {
         RequestBuilder requestBuilder = new RequestBuilder();
         requestBuilder.setQueryParams(singletonList(new Param("key", "value")));

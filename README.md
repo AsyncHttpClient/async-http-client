@@ -20,7 +20,7 @@ Maven:
     <dependency>
         <groupId>org.asynchttpclient</groupId>
         <artifactId>async-http-client</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1</version>
     </dependency>
 </dependencies>
 ```
@@ -28,7 +28,7 @@ Maven:
 Gradle:
 ```groovy
 dependencies {
-    implementation 'org.asynchttpclient:async-http-client:3.0.0'
+    implementation 'org.asynchttpclient:async-http-client:3.0.1'
 }
 ```
 
