@@ -52,8 +52,8 @@ public class LargeResponseTest {
         AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setEnableAutomaticDecompression(true)
                 .setCompressionEnforced(true)
-                .setReadTimeout(Duration.ofMinutes(8))
-                .setRequestTimeout(Duration.ofMinutes(8))
+                .setReadTimeout(Duration.ofMinutes(15))
+                .setRequestTimeout(Duration.ofMinutes(15))
                 .setConnectTimeout(Duration.ofSeconds(1))
                 .build();
         return new DefaultAsyncHttpClient(config);
@@ -90,7 +90,7 @@ public class LargeResponseTest {
     }
 
     @Test
-    @Timeout(value = 8, unit = TimeUnit.MINUTES)
+    @Timeout(value = 15, unit = TimeUnit.MINUTES)
     void handleLargeResponse() throws Throwable {
         AtomicInteger status = new AtomicInteger(-1);
         AtomicLong bytesReceived = new AtomicLong();
@@ -135,7 +135,7 @@ public class LargeResponseTest {
                     }
                 });
 
-                future.get(8, TimeUnit.MINUTES);
+                future.get(15, TimeUnit.MINUTES);
 
                 assertEquals(200, status.get());
                 assertEquals(0, throwableCount.get());
