@@ -19,7 +19,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
