@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.config;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,8 +105,8 @@ public final class AsyncHttpClientConfigHelper {
             });
         }
 
-        @Nullable
-        public String[] getStringArray(String key) {
+
+        public String @Nullable[] getStringArray(String key) {
             String s = getString(key);
             s = s.trim();
             if (s.isEmpty()) {
