@@ -18,6 +18,7 @@ package org.asynchttpclient;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import io.netty.handler.codec.http.HttpHeaders;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,12 +34,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
+@ExtendWith(NettyLeakDetectorExtension.class)
 public class LargeResponseTest {
     private static Logger LOG = LoggerFactory.getLogger(LargeResponseTest.class);
     private static final int textSize = 200_000;
