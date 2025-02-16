@@ -22,6 +22,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import io.netty.handler.codec.compression.Brotli;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,9 +36,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(NettyLeakDetectorExtension.class)
 public class AutomaticDecompressionTest {
     private static final String UNCOMPRESSED_PAYLOAD = "a".repeat(500);
 
