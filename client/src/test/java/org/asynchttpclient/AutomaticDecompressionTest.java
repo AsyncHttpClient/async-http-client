@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(NettyLeakDetectorExtension.class)
 public class AutomaticDecompressionTest {
-    private static final String UNCOMPRESSED_PAYLOAD = "a".repeat(500);
+    private static final String UNCOMPRESSED_PAYLOAD = "a".repeat(50_000);
 
     private static HttpServer HTTP_SERVER;
 
