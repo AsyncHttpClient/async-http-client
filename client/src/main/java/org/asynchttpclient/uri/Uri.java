@@ -16,7 +16,7 @@
 package org.asynchttpclient.uri;
 
 import org.asynchttpclient.util.StringBuilderPool;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.net.URI;
 import java.net.URISyntaxException;

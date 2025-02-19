@@ -16,7 +16,7 @@
 package org.asynchttpclient.proxy;
 
 import org.asynchttpclient.uri.Uri;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Selector for a proxy server
