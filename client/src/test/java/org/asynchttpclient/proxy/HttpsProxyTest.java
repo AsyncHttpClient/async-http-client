@@ -13,8 +13,10 @@
 package org.asynchttpclient.proxy;
 
 import org.asynchttpclient.*;
+import org.asynchttpclient.proxy.ProxyServer.Builder;
 import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.asynchttpclient.test.EchoHandler;
+import org.asynchttpclient.util.HttpConstants;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -29,6 +31,12 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.testng.Assert.assertEquals;
 
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Proxy usage tests.
  */
@@ -37,7 +45,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
   private Server server2;
 
   public AbstractHandler configureHandler() throws Exception {
-    return new ConnectHandler();
+    return new ProxyHandler();
   }
 
   @BeforeClass(alwaysRun = true)
@@ -128,5 +136,40 @@ public class HttpsProxyTest extends AbstractBasicTest {
       Response r2 = asyncHttpClient.executeRequest(rb.build()).get();
       assertEquals(r2.getStatusCode(), 200);
     }
+  }
+  
+  @Test
+  public void testFailedConnectWithProxy() throws Exception {
+      try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
+          Builder proxyServer = proxyServer("localhost", port1);
+          proxyServer.setCustomHeaders(r -> r.getHeaders().add(ProxyHandler.HEADER_FORBIDDEN, "1"));
+          RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer);
+
+          Response response1 = asyncHttpClient.executeRequest(rb.build()).get();
+          assertEquals(403, response1.getStatusCode());
+
+          Response response2 = asyncHttpClient.executeRequest(rb.build()).get();
+          assertEquals(403, response2.getStatusCode());
+
+          Response response3 = asyncHttpClient.executeRequest(rb.build()).get();
+          assertEquals(403, response3.getStatusCode());
+      }
+  }
+  
+  public static class ProxyHandler extends ConnectHandler {
+      final static String HEADER_FORBIDDEN = "X-REJECT-REQUEST";
+
+      @Override
+      public void handle(String s, org.eclipse.jetty.server.Request r, HttpServletRequest request,
+              HttpServletResponse response) throws ServletException, IOException {
+          if (HttpConstants.Methods.CONNECT.equalsIgnoreCase(request.getMethod())) {
+              if (request.getHeader(HEADER_FORBIDDEN) != null) {
+                  response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                  r.setHandled(true);
+                  return;
+              }
+          }
+          super.handle(s, r, request, response);
+      }
   }
 }
