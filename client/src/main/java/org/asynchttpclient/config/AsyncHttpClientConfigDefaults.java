@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.config;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -159,11 +159,11 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + USER_AGENT_CONFIG);
     }
 
-    public static @Nullable String[] defaultEnabledProtocols() {
+    public static String @Nullable[] defaultEnabledProtocols() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + ENABLED_PROTOCOLS_CONFIG);
     }
 
-    public static @Nullable String[] defaultEnabledCipherSuites() {
+    public static String @Nullable[] defaultEnabledCipherSuites() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getStringArray(ASYNC_CLIENT_CONFIG_ROOT + ENABLED_CIPHER_SUITES_CONFIG);
     }
 
