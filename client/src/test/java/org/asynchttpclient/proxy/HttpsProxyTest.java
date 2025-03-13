@@ -13,6 +13,7 @@
 package org.asynchttpclient.proxy;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -43,8 +44,10 @@ import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Proxy usage tests.
@@ -156,7 +159,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
     public void testFailedConnectWithProxy() throws Exception {
         try (AsyncHttpClient asyncHttpClient = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
         	Builder proxyServer = proxyServer("localhost", port1);
-        	proxyServer.setCustomHeaders(r -> r.getHeaders().add(ProxyHandler.HEADER_FORBIDDEN, "1"));
+        	proxyServer.setCustomHeaders(r -> new DefaultHttpHeaders().set(ProxyHandler.HEADER_FORBIDDEN, "1"));
             RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer);
 
             Response response1 = asyncHttpClient.executeRequest(rb.build()).get();
@@ -170,14 +173,37 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
     
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testClosedConnectionWithProxy() throws Exception {
+        try (AsyncHttpClient asyncHttpClient = asyncHttpClient(
+                config().setFollowRedirect(true).setUseInsecureTrustManager(true).setKeepAlive(true))) {
+            Builder proxyServer = proxyServer("localhost", port1);
+            proxyServer.setCustomHeaders(r -> new DefaultHttpHeaders().set(ProxyHandler.HEADER_FORBIDDEN, "2"));
+            RequestBuilder rb = get(getTargetUrl2()).setProxyServer(proxyServer);
+
+            assertThrowsExactly(ExecutionException.class, () -> asyncHttpClient.executeRequest(rb.build()).get());
+            assertThrowsExactly(ExecutionException.class, () -> asyncHttpClient.executeRequest(rb.build()).get());
+            assertThrowsExactly(ExecutionException.class, () -> asyncHttpClient.executeRequest(rb.build()).get());
+        }
+    }
+
     public static class ProxyHandler extends ConnectHandler {
     	final static String HEADER_FORBIDDEN = "X-REJECT-REQUEST";
 
         @Override
         public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
             if (HttpConstants.Methods.CONNECT.equalsIgnoreCase(request.getMethod())) {
-                if (request.getHeader(HEADER_FORBIDDEN) != null) {
+                String headerValue = request.getHeader(HEADER_FORBIDDEN);
+                if (headerValue == null) {
+                    headerValue = "";
+                }
+                switch (headerValue) {
+                case "1":
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    r.setHandled(true);
+                    return;
+                case "2":
+                    r.getHttpChannel().getConnection().close();
                     r.setHandled(true);
                     return;
                 }

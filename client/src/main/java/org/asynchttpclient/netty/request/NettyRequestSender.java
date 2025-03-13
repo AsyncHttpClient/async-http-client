@@ -97,6 +97,13 @@ public final class NettyRequestSender {
         requestFactory = new NettyRequestFactory(config);
     }
 
+    // needConnect returns true if the request is secure/websocket and a HTTP proxy is set
+    private boolean needConnect(final Request request, final ProxyServer proxyServer) {
+        return proxyServer != null
+                && proxyServer.getProxyType().isHttp()
+                && (request.getUri().isSecured() || request.getUri().isWebSocket());
+    }
+
     public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
         if (isClosed()) {
             throw new IllegalStateException("Closed");
@@ -106,9 +113,7 @@ public final class NettyRequestSender {
         ProxyServer proxyServer = getProxyServer(config, request);
 
         // WebSockets use connect tunneling to work with proxies
-        if (proxyServer != null && proxyServer.getProxyType().isHttp() &&
-                (request.getUri().isSecured() || request.getUri().isWebSocket()) &&
-                !isConnectAlreadyDone(request, future)) {
+        if (needConnect(request, proxyServer) && !isConnectAlreadyDone(request, future)) {
             // Proxy with HTTPS or WebSocket: CONNECT for sure
             if (future != null && future.isConnectAllowed()) {
                 // Perform CONNECT
@@ -125,6 +130,8 @@ public final class NettyRequestSender {
 
     private static boolean isConnectAlreadyDone(Request request, NettyResponseFuture<?> future) {
         return future != null
+                // If the channel can't be reused or closed, a CONNECT is still required
+                && future.isReuseChannel() && Channels.isChannelActive(future.channel())
                 && future.getNettyRequest() != null
                 && future.getNettyRequest().getHttpRequest().method() == HttpMethod.CONNECT
                 && !request.getMethod().equals(CONNECT);
@@ -137,11 +144,19 @@ public final class NettyRequestSender {
      */
     private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future,
                                                                        ProxyServer proxyServer, boolean performConnectRequest) {
-        NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, performConnectRequest);
         Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
-        return Channels.isChannelActive(channel)
-                ? sendRequestWithOpenChannel(newFuture, asyncHandler, channel)
-                : sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler);
+        if (Channels.isChannelActive(channel)) {
+            NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future,
+                    proxyServer, performConnectRequest);
+            return sendRequestWithOpenChannel(newFuture, asyncHandler, channel);
+        } else {
+            // A new channel is not expected when performConnectRequest is false. We need to
+            // revisit the condition of sending
+            // the CONNECT request to the new channel.
+            NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future,
+                    proxyServer, needConnect(request, proxyServer));
+            return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler);
+        }
     }
 
     /**
