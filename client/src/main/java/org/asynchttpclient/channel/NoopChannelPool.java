@@ -16,7 +16,7 @@
 package org.asynchttpclient.channel;
 
 import io.netty.channel.Channel;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
