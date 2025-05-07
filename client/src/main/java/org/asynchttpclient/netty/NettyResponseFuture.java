@@ -187,10 +187,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return false;
         }
 
-        // cancel could happen before channel was attached
-        if (channel != null) {
-            Channels.setDiscard(channel);
-            Channels.silentlyCloseChannel(channel);
+        Channel ch = channel; //atomic read, so that it won't end up in TOCTOU
+        if (ch != null) {
+            Channels.setDiscard(ch);
+            Channels.silentlyCloseChannel(ch);
         }
 
         if (ON_THROWABLE_CALLED_FIELD.getAndSet(this, 1) == 0) {
