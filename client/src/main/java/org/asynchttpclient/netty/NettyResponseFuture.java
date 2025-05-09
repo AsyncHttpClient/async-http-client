@@ -187,7 +187,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return false;
         }
 
-        Channel ch = channel; //atomic read, so that it won't end up in TOCTOU
+        final Channel ch = channel; //atomic read, so that it won't end up in TOCTOU
         if (ch != null) {
             Channels.setDiscard(ch);
             Channels.silentlyCloseChannel(ch);
