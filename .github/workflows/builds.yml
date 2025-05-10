@@ -16,7 +16,7 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Verify
-        run: ./mvnw clean verify -DskipTests -Dgpg.skip=true
+        run: ./mvnw -B -ntp clean verify -DskipTests -Dgpg.skip=true
 
   RunOnLinux:
     runs-on: ubuntu-latest
