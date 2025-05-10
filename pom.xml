@@ -422,7 +422,35 @@
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
                             </gpgArguments>
+                            <gpg.skip>false</gpg.skip>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.siom79.japicmp</groupId>
+                <artifactId>japicmp-maven-plugin</artifactId>
+                <version>0.23.1</version>
+                <configuration>
+                    <version>
+                        <old>RELEASE</old>
+                        <new>${project.version}</new>
+                    </version>
+                    <parameter>
+                        <onlyModified>true</onlyModified>
+                        <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                        <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
+                        <includeSynthetic>false</includeSynthetic>
+                        <accessModifier>public</accessModifier>
+                    </parameter>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>cmp</goal>
+                        </goals>
+                        <phase>verify</phase>
                     </execution>
                 </executions>
             </plugin>
