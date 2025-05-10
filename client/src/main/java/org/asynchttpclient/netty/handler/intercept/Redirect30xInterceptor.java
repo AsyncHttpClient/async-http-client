@@ -190,7 +190,7 @@ public class Redirect30xInterceptor {
             headers.remove(CONTENT_TYPE);
         }
 
-        if (stripAuthorization || realm != null && realm.getScheme() == AuthScheme.NTLM) {
+        if (stripAuthorization || (realm != null && realm.getScheme() == AuthScheme.NTLM)) {
             headers.remove(AUTHORIZATION)
                     .remove(PROXY_AUTHORIZATION);
         }
