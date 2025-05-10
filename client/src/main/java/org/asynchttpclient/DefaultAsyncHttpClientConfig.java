@@ -808,7 +808,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean validateResponseHeaders = defaultValidateResponseHeaders();
-        private boolean stripAuthorizationOnRedirect; // default value
+        private boolean stripAuthorizationOnRedirect = false; // default value
 
         // websocket
         private boolean aggregateWebSocketFrameFragments = defaultAggregateWebSocketFrameFragments();
