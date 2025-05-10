@@ -15,7 +15,7 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
-      - name: JAPICMP Check
+      - name: Verify
         run: ./mvnw clean verify -DskipTests -Dgpg.skip=true
 
   RunOnLinux:
