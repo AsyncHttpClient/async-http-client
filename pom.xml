@@ -112,7 +112,7 @@
             <dependency>
                 <groupId>io.github.nettyplus</groupId>
                 <artifactId>netty-leak-detector-junit-extension</artifactId>
-                <version>0.0.8</version>
+                <version>0.2.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
