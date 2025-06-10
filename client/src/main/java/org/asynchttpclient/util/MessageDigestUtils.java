@@ -18,6 +18,13 @@ package org.asynchttpclient.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Thread-safety: Each digest is kept in a ThreadLocal. This
+ * class is intended for use on long-lived threads (e.g., Netty event loops).
+ * If you call it from a short-lived or unbounded thread pool, you may
+ * inadvertently retain one MessageDigest instance per thread, leading
+ * to memory leaks.
+ */
 public final class MessageDigestUtils {
 
     private static final ThreadLocal<MessageDigest> MD5_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
@@ -68,6 +75,7 @@ public final class MessageDigestUtils {
     public static MessageDigest pooledMessageDigest(String algorithm) {
         String alg = algorithm.replace("_", "-").toUpperCase();
         MessageDigest md;
+        if ("SHA-512-256".equals(alg)) alg = "SHA-512/256";
         switch (alg) {
             case "MD5":
                 md = MD5_MESSAGE_DIGESTS.get();

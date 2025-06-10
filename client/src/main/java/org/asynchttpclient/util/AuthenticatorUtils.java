@@ -82,6 +82,9 @@ public final class AuthenticatorUtils {
         if (realm.getOpaque() != null) {
             append(builder, "opaque", realm.getOpaque(), true);
         }
+        if (realm.getScheme() == Realm.AuthScheme.DIGEST && realm.getCharset() == StandardCharsets.UTF_8) {
+            append(builder, "charset", "UTF-8", false);
+        }
         if (realm.getQop() != null) {
             append(builder, "qop", realm.getQop(), false);
             append(builder, "nc", realm.getNc(), false);
@@ -89,7 +92,10 @@ public final class AuthenticatorUtils {
         }
         // RFC7616: userhash parameter (optional, not implemented yet)
         builder.setLength(builder.length() - 2); // remove tailing ", "
-        return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1), StandardCharsets.UTF_8);
+        Charset wireCs = (realm.getCharset() == StandardCharsets.UTF_8)
+                ? StandardCharsets.UTF_8
+                : ISO_8859_1;
+        return new String(StringUtils.charSequence2Bytes(builder, wireCs), wireCs);
     }
 
     private static void append(StringBuilder builder, String name, @Nullable String value, boolean quoted) {
