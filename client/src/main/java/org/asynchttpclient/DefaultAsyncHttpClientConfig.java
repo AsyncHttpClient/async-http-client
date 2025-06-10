@@ -127,6 +127,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean keepEncodingHeader;
     private final ProxyServerSelector proxyServerSelector;
     private final boolean validateResponseHeaders;
+    private final boolean stripAuthorizationOnRedirect;
 
     // websockets
     private final boolean aggregateWebSocketFrameFragments;
@@ -219,6 +220,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          boolean validateResponseHeaders,
                                          boolean aggregateWebSocketFrameFragments,
                                          boolean enablewebSocketCompression,
+                                         boolean stripAuthorizationOnRedirect,
 
                                          // timeouts
                                          Duration connectTimeout,
@@ -307,6 +309,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.keepEncodingHeader = keepEncodingHeader;
         this.proxyServerSelector = proxyServerSelector;
         this.validateResponseHeaders = validateResponseHeaders;
+        this.stripAuthorizationOnRedirect = stripAuthorizationOnRedirect;
 
         // websocket
         this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
@@ -564,6 +567,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return validateResponseHeaders;
     }
 
+    @Override
+    public boolean isStripAuthorizationOnRedirect() {
+        return stripAuthorizationOnRedirect;
+    }
+
     // ssl
     @Override
     public boolean isUseOpenSsl() {
@@ -800,6 +808,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean useProxySelector = defaultUseProxySelector();
         private boolean useProxyProperties = defaultUseProxyProperties();
         private boolean validateResponseHeaders = defaultValidateResponseHeaders();
+        private boolean stripAuthorizationOnRedirect = false; // default value
 
         // websocket
         private boolean aggregateWebSocketFrameFragments = defaultAggregateWebSocketFrameFragments();
@@ -891,6 +900,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             keepEncodingHeader = config.isKeepEncodingHeader();
             proxyServerSelector = config.getProxyServerSelector();
             validateResponseHeaders = config.isValidateResponseHeaders();
+            stripAuthorizationOnRedirect = config.isStripAuthorizationOnRedirect();
 
             // websocket
             aggregateWebSocketFrameFragments = config.isAggregateWebSocketFrameFragments();
@@ -1076,6 +1086,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setUseProxyProperties(boolean useProxyProperties) {
             this.useProxyProperties = useProxyProperties;
+            return this;
+        }
+
+        public Builder setStripAuthorizationOnRedirect(boolean value) {
+            stripAuthorizationOnRedirect = value;
             return this;
         }
 
@@ -1444,6 +1459,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     validateResponseHeaders,
                     aggregateWebSocketFrameFragments,
                     enablewebSocketCompression,
+                    stripAuthorizationOnRedirect,
                     connectTimeout,
                     requestTimeout,
                     readTimeout,

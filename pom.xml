@@ -105,14 +105,14 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>5.11.4</version>
+                <version>5.13.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>io.github.nettyplus</groupId>
                 <artifactId>netty-leak-detector-junit-extension</artifactId>
-                <version>0.0.8</version>
+                <version>0.2.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -422,7 +422,35 @@
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
                             </gpgArguments>
+                            <gpg.skip>false</gpg.skip>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.siom79.japicmp</groupId>
+                <artifactId>japicmp-maven-plugin</artifactId>
+                <version>0.23.1</version>
+                <configuration>
+                    <version>
+                        <old>RELEASE</old>
+                        <new>${project.version}</new>
+                    </version>
+                    <parameter>
+                        <onlyModified>true</onlyModified>
+                        <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                        <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
+                        <includeSynthetic>false</includeSynthetic>
+                        <accessModifier>public</accessModifier>
+                    </parameter>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>cmp</goal>
+                        </goals>
+                        <phase>verify</phase>
                     </execution>
                 </executions>
             </plugin>

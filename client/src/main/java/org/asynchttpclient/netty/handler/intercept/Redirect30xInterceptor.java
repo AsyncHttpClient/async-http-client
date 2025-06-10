@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
@@ -73,11 +72,13 @@ public class Redirect30xInterceptor {
     private final AsyncHttpClientConfig config;
     private final NettyRequestSender requestSender;
     private final MaxRedirectException maxRedirectException;
+    private final boolean stripAuthorizationOnRedirect;
 
     Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
+        stripAuthorizationOnRedirect = config.isStripAuthorizationOnRedirect(); // New flag
         maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()),
                 Redirect30xInterceptor.class, "exitAfterHandlingRedirect");
     }
@@ -127,7 +128,7 @@ public class Redirect30xInterceptor {
                     }
                 }
 
-                requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody));
+                requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody, stripAuthorizationOnRedirect));
 
                 // in case of a redirect from HTTP to HTTPS, future
                 // attributes might change
@@ -180,7 +181,7 @@ public class Redirect30xInterceptor {
         return false;
     }
 
-    private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
+    private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
         HttpHeaders headers = request.getHeaders()
                 .remove(HOST)
                 .remove(CONTENT_LENGTH);
@@ -189,7 +190,7 @@ public class Redirect30xInterceptor {
             headers.remove(CONTENT_TYPE);
         }
 
-        if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
+        if (stripAuthorization || (realm != null && realm.getScheme() == AuthScheme.NTLM)) {
             headers.remove(AUTHORIZATION)
                     .remove(PROXY_AUTHORIZATION);
         }
