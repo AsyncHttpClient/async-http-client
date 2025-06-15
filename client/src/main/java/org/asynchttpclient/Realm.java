@@ -272,7 +272,7 @@ public class Realm {
         private String methodName = GET;
         private boolean usePreemptive;
         private String ntlmDomain = System.getProperty("http.auth.ntlm.domain");
-        private static Charset charset = UTF_8;
+        private Charset charset = UTF_8;
         private String ntlmHost = "localhost";
         private boolean useAbsoluteURI;
         private boolean omitQuery;
