@@ -102,6 +102,29 @@ public final class MessageDigestUtils {
     }
 
     /**
+     * Converts a byte array to a lower-case hexadecimal String.
+     * Locale-safe and allocation-free except for the final char[] → String copy.
+     *
+     * @param bytes the byte array to convert (must not be null)
+     * @return 2×length lower-case hex string
+     * @throws IllegalArgumentException if {@code bytes} is null
+     */
+    public static String bytesToHex(byte[] bytes) {
+        if (bytes == null) {
+            throw new IllegalArgumentException("bytes == null");
+        }
+        final char[] HEX = "0123456789abcdef".toCharArray();
+        char[] out = new char[bytes.length << 1];
+
+        for (int i = 0, j = 0; i < bytes.length; i++) {
+            int v = bytes[i] & 0xFF;
+            out[j++] = HEX[v >>> 4];
+            out[j++] = HEX[v & 0x0F];
+        }
+        return new String(out);
+    }
+
+    /**
      * @return a pooled, reset MessageDigest for MD5
      */
     public static MessageDigest pooledMd5MessageDigest() {
