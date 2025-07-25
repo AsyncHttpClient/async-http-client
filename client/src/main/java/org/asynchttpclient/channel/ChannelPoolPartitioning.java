@@ -15,12 +15,12 @@
  */
 package org.asynchttpclient.channel;
 
+import java.util.Objects;
+
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 @FunctionalInterface
 public interface ChannelPoolPartitioning {
@@ -111,7 +111,8 @@ public interface ChannelPoolPartitioning {
                     ", virtualHost=" + virtualHost +
                     ", proxyHost=" + proxyHost +
                     ", proxyPort=" + proxyPort +
-                    ", proxyType=" + proxyType;
+                    ", proxyType=" + proxyType +
+                    ")";
         }
     }
 }
