@@ -58,6 +58,9 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
         }
 
+        sslContextBuilder.endpointIdentificationAlgorithm(
+                config.isDisableHttpsEndpointIdentificationAlgorithm() ? "" : "HTTPS");
+
         return configureSslContextBuilder(sslContextBuilder).build();
     }
 

@@ -19,7 +19,6 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.SslEngineFactory;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 
 public abstract class SslEngineFactoryBase implements SslEngineFactory {
 
@@ -30,10 +29,5 @@ public abstract class SslEngineFactoryBase implements SslEngineFactory {
 
     protected void configureSslEngine(SSLEngine sslEngine, AsyncHttpClientConfig config) {
         sslEngine.setUseClientMode(true);
-        if (!config.isDisableHttpsEndpointIdentificationAlgorithm()) {
-            SSLParameters params = sslEngine.getSSLParameters();
-            params.setEndpointIdentificationAlgorithm("HTTPS");
-            sslEngine.setSSLParameters(params);
-        }
     }
 }
