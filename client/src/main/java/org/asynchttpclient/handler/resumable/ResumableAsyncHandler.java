@@ -20,7 +20,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.Response.ResponseBuilder;
-import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
  * Beware that it registers a shutdown hook, that will cause a ClassLoader leak when used in an appserver and only redeploying the application.
  */
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
-    private static final Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResumableAsyncHandler.class);
     private static final ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private static Map<String, Long> resumableIndex = Collections.emptyMap();
 
@@ -125,7 +124,7 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         if (decoratedAsyncHandler != null) {
             decoratedAsyncHandler.onThrowable(t);
         } else {
-            logger.debug("", t);
+            LOGGER.debug("", t);
         }
     }
 
