@@ -47,7 +47,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
  * Beware that it registers a shutdown hook, that will cause a ClassLoader leak when used in an appserver and only redeploying the application.
  */
 public class ResumableAsyncHandler implements AsyncHandler<Response> {
-    private static final Logger logger = LoggerFactory.getLogger(TransferCompletionHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ResumableAsyncHandler.class);
     private static final ResumableIndexThread resumeIndexThread = new ResumableIndexThread();
     private static Map<String, Long> resumableIndex = Collections.emptyMap();
 
