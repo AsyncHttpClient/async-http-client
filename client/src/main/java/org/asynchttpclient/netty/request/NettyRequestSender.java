@@ -54,6 +54,7 @@ import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
@@ -337,7 +338,7 @@ public final class NettyRequestSender {
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
         if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && proxy.getProxyType().isHttp()) {
-            int port = uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
+            int port = ProxyType.HTTPS.equals(proxy.getProxyType()) || uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
             scheduleRequestTimeout(future, unresolvedRemoteAddress);
             return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);

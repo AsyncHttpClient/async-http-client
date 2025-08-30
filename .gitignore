@@ -19,3 +19,7 @@ MANIFEST.MF
 work
 atlassian-ide-plugin.xml
 /bom/.flattened-pom.xml
+
+# Docker volumes and logs (but keep configuration)
+docker/squid/logs/
+docker/nginx/logs/

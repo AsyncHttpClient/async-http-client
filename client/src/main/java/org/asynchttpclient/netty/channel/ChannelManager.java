@@ -67,6 +67,7 @@ import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -386,14 +387,22 @@ public class ChannelManager {
         }
 
         if (requestUri.isSecured()) {
-            if (!isSslHandlerConfigured(pipeline)) {
-                SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
-                whenHandshaked = sslHandler.handshakeFuture();
-                pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
+            // For HTTPS targets, we always need to add/replace the SSL handler for the target connection
+            // even if there's already an SSL handler in the pipeline (which would be for an HTTPS proxy)
+            if (isSslHandlerConfigured(pipeline)) {
+                // Remove existing SSL handler (for proxy) and replace with SSL handler for target
+                pipeline.remove(SSL_HANDLER);
             }
+            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
+            whenHandshaked = sslHandler.handshakeFuture();
+            pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
             pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
         } else {
+            // For HTTP targets, remove any existing SSL handler (from HTTPS proxy) since target is not secured
+            if (isSslHandlerConfigured(pipeline)) {
+                pipeline.remove(SSL_HANDLER);
+            }
             pipeline.addBefore(AHC_HTTP_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
         }
 
@@ -406,6 +415,53 @@ public class ChannelManager {
 
             pipeline.remove(AHC_HTTP_HANDLER);
         }
+        return whenHandshaked;
+    }
+
+    public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer) {
+        Future<Channel> whenHandshaked = null;
+
+        // Remove HTTP codec as tunnel is established
+        if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
+            pipeline.remove(HTTP_CLIENT_CODEC);
+        }
+
+        if (requestUri.isSecured()) {
+            // For HTTPS proxy to HTTPS target, we need to establish target SSL over the proxy SSL tunnel
+            // The proxy SSL handler should remain as it provides the tunnel transport
+            // We need to add target SSL handler that will negotiate with the target through the tunnel
+            
+            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
+            whenHandshaked = sslHandler.handshakeFuture();
+            
+            // For HTTPS proxy tunnel, add target SSL handler after the existing proxy SSL handler
+            // This creates a nested SSL setup: Target SSL -> Proxy SSL -> Network
+            if (isSslHandlerConfigured(pipeline)) {
+                // Insert target SSL handler after the proxy SSL handler
+                pipeline.addAfter(SSL_HANDLER, "target-ssl", sslHandler);
+            } else {
+                // This shouldn't happen for HTTPS proxy, but fallback
+                pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
+            }
+            
+            pipeline.addAfter("target-ssl", HTTP_CLIENT_CODEC, newHttpClientCodec());
+
+        } else {
+            // For HTTPS proxy to HTTP target, just add HTTP codec
+            // The proxy SSL handler provides the tunnel and remains
+            pipeline.addBefore(AHC_HTTP_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
+        }
+
+        if (requestUri.isWebSocket()) {
+            pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
+
+            if (config.isEnableWebSocketCompression()) {
+                pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+            }
+
+            pipeline.remove(AHC_HTTP_HANDLER);
+        }
+        
         return whenHandshaked;
     }
 
@@ -486,6 +542,10 @@ public class ChannelManager {
                 }
             });
 
+        } else if (proxy != null && ProxyType.HTTPS.equals(proxy.getProxyType())) {
+            // For HTTPS proxies, use HTTP bootstrap but ensure SSL connection to proxy
+            // The SSL handler for connecting to the proxy will be added in the connect phase
+            promise.setSuccess(httpBootstrap);
         } else {
             promise.setSuccess(httpBootstrap);
         }

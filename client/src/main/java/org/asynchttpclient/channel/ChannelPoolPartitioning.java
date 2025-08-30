@@ -50,7 +50,7 @@ public interface ChannelPoolPartitioning {
                         targetHostBaseUrl,
                         virtualHost,
                         proxyServer.getHost(),
-                        uri.isSecured() && proxyServer.getProxyType() == ProxyType.HTTP ?
+                        uri.isSecured() && proxyServer.getProxyType().isHttp() ?
                                 proxyServer.getSecuredPort() :
                                 proxyServer.getPort(),
                         proxyServer.getProxyType());
