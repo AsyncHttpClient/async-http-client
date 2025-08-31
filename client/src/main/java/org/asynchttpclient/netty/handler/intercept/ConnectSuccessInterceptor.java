@@ -22,6 +22,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,18 @@ public class ConnectSuccessInterceptor {
 
         Uri requestUri = request.getUri();
         LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
-        final Future<Channel> whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
+        
+        final Future<Channel> whenHandshaked;
+        
+        // Special handling for HTTPS proxy tunneling
+        if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {
+            // For HTTPS proxy, we need special tunnel pipeline management
+            whenHandshaked = channelManager.updatePipelineForHttpsTunneling(channel.pipeline(), requestUri, proxyServer);
+        } else {
+            // Standard HTTP proxy or SOCKS proxy tunneling
+            whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
+        }
+        
         future.setReuseChannel(true);
         future.setConnectAllowed(false);
 

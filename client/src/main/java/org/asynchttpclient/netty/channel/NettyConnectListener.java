@@ -26,6 +26,7 @@ import org.asynchttpclient.netty.future.StackTraceInspector;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,8 +101,57 @@ public final class NettyConnectListener<T> {
         timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
         ProxyServer proxyServer = future.getProxyServer();
 
+        // For HTTPS proxies, establish SSL connection to the proxy server first
+        if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {
+            SslHandler sslHandler;
+            try {
+                sslHandler = channelManager.addSslHandler(channel.pipeline(), 
+                    Uri.create("https://" + proxyServer.getHost() + ":" + proxyServer.getSecuredPort()), 
+                    null, false);
+            } catch (Exception sslError) {
+                onFailure(channel, sslError);
+                return;
+            }
+
+            final AsyncHandler<?> asyncHandler = future.getAsyncHandler();
+
+            try {
+                asyncHandler.onTlsHandshakeAttempt();
+            } catch (Exception e) {
+                LOGGER.error("onTlsHandshakeAttempt crashed", e);
+                onFailure(channel, e);
+                return;
+            }
+
+            sslHandler.handshakeFuture().addListener(new SimpleFutureListener<Channel>() {
+                @Override
+                protected void onSuccess(Channel value) {
+                    try {
+                        asyncHandler.onTlsHandshakeSuccess(sslHandler.engine().getSession());
+                    } catch (Exception e) {
+                        LOGGER.error("onTlsHandshakeSuccess crashed", e);
+                        NettyConnectListener.this.onFailure(channel, e);
+                        return;
+                    }
+                    // After SSL handshake to proxy, continue with normal proxy request
+                    writeRequest(channel);
+                }
+
+                @Override
+                protected void onFailure(Throwable cause) {
+                    try {
+                        asyncHandler.onTlsHandshakeFailure(cause);
+                    } catch (Exception e) {
+                        LOGGER.error("onTlsHandshakeFailure crashed", e);
+                        NettyConnectListener.this.onFailure(channel, e);
+                        return;
+                    }
+                    NettyConnectListener.this.onFailure(channel, cause);
+                }
+            });
+
         // in case of proxy tunneling, we'll add the SslHandler later, after the CONNECT request
-        if ((proxyServer == null || proxyServer.getProxyType().isSocks()) && uri.isSecured()) {
+        } else if ((proxyServer == null || proxyServer.getProxyType().isSocks()) && uri.isSecured()) {
             SslHandler sslHandler;
             try {
                 sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost(), proxyServer != null);
