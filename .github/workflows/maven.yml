@@ -41,7 +41,7 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw -B -ntp clean test -Dno.docker.tests=true
+        run: ./mvnw -B -ntp clean test
 
   RunOnWindows:
     runs-on: windows-latest
@@ -52,4 +52,4 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw.cmd -B -ntp clean test -Dno.docker.tests=true
+        run: ./mvnw.cmd -B -ntp clean test
