@@ -16,9 +16,10 @@
 package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.channel.IoEventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.channel.uring.IoUringIoHandler;
 import io.netty.util.Timer;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
@@ -61,7 +62,7 @@ public class DefaultAsyncHttpClientTest {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
         try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
             assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
-            assertInstanceOf(IOUringEventLoopGroup.class, client.channelManager().getEventLoopGroup());
+            assertInstanceOf(IoUringIoHandler.class, client.channelManager().getEventLoopGroup());
         }
     }
 

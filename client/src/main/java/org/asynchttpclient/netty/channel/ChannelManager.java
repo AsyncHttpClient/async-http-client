@@ -165,8 +165,8 @@ public class ChannelManager {
                 transportFactory = new EpollTransportFactory();
             } else if (isInstanceof(eventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
                 transportFactory = new KQueueTransportFactory();
-            } else if (isInstanceof(eventLoopGroup, "io.netty.incubator.channel.uring.IOUringEventLoopGroup")) {
-                transportFactory = new IoUringIncubatorTransportFactory();
+            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.uring.IOUringEventLoopGroup")) {
+                transportFactory = new IoUringTransportFactory();
             } else {
                 throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
             }
@@ -190,8 +190,8 @@ public class ChannelManager {
         // We will check if Epoll is available or not. If available, return EpollTransportFactory.
         // If none of the condition matches then no native transport is available, and we will throw an exception.
         if (!PlatformDependent.isWindows()) {
-            if (IoUringIncubatorTransportFactory.isAvailable() && !config.isUseOnlyEpollNativeTransport()) {
-                return new IoUringIncubatorTransportFactory();
+            if (IoUringTransportFactory.isAvailable() && !config.isUseOnlyEpollNativeTransport()) {
+                return new IoUringTransportFactory();
             } else if (EpollTransportFactory.isAvailable()) {
                 return new EpollTransportFactory();
             }

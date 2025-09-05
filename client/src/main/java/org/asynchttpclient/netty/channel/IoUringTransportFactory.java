@@ -15,30 +15,31 @@
  */
 package org.asynchttpclient.netty.channel;
 
-import io.netty.incubator.channel.uring.IOUring;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUringSocketChannel;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.uring.IoUring;
+import io.netty.channel.uring.IoUringIoHandler;
+import io.netty.channel.uring.IoUringSocketChannel;
 
 import java.util.concurrent.ThreadFactory;
 
-class IoUringIncubatorTransportFactory implements TransportFactory<IOUringSocketChannel, IOUringEventLoopGroup> {
+class IoUringTransportFactory implements TransportFactory<IoUringSocketChannel, MultiThreadIoEventLoopGroup> {
 
     static boolean isAvailable() {
         try {
-            Class.forName("io.netty.incubator.channel.uring.IOUring");
+            Class.forName("io.netty.channel.uring.IoUring");
         } catch (ClassNotFoundException e) {
             return false;
         }
-        return IOUring.isAvailable();
+        return IoUring.isAvailable();
     }
 
     @Override
-    public IOUringSocketChannel newChannel() {
-        return new IOUringSocketChannel();
+    public IoUringSocketChannel newChannel() {
+        return new IoUringSocketChannel();
     }
 
     @Override
-    public IOUringEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
-        return new IOUringEventLoopGroup(ioThreadsCount, threadFactory);
+    public MultiThreadIoEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
+        return new MultiThreadIoEventLoopGroup(ioThreadsCount, threadFactory, IoUringIoHandler.newFactory());
     }
 }

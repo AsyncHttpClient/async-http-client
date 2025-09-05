@@ -2,9 +2,9 @@ package org.asynchttpclient.netty;
 
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.uring.IoUring;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.Zstd;
-import io.netty.incubator.channel.uring.IOUring;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -21,7 +21,7 @@ public class NettyTest {
     @Test
     @EnabledOnOs(OS.LINUX)
     public void ioUringIsAvailableOnLinux() {
-        assertTrue(IOUring.isAvailable());
+        assertTrue(IoUring.isAvailable());
     }
 
     @Test
