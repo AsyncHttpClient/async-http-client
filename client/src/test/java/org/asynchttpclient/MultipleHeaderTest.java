@@ -16,6 +16,7 @@ import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
 import javax.net.ServerSocketFactory;
 import java.io.BufferedReader;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author Hubert Iwaniuk
  */
+@Disabled("New Netty Release Prevent Invalid Line in HTTP Header")
 public class MultipleHeaderTest extends AbstractBasicTest {
     private static ExecutorService executorService;
     private static ServerSocket serverSocket;
