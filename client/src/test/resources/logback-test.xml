@@ -7,6 +7,7 @@
 
     <logger name="org.eclipse" level="INFO"/>
     <logger name="org.apache" level="INFO"/>
+    <logger name="com.github.dockerjava" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
