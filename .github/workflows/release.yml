@@ -31,7 +31,7 @@ jobs:
         with:
           servers: |
             [{
-              "id": "ossrh",
+              "id": "central",
               "username": "${{ secrets.OSSRH_USERNAME }}",
               "password": "${{ secrets.OSSRH_PASSWORD }}"
             }]
