@@ -380,7 +380,10 @@ public interface AsyncHttpClientConfig {
      *
      * @return true if the Authorization header should be stripped, false otherwise.
      */
-    boolean isStripAuthorizationOnRedirect();
+    default boolean isStripAuthorizationOnRedirect() {
+        // By default, we throw, so that existing implementations don't break.
+        throw new UnsupportedOperationException("IsStripAuthorizationOnRedirect is not supported by " + getClass().getName());
+    }
 
     enum ResponseBodyPartFactory {
 
