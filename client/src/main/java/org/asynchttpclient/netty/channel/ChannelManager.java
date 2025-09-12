@@ -485,7 +485,8 @@ public class ChannelManager {
         }
 
         SslHandler sslHandler = createSslHandler(peerHost, peerPort);
-        if (hasSocksProxyHandler) {
+        // Check if SOCKS handler actually exists in the pipeline before trying to add after it
+        if (hasSocksProxyHandler && pipeline.get(SOCKS_HANDLER) != null) {
             pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
         } else {
             pipeline.addFirst(SSL_HANDLER, sslHandler);
