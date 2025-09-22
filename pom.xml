@@ -46,7 +46,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <netty.version>4.2.5.Final</netty.version>
-        <netty.iouring>0.0.26.Final</netty.iouring>
         <brotli4j.version>1.18.0</brotli4j.version>
         <slf4j.version>2.0.16</slf4j.version>
         <zstd-jni.version>1.5.7-2</zstd-jni.version>
