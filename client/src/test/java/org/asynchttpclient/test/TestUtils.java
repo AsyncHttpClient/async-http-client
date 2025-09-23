@@ -31,7 +31,6 @@ import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
-import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -180,9 +179,7 @@ public final class TestUtils {
         addAuthHandler(server, Constraint.__BASIC_AUTH, new BasicAuthenticator(), handler);
     }
 
-    public static void addDigestAuthHandler(Server server, Handler handler) {
-        addAuthHandler(server, Constraint.__DIGEST_AUTH, new DigestAuthenticator(), handler);
-    }
+    // Removed obsolete addDigestAuthHandler and related Jetty digest code.
 
     private static void addAuthHandler(Server server, String auth, LoginAuthenticator authenticator, Handler handler) {
         server.addBean(LOGIN_SERVICE);
