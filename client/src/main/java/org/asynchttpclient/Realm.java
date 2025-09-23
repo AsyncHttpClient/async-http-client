@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -31,10 +32,10 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
-import static org.asynchttpclient.util.MessageDigestUtils.pooledMd5MessageDigest;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.StringUtils.appendBase16;
 import static org.asynchttpclient.util.StringUtils.toHexString;
+import org.asynchttpclient.util.MessageDigestUtils;
 
 /**
  * This class is required when authentication is needed. The class support
@@ -275,6 +276,7 @@ public class Realm {
         private String ntlmHost = "localhost";
         private boolean useAbsoluteURI;
         private boolean omitQuery;
+        private Charset digestCharset = ISO_8859_1;   // RFC default
         /**
          * Kerberos/Spnego properties
          */
@@ -282,6 +284,7 @@ public class Realm {
         private @Nullable String servicePrincipalName;
         private boolean useCanonicalHostname;
         private @Nullable String loginContextName;
+        private @Nullable String cs;
 
         public Builder() {
             principal = null;
@@ -424,6 +427,10 @@ public class Realm {
                     .setOpaque(match(headerLine, "opaque"))
                     .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
             String algorithm = match(headerLine, "algorithm");
+            String cs = match(headerLine, "charset");
+            if ("UTF-8".equalsIgnoreCase(cs)) {
+                this.digestCharset = UTF_8;
+            }
             if (isNonEmpty(algorithm)) {
                 setAlgorithm(algorithm);
             }
@@ -452,40 +459,47 @@ public class Realm {
             return this;
         }
 
+        /**
+         * Extracts the value of a token from a WWW-Authenticate or Proxy-Authenticate header line.
+         * Example: match('Digest realm="test", nonce="abc"', "realm") returns "test"
+         */
+        private static @Nullable String match(String headerLine, String token) {
+            if (headerLine == null || token == null) return null;
+            String pattern = token + "=\"";
+            int start = headerLine.indexOf(pattern);
+            if (start == -1) return null;
+            start += pattern.length();
+            int end = headerLine.indexOf('"', start);
+            if (end == -1) return null;
+            return headerLine.substring(start, end);
+        }
+
         private void newCnonce(MessageDigest md) {
             byte[] b = new byte[8];
             ThreadLocalRandom.current().nextBytes(b);
-            b = md.digest(b);
-            cnonce = toHexString(b);
+            byte[] full = md.digest(b);
+            // trim to first 8 bytes → 16 hex chars
+            byte[] small = Arrays.copyOf(full, Math.min(8, full.length));
+            cnonce = toHexString(small);
         }
 
-        /**
-         * TODO: A Pattern/Matcher may be better.
-         */
-        private static @Nullable String match(String headerLine, String token) {
-            if (headerLine == null) {
-                return null;
-            }
-
-            int match = headerLine.indexOf(token);
-            if (match <= 0) {
-                return null;
-            }
-
-            // = to skip
-            match += token.length() + 1;
-            int trailingComa = headerLine.indexOf(',', match);
-            String value = headerLine.substring(match, trailingComa > 0 ? trailingComa : headerLine.length());
-            value = value.length() > 0 && value.charAt(value.length() - 1) == '"'
-                    ? value.substring(0, value.length() - 1)
-                    : value;
-            return value.charAt(0) == '"' ? value.substring(1) : value;
-        }
-
-        private static byte[] md5FromRecycledStringBuilder(StringBuilder sb, MessageDigest md) {
-            md.update(StringUtils.charSequence2ByteBuffer(sb, ISO_8859_1));
+        private static byte[] digestFromRecycledStringBuilder(StringBuilder sb, MessageDigest md, Charset enc) {
+            md.update(StringUtils.charSequence2ByteBuffer(sb, enc));
             sb.setLength(0);
             return md.digest();
+        }
+
+        private static MessageDigest getDigestInstance(String algorithm) {
+            if ("SHA-512/256".equalsIgnoreCase(algorithm)) algorithm = "SHA-512-256";
+            if (algorithm == null || "MD5".equalsIgnoreCase(algorithm) || "MD5-sess".equalsIgnoreCase(algorithm)) {
+                return MessageDigestUtils.pooledMd5MessageDigest();
+            } else if ("SHA-256".equalsIgnoreCase(algorithm) || "SHA-256-sess".equalsIgnoreCase(algorithm)) {
+                return MessageDigestUtils.pooledSha256MessageDigest();
+            } else if ("SHA-512-256".equalsIgnoreCase(algorithm) || "SHA-512-256-sess".equalsIgnoreCase(algorithm)) {
+                return MessageDigestUtils.pooledSha512_256MessageDigest();
+            } else {
+                throw new UnsupportedOperationException("Digest algorithm not supported: " + algorithm);
+            }
         }
 
         private byte[] ha1(StringBuilder sb, MessageDigest md) {
@@ -495,19 +509,18 @@ public class Realm {
             // passwd ) ":" nonce-value ":" cnonce-value
 
             sb.append(principal).append(':').append(realmName).append(':').append(password);
-            byte[] core = md5FromRecycledStringBuilder(sb, md);
+            byte[] core = digestFromRecycledStringBuilder(sb, md, digestCharset);
 
-            if (algorithm == null || "MD5".equals(algorithm)) {
+            if (algorithm == null || "MD5".equalsIgnoreCase(algorithm) || "SHA-256".equalsIgnoreCase(algorithm) || "SHA-512-256".equalsIgnoreCase(algorithm)) {
                 // A1 = username ":" realm-value ":" passwd
                 return core;
             }
-            if ("MD5-sess".equals(algorithm)) {
-                // A1 = MD5(username ":" realm-value ":" passwd ) ":" nonce ":" cnonce
+            if ("MD5-sess".equalsIgnoreCase(algorithm) || "SHA-256-sess".equalsIgnoreCase(algorithm) || "SHA-512-256-sess".equalsIgnoreCase(algorithm)) {
+                // A1 = HASH(username ":" realm-value ":" passwd ) ":" nonce ":" cnonce
                 appendBase16(sb, core);
                 sb.append(':').append(nonce).append(':').append(cnonce);
-                return md5FromRecycledStringBuilder(sb, md);
+                return digestFromRecycledStringBuilder(sb, md, digestCharset);
             }
-
             throw new UnsupportedOperationException("Digest algorithm not supported: " + algorithm);
         }
 
@@ -526,7 +539,7 @@ public class Realm {
                 throw new UnsupportedOperationException("Digest qop not supported: " + qop);
             }
 
-            return md5FromRecycledStringBuilder(sb, md);
+            return digestFromRecycledStringBuilder(sb, md, digestCharset);
         }
 
         private void appendMiddlePart(StringBuilder sb) {
@@ -553,7 +566,7 @@ public class Realm {
                 appendMiddlePart(sb);
                 appendBase16(sb, ha2);
 
-                byte[] responseDigest = md5FromRecycledStringBuilder(sb, md);
+                byte[] responseDigest = digestFromRecycledStringBuilder(sb, md, digestCharset);
                 response = toHexString(responseDigest);
             }
         }
@@ -567,7 +580,9 @@ public class Realm {
 
             // Avoid generating
             if (isNonEmpty(nonce)) {
-                MessageDigest md = pooledMd5MessageDigest();
+                // Defensive: if algorithm is null, default to MD5
+                String algo = (algorithm != null) ? algorithm : "MD5";
+                MessageDigest md = getDigestInstance(algo);
                 newCnonce(md);
                 newResponse(md);
             }
@@ -585,7 +600,7 @@ public class Realm {
                     cnonce,
                     uri,
                     usePreemptive,
-                    charset,
+                    (scheme == AuthScheme.DIGEST ? digestCharset : charset),
                     ntlmDomain,
                     ntlmHost,
                     useAbsoluteURI,
