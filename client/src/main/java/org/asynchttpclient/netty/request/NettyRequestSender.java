@@ -59,6 +59,21 @@ import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 
+/**
+ * Central orchestrator for sending HTTP requests through Netty channels.
+ * <p>
+ * This class manages the complete request lifecycle including:
+ * <ul>
+ *   <li>Channel acquisition from pool or creation of new connections</li>
+ *   <li>Address resolution and connection establishment</li>
+ *   <li>SSL/TLS handshake coordination</li>
+ *   <li>Proxy tunneling via HTTP CONNECT</li>
+ *   <li>Request writing and timeout management</li>
+ *   <li>Retry logic and error handling</li>
+ *   <li>IO exception filter application</li>
+ * </ul>
+ * </p>
+ */
 public final class NettyRequestSender {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyRequestSender.class);
@@ -70,6 +85,14 @@ public final class NettyRequestSender {
   private final AsyncHttpClientState clientState;
   private final NettyRequestFactory requestFactory;
 
+  /**
+   * Constructs a new NettyRequestSender.
+   *
+   * @param config the async HTTP client configuration
+   * @param channelManager the channel manager for connection lifecycle
+   * @param nettyTimer the timer for scheduling timeouts
+   * @param clientState the client state for shutdown checks
+   */
   public NettyRequestSender(AsyncHttpClientConfig config,
                             ChannelManager channelManager,
                             Timer nettyTimer,
@@ -84,6 +107,22 @@ public final class NettyRequestSender {
     requestFactory = new NettyRequestFactory(config);
   }
 
+  /**
+   * Sends an HTTP request and returns a future for the response.
+   * <p>
+   * This method is the main entry point for request execution. It handles proxy
+   * configuration, channel pooling, connection establishment, and request writing.
+   * For HTTPS or WebSocket connections through HTTP proxies, it automatically
+   * performs CONNECT tunneling.
+   * </p>
+   *
+   * @param request the request to send
+   * @param asyncHandler the handler for processing the response
+   * @param future an existing future to reuse (for redirects/retries), or null
+   * @param <T> the response type
+   * @return a ListenableFuture that will complete with the response
+   * @throws IllegalStateException if the client is closed
+   */
   public <T> ListenableFuture<T> sendRequest(final Request request,
                                              final AsyncHandler<T> asyncHandler,
                                              NettyResponseFuture<T> future) {
@@ -380,6 +419,18 @@ public final class NettyRequestSender {
     return future;
   }
 
+  /**
+   * Writes an HTTP request to a channel.
+   * <p>
+   * This method writes the HTTP request headers and optionally the body,
+   * handling Expect: 100-continue logic, progress tracking, and write
+   * completion listeners. It also schedules the read timeout.
+   * </p>
+   *
+   * @param future the response future containing the request
+   * @param channel the channel to write to
+   * @param <T> the response type
+   */
   public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
 
     NettyRequest nettyRequest = future.getNettyRequest();
@@ -461,6 +512,18 @@ public final class NettyRequestSender {
     }
   }
 
+  /**
+   * Aborts a request by closing the channel and completing the future exceptionally.
+   * <p>
+   * This method is called when an error occurs that makes it impossible to continue
+   * the request. It ensures the channel is closed and the future is completed with
+   * the exception.
+   * </p>
+   *
+   * @param channel the channel to close (may be null)
+   * @param future the future to abort
+   * @param t the exception that caused the abort
+   */
   public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
 
     if (channel != null) {
@@ -495,6 +558,17 @@ public final class NettyRequestSender {
     }
   }
 
+  /**
+   * Attempts to retry a failed request.
+   * <p>
+   * This method checks if retry is possible based on the request's retry count
+   * and replayability. If retry is allowed, it resets the channel state and
+   * sends the request again.
+   * </p>
+   *
+   * @param future the future to retry
+   * @return true if retry was initiated, false otherwise
+   */
   public boolean retry(NettyResponseFuture<?> future) {
 
     if (isClosed()) {
@@ -527,6 +601,19 @@ public final class NettyRequestSender {
     }
   }
 
+  /**
+   * Applies IO exception filters and potentially replays the request.
+   * <p>
+   * This method runs all configured IO exception filters, allowing them to
+   * inspect the exception and decide whether to retry the request. If any
+   * filter requests a replay and retry is possible, the request is resent.
+   * </p>
+   *
+   * @param future the response future
+   * @param e the IOException that occurred
+   * @param channel the channel where the exception occurred
+   * @return true if the request was replayed, false otherwise
+   */
   public boolean applyIoExceptionFiltersAndReplayRequest(NettyResponseFuture<?> future, IOException e,
                                                          Channel channel) {
 

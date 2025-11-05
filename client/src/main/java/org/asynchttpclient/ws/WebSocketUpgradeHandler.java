@@ -25,35 +25,149 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An {@link AsyncHandler} which is able to execute WebSocket upgrade. Use the Builder for configuring WebSocket options.
+ * An {@link AsyncHandler} that handles WebSocket protocol upgrade and connection management.
+ * <p>
+ * This handler manages the HTTP-to-WebSocket upgrade process by:
+ * </p>
+ * <ul>
+ *   <li>Validating the HTTP 101 Switching Protocols response</li>
+ *   <li>Processing the upgrade headers</li>
+ *   <li>Establishing the WebSocket connection</li>
+ *   <li>Notifying registered listeners of connection events</li>
+ * </ul>
+ * <p>
+ * Subclasses can override the protected hook methods (*0) to add custom behavior
+ * at various stages of the upgrade process.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * WebSocketUpgradeHandler handler = new WebSocketUpgradeHandler.Builder()
+ *     .addWebSocketListener(new WebSocketListener() {
+ *         @Override
+ *         public void onOpen(WebSocket websocket) {
+ *             websocket.sendTextFrame("Hello!");
+ *         }
+ *
+ *         @Override
+ *         public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+ *             System.out.println("Received: " + payload);
+ *         }
+ *
+ *         @Override
+ *         public void onClose(WebSocket websocket, int code, String reason) {
+ *             System.out.println("Connection closed");
+ *         }
+ *
+ *         @Override
+ *         public void onError(Throwable t) {
+ *             System.err.println("Error: " + t.getMessage());
+ *         }
+ *     })
+ *     .build();
+ *
+ * WebSocket websocket = asyncHttpClient
+ *     .prepareGet("ws://echo.websocket.org")
+ *     .execute(handler)
+ *     .get();
+ * }</pre>
  */
 public class WebSocketUpgradeHandler implements AsyncHandler<NettyWebSocket> {
 
   private final List<WebSocketListener> listeners;
   private NettyWebSocket webSocket;
 
+  /**
+   * Creates a new WebSocket upgrade handler with the specified listeners.
+   *
+   * @param listeners the list of WebSocket listeners to notify of events
+   */
   public WebSocketUpgradeHandler(List<WebSocketListener> listeners) {
     this.listeners = listeners;
   }
 
+  /**
+   * Extension point called when the WebSocket instance is set.
+   * <p>
+   * Subclasses can override this method to perform additional initialization
+   * or configuration when the WebSocket connection is established.
+   * </p>
+   *
+   * @param webSocket the WebSocket instance
+   */
   protected void setWebSocket0(NettyWebSocket webSocket) {
   }
 
+  /**
+   * Extension point called when the HTTP response status is received.
+   * <p>
+   * Subclasses can override this method to inspect or validate the status
+   * before the upgrade proceeds.
+   * </p>
+   *
+   * @param responseStatus the HTTP response status
+   * @throws Exception if an error occurs during status processing
+   */
   protected void onStatusReceived0(HttpResponseStatus responseStatus) throws Exception {
   }
 
+  /**
+   * Extension point called when the HTTP response headers are received.
+   * <p>
+   * Subclasses can override this method to inspect or validate the upgrade
+   * headers before the connection is established.
+   * </p>
+   *
+   * @param headers the HTTP response headers
+   * @throws Exception if an error occurs during header processing
+   */
   protected void onHeadersReceived0(HttpHeaders headers) throws Exception {
   }
 
+  /**
+   * Extension point called when the HTTP response body part is received.
+   * <p>
+   * Subclasses can override this method to process any response body data
+   * received during the upgrade (though typically there isn't any).
+   * </p>
+   *
+   * @param bodyPart the HTTP response body part
+   * @throws Exception if an error occurs during body part processing
+   */
   protected void onBodyPartReceived0(HttpResponseBodyPart bodyPart) throws Exception {
   }
 
+  /**
+   * Extension point called when the upgrade completes successfully.
+   * <p>
+   * Subclasses can override this method to perform actions after the
+   * WebSocket connection is fully established.
+   * </p>
+   *
+   * @throws Exception if an error occurs during completion processing
+   */
   protected void onCompleted0() throws Exception {
   }
 
+  /**
+   * Extension point called when an error occurs during the upgrade.
+   * <p>
+   * Subclasses can override this method to add custom error handling
+   * logic before listeners are notified.
+   * </p>
+   *
+   * @param t the Throwable that caused the error
+   */
   protected void onThrowable0(Throwable t) {
   }
 
+  /**
+   * Extension point called when the WebSocket connection is opened.
+   * <p>
+   * Subclasses can override this method to perform actions when the
+   * connection is ready to send and receive frames.
+   * </p>
+   */
   protected void onOpen0() {
   }
 

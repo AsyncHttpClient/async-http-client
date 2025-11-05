@@ -18,20 +18,29 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Abstract base class implementing common functionality for multipart parts.
+ * <p>
+ * This class provides the core implementation of the {@link Part} interface,
+ * managing common metadata such as name, content type, charset, transfer encoding,
+ * disposition type, and custom headers. Concrete implementations extend this class
+ * to provide specific content handling.
+ * </p>
+ */
 public abstract class PartBase implements Part {
 
   /**
-   * The name of the form field, part of the Content-Disposition header
+   * The name of the form field, used in the Content-Disposition header.
    */
   private final String name;
 
   /**
-   * The main part of the Content-Type header
+   * The MIME type of the part's content, used in the Content-Type header.
    */
   private final String contentType;
 
   /**
-   * The charset (part of Content-Type header)
+   * The character encoding, appended to the Content-Type header.
    */
   private final Charset charset;
 
@@ -41,28 +50,28 @@ public abstract class PartBase implements Part {
   private final String transferEncoding;
 
   /**
-   * The Content-Id
+   * The Content-ID header value, used to uniquely identify the part.
    */
   private final String contentId;
 
   /**
-   * The disposition type (part of Content-Disposition)
+   * The disposition type used in the Content-Disposition header (e.g., "form-data").
    */
   private String dispositionType;
 
   /**
-   * Additional part headers
+   * Additional custom headers to be included with this part.
    */
   private List<Param> customHeaders;
 
   /**
-   * Constructor.
+   * Constructs a part base with the specified metadata.
    *
-   * @param name             The name of the part, or <code>null</code>
-   * @param contentType      The content type, or <code>null</code>
-   * @param charset          The character encoding, or <code>null</code>
-   * @param contentId        The content id, or <code>null</code>
-   * @param transferEncoding The transfer encoding, or <code>null</code>
+   * @param name             the name of the form field, or {@code null}
+   * @param contentType      the content type, or {@code null}
+   * @param charset          the character encoding, or {@code null}
+   * @param contentId        the content ID, or {@code null}
+   * @param transferEncoding the transfer encoding, or {@code null}
    */
   public PartBase(String name, String contentType, Charset charset, String contentId, String transferEncoding) {
     this.name = name;
@@ -102,6 +111,11 @@ public abstract class PartBase implements Part {
     return dispositionType;
   }
 
+  /**
+   * Sets the disposition type for this part.
+   *
+   * @param dispositionType the disposition type (e.g., "form-data", "attachment")
+   */
   public void setDispositionType(String dispositionType) {
     this.dispositionType = dispositionType;
   }
@@ -111,10 +125,24 @@ public abstract class PartBase implements Part {
     return customHeaders;
   }
 
+  /**
+   * Sets the custom headers for this part.
+   *
+   * @param customHeaders the list of custom headers, or {@code null} to clear
+   */
   public void setCustomHeaders(List<Param> customHeaders) {
     this.customHeaders = customHeaders;
   }
 
+  /**
+   * Adds a custom header to this part.
+   * <p>
+   * If no custom headers have been set yet, a new list is created.
+   * </p>
+   *
+   * @param name  the header name
+   * @param value the header value
+   */
   public void addCustomHeader(String name, String value) {
     if (customHeaders == null) {
       customHeaders = new ArrayList<>(2);
@@ -122,6 +150,11 @@ public abstract class PartBase implements Part {
     customHeaders.add(new Param(name, value));
   }
 
+  /**
+   * Returns a string representation of this part.
+   *
+   * @return a string containing the part's metadata
+   */
   public String toString() {
     return getClass().getSimpleName() +
             " name=" + getName() +

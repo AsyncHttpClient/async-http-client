@@ -29,22 +29,63 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Straight forward default implementation of the {@code RxHttpClient} interface.
+ * Default implementation of the {@code RxHttpClient} interface.
+ * <p>
+ * This class provides RxJava 2 integration for AsyncHttpClient by wrapping
+ * HTTP requests in {@code Maybe} instances, supporting both standard and
+ * progress-aware async handlers.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = asyncHttpClient();
+ * RxHttpClient rxClient = new DefaultRxHttpClient(client);
+ *
+ * // Simple request returning Response
+ * Request request = get("http://www.example.com").build();
+ * Maybe<Response> maybe = rxClient.prepare(request);
+ * maybe.subscribe(
+ *     response -> System.out.println("Status: " + response.getStatusCode()),
+ *     error -> System.err.println("Error: " + error),
+ *     () -> System.out.println("Completed with no result")
+ * );
+ *
+ * // Custom handler for specific result type
+ * Maybe<String> bodyMaybe = rxClient.prepare(
+ *     request,
+ *     () -> new AsyncCompletionHandler<String>() {
+ *         public String onCompleted(Response response) {
+ *             return response.getResponseBody();
+ *         }
+ *     }
+ * );
+ * }</pre>
  */
 public class DefaultRxHttpClient implements RxHttpClient {
 
   private final AsyncHttpClient asyncHttpClient;
 
   /**
-   * Returns a new {@code DefaultRxHttpClient} instance that uses the given {@code asyncHttpClient} under the hoods.
+   * Creates a new DefaultRxHttpClient that delegates to the given AsyncHttpClient.
    *
-   * @param asyncHttpClient the Async HTTP Client instance to be used
+   * @param asyncHttpClient the Async HTTP Client instance to be used for executing requests
    * @throws NullPointerException if {@code asyncHttpClient} is {@code null}
    */
   public DefaultRxHttpClient(AsyncHttpClient asyncHttpClient) {
     this.asyncHttpClient = requireNonNull(asyncHttpClient);
   }
 
+  /**
+   * Prepares a request for execution as a RxJava 2 Maybe.
+   * <p>
+   * The request is executed when the Maybe is subscribed to, and the result
+   * is produced by the handler supplied by the handlerSupplier.
+   *
+   * @param request the HTTP request to execute
+   * @param handlerSupplier a supplier that provides the AsyncHandler for processing the response
+   * @param <T> the type of result produced by the handler and emitted by the Maybe
+   * @return a Maybe that executes the request on subscription and emits the handler's result
+   * @throws NullPointerException if {@code request} or {@code handlerSupplier} is {@code null}
+   */
   @Override
   public <T> Maybe<T> prepare(Request request, Supplier<? extends AsyncHandler<T>> handlerSupplier) {
     requireNonNull(request);

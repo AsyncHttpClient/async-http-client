@@ -27,8 +27,28 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 /**
- * A {@link org.asynchttpclient.handler.resumable.ResumableAsyncHandler.ResumableProcessor} which use a properties file
- * to store the download index information.
+ * A {@link ResumableAsyncHandler.ResumableProcessor} implementation that persists download progress
+ * to a properties file in the system temporary directory.
+ * <p>
+ * This processor stores URL-to-byte-position mappings in a properties file, enabling
+ * downloads to resume after application restarts or crashes. The properties file is
+ * stored at {@code ${java.io.tmpdir}/ahc/ResumableAsyncHandler.properties}.
+ * <p>
+ * The processor maintains an in-memory cache of the download state and persists it to
+ * disk when {@link #save(Map)} is called (typically during JVM shutdown via a shutdown hook).
+ *
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * PropertiesBasedResumableProcessor processor = new PropertiesBasedResumableProcessor();
+ * ResumableAsyncHandler handler = new ResumableAsyncHandler(processor);
+ *
+ * // The processor automatically loads previous download state
+ * client.prepareGet("http://example.com/largefile.zip")
+ *     .execute(handler)
+ *     .get();
+ *
+ * // Download progress is automatically saved on JVM shutdown
+ * }</pre>
  */
 public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.ResumableProcessor {
   private final static Logger log = LoggerFactory.getLogger(PropertiesBasedResumableProcessor.class);
@@ -41,7 +61,13 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
   }
 
   /**
-   * {@inheritDoc}
+   * Stores the number of bytes transferred for the specified URL.
+   * <p>
+   * Updates the in-memory cache with the current download position. This information
+   * will be persisted to disk when {@link #save(Map)} is called.
+   *
+   * @param url the URL being downloaded (used as the key)
+   * @param transferredBytes the number of bytes successfully transferred so far
    */
   @Override
   public void put(String url, long transferredBytes) {
@@ -49,7 +75,12 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
   }
 
   /**
-   * {@inheritDoc}
+   * Removes the download state for the specified URL.
+   * <p>
+   * This is typically called when a download completes successfully, removing the
+   * entry from both the in-memory cache and (on next save) the persistent storage.
+   *
+   * @param uri the URL whose download state should be removed
    */
   @Override
   public void remove(String uri) {
@@ -59,7 +90,16 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
   }
 
   /**
-   * {@inheritDoc}
+   * Persists the download state to a properties file.
+   * <p>
+   * This method is typically invoked during JVM shutdown via a shutdown hook registered
+   * by {@link ResumableAsyncHandler}. It writes all URL-to-byte-position mappings to
+   * {@code ${java.io.tmpdir}/ahc/ResumableAsyncHandler.properties}.
+   * <p>
+   * The method creates the necessary directories if they don't exist and handles
+   * errors gracefully by logging warnings rather than throwing exceptions.
+   *
+   * @param map the complete download state map (not used; this implementation uses internal state)
    */
   @Override
   public void save(Map<String, Long> map) {
@@ -91,7 +131,16 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
   }
 
   /**
-   * {@inheritDoc}
+   * Loads the previously saved download state from the properties file.
+   * <p>
+   * This method is called when a {@link ResumableAsyncHandler} is created. It reads
+   * the properties file from {@code ${java.io.tmpdir}/ahc/ResumableAsyncHandler.properties}
+   * and loads all URL-to-byte-position mappings into memory.
+   * <p>
+   * If the file doesn't exist or cannot be read, the method returns an empty map
+   * and logs appropriate messages.
+   *
+   * @return a map containing URL-to-byte-position mappings from the previous session
    */
   @Override
   public Map<String, Long> load() {

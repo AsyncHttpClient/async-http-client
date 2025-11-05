@@ -15,9 +15,30 @@ package org.asynchttpclient.extras.simple;
 
 
 /**
- * Simple {@link Throwable} handler to be used with {@link SimpleAsyncHttpClient}
+ * Simple {@link Throwable} handler to be used with {@link SimpleAsyncHttpClient}.
+ * <p>
+ * This interface provides a callback mechanism for handling exceptions that occur
+ * during HTTP request execution, allowing custom error handling logic.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * ThrowableHandler handler = throwable -> {
+ *     logger.error("Request failed: " + throwable.getMessage(), throwable);
+ *     // Custom error handling logic
+ * };
+ *
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ *     .setDefaultThrowableHandler(handler)
+ *     .setUrl("http://www.example.com")
+ *     .build();
+ * }</pre>
  */
 public interface ThrowableHandler {
 
+  /**
+   * Handles a throwable that occurred during HTTP request processing.
+   *
+   * @param t the throwable that was thrown during request execution
+   */
   void onThrowable(Throwable t);
 }

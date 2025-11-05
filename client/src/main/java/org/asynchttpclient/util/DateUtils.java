@@ -13,11 +13,36 @@
  */
 package org.asynchttpclient.util;
 
+/**
+ * Utility class for date and time operations.
+ * <p>
+ * This class provides convenience methods for working with time-related operations
+ * in the async-http-client library.
+ * </p>
+ */
 public final class DateUtils {
 
   private DateUtils() {
   }
 
+  /**
+   * Returns the current time in milliseconds.
+   * <p>
+   * This method is a wrapper around {@link System#currentTimeMillis()} and provides
+   * the current time in milliseconds since the Unix epoch (January 1, 1970, 00:00:00 GMT).
+   * The name "unprecise" indicates that the precision may vary depending on the underlying
+   * operating system.
+   * </p>
+   *
+   * <p><b>Usage Examples:</b></p>
+   * <pre>{@code
+   * long startTime = unpreciseMillisTime();
+   * // perform operation
+   * long elapsed = unpreciseMillisTime() - startTime;
+   * }</pre>
+   *
+   * @return the current time in milliseconds
+   */
   public static long unpreciseMillisTime() {
     return System.currentTimeMillis();
   }

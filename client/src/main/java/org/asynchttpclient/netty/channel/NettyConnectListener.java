@@ -32,7 +32,14 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
 /**
- * Non Blocking connect.
+ * Listener for handling non-blocking channel connection events.
+ * <p>
+ * This class manages the connection lifecycle from channel creation through
+ * SSL/TLS handshake (if needed) to request writing. It handles connection
+ * failures with retry logic and manages connection semaphore locks.
+ * </p>
+ *
+ * @param <T> the response type
  */
 public final class NettyConnectListener<T> {
 
@@ -43,6 +50,14 @@ public final class NettyConnectListener<T> {
   private final ChannelManager channelManager;
   private final ConnectionSemaphore connectionSemaphore;
 
+  /**
+   * Constructs a new NettyConnectListener.
+   *
+   * @param future the response future for this connection
+   * @param requestSender the request sender for writing requests
+   * @param channelManager the channel manager for pipeline configuration
+   * @param connectionSemaphore the semaphore for connection limiting, or null
+   */
   public NettyConnectListener(NettyResponseFuture<T> future,
                               NettyRequestSender requestSender,
                               ChannelManager channelManager,
@@ -80,6 +95,17 @@ public final class NettyConnectListener<T> {
     requestSender.writeRequest(future, channel);
   }
 
+  /**
+   * Handles successful channel connection.
+   * <p>
+   * This method transfers the connection semaphore lock to the channel,
+   * sets up SSL/TLS if needed, and initiates request writing. For SSL connections,
+   * it waits for the handshake to complete before writing the request.
+   * </p>
+   *
+   * @param channel the successfully connected channel
+   * @param remoteAddress the remote address that was connected to
+   */
   public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
 
     if (connectionSemaphore != null) {
@@ -157,6 +183,17 @@ public final class NettyConnectListener<T> {
     }
   }
 
+  /**
+   * Handles channel connection failure.
+   * <p>
+   * This method attempts to retry the connection if retries are available
+   * and the failure is recoverable. If retry fails or is not applicable,
+   * it aborts the future with a ConnectException.
+   * </p>
+   *
+   * @param channel the failed channel (may be null)
+   * @param cause the cause of the failure
+   */
   public void onFailure(Channel channel, Throwable cause) {
 
     // beware, channel can be null

@@ -12,16 +12,42 @@
  */
 package org.asynchttpclient.util;
 
+/**
+ * A thread-local pool of StringBuilder instances for efficient string building.
+ * <p>
+ * This class maintains a thread-local pool of StringBuilder instances with an initial
+ * capacity of 512 characters. Using pooled StringBuilders reduces object allocation
+ * overhead for frequently performed string concatenation operations.
+ * </p>
+ */
 public class StringBuilderPool {
 
+  /**
+   * The default, shared StringBuilderPool instance.
+   */
   public static final StringBuilderPool DEFAULT = new StringBuilderPool();
 
   private final ThreadLocal<StringBuilder> pool = ThreadLocal.withInitial(() -> new StringBuilder(512));
 
   /**
-   * BEWARE: MUSTN'T APPEND TO ITSELF!
+   * Returns a reset, pooled StringBuilder ready for use.
+   * <p>
+   * The returned StringBuilder has its length reset to zero but retains its underlying
+   * character array capacity. Each thread gets its own instance, making this method
+   * thread-safe without requiring synchronization.
+   * </p>
+   * <p><b>IMPORTANT:</b> The returned StringBuilder must not be appended to itself,
+   * as it's reused across calls within the same thread.
+   * </p>
    *
-   * @return a pooled StringBuilder
+   * <p><b>Usage Examples:</b></p>
+   * <pre>{@code
+   * StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
+   * sb.append("hello").append(" ").append("world");
+   * String result = sb.toString();
+   * }</pre>
+   *
+   * @return a reset, pooled StringBuilder
    */
   public StringBuilder stringBuilder() {
     StringBuilder sb = pool.get();

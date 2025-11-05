@@ -15,15 +15,31 @@ package org.asynchttpclient.spnego;
 
 /**
  * Signals SPNEGO protocol failure.
+ * <p>
+ * This exception is thrown when an error occurs during SPNEGO authentication processing,
+ * such as when GSS context initialization fails, credentials are invalid or expired,
+ * or login failures occur.
+ * </p>
  */
 public class SpnegoEngineException extends Exception {
 
   private static final long serialVersionUID = -3123799505052881438L;
 
+  /**
+   * Creates a new SpnegoEngineException with the specified message.
+   *
+   * @param message the exception detail message
+   */
   public SpnegoEngineException(String message) {
     super(message);
   }
 
+  /**
+   * Creates a new SpnegoEngineException with the specified detail message and cause.
+   *
+   * @param message the exception detail message
+   * @param cause the {@code Throwable} that caused this exception
+   */
   public SpnegoEngineException(String message, Throwable cause) {
     super(message, cause);
   }

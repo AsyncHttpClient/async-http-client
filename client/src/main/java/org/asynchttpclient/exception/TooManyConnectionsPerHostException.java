@@ -14,9 +14,26 @@ package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
+/**
+ * Exception thrown when the maximum number of connections per host has been reached.
+ * This occurs when the client attempts to open a new connection to a specific host
+ * but has already reached the configured {@code maxConnectionsPerHost} limit for that host.
+ *
+ * <p>To resolve this, either:</p>
+ * <ul>
+ *   <li>Increase the {@code maxConnectionsPerHost} configuration value</li>
+ *   <li>Ensure connections are being properly closed and returned to the pool</li>
+ *   <li>Reduce the number of concurrent requests to this specific host</li>
+ * </ul>
+ */
 @SuppressWarnings("serial")
 public class TooManyConnectionsPerHostException extends IOException {
 
+  /**
+   * Constructs a new exception with the maximum number of connections per host.
+   *
+   * @param max the maximum number of connections per host that was exceeded
+   */
   public TooManyConnectionsPerHostException(int max) {
     super("Too many connections: " + max);
   }

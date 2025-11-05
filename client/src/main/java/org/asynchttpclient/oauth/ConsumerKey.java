@@ -17,26 +17,64 @@ import org.asynchttpclient.util.Utf8UrlEncoder;
 
 /**
  * Value class for OAuth consumer keys.
+ * <p>
+ * Represents the consumer credentials used in OAuth 1.0 authentication, consisting of a key and a secret.
+ * The key is automatically percent-encoded for use in OAuth signatures.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * ConsumerKey consumerKey = new ConsumerKey("my-consumer-key", "my-consumer-secret");
+ * String key = consumerKey.getKey();
+ * String encodedKey = consumerKey.getPercentEncodedKey();
+ * }</pre>
  */
 public class ConsumerKey {
   private final String key;
   private final String secret;
   private final String percentEncodedKey;
 
+  /**
+   * Creates a new consumer key with the specified key and secret.
+   * <p>
+   * The key is automatically percent-encoded using UTF-8 URL encoding for use in OAuth signatures.
+   * </p>
+   *
+   * @param key the consumer key (public identifier)
+   * @param secret the consumer secret (confidential part)
+   */
   public ConsumerKey(String key, String secret) {
     this.key = key;
     this.secret = secret;
     this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
   }
 
+  /**
+   * Returns the consumer key (public identifier).
+   *
+   * @return the consumer key
+   */
   public String getKey() {
     return key;
   }
 
+  /**
+   * Returns the consumer secret (confidential part).
+   *
+   * @return the consumer secret
+   */
   public String getSecret() {
     return secret;
   }
 
+  /**
+   * Returns the percent-encoded consumer key.
+   * <p>
+   * This is the URL-encoded version of the key, ready for use in OAuth signature calculations.
+   * </p>
+   *
+   * @return the percent-encoded consumer key
+   */
   public String getPercentEncodedKey() {
     return percentEncodedKey;
   }

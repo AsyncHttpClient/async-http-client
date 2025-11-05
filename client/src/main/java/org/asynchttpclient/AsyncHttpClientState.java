@@ -15,6 +15,20 @@ package org.asynchttpclient;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Represents the lifecycle state of an {@link AsyncHttpClient} instance.
+ * This class provides thread-safe access to the client's closed state.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * AsyncHttpClientState state = client.getState();
+ * if (!state.isClosed()) {
+ *     // Safe to use client
+ *     client.prepareGet("http://example.com").execute();
+ * }
+ * }</pre>
+ */
 public class AsyncHttpClientState {
 
   private final AtomicBoolean closed;
@@ -23,6 +37,12 @@ public class AsyncHttpClientState {
     this.closed = closed;
   }
 
+  /**
+   * Returns whether the associated {@link AsyncHttpClient} has been closed.
+   * Once closed, the client cannot be used to execute new requests.
+   *
+   * @return {@code true} if the client has been closed, {@code false} otherwise
+   */
   public boolean isClosed() {
     return closed.get();
   }

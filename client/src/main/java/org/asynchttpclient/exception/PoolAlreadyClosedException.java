@@ -16,9 +16,20 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
+/**
+ * Exception thrown when attempting to use a connection pool that has already been closed.
+ * This typically occurs when trying to execute a request after the {@link org.asynchttpclient.AsyncHttpClient}
+ * has been closed.
+ *
+ * <p>This is a singleton exception optimized for performance by using a shared
+ * instance with no stack trace.</p>
+ */
 @SuppressWarnings("serial")
 public class PoolAlreadyClosedException extends IOException {
 
+  /**
+   * Singleton instance of this exception with no stack trace for performance optimization.
+   */
   public static final PoolAlreadyClosedException INSTANCE = unknownStackTrace(new PoolAlreadyClosedException(), PoolAlreadyClosedException.class, "INSTANCE");
 
   private PoolAlreadyClosedException() {

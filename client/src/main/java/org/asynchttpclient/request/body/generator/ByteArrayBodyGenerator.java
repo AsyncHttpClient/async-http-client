@@ -17,31 +17,81 @@ import org.asynchttpclient.request.body.Body;
 
 /**
  * A {@link BodyGenerator} backed by a byte array.
+ * <p>
+ * This implementation creates bodies that read from an in-memory byte array.
+ * The byte array is shared across all body instances created by this generator,
+ * but each body maintains its own read position to support multiple reads
+ * (e.g., for retries and redirects).
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create a body generator from a byte array
+ * byte[] data = "Request body content".getBytes(StandardCharsets.UTF_8);
+ * BodyGenerator generator = new ByteArrayBodyGenerator(data);
+ *
+ * // Use with AsyncHttpClient
+ * AsyncHttpClient client = asyncHttpClient();
+ * client.preparePost("http://example.com/api")
+ *     .setBody(generator)
+ *     .execute();
+ * }</pre>
  */
 public final class ByteArrayBodyGenerator implements BodyGenerator {
 
   private final byte[] bytes;
 
+  /**
+   * Constructs a byte array body generator.
+   *
+   * @param bytes the byte array to use as the request body
+   */
   public ByteArrayBodyGenerator(byte[] bytes) {
     this.bytes = bytes;
   }
 
   /**
-   * {@inheritDoc}
+   * Creates a new body instance that reads from the byte array.
+   *
+   * @return a new body instance
    */
   @Override
   public Body createBody() {
     return new ByteBody();
   }
 
+  /**
+   * A body implementation that reads from a byte array.
+   * <p>
+   * This class maintains state for reading from the byte array and can be reset
+   * to support multiple reads of the same content.
+   * </p>
+   */
   protected final class ByteBody implements Body {
     private boolean eof = false;
     private int lastPosition = 0;
 
+    /**
+     * Returns the content length of this body.
+     *
+     * @return the length of the byte array in bytes
+     */
     public long getContentLength() {
       return bytes.length;
     }
 
+    /**
+     * Transfers bytes from the byte array to the target buffer.
+     * <p>
+     * This method transfers as many bytes as possible to the target buffer,
+     * limited by either the remaining bytes in the array or the available
+     * space in the target buffer.
+     * </p>
+     *
+     * @param target the buffer to write bytes to
+     * @return {@link BodyState#STOP} if all bytes have been transferred,
+     *         {@link BodyState#CONTINUE} otherwise
+     */
     public BodyState transferTo(ByteBuf target) {
 
       if (eof) {
@@ -60,6 +110,13 @@ public final class ByteArrayBodyGenerator implements BodyGenerator {
       return BodyState.CONTINUE;
     }
 
+    /**
+     * Resets the body state to allow re-reading from the beginning.
+     * <p>
+     * This method resets the read position and end-of-file flag, allowing
+     * the body to be read again from the start.
+     * </p>
+     */
     public void close() {
       lastPosition = 0;
       eof = false;

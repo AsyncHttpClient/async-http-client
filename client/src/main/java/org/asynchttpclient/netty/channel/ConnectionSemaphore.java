@@ -16,12 +16,37 @@ package org.asynchttpclient.netty.channel;
 import java.io.IOException;
 
 /**
- * Connections limiter.
+ * Semaphore for limiting concurrent connections.
+ * <p>
+ * This interface provides a mechanism to control the maximum number of concurrent
+ * connections that can be established, either globally or per-host. Implementations
+ * enforce connection limits to prevent resource exhaustion.
+ * </p>
  */
 public interface ConnectionSemaphore {
 
+    /**
+     * Acquires a lock to allow a new channel connection.
+     * <p>
+     * This method blocks or throws an exception if the connection limit has been reached.
+     * The lock must be released by calling {@link #releaseChannelLock(Object)} when the
+     * connection is no longer needed.
+     * </p>
+     *
+     * @param partitionKey the key identifying the connection partition (e.g., host)
+     * @throws IOException if the lock cannot be acquired due to connection limits
+     */
     void acquireChannelLock(Object partitionKey) throws IOException;
 
+    /**
+     * Releases a previously acquired channel lock.
+     * <p>
+     * This method should be called when a connection is closed or returned to the pool,
+     * allowing other pending requests to proceed.
+     * </p>
+     *
+     * @param partitionKey the key identifying the connection partition (e.g., host)
+     */
     void releaseChannelLock(Object partitionKey);
 
 }

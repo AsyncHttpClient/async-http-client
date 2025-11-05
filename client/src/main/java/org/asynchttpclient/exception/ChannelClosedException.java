@@ -16,9 +16,20 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
+/**
+ * Exception thrown when a channel has been closed unexpectedly.
+ * This exception indicates that the underlying network channel was closed before
+ * the request could be completed or sent.
+ *
+ * <p>This is a singleton exception optimized for performance by using a shared
+ * instance with no stack trace.</p>
+ */
 @SuppressWarnings("serial")
 public final class ChannelClosedException extends IOException {
 
+  /**
+   * Singleton instance of this exception with no stack trace for performance optimization.
+   */
   public static final ChannelClosedException INSTANCE = unknownStackTrace(new ChannelClosedException(), ChannelClosedException.class, "INSTANCE");
 
   private ChannelClosedException() {

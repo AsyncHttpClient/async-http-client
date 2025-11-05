@@ -16,6 +16,21 @@ import java.util.concurrent.TimeUnit;
  * The <code>maxWaitMs</code> argument is respected across both permit acquisitions. For
  * example, if 1000 ms is given, and the filter spends 500 ms waiting for a connection,
  * it will only spend another 500 ms waiting for the rate limiter.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Limit to 10 concurrent connections and 5 requests per second
+ * RateLimitedThrottleRequestFilter filter =
+ *     new RateLimitedThrottleRequestFilter(10, 5.0);
+ *
+ * AsyncHttpClient client = asyncHttpClient(config()
+ *     .addRequestFilter(filter)
+ *     .build());
+ *
+ * // With custom max wait time of 2 seconds
+ * RateLimitedThrottleRequestFilter customFilter =
+ *     new RateLimitedThrottleRequestFilter(10, 5.0, 2000);
+ * }</pre>
  */
 public class RateLimitedThrottleRequestFilter implements RequestFilter {
   private final static Logger logger = LoggerFactory.getLogger(RateLimitedThrottleRequestFilter.class);
@@ -23,10 +38,29 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
   private final int maxWaitMs;
   private final RateLimiter rateLimiter;
 
+  /**
+   * Creates a rate-limited throttle filter with default maximum wait time.
+   * <p>
+   * The maximum wait time defaults to {@link Integer#MAX_VALUE}, effectively
+   * allowing requests to wait indefinitely for permits.
+   *
+   * @param maxConnections the maximum number of concurrent connections allowed
+   * @param rateLimitPerSecond the maximum rate of requests per second
+   */
   public RateLimitedThrottleRequestFilter(int maxConnections, double rateLimitPerSecond) {
     this(maxConnections, rateLimitPerSecond, Integer.MAX_VALUE);
   }
 
+  /**
+   * Creates a rate-limited throttle filter with a specified maximum wait time.
+   * <p>
+   * This filter enforces both connection concurrency limits and rate limiting.
+   * The maxWaitMs applies to the total time spent waiting for both permits.
+   *
+   * @param maxConnections the maximum number of concurrent connections allowed
+   * @param rateLimitPerSecond the maximum rate of requests per second
+   * @param maxWaitMs the maximum time in milliseconds to wait for permits
+   */
   public RateLimitedThrottleRequestFilter(int maxConnections, double rateLimitPerSecond, int maxWaitMs) {
     this.maxWaitMs = maxWaitMs;
     this.rateLimiter = RateLimiter.create(rateLimitPerSecond);
@@ -34,7 +68,17 @@ public class RateLimitedThrottleRequestFilter implements RequestFilter {
   }
 
   /**
-   * {@inheritDoc}
+   * Filters the request by applying both concurrency and rate limiting constraints.
+   * <p>
+   * This method attempts to acquire both a connection permit and a rate limiter permit
+   * before allowing the request to proceed. If either acquisition fails within the
+   * configured maximum wait time, a {@link FilterException} is thrown.
+   *
+   * @param ctx the filter context containing the request and async handler
+   * @param <T> the type of the async handler's result
+   * @return a new filter context with a handler that releases the connection permit on completion
+   * @throws FilterException if the request cannot acquire necessary permits within the maximum wait time
+   *                        or if the thread is interrupted while waiting
    */
   @Override
   public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {

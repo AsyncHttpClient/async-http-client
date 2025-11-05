@@ -15,10 +15,34 @@ package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
 
+/**
+ * Represents a chunk of body data for feedable body generators.
+ * <p>
+ * A body chunk contains a buffer with the actual data and a flag indicating
+ * whether this is the last chunk in the sequence. This class is used by
+ * {@link FeedableBodyGenerator} implementations to queue and transfer body
+ * data incrementally.
+ * </p>
+ */
 public final class BodyChunk {
+  /**
+   * Indicates whether this is the last chunk in the body.
+   * When {@code true}, no more chunks will follow.
+   */
   public final boolean last;
+
+  /**
+   * The buffer containing the chunk data.
+   * This buffer holds the actual bytes to be transferred.
+   */
   public final ByteBuf buffer;
 
+  /**
+   * Constructs a new body chunk.
+   *
+   * @param buffer the buffer containing the chunk data
+   * @param last   {@code true} if this is the last chunk, {@code false} otherwise
+   */
   BodyChunk(ByteBuf buffer, boolean last) {
     this.buffer = buffer;
     this.last = last;

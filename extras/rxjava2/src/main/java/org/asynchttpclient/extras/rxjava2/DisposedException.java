@@ -16,11 +16,19 @@ package org.asynchttpclient.extras.rxjava2;
 import java.util.concurrent.CancellationException;
 
 /**
- * Indicates that the HTTP request has been disposed asynchronously via RxJava.
+ * Indicates that the HTTP request has been disposed asynchronously via RxJava 2.
+ * <p>
+ * This exception is used to signal early termination of HTTP request processing when
+ * the RxJava 2 observer disposes of the subscription before the request completes.
  */
 public class DisposedException extends CancellationException {
   private static final long serialVersionUID = -5885577182105850384L;
 
+  /**
+   * Creates a new DisposedException with the specified detail message.
+   *
+   * @param message the detail message explaining the disposal
+   */
   public DisposedException(String message) {
     super(message);
   }

@@ -38,7 +38,19 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 /**
- * A simple implementation of {@link ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}
+ * Default implementation of {@link ChannelPool} based on a {@link java.util.concurrent.ConcurrentHashMap}.
+ * <p>
+ * This pool manages idle connections organized by partition keys (typically host:port),
+ * supporting configurable connection TTL and idle timeouts. It uses a timer-based cleaner
+ * to remove expired or remotely-closed connections.
+ * </p>
+ * <p>
+ * Supports two lease strategies:
+ * <ul>
+ *   <li>LIFO (Last-In-First-Out) - reuses most recently returned connections (default)</li>
+ *   <li>FIFO (First-In-First-Out) - reuses oldest connections first</li>
+ * </ul>
+ * </p>
  */
 public final class DefaultChannelPool implements ChannelPool {
 
@@ -55,6 +67,12 @@ public final class DefaultChannelPool implements ChannelPool {
   private final long cleanerPeriod;
   private final PoolLeaseStrategy poolLeaseStrategy;
 
+  /**
+   * Constructs a pool using configuration settings.
+   *
+   * @param config the client configuration
+   * @param hashedWheelTimer the timer for scheduling cleanup tasks
+   */
   public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
     this(config.getPooledConnectionIdleTimeout(),
             config.getConnectionTtl(),

@@ -41,10 +41,37 @@ import java.util.function.Function;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
+/**
+ * An {@link AsyncHttpClientConfig} implementation that reads configuration from Typesafe Config.
+ * <p>
+ * This class allows AsyncHttpClient to be configured using Typesafe Config (now Lightbend Config),
+ * enabling externalized configuration through application.conf, application.json, or other
+ * supported configuration sources.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Load from application.conf
+ * Config config = ConfigFactory.load();
+ * AsyncHttpClientConfig ahcConfig = new AsyncHttpClientTypesafeConfig(config);
+ * AsyncHttpClient client = asyncHttpClient(ahcConfig);
+ *
+ * // Load from custom config
+ * Config custom = ConfigFactory.parseString(
+ *     "org.asynchttpclient.maxConnections = 100\n" +
+ *     "org.asynchttpclient.requestTimeout = 30000"
+ * );
+ * AsyncHttpClientConfig ahcConfig = new AsyncHttpClientTypesafeConfig(custom);
+ * }</pre>
+ */
 public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
 
   private final Config config;
 
+  /**
+   * Creates a new configuration instance from the specified Typesafe Config.
+   *
+   * @param config the Typesafe Config containing AsyncHttpClient configuration properties
+   */
   public AsyncHttpClientTypesafeConfig(Config config) {
     this.config = config;
   }

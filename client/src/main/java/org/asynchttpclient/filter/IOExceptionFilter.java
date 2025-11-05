@@ -13,18 +13,60 @@
 package org.asynchttpclient.filter;
 
 /**
- * This filter is invoked when an {@link java.io.IOException} occurs during an http transaction.
+ * Filter interface for handling IOExceptions that occur during HTTP transactions.
+ * This filter is invoked when an {@link java.io.IOException} is thrown during
+ * request execution, allowing custom error handling and recovery logic.
+ *
+ * <p>IOException filters can be used to:</p>
+ * <ul>
+ *   <li>Implement custom retry logic for network failures</li>
+ *   <li>Log or monitor connection errors</li>
+ *   <li>Trigger request replay for transient failures</li>
+ *   <li>Provide fallback responses</li>
+ *   <li>Abort request processing by throwing {@link FilterException}</li>
+ * </ul>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Retry on connection timeout
+ * public class RetryOnTimeoutFilter implements IOExceptionFilter {
+ *     private final int maxRetries = 3;
+ *     private final AtomicInteger retryCount = new AtomicInteger(0);
+ *
+ *     @Override
+ *     public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+ *         IOException exception = ctx.getIOException();
+ *         if (exception instanceof SocketTimeoutException && retryCount.incrementAndGet() < maxRetries) {
+ *             // Replay the request
+ *             return new FilterContext.FilterContextBuilder<>(ctx)
+ *                 .replayRequest(true)
+ *                 .build();
+ *         }
+ *         // Max retries exceeded, propagate the exception
+ *         throw new FilterException("Max retries exceeded", exception);
+ *     }
+ * }
+ *
+ * // Register the filter
+ * AsyncHttpClient client = Dsl.asyncHttpClient(
+ *     new DefaultAsyncHttpClientConfig.Builder()
+ *         .addIOExceptionFilter(new RetryOnTimeoutFilter())
+ *         .build()
+ * );
+ * }</pre>
  */
 public interface IOExceptionFilter {
 
   /**
-   * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link IOExceptionFilter#filter} and will
-   * use the returned {@link FilterContext} to replay the {@link org.asynchttpclient.Request} or abort the processing.
+   * Processes the IOException that occurred during request execution.
+   * The {@link org.asynchttpclient.AsyncHttpClient} will use the returned {@link FilterContext}
+   * to determine whether to replay the {@link org.asynchttpclient.Request} or abort processing.
+   * If {@link FilterContext#replayRequest()} returns true, the request will be retried.
    *
-   * @param ctx a {@link FilterContext}
+   * @param ctx the filter context containing the exception and request details
    * @param <T> the handler result type
-   * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
-   * @throws FilterException to interrupt the filter processing.
+   * @return a {@link FilterContext}, which may be the same as or different from the input context
+   * @throws FilterException to abort the request processing and stop filter chain execution
    */
   <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
 }

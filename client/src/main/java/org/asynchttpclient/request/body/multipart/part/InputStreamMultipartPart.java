@@ -26,12 +26,26 @@ import java.nio.channels.WritableByteChannel;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
+/**
+ * Multipart part implementation for {@link InputStreamPart}.
+ * <p>
+ * This class handles encoding and transfer of streaming data as multipart parts. It wraps
+ * the input stream in a {@link ReadableByteChannel} for efficient transfer operations and
+ * tracks the position for content length validation when known.
+ * </p>
+ */
 public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamPart> {
 
   private long position = 0L;
   private ByteBuffer buffer;
   private ReadableByteChannel channel;
 
+  /**
+   * Constructs an input stream multipart part.
+   *
+   * @param part     the input stream part containing the stream and metadata
+   * @param boundary the multipart boundary bytes
+   */
   public InputStreamMultipartPart(InputStreamPart part, byte[] boundary) {
     super(part, boundary);
   }

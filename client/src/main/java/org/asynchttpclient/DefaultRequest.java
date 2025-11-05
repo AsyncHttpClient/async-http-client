@@ -34,6 +34,21 @@ import java.util.Map;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+/**
+ * Default immutable implementation of {@link Request}.
+ * <p>
+ * This class is constructed by {@link RequestBuilder} and contains all the
+ * information needed to execute an HTTP request. Once built, instances are
+ * immutable and thread-safe.
+ * </p>
+ * <p>
+ * Applications typically don't create instances directly but use {@link RequestBuilder}
+ * or the various prepare methods on {@link AsyncHttpClient}.
+ * </p>
+ *
+ * @see Request
+ * @see RequestBuilder
+ */
 public class DefaultRequest implements Request {
 
   public final ProxyServer proxyServer;

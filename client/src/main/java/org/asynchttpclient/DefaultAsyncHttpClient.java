@@ -42,7 +42,38 @@ import java.util.function.Predicate;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 
 /**
- * Default and threadsafe implementation of {@link AsyncHttpClient}.
+ * Default thread-safe implementation of {@link AsyncHttpClient}.
+ * <p>
+ * This is the primary implementation class for making asynchronous HTTP requests.
+ * It manages connection pooling, timeouts, and request execution using Netty as
+ * the underlying I/O provider.
+ * </p>
+ * <p>
+ * Instances can be created directly or via {@link Dsl#asyncHttpClient()}. When done,
+ * clients should be closed to release resources like connection pools and timers.
+ * </p>
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * // Using default configuration
+ * AsyncHttpClient client = new DefaultAsyncHttpClient();
+ * try {
+ *     Future<Response> future = client.prepareGet("http://example.com").execute();
+ *     Response response = future.get();
+ *     System.out.println(response.getResponseBody());
+ * } finally {
+ *     client.close();
+ * }
+ *
+ * // With custom configuration
+ * DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+ *     .setConnectTimeout(5000)
+ *     .setRequestTimeout(10000)
+ *     .build();
+ * AsyncHttpClient client = new DefaultAsyncHttpClient(config);
+ * }</pre>
+ *
+ * @see AsyncHttpClient
+ * @see Dsl#asyncHttpClient()
  */
 public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
@@ -62,25 +93,24 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
   private SignatureCalculator signatureCalculator;
 
   /**
-   * Create a new HTTP Asynchronous Client using the default
-   * {@link DefaultAsyncHttpClientConfig} configuration. The default
-   * {@link AsyncHttpClient} that will be used will be based on the classpath
-   * configuration.
+   * Creates a new HTTP asynchronous client with default configuration.
    * <p>
-   * If none of those providers are found, then the engine will throw an
-   * IllegalStateException.
+   * The default configuration uses Netty as the underlying provider with
+   * standard timeout and connection pool settings.
+   * </p>
    */
   public DefaultAsyncHttpClient() {
     this(new DefaultAsyncHttpClientConfig.Builder().build());
   }
 
   /**
-   * Create a new HTTP Asynchronous Client using the specified
-   * {@link DefaultAsyncHttpClientConfig} configuration. This configuration
-   * will be passed to the default {@link AsyncHttpClient} that will be
-   * selected based on the classpath configuration.
+   * Creates a new HTTP asynchronous client with the specified configuration.
+   * <p>
+   * The configuration controls behavior such as timeouts, connection pooling,
+   * proxy settings, SSL/TLS options, and more.
+   * </p>
    *
-   * @param config a {@link DefaultAsyncHttpClientConfig}
+   * @param config the client configuration to use
    */
   public DefaultAsyncHttpClient(AsyncHttpClientConfig config) {
 

@@ -235,120 +235,341 @@ public interface AsyncHttpClientConfig {
    */
   int getConnectionTtl();
 
+  /**
+   * Returns whether OpenSSL should be used instead of the JDK SSL implementation.
+   * OpenSSL can provide better performance in some scenarios.
+   *
+   * @return {@code true} if OpenSSL should be used, {@code false} to use JDK SSL
+   */
   boolean isUseOpenSsl();
 
+  /**
+   * Returns whether to use an insecure trust manager that accepts all certificates.
+   * This should only be used for testing purposes and never in production.
+   *
+   * @return {@code true} if insecure trust manager is enabled, {@code false} otherwise
+   */
   boolean isUseInsecureTrustManager();
 
   /**
-   * @return true to disable all HTTPS behaviors AT ONCE, such as hostname verification and SNI
+   * Returns whether to disable HTTPS endpoint identification algorithm.
+   * When enabled, this disables hostname verification and SNI.
+   * This should only be used for testing and never in production.
+   *
+   * @return {@code true} to disable all HTTPS endpoint identification, {@code false} otherwise
    */
   boolean isDisableHttpsEndpointIdentificationAlgorithm();
 
   /**
-   * @return the array of enabled protocols
+   * Returns the array of enabled SSL/TLS protocols.
+   *
+   * @return the array of enabled protocols, or {@code null} to use defaults
    */
   String[] getEnabledProtocols();
 
   /**
-   * @return the array of enabled cipher suites
+   * Returns the array of enabled cipher suites for SSL/TLS connections.
+   *
+   * @return the array of enabled cipher suites, or {@code null} to use defaults
    */
   String[] getEnabledCipherSuites();
 
   /**
-   * @return if insecure cipher suites must be filtered out (only used when not explicitly passing enabled cipher suites)
+   * Returns whether insecure cipher suites should be filtered out.
+   * This is only used when enabled cipher suites are not explicitly set.
+   *
+   * @return {@code true} if insecure cipher suites must be filtered out, {@code false} otherwise
    */
   boolean isFilterInsecureCipherSuites();
 
   /**
-   * @return the size of the SSL session cache, 0 means using the default value
+   * Returns the size of the SSL session cache.
+   *
+   * @return the size of the SSL session cache, or 0 to use the default value
    */
   int getSslSessionCacheSize();
 
   /**
-   * @return the SSL session timeout in seconds, 0 means using the default value
+   * Returns the SSL session timeout in seconds.
+   *
+   * @return the SSL session timeout in seconds, or 0 to use the default value
    */
   int getSslSessionTimeout();
 
+  /**
+   * Returns the maximum length of the initial line in the HTTP codec.
+   *
+   * @return the maximum initial line length in bytes
+   */
   int getHttpClientCodecMaxInitialLineLength();
 
+  /**
+   * Returns the maximum size of HTTP headers in the HTTP codec.
+   *
+   * @return the maximum header size in bytes
+   */
   int getHttpClientCodecMaxHeaderSize();
 
+  /**
+   * Returns the maximum size of HTTP chunks in the HTTP codec.
+   *
+   * @return the maximum chunk size in bytes
+   */
   int getHttpClientCodecMaxChunkSize();
 
+  /**
+   * Returns the initial buffer size for the HTTP codec.
+   *
+   * @return the initial buffer size in bytes
+   */
   int getHttpClientCodecInitialBufferSize();
 
+  /**
+   * Returns whether zero-copy file transfer is disabled.
+   * Zero-copy can improve performance but may not work in all scenarios.
+   *
+   * @return {@code true} if zero-copy is disabled, {@code false} if enabled
+   */
   boolean isDisableZeroCopy();
 
+  /**
+   * Returns the SSL/TLS handshake timeout in milliseconds.
+   *
+   * @return the handshake timeout in milliseconds
+   */
   int getHandshakeTimeout();
 
+  /**
+   * Returns the factory for creating SSL engines.
+   *
+   * @return the {@link SslEngineFactory}, or {@code null} if not configured
+   */
   SslEngineFactory getSslEngineFactory();
 
+  /**
+   * Returns the chunk size for chunked file uploads.
+   *
+   * @return the chunk size in bytes
+   */
   int getChunkedFileChunkSize();
 
+  /**
+   * Returns the maximum buffer size for WebSocket connections.
+   *
+   * @return the maximum WebSocket buffer size in bytes
+   */
   int getWebSocketMaxBufferSize();
 
+  /**
+   * Returns the maximum frame size for WebSocket connections.
+   *
+   * @return the maximum WebSocket frame size in bytes
+   */
   int getWebSocketMaxFrameSize();
 
+  /**
+   * Returns whether the encoding header should be kept when compression is enabled.
+   *
+   * @return {@code true} if encoding header should be kept, {@code false} otherwise
+   */
   boolean isKeepEncodingHeader();
 
+  /**
+   * Returns the quiet period for graceful shutdown in milliseconds.
+   * During the quiet period, no new tasks will be accepted.
+   *
+   * @return the shutdown quiet period in milliseconds
+   */
   int getShutdownQuietPeriod();
 
+  /**
+   * Returns the maximum time to wait for shutdown to complete in milliseconds.
+   *
+   * @return the shutdown timeout in milliseconds
+   */
   int getShutdownTimeout();
 
+  /**
+   * Returns the Netty channel options to be applied to all channels.
+   *
+   * @return a map of channel options and their values
+   */
   Map<ChannelOption<Object>, Object> getChannelOptions();
 
+  /**
+   * Returns the Netty event loop group to be used.
+   * If {@code null}, a default event loop group will be created.
+   *
+   * @return the {@link EventLoopGroup}, or {@code null} to use default
+   */
   EventLoopGroup getEventLoopGroup();
 
+  /**
+   * Returns whether native transport should be used when available.
+   * Native transports can provide better performance on supported platforms.
+   *
+   * @return {@code true} to use native transport, {@code false} to use NIO
+   */
   boolean isUseNativeTransport();
 
+  /**
+   * Returns the additional channel initializer for HTTP channels.
+   *
+   * @return the channel initializer consumer, or {@code null} if not configured
+   */
   Consumer<Channel> getHttpAdditionalChannelInitializer();
 
+  /**
+   * Returns the additional channel initializer for WebSocket channels.
+   *
+   * @return the channel initializer consumer, or {@code null} if not configured
+   */
   Consumer<Channel> getWsAdditionalChannelInitializer();
 
+  /**
+   * Returns the factory for creating response body part objects.
+   *
+   * @return the {@link ResponseBodyPartFactory}
+   */
   ResponseBodyPartFactory getResponseBodyPartFactory();
 
+  /**
+   * Returns the custom channel pool implementation.
+   *
+   * @return the {@link ChannelPool}, or {@code null} to use default
+   */
   ChannelPool getChannelPool();
 
+  /**
+   * Returns the factory for creating connection semaphores.
+   *
+   * @return the {@link ConnectionSemaphoreFactory}, or {@code null} if not configured
+   */
   ConnectionSemaphoreFactory getConnectionSemaphoreFactory();
 
+  /**
+   * Returns the Netty timer to be used for timeouts.
+   *
+   * @return the {@link Timer}, or {@code null} to create a default timer
+   */
   Timer getNettyTimer();
 
   /**
-   * @return the duration between tick of {@link io.netty.util.HashedWheelTimer}
+   * Returns the duration between ticks of the hashed wheel timer in milliseconds.
+   * The hashed wheel timer is used for managing timeouts efficiently.
+   *
+   * @return the duration between ticks of {@link io.netty.util.HashedWheelTimer} in milliseconds
    */
   long getHashedWheelTimerTickDuration();
 
   /**
+   * Returns the size of the hashed wheel timer.
+   * A larger size can handle more concurrent timeouts but uses more memory.
+   *
    * @return the size of the hashed wheel {@link io.netty.util.HashedWheelTimer}
    */
   int getHashedWheelTimerSize();
 
+  /**
+   * Returns the strategy for determining whether connections should be kept alive.
+   *
+   * @return the {@link KeepAliveStrategy}
+   */
   KeepAliveStrategy getKeepAliveStrategy();
 
+  /**
+   * Returns whether response headers should be validated for correctness.
+   *
+   * @return {@code true} if response headers should be validated, {@code false} otherwise
+   */
   boolean isValidateResponseHeaders();
 
+  /**
+   * Returns whether WebSocket frame fragments should be aggregated.
+   *
+   * @return {@code true} if fragments should be aggregated, {@code false} otherwise
+   */
   boolean isAggregateWebSocketFrameFragments();
 
+  /**
+   * Returns whether WebSocket compression extension is enabled.
+   *
+   * @return {@code true} if WebSocket compression is enabled, {@code false} otherwise
+   */
   boolean isEnableWebSocketCompression();
 
+  /**
+   * Returns whether TCP_NODELAY socket option is enabled.
+   * When enabled, small packets are sent immediately without buffering (Nagle's algorithm disabled).
+   *
+   * @return {@code true} if TCP_NODELAY is enabled, {@code false} otherwise
+   */
   boolean isTcpNoDelay();
 
+  /**
+   * Returns whether SO_REUSEADDR socket option is enabled.
+   * When enabled, allows reusing local addresses and ports.
+   *
+   * @return {@code true} if SO_REUSEADDR is enabled, {@code false} otherwise
+   */
   boolean isSoReuseAddress();
 
+  /**
+   * Returns whether SO_KEEPALIVE socket option is enabled.
+   * When enabled, TCP keepalive probes are sent to detect dead connections.
+   *
+   * @return {@code true} if SO_KEEPALIVE is enabled, {@code false} otherwise
+   */
   boolean isSoKeepAlive();
 
+  /**
+   * Returns the SO_LINGER socket option value in seconds.
+   * Controls the behavior when closing a socket with unsent data.
+   *
+   * @return the SO_LINGER value in seconds, or -1 if disabled
+   */
   int getSoLinger();
 
+  /**
+   * Returns the SO_SNDBUF socket option value.
+   * Specifies the size of the TCP send buffer.
+   *
+   * @return the send buffer size in bytes, or -1 to use system default
+   */
   int getSoSndBuf();
 
+  /**
+   * Returns the SO_RCVBUF socket option value.
+   * Specifies the size of the TCP receive buffer.
+   *
+   * @return the receive buffer size in bytes, or -1 to use system default
+   */
   int getSoRcvBuf();
 
+  /**
+   * Returns the Netty ByteBuf allocator to use for buffer allocation.
+   *
+   * @return the {@link ByteBufAllocator}, or {@code null} to use default
+   */
   ByteBufAllocator getAllocator();
 
+  /**
+   * Returns the number of I/O threads to use in the event loop group.
+   *
+   * @return the number of I/O threads
+   */
   int getIoThreadsCount();
 
+  /**
+   * Factory for creating {@link HttpResponseBodyPart} instances.
+   * Determines how response body data is buffered and processed.
+   */
   enum ResponseBodyPartFactory {
 
+    /**
+     * Creates eager response body parts that immediately copy the data from the Netty buffer.
+     * This is safer but uses more memory as data is copied immediately.
+     */
     EAGER {
       @Override
       public HttpResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
@@ -356,6 +577,10 @@ public interface AsyncHttpClientConfig {
       }
     },
 
+    /**
+     * Creates lazy response body parts that hold a reference to the Netty buffer.
+     * This is more memory efficient but requires careful buffer lifecycle management.
+     */
     LAZY {
       @Override
       public HttpResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last) {
@@ -363,6 +588,13 @@ public interface AsyncHttpClientConfig {
       }
     };
 
+    /**
+     * Creates a new response body part from the given buffer.
+     *
+     * @param buf the buffer containing response body data
+     * @param last {@code true} if this is the last body part, {@code false} otherwise
+     * @return a new {@link HttpResponseBodyPart}
+     */
     public abstract HttpResponseBodyPart newResponseBodyPart(ByteBuf buf, boolean last);
   }
 }

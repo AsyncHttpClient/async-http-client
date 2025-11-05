@@ -21,7 +21,12 @@ import org.asynchttpclient.uri.Uri;
 import java.net.SocketAddress;
 
 /**
- * A class that represent the HTTP response' status line (code + text)
+ * Netty-based implementation of HTTP response status information.
+ * <p>
+ * This class wraps a Netty {@link HttpResponse} and extracts status code, status text,
+ * protocol version, and socket address information. It provides access to the complete
+ * HTTP status line and connection details.
+ * </p>
  */
 public class NettyResponseStatus extends HttpResponseStatus {
 
@@ -29,6 +34,13 @@ public class NettyResponseStatus extends HttpResponseStatus {
   private final SocketAddress remoteAddress;
   private final SocketAddress localAddress;
 
+  /**
+   * Constructs a new NettyResponseStatus.
+   *
+   * @param uri the request URI
+   * @param response the Netty HTTP response
+   * @param channel the channel the response was received on (may be null)
+   */
   public NettyResponseStatus(Uri uri, HttpResponse response, Channel channel) {
     super(uri);
     this.response = response;

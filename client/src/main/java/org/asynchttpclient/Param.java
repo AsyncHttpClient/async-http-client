@@ -17,7 +17,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A pair of (name, value) String
+ * Represents a name-value pair, typically used for query parameters or form data.
+ * This is an immutable class that holds a single parameter's name and value.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create a single parameter
+ * Param param = new Param("username", "john");
+ *
+ * // Convert a map to a list of parameters
+ * Map<String, List<String>> paramsMap = new HashMap<>();
+ * paramsMap.put("filter", Arrays.asList("active", "published"));
+ * List<Param> params = Param.map2ParamList(paramsMap);
+ * }</pre>
  *
  * @author slandelle
  */
@@ -26,11 +38,24 @@ public class Param {
   private final String name;
   private final String value;
 
+  /**
+   * Constructs a new parameter with the specified name and value.
+   *
+   * @param name the parameter name
+   * @param value the parameter value
+   */
   public Param(String name, String value) {
     this.name = name;
     this.value = value;
   }
 
+  /**
+   * Converts a map of parameter names to value lists into a flat list of {@link Param} objects.
+   * Each map entry with multiple values will generate multiple {@link Param} instances, one for each value.
+   *
+   * @param map the map to convert, where each key maps to a list of values
+   * @return a list of {@link Param} objects, or {@code null} if the input map is {@code null}
+   */
   public static List<Param> map2ParamList(Map<String, List<String>> map) {
     if (map == null)
       return null;
@@ -44,10 +69,20 @@ public class Param {
     return params;
   }
 
+  /**
+   * Returns the parameter name.
+   *
+   * @return the parameter name
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * Returns the parameter value.
+   *
+   * @return the parameter value
+   */
   public String getValue() {
     return value;
   }

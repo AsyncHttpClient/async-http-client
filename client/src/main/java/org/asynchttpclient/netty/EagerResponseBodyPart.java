@@ -20,13 +20,27 @@ import java.nio.ByteBuffer;
 import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 
 /**
- * A callback class used when an HTTP response body is received.
- * Bytes are eagerly fetched from the ByteBuf
+ * Response body part that eagerly copies bytes from the Netty ByteBuf.
+ * <p>
+ * This implementation immediately extracts bytes from the ByteBuf upon construction,
+ * allowing the original buffer to be released quickly. This is the default strategy
+ * and is suitable for most use cases where response bodies are small to medium sized.
+ * </p>
+ * <p>
+ * The eager strategy trades memory (for the byte copy) for simplified lifecycle management
+ * and avoids the need to manually manage ByteBuf reference counts.
+ * </p>
  */
 public class EagerResponseBodyPart extends HttpResponseBodyPart {
 
   private final byte[] bytes;
 
+  /**
+   * Constructs an eager response body part.
+   *
+   * @param buf the Netty ByteBuf containing the response body chunk
+   * @param last whether this is the final body part
+   */
   public EagerResponseBodyPart(ByteBuf buf, boolean last) {
     super(last);
     bytes = byteBuf2Bytes(buf);

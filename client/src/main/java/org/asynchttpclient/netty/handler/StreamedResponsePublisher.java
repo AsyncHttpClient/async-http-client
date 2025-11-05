@@ -24,6 +24,30 @@ import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Reactive Streams publisher for streaming HTTP response body parts.
+ * <p>
+ * This publisher implements backpressure-aware streaming of HTTP response body parts
+ * using the Reactive Streams API. It extends Netty's HandlerPublisher to integrate
+ * with the Netty pipeline and manages demand-driven read operations.
+ * </p>
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Used internally with StreamedAsyncHandler
+ * StreamedAsyncHandler<Response> handler = new StreamedAsyncHandler<Response>() {
+ *     @Override
+ *     public State onStream(Publisher<HttpResponseBodyPart> publisher) {
+ *         publisher.subscribe(new Subscriber<HttpResponseBodyPart>() {
+ *             public void onNext(HttpResponseBodyPart part) {
+ *                 // Process body part with backpressure
+ *                 subscription.request(1);
+ *             }
+ *         });
+ *         return State.CONTINUE;
+ *     }
+ * };
+ * }</pre>
+ */
 public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBodyPart> {
 
   protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -34,6 +58,14 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
   private volatile boolean hasOutstandingRequest = false;
   private Throwable error;
 
+  /**
+   * Constructs a new StreamedResponsePublisher.
+   *
+   * @param executor the event executor for processing events
+   * @param channelManager the channel manager for channel lifecycle management
+   * @param future the response future associated with this stream
+   * @param channel the channel from which body parts are read
+   */
   StreamedResponsePublisher(EventExecutor executor, ChannelManager channelManager, NettyResponseFuture<?> future, Channel channel) {
     super(executor, HttpResponseBodyPart.class);
     this.channelManager = channelManager;
@@ -41,6 +73,13 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
     this.channel = channel;
   }
 
+  /**
+   * Handles cancellation by the subscriber.
+   * <p>
+   * When the subscriber cancels the subscription, this method marks the future as done
+   * and closes the channel since the remaining response body will not be consumed.
+   * </p>
+   */
   @Override
   protected void cancelled() {
     logger.debug("Subscriber cancelled, ignoring the rest of the body");
@@ -56,31 +95,78 @@ public class StreamedResponsePublisher extends HandlerPublisher<HttpResponseBody
     channelManager.closeChannel(channel);
   }
 
+  /**
+   * Handles demand requests from the subscriber.
+   * <p>
+   * This method is called when the subscriber requests more items. It sets the
+   * outstanding request flag to indicate that the subscriber is ready to receive data.
+   * </p>
+   */
   @Override
   protected void requestDemand() {
     hasOutstandingRequest = true;
     super.requestDemand();
   }
 
+  /**
+   * Handles channel read completion events.
+   * <p>
+   * This method clears the outstanding request flag when a read completes, indicating
+   * that the current demand has been satisfied. It then delegates to the parent
+   * implementation to trigger backpressure handling.
+   * </p>
+   *
+   * @param ctx the channel handler context
+   * @throws Exception if an error occurs during processing
+   */
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     hasOutstandingRequest = false;
     super.channelReadComplete(ctx);
   }
 
+  /**
+   * Subscribes a subscriber to this publisher.
+   * <p>
+   * This method wraps the provided subscriber with an ErrorReplacingSubscriber
+   * to handle error replacement during completion, allowing deferred errors
+   * to be signaled at the appropriate time.
+   * </p>
+   *
+   * @param subscriber the subscriber to receive body parts
+   */
   @Override
   public void subscribe(Subscriber<? super HttpResponseBodyPart> subscriber) {
     super.subscribe(new ErrorReplacingSubscriber(subscriber));
   }
 
+  /**
+   * Checks if there is an outstanding demand request from the subscriber.
+   *
+   * @return true if the subscriber has requested data that hasn't been fulfilled yet
+   */
   public boolean hasOutstandingRequest() {
     return hasOutstandingRequest;
   }
 
+  /**
+   * Returns the response future associated with this publisher.
+   *
+   * @return the NettyResponseFuture for this streaming response
+   */
   NettyResponseFuture<?> future() {
     return future;
   }
 
+  /**
+   * Sets an error that should be delivered to the subscriber on completion.
+   * <p>
+   * This allows deferring error signaling until the natural completion point
+   * of the stream, converting a successful completion into an error signal.
+   * </p>
+   *
+   * @param t the error to deliver on completion
+   */
   public void setError(Throwable t) {
     this.error = t;
   }

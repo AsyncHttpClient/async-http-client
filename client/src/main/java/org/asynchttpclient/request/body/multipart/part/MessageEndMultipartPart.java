@@ -21,11 +21,25 @@ import org.asynchttpclient.request.body.multipart.FileLikePart;
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
+/**
+ * Special multipart part that represents the end of a multipart message.
+ * <p>
+ * This class generates the final boundary marker that terminates a multipart/form-data
+ * message. It consists of "--boundary--CRLF" according to the multipart specification.
+ * Unlike regular parts, it has no associated Part object and no separate pre-content,
+ * content, and post-content phases.
+ * </p>
+ */
 public class MessageEndMultipartPart extends MultipartPart<FileLikePart> {
 
   // lazy
   private ByteBuf contentBuffer;
 
+  /**
+   * Constructs a message end multipart part.
+   *
+   * @param boundary the multipart boundary bytes
+   */
   public MessageEndMultipartPart(byte[] boundary) {
     super(null, boundary);
     state = MultipartState.PRE_CONTENT;

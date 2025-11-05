@@ -25,13 +25,36 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 /**
- * Customized {@link Response} which add support for getting the response's body as an XML document (@link WebDavResponse#getBodyAsXML}
+ * Customized {@link Response} that adds support for getting the response body as an XML document.
+ * <p>
+ * This response wrapper is specifically designed for WebDAV operations, which typically return
+ * XML responses (especially for multi-status 207 responses). It provides access to the parsed
+ * XML document alongside all standard HTTP response properties.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * WebDavCompletionHandlerBase<WebDavResponse> handler = new WebDavCompletionHandlerBase<WebDavResponse>() {
+ *     @Override
+ *     public WebDavResponse onCompleted(WebDavResponse response) {
+ *         Document doc = response.getBodyAsXML();
+ *         // Process XML document
+ *         return response;
+ *     }
+ * };
+ * }</pre>
  */
 public class WebDavResponse implements Response {
 
   private final Response response;
   private final Document document;
 
+  /**
+   * Creates a new WebDAV response wrapping an HTTP response and its parsed XML document.
+   *
+   * @param response the underlying HTTP response
+   * @param document the parsed XML document from the response body (can be null)
+   */
   WebDavResponse(Response response, Document document) {
     this.response = response;
     this.document = document;
@@ -114,6 +137,16 @@ public class WebDavResponse implements Response {
     return response.getLocalAddress();
   }
 
+  /**
+   * Returns the response body as a parsed XML document.
+   * <p>
+   * This method provides access to the DOM document parsed from the response body.
+   * For WebDAV multi-status responses (HTTP 207), this contains the structured XML
+   * data describing the results of the operation.
+   * </p>
+   *
+   * @return the parsed XML document, or null if the response didn't contain XML
+   */
   public Document getBodyAsXML() {
     return document;
   }

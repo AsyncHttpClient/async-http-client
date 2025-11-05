@@ -68,34 +68,95 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     this.accumulateBody = accumulateBody;
   }
 
+  /**
+   * Creates a ResumableAsyncHandler starting from the specified byte position.
+   * <p>
+   * Uses a NULL processor (no persistence) and does not accumulate response bytes.
+   *
+   * @param byteTransferred the number of bytes already transferred (for manual resume)
+   */
   public ResumableAsyncHandler(long byteTransferred) {
     this(byteTransferred, null, null, false);
   }
 
+  /**
+   * Creates a ResumableAsyncHandler with optional response body accumulation.
+   * <p>
+   * Uses a NULL processor (no persistence) and starts from byte 0.
+   *
+   * @param accumulateBody {@code true} to accumulate response bytes in memory for later access
+   */
   public ResumableAsyncHandler(boolean accumulateBody) {
     this(0, null, null, accumulateBody);
   }
 
+  /**
+   * Creates a ResumableAsyncHandler with default settings.
+   * <p>
+   * Uses a NULL processor (no persistence), starts from byte 0, and does not accumulate response bytes.
+   */
   public ResumableAsyncHandler() {
     this(0, null, null, false);
   }
 
+  /**
+   * Creates a ResumableAsyncHandler that decorates another handler.
+   * <p>
+   * Uses a {@link PropertiesBasedResumableProcessor} for persistence, starts from byte 0,
+   * and does not accumulate response bytes. The decorated handler will receive all
+   * handler callbacks in addition to the resume functionality.
+   *
+   * @param decoratedAsyncHandler the handler to decorate with resume capability
+   */
   public ResumableAsyncHandler(AsyncHandler<Response> decoratedAsyncHandler) {
     this(0, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
   }
 
+  /**
+   * Creates a ResumableAsyncHandler that decorates another handler with a specified starting position.
+   * <p>
+   * Uses a {@link PropertiesBasedResumableProcessor} for persistence and does not accumulate response bytes.
+   *
+   * @param byteTransferred the number of bytes already transferred (for manual resume)
+   * @param decoratedAsyncHandler the handler to decorate with resume capability
+   */
   public ResumableAsyncHandler(long byteTransferred, AsyncHandler<Response> decoratedAsyncHandler) {
     this(byteTransferred, new PropertiesBasedResumableProcessor(), decoratedAsyncHandler, false);
   }
 
+  /**
+   * Creates a ResumableAsyncHandler with a custom processor.
+   * <p>
+   * Starts from byte 0 and does not accumulate response bytes.
+   *
+   * @param resumableProcessor the processor to use for persisting download state
+   */
   public ResumableAsyncHandler(ResumableProcessor resumableProcessor) {
     this(0, resumableProcessor, null, false);
   }
 
+  /**
+   * Creates a ResumableAsyncHandler with a custom processor and optional response body accumulation.
+   * <p>
+   * Starts from byte 0.
+   *
+   * @param resumableProcessor the processor to use for persisting download state
+   * @param accumulateBody {@code true} to accumulate response bytes in memory for later access
+   */
   public ResumableAsyncHandler(ResumableProcessor resumableProcessor, boolean accumulateBody) {
     this(0, resumableProcessor, null, accumulateBody);
   }
 
+  /**
+   * Processes the HTTP response status.
+   * <p>
+   * Accepts status codes 200 (OK) and 206 (Partial Content). Other status codes
+   * cause the request to be aborted. Delegates to the decorated handler if present.
+   *
+   * @param status the HTTP response status
+   * @return {@link State#CONTINUE} if the status is acceptable, {@link State#ABORT} otherwise
+   * @throws Exception if an error occurs during processing
+   */
   @Override
   public State onStatusReceived(final HttpResponseStatus status) throws Exception {
     responseBuilder.accumulate(status);
@@ -112,6 +173,13 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     return AsyncHandler.State.CONTINUE;
   }
 
+  /**
+   * Handles exceptions that occur during request processing.
+   * <p>
+   * Delegates to the decorated handler if present, otherwise logs the exception.
+   *
+   * @param t the exception that occurred
+   */
   @Override
   public void onThrowable(Throwable t) {
     if (decoratedAsyncHandler != null) {
@@ -121,6 +189,16 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     }
   }
 
+  /**
+   * Processes a chunk of the response body.
+   * <p>
+   * Optionally accumulates the bytes if configured to do so, notifies the resumable listener,
+   * delegates to the decorated handler if present, and updates the transfer position in the processor.
+   *
+   * @param bodyPart the chunk of response body
+   * @return the state returned by the decorated handler, or {@link State#CONTINUE}
+   * @throws Exception if an error occurs during processing
+   */
   @Override
   public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
 
@@ -145,6 +223,15 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     return state;
   }
 
+  /**
+   * Completes the request processing.
+   * <p>
+   * Removes the URL from the processor (as download is complete), notifies the resumable listener,
+   * and delegates to the decorated handler if present.
+   *
+   * @return the complete response
+   * @throws Exception if an error occurs during completion
+   */
   @Override
   public Response onCompleted() throws Exception {
     resumableProcessor.remove(url);
@@ -157,6 +244,16 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     return responseBuilder.build();
   }
 
+  /**
+   * Processes the HTTP response headers.
+   * <p>
+   * Checks for invalid Content-Length values and aborts if -1 is encountered.
+   * Delegates to the decorated handler if present.
+   *
+   * @param headers the HTTP response headers
+   * @return the state returned by the decorated handler, or {@link State#CONTINUE}
+   * @throws Exception if an error occurs during processing
+   */
   @Override
   public State onHeadersReceived(HttpHeaders headers) throws Exception {
     responseBuilder.accumulate(headers);
@@ -173,6 +270,14 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
     return State.CONTINUE;
   }
 
+  /**
+   * Processes trailing HTTP headers.
+   * <p>
+   * Accumulates trailing headers in the response builder.
+   *
+   * @param headers the trailing HTTP headers
+   * @return {@link State#CONTINUE} to proceed with processing
+   */
   @Override
   public State onTrailingHeadersReceived(HttpHeaders headers) {
     responseBuilder.accumulate(headers);
@@ -180,11 +285,17 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
   }
 
   /**
-   * Invoke this API if you want to set the Range header on your {@link Request} based on the last valid bytes
-   * position.
+   * Adjusts the request to include a Range header for resuming the download.
+   * <p>
+   * This method determines the last successfully transferred byte position from the processor
+   * and the resumable listener, then sets the appropriate Range header on the request to
+   * resume from that position. If the request already has a Range header, it is not modified.
+   * <p>
+   * This method is typically called by {@link ResumableIOExceptionFilter} when retrying
+   * a failed request.
    *
-   * @param request {@link Request}
-   * @return a {@link Request} with the Range header properly set.
+   * @param request the original request
+   * @return a new request with the Range header set to resume from the last valid position
    */
   public Request adjustRequestRange(Request request) {
 
@@ -206,10 +317,14 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
   }
 
   /**
-   * Set a {@link ResumableListener}
+   * Sets the listener that will receive and process response body bytes.
+   * <p>
+   * The resumable listener is responsible for writing bytes to the final destination
+   * (e.g., a file) and tracking the current download position. Common implementations
+   * include {@link ResumableRandomAccessFileListener}.
    *
-   * @param resumableListener a {@link ResumableListener}
-   * @return this
+   * @param resumableListener the listener that will handle response body bytes
+   * @return this handler for method chaining
    */
   public ResumableAsyncHandler setResumableListener(ResumableListener resumableListener) {
     this.resumableListener = resumableListener;

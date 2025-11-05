@@ -29,13 +29,18 @@ package org.asynchttpclient.ntlm;
 
 /**
  * Signals NTLM protocol failure.
+ * <p>
+ * This exception is thrown when an error occurs during NTLM authentication processing,
+ * such as when message decoding fails, required cryptographic algorithms are unavailable,
+ * or the authentication challenge is malformed.
+ * </p>
  */
 class NtlmEngineException extends RuntimeException {
 
   private static final long serialVersionUID = 6027981323731768824L;
 
   /**
-   * Creates a new NTLMEngineException with the specified message.
+   * Creates a new NtlmEngineException with the specified message.
    *
    * @param message the exception detail message
    */
@@ -44,11 +49,11 @@ class NtlmEngineException extends RuntimeException {
   }
 
   /**
-   * Creates a new NTLMEngineException with the specified detail message and cause.
+   * Creates a new NtlmEngineException with the specified detail message and cause.
    *
    * @param message the exception detail message
-   * @param cause   the <tt>Throwable</tt> that caused this exception, or <tt>null</tt>
-   *                if the cause is unavailable, unknown, or not a <tt>Throwable</tt>
+   * @param cause the {@code Throwable} that caused this exception, or {@code null}
+   *              if the cause is unavailable, unknown, or not a {@code Throwable}
    */
   NtlmEngineException(String message, Throwable cause) {
     super(message, cause);

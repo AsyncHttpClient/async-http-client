@@ -25,6 +25,43 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * Thread-safe implementation of {@link CookieStore} that stores cookies in memory.
+ * This implementation follows RFC 6265 cookie specifications including domain matching,
+ * path matching, secure cookies, and expiration handling.
+ *
+ * <p>Features:</p>
+ * <ul>
+ *   <li>Thread-safe concurrent access using {@link ConcurrentHashMap}</li>
+ *   <li>Automatic expiration checking when retrieving cookies</li>
+ *   <li>Domain and path matching according to RFC 6265</li>
+ *   <li>Support for host-only and persistent cookies</li>
+ *   <li>Efficient lookup by domain and path</li>
+ * </ul>
+ *
+ * <p>This is the default cookie store used by {@link org.asynchttpclient.AsyncHttpClient}
+ * when no custom cookie store is configured.</p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create and configure with client
+ * CookieStore cookieStore = new ThreadSafeCookieStore();
+ * AsyncHttpClient client = Dsl.asyncHttpClient(
+ *     new DefaultAsyncHttpClientConfig.Builder()
+ *         .setCookieStore(cookieStore)
+ *         .build()
+ * );
+ *
+ * // Cookies are automatically stored from responses
+ * client.prepareGet("http://example.com").execute();
+ *
+ * // Retrieve all cookies
+ * List<Cookie> allCookies = cookieStore.getAll();
+ *
+ * // Clear all cookies
+ * cookieStore.clear();
+ * }</pre>
+ */
 public final class ThreadSafeCookieStore implements CookieStore {
 
   private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();

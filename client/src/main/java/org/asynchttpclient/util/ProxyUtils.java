@@ -71,9 +71,16 @@ public final class ProxyUtils {
   }
 
   /**
-   * @param config  the global config
-   * @param request the request
-   * @return the proxy server to be used for this request (can be null)
+   * Determines the proxy server to use for a given request.
+   * <p>
+   * This method first checks if a proxy server is explicitly configured on the request.
+   * If not, it falls back to the proxy server selector configured on the client. The method
+   * also verifies that the determined proxy is not configured to be ignored for the request's host.
+   * </p>
+   *
+   * @param config  the global client configuration
+   * @param request the HTTP request
+   * @return the proxy server to be used for this request, or null if no proxy should be used
    */
   public static ProxyServer getProxyServer(AsyncHttpClientConfig config, Request request) {
     ProxyServer proxyServer = request.getProxyServer();
@@ -126,19 +133,28 @@ public final class ProxyUtils {
   }
 
   /**
-   * Get a proxy server selector based on the JDK default proxy selector.
+   * Gets a proxy server selector based on the JDK default proxy selector.
+   * <p>
+   * This method creates a selector that uses Java's default {@link ProxySelector} to
+   * determine proxy settings, which typically respects system proxy properties.
+   * </p>
    *
-   * @return The proxy server selector.
+   * @return the proxy server selector based on JDK defaults
    */
   public static ProxyServerSelector getJdkDefaultProxyServerSelector() {
     return createProxyServerSelector(ProxySelector.getDefault());
   }
 
   /**
-   * Create a proxy server selector based on the passed in JDK proxy selector.
+   * Creates a proxy server selector based on the specified JDK proxy selector.
+   * <p>
+   * This method wraps a {@link ProxySelector} to provide proxy selection functionality
+   * compatible with the async-http-client API. It handles HTTP proxies and properly
+   * manages direct connections.
+   * </p>
    *
-   * @param proxySelector The proxy selector to use.  Must not be null.
-   * @return The proxy server selector.
+   * @param proxySelector the JDK proxy selector to use (must not be null)
+   * @return the proxy server selector
    */
   private static ProxyServerSelector createProxyServerSelector(final ProxySelector proxySelector) {
     return uri -> {

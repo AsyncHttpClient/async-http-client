@@ -27,12 +27,35 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Hostname resolver that coordinates DNS resolution with AsyncHandler callbacks.
+ * <p>
+ * This singleton resolver wraps Netty's NameResolver and provides hooks for
+ * AsyncHandlers to be notified of resolution attempts, successes, and failures.
+ * It converts resolved InetAddresses to InetSocketAddresses with the appropriate port.
+ * </p>
+ */
 public enum RequestHostnameResolver {
 
+  /** Singleton instance */
   INSTANCE;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestHostnameResolver.class);
 
+  /**
+   * Resolves a hostname to a list of socket addresses, notifying the handler of progress.
+   * <p>
+   * This method performs asynchronous DNS resolution using the provided name resolver,
+   * and invokes the appropriate callbacks on the async handler for resolution attempts,
+   * successes, and failures.
+   * </p>
+   *
+   * @param nameResolver the Netty name resolver to use for DNS resolution
+   * @param unresolvedAddress the unresolved socket address containing the hostname and port
+   * @param asyncHandler the handler to notify of resolution events
+   * @return a future that will be completed with the list of resolved socket addresses,
+   *         or failed with an exception if resolution fails
+   */
   public Future<List<InetSocketAddress>> resolve(NameResolver<InetAddress> nameResolver, InetSocketAddress unresolvedAddress, AsyncHandler<?> asyncHandler) {
 
     final String hostname = unresolvedAddress.getHostString();

@@ -15,8 +15,25 @@ package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.AsyncHttpClientConfig;
 
+/**
+ * Factory for creating ConnectionSemaphore instances.
+ * <p>
+ * This factory creates connection limiters based on the client configuration,
+ * allowing different semaphore strategies (per-host, global, or no limits).
+ * </p>
+ */
 public interface ConnectionSemaphoreFactory {
 
+    /**
+     * Creates a new ConnectionSemaphore based on the provided configuration.
+     * <p>
+     * The returned semaphore enforces connection limits according to the
+     * configuration settings such as maxConnections and maxConnectionsPerHost.
+     * </p>
+     *
+     * @param config the async HTTP client configuration
+     * @return a new ConnectionSemaphore instance
+     */
     ConnectionSemaphore newConnectionSemaphore(AsyncHttpClientConfig config);
 
 }

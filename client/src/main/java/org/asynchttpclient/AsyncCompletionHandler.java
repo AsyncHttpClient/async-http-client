@@ -22,14 +22,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An {@link AsyncHandler} augmented with an {@link #onCompleted(Response)}
- * convenience method which gets called when the {@link Response} processing is
- * finished. This class also implements the {@link ProgressAsyncHandler}
- * callback, all doing nothing except returning
- * {@link org.asynchttpclient.AsyncHandler.State#CONTINUE}
+ * A convenient {@link AsyncHandler} implementation that provides a simpler completion callback.
+ * <p>
+ * Instead of implementing all the low-level {@link AsyncHandler} methods, subclasses only need to
+ * implement {@link #onCompleted(Response)} which is called with the fully assembled {@link Response}.
+ * </p>
+ * <p>
+ * This class handles accumulation of HTTP response status, headers, and body parts into a complete
+ * Response object. It also implements {@link ProgressAsyncHandler} with default implementations
+ * that simply return {@link org.asynchttpclient.AsyncHandler.State#CONTINUE}.
+ * </p>
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * client.prepareGet("http://example.com")
+ *     .execute(new AsyncCompletionHandler<String>() {
+ *         @Override
+ *         public String onCompleted(Response response) throws Exception {
+ *             return response.getResponseBody();
+ *         }
+ *     });
+ * }</pre>
  *
- * @param <T> Type of the value that will be returned by the associated
- *            {@link java.util.concurrent.Future}
+ * @param <T> the type of value that will be returned by the associated {@link java.util.concurrent.Future}
  */
 public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<T> {
 
@@ -72,20 +87,21 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
   }
 
   /**
-   * Invoked once the HTTP response processing is finished.
+   * Invoked once the HTTP response has been fully received and assembled.
+   * Subclasses must implement this method to process the complete response.
    *
-   * @param response The {@link Response}
-   * @return T Value that will be returned by the associated
-   * {@link java.util.concurrent.Future}
-   * @throws Exception if something wrong happens
+   * @param response the fully assembled HTTP response
+   * @return the value of type T that will be returned by the associated {@link java.util.concurrent.Future}
+   * @throws Exception if an error occurs during response processing
    */
   abstract public T onCompleted(Response response) throws Exception;
 
   /**
-   * Invoked when the HTTP headers have been fully written on the I/O socket.
+   * Invoked when the HTTP request headers have been fully written to the I/O socket.
+   * Default implementation continues processing.
    *
-   * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE
-   * or ABORT the current processing.
+   * @return {@link org.asynchttpclient.AsyncHandler.State#CONTINUE} to continue processing,
+   *         or {@link org.asynchttpclient.AsyncHandler.State#ABORT} to abort
    */
   @Override
   public State onHeadersWritten() {
@@ -93,11 +109,12 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
   }
 
   /**
-   * Invoked when the content (a {@link java.io.File}, {@link String} or
-   * {@link java.io.InputStream} has been fully written on the I/O socket.
+   * Invoked when the HTTP request body (e.g., {@link java.io.File}, {@link String}, or
+   * {@link java.io.InputStream}) has been fully written to the I/O socket.
+   * Default implementation continues processing.
    *
-   * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE
-   * or ABORT the current processing.
+   * @return {@link org.asynchttpclient.AsyncHandler.State#CONTINUE} to continue processing,
+   *         or {@link org.asynchttpclient.AsyncHandler.State#ABORT} to abort
    */
   @Override
   public State onContentWritten() {
@@ -105,14 +122,14 @@ public abstract class AsyncCompletionHandler<T> implements ProgressAsyncHandler<
   }
 
   /**
-   * Invoked when the I/O operation associated with the {@link Request} body as
-   * been progressed.
+   * Invoked to report progress as the {@link Request} body is being written.
+   * Default implementation continues processing.
    *
-   * @param amount  The amount of bytes to transfer
-   * @param current The amount of bytes transferred
-   * @param total   The total number of bytes transferred
-   * @return a {@link org.asynchttpclient.AsyncHandler.State} telling to CONTINUE
-   * or ABORT the current processing.
+   * @param amount  the amount of bytes written in this progress update
+   * @param current the total amount of bytes written so far
+   * @param total   the total number of bytes to be written, or -1 if unknown
+   * @return {@link org.asynchttpclient.AsyncHandler.State#CONTINUE} to continue processing,
+   *         or {@link org.asynchttpclient.AsyncHandler.State#ABORT} to abort
    */
   @Override
   public State onContentWriteProgress(long amount, long current, long total) {

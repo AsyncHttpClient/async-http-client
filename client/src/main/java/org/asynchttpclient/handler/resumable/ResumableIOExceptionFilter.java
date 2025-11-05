@@ -17,9 +17,49 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
 
 /**
- * Simple {@link org.asynchttpclient.filter.IOExceptionFilter} that replay the current {@link org.asynchttpclient.Request} using a {@link ResumableAsyncHandler}
+ * An {@link IOExceptionFilter} that enables automatic retry with resume capability for failed downloads.
+ * <p>
+ * This filter detects I/O exceptions during request processing and, if the handler is a
+ * {@link ResumableAsyncHandler}, automatically adjusts the request to resume from where it failed
+ * by setting the appropriate Range header. This allows downloads to continue from the last
+ * successfully received byte rather than starting over.
+ * <p>
+ * The filter works in conjunction with {@link ResumableAsyncHandler} to implement resumable
+ * downloads that can recover from network interruptions, timeouts, or other I/O errors.
+ *
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = new DefaultAsyncHttpClient(
+ *     new DefaultAsyncHttpClientConfig.Builder()
+ *         .addIOExceptionFilter(new ResumableIOExceptionFilter())
+ *         .build()
+ * );
+ *
+ * ResumableAsyncHandler handler = new ResumableAsyncHandler();
+ * handler.setResumableListener(new ResumableRandomAccessFileListener(outputFile));
+ *
+ * // The filter will automatically retry with Range header if I/O exceptions occur
+ * client.prepareGet("http://example.com/largefile.zip")
+ *     .execute(handler)
+ *     .get();
+ * }</pre>
  */
 public class ResumableIOExceptionFilter implements IOExceptionFilter {
+
+  /**
+   * Filters I/O exceptions and enables request replay with resume capability.
+   * <p>
+   * If an I/O exception occurs and the handler is a {@link ResumableAsyncHandler},
+   * this method adjusts the request to include a Range header starting from the
+   * last successfully transferred byte and marks the request for replay.
+   * <p>
+   * For other handlers or if no exception occurred, the context is returned unchanged.
+   *
+   * @param ctx the filter context containing the exception, request, and handler
+   * @param <T> the response type
+   * @return a new filter context with an adjusted request if resumption is possible,
+   *         or the original context otherwise
+   */
   public <T> FilterContext<T> filter(FilterContext<T> ctx) {
     if (ctx.getIOException() != null && ctx.getAsyncHandler() instanceof ResumableAsyncHandler) {
 

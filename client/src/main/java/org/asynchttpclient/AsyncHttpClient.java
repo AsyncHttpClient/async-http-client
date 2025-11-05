@@ -131,172 +131,184 @@ import java.util.function.Predicate;
 public interface AsyncHttpClient extends Closeable {
 
   /**
-   * Return true if closed
+   * Checks if this client has been closed.
    *
-   * @return true if closed
+   * @return true if the client has been closed, false otherwise
    */
   boolean isClosed();
 
   /**
-   * Set default signature calculator to use for requests built by this client instance
+   * Sets the default signature calculator to use for all requests built by this client instance.
+   * The signature calculator is used to sign requests for authentication purposes.
    *
-   * @param signatureCalculator a signature calculator
-   * @return {@link RequestBuilder}
+   * @param signatureCalculator the signature calculator to use for request signing
+   * @return this AsyncHttpClient instance for method chaining
    */
   AsyncHttpClient setSignatureCalculator(SignatureCalculator signatureCalculator);
 
   /**
-   * Prepare an HTTP client request.
+   * Prepares an HTTP request with the specified method and URL.
    *
-   * @param method HTTP request method type. MUST BE in upper case
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param method the HTTP request method (e.g., "GET", "POST"). MUST be in uppercase
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepare(String method, String url);
 
 
   /**
-   * Prepare an HTTP client GET request.
+   * Prepares an HTTP GET request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepareGet(String url);
 
   /**
-   * Prepare an HTTP client CONNECT request.
+   * Prepares an HTTP CONNECT request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepareConnect(String url);
 
   /**
-   * Prepare an HTTP client OPTIONS request.
+   * Prepares an HTTP OPTIONS request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepareOptions(String url);
 
   /**
-   * Prepare an HTTP client HEAD request.
+   * Prepares an HTTP HEAD request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepareHead(String url);
 
   /**
-   * Prepare an HTTP client POST request.
+   * Prepares an HTTP POST request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder preparePost(String url);
 
   /**
-   * Prepare an HTTP client PUT request.
+   * Prepares an HTTP PUT request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder preparePut(String url);
 
   /**
-   * Prepare an HTTP client DELETE request.
+   * Prepares an HTTP DELETE request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepareDelete(String url);
 
   /**
-   * Prepare an HTTP client PATCH request.
+   * Prepares an HTTP PATCH request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder preparePatch(String url);
 
   /**
-   * Prepare an HTTP client TRACE request.
+   * Prepares an HTTP TRACE request for the specified URL.
    *
-   * @param url A well formed URL.
-   * @return {@link RequestBuilder}
+   * @param url a well-formed URL string
+   * @return a {@link BoundRequestBuilder} for configuring and executing the request
    */
   BoundRequestBuilder prepareTrace(String url);
 
   /**
-   * Construct a {@link RequestBuilder} using a {@link Request}
+   * Prepares a request using an existing {@link Request} instance as a template.
+   * This allows modification of an existing request before execution.
    *
-   * @param request a {@link Request}
-   * @return {@link RequestBuilder}
+   * @param request the request to use as a template
+   * @return a {@link BoundRequestBuilder} for further configuring and executing the request
    */
   BoundRequestBuilder prepareRequest(Request request);
 
   /**
-   * Construct a {@link RequestBuilder} using a {@link RequestBuilder}
+   * Prepares a request using an existing {@link RequestBuilder} instance.
+   * This allows binding a request builder to this client for execution.
    *
-   * @param requestBuilder a {@link RequestBuilder}
-   * @return {@link RequestBuilder}
+   * @param requestBuilder the request builder containing the request configuration
+   * @return a {@link BoundRequestBuilder} for further configuring and executing the request
    */
   BoundRequestBuilder prepareRequest(RequestBuilder requestBuilder);
 
   /**
-   * Execute an HTTP request.
+   * Executes an HTTP request asynchronously with a custom response handler.
+   * The handler processes the response as it arrives (status, headers, body parts).
    *
-   * @param request {@link Request}
-   * @param handler an instance of {@link AsyncHandler}
-   * @param <T>     Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
-   * @return a {@link Future} of type T
+   * @param request the HTTP request to execute
+   * @param handler the async handler to process the response
+   * @param <T>     the type of value returned by the handler's onCompleted method
+   * @return a {@link ListenableFuture} that will contain the result of type T
    */
   <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler);
 
   /**
-   * Execute an HTTP request.
+   * Executes an HTTP request asynchronously with a custom response handler.
+   * The request is built from the provided RequestBuilder before execution.
    *
-   * @param requestBuilder {@link RequestBuilder}
-   * @param handler        an instance of {@link AsyncHandler}
-   * @param <T>            Type of the value that will be returned by the associated {@link java.util.concurrent.Future}
-   * @return a {@link Future} of type T
+   * @param requestBuilder the request builder containing the request configuration
+   * @param handler        the async handler to process the response
+   * @param <T>            the type of value returned by the handler's onCompleted method
+   * @return a {@link ListenableFuture} that will contain the result of type T
    */
   <T> ListenableFuture<T> executeRequest(RequestBuilder requestBuilder, AsyncHandler<T> handler);
 
   /**
-   * Execute an HTTP request.
+   * Executes an HTTP request asynchronously and returns the complete response.
+   * The entire response body will be buffered in memory.
    *
-   * @param request {@link Request}
-   * @return a {@link Future} of type Response
+   * @param request the HTTP request to execute
+   * @return a {@link ListenableFuture} containing the complete {@link Response}
    */
   ListenableFuture<Response> executeRequest(Request request);
 
   /**
-   * Execute an HTTP request.
+   * Executes an HTTP request asynchronously and returns the complete response.
+   * The request is built from the provided RequestBuilder before execution.
+   * The entire response body will be buffered in memory.
    *
-   * @param requestBuilder {@link RequestBuilder}
-   * @return a {@link Future} of type Response
+   * @param requestBuilder the request builder containing the request configuration
+   * @return a {@link ListenableFuture} containing the complete {@link Response}
    */
   ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder);
 
-  /***
-   * Return details about pooled connections.
+  /**
+   * Returns statistics about the pooled connections managed by this client.
+   * This includes information about open connections, idle connections, and connection counts.
    *
-   * @return a {@link ClientStats}
+   * @return a {@link ClientStats} object containing connection pool statistics
    */
   ClientStats getClientStats();
 
   /**
-   * Flush ChannelPool partitions based on a predicate
+   * Flushes (removes) channel pool partitions that match the given predicate.
+   * This is useful for selectively clearing connections based on custom criteria.
    *
-   * @param predicate the predicate
+   * @param predicate the predicate to test each partition key; partitions matching will be flushed
    */
   void flushChannelPoolPartitions(Predicate<Object> predicate);
 
   /**
-   * Return the config associated to this client.
+   * Returns the configuration associated with this client.
+   * The configuration contains settings such as timeouts, connection pool parameters,
+   * and other behavioral options.
    *
-   * @return the config associated to this client.
+   * @return the {@link AsyncHttpClientConfig} used by this client
    */
   AsyncHttpClientConfig getConfig();
 }

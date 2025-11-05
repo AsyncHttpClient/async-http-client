@@ -22,10 +22,35 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
- * <br>
- * NOTE: The {@link InputStream} must support the {@link InputStream#mark} and {@link java.io.InputStream#reset()} operation. If not, mechanisms like authentication, redirect, or
- * resumable download will not works.
+ * A {@link BodyGenerator} that reads from an {@link InputStream} without loading the entire stream into memory.
+ * <p>
+ * This implementation allows streaming of request bodies from input streams, which is useful
+ * for large payloads that should not be fully buffered in memory. The content is read
+ * incrementally as needed during the request transfer.
+ * </p>
+ * <p>
+ * <b>Important:</b> The {@link InputStream} must support the {@link InputStream#mark(int)} and
+ * {@link InputStream#reset()} operations for proper functionality. If these operations are not
+ * supported, mechanisms like authentication challenges, redirects, or resumable transfers will
+ * not work correctly.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create from an input stream with unknown length
+ * InputStream stream = new FileInputStream("data.bin");
+ * BodyGenerator generator = new InputStreamBodyGenerator(stream);
+ *
+ * // Create from an input stream with known length
+ * InputStream stream2 = new ByteArrayInputStream(data);
+ * BodyGenerator generator2 = new InputStreamBodyGenerator(stream2, data.length);
+ *
+ * // Use with AsyncHttpClient
+ * AsyncHttpClient client = asyncHttpClient();
+ * client.preparePost("http://example.com/upload")
+ *     .setBody(generator)
+ *     .execute();
+ * }</pre>
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 
@@ -33,25 +58,48 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
   private final InputStream inputStream;
   private final long contentLength;
 
+  /**
+   * Constructs an input stream body generator with unknown content length.
+   *
+   * @param inputStream the input stream to read from
+   */
   public InputStreamBodyGenerator(InputStream inputStream) {
     this(inputStream, -1L);
   }
 
+  /**
+   * Constructs an input stream body generator with specified content length.
+   *
+   * @param inputStream   the input stream to read from
+   * @param contentLength the total number of bytes to read, or -1 if unknown
+   */
   public InputStreamBodyGenerator(InputStream inputStream, long contentLength) {
     this.inputStream = inputStream;
     this.contentLength = contentLength;
   }
 
+  /**
+   * Gets the input stream that this generator reads from.
+   *
+   * @return the input stream
+   */
   public InputStream getInputStream() {
     return inputStream;
   }
 
+  /**
+   * Gets the content length of this body.
+   *
+   * @return the content length in bytes, or -1 if unknown
+   */
   public long getContentLength() {
     return contentLength;
   }
 
   /**
-   * {@inheritDoc}
+   * Creates a new body instance that reads from the input stream.
+   *
+   * @return a new body instance
    */
   @Override
   public Body createBody() {

@@ -34,9 +34,24 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
 
+/**
+ * WebSocket protocol handler for managing WebSocket connections and frame processing.
+ * <p>
+ * This handler manages the WebSocket handshake upgrade process, validates the upgrade
+ * response, and processes WebSocket frames. It implements the WebSocket protocol as
+ * specified in RFC 6455.
+ * </p>
+ */
 @Sharable
 public final class WebSocketHandler extends AsyncHttpClientHandler {
 
+  /**
+   * Constructs a new WebSocketHandler.
+   *
+   * @param config the async HTTP client configuration
+   * @param channelManager the channel manager for managing channel lifecycle
+   * @param requestSender the request sender for sending HTTP requests
+   */
   public WebSocketHandler(AsyncHttpClientConfig config,
                           ChannelManager channelManager,
                           NettyRequestSender requestSender) {
@@ -95,6 +110,22 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
     }
   }
 
+  /**
+   * Processes WebSocket protocol messages including handshake responses and frames.
+   * <p>
+   * This method handles:
+   * <ul>
+   *   <li>HTTP upgrade responses for WebSocket handshake validation</li>
+   *   <li>WebSocket frames for established connections</li>
+   *   <li>Final handshake cleanup with LastHttpContent</li>
+   * </ul>
+   * </p>
+   *
+   * @param channel the channel the message was read from
+   * @param future the response future associated with the WebSocket upgrade request
+   * @param e the message to handle (HttpResponse, WebSocketFrame, or LastHttpContent)
+   * @throws Exception if an error occurs during message handling
+   */
   @Override
   public void handleRead(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
 
@@ -137,6 +168,16 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
     }
   }
 
+  /**
+   * Handles exceptions during WebSocket operations by notifying the WebSocket listener.
+   * <p>
+   * This method propagates the exception to the WebSocket's error handler and
+   * sends a close frame to gracefully terminate the connection.
+   * </p>
+   *
+   * @param future the response future associated with the WebSocket
+   * @param e the exception that occurred
+   */
   @Override
   public void handleException(NettyResponseFuture<?> future, Throwable e) {
     logger.warn("onError", e);
@@ -152,6 +193,16 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
     }
   }
 
+  /**
+   * Handles WebSocket connection closure when the channel becomes inactive.
+   * <p>
+   * This method is called when the connection is closed without receiving a proper
+   * WebSocket close frame. It notifies the WebSocket listener with status code 1006
+   * (abnormal closure) as per RFC 6455.
+   * </p>
+   *
+   * @param future the response future associated with the WebSocket
+   */
   @Override
   public void handleChannelInactive(NettyResponseFuture<?> future) {
     logger.trace("Connection was closed abnormally (that is, with no close frame being received).");

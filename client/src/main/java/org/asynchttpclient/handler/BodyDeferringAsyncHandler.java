@@ -92,11 +92,23 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
   private volatile Response response;
   private volatile Throwable throwable;
 
+  /**
+   * Creates a new BodyDeferringAsyncHandler with the specified output stream.
+   *
+   * @param os the output stream where the response body will be written
+   */
   public BodyDeferringAsyncHandler(final OutputStream os) {
     this.output = os;
     this.responseSet = false;
   }
 
+  /**
+   * Handles exceptions that occur during the request processing.
+   * This method ensures the latch is released and the output stream is closed
+   * to prevent blocking threads waiting on {@link #getResponse()}.
+   *
+   * @param t the exception that occurred during request processing
+   */
   @Override
   public void onThrowable(Throwable t) {
     this.throwable = t;
@@ -121,30 +133,69 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
   }
 
+  /**
+   * Processes the HTTP response status line.
+   * Resets and begins building the response object.
+   *
+   * @param responseStatus the HTTP response status received from the server
+   * @return {@link State#CONTINUE} to proceed with the request processing
+   * @throws Exception if an error occurs while processing the status
+   */
   @Override
-  public State onStatusReceived(HttpResponseStatus responseStatus) {
+  public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
     responseBuilder.reset();
     responseBuilder.accumulate(responseStatus);
     return State.CONTINUE;
   }
 
+  /**
+   * Processes the HTTP response headers.
+   * Accumulates headers for the response that will be available via {@link #getResponse()}.
+   *
+   * @param headers the HTTP response headers received from the server
+   * @return {@link State#CONTINUE} to proceed with the request processing
+   * @throws Exception if an error occurs while processing the headers
+   */
   @Override
-  public State onHeadersReceived(HttpHeaders headers) {
+  public State onHeadersReceived(HttpHeaders headers) throws Exception {
     responseBuilder.accumulate(headers);
     return State.CONTINUE;
   }
 
+  /**
+   * Processes trailing HTTP headers (HTTP/2 and chunked transfer encoding).
+   * Accumulates trailing headers for the final response.
+   *
+   * @param headers the trailing HTTP headers received from the server
+   * @return {@link State#CONTINUE} to proceed with the request processing
+   * @throws Exception if an error occurs while processing the trailing headers
+   */
   @Override
-  public State onTrailingHeadersReceived(HttpHeaders headers) {
+  public State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
     responseBuilder.accumulate(headers);
     return State.CONTINUE;
   }
 
+  /**
+   * Invoked when the request is being retried.
+   * This handler does not support retries due to the streaming nature of body handling.
+   *
+   * @throws UnsupportedOperationException always thrown as retries are not supported
+   */
   @Override
   public void onRetry() {
     throw new UnsupportedOperationException(this.getClass().getSimpleName() + " cannot retry a request.");
   }
 
+  /**
+   * Processes a chunk of the response body.
+   * On receiving the first body chunk, the response headers are finalized and made available
+   * via {@link #getResponse()}. The body bytes are immediately written to the output stream.
+   *
+   * @param bodyPart the chunk of response body received from the server
+   * @return {@link State#CONTINUE} to proceed with the request processing
+   * @throws Exception if an error occurs while processing or writing the body part
+   */
   @Override
   public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
     // body arrived, flush headers
@@ -158,6 +209,11 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     return State.CONTINUE;
   }
 
+  /**
+   * Flushes and closes the output stream.
+   *
+   * @throws IOException if an I/O error occurs while flushing or closing the stream
+   */
   protected void closeOut() throws IOException {
     try {
       output.flush();
@@ -166,6 +222,14 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
   }
 
+  /**
+   * Completes the request processing.
+   * Ensures the response is finalized, releases waiting threads, closes the output stream,
+   * and returns the complete response.
+   *
+   * @return the complete {@link Response} object
+   * @throws IOException if an error occurs while completing the request or an exception was thrown earlier
+   */
   @Override
   public Response onCompleted() throws IOException {
 
@@ -200,23 +264,24 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
   }
 
   /**
-   * This method -- unlike Future&lt;Reponse&gt;.get() -- will block only as long,
-   * as headers arrive. This is useful for large transfers, to examine headers
-   * ASAP, and defer body streaming to it's fine destination and prevent
-   * unneeded bandwidth consumption. The response here will contain the very
-   * 1st response from server, so status code and headers, but it might be
-   * incomplete in case of broken servers sending trailing headers. In that
-   * case, the "usual" Future&lt;Response&gt;.get() method will return complete
-   * headers, but multiple invocations of getResponse() will always return the
-   * 1st cached, probably incomplete one. Note: the response returned by this
-   * method will contain everything <em>except</em> the response body itself,
-   * so invoking any method like Response.getResponseBodyXXX() will result in
-   * error! Also, please not that this method might return <code>null</code>
-   * in case of some errors.
+   * Retrieves the response as soon as headers are available, without waiting for the body.
+   * <p>
+   * Unlike {@code Future<Response>.get()}, this method blocks only until headers arrive,
+   * making it useful for large transfers where you need to examine headers immediately
+   * and defer body streaming to prevent unnecessary bandwidth consumption.
+   * <p>
+   * The returned response contains the initial response from the server (status code and headers),
+   * but may be incomplete if the server sends trailing headers. The complete headers can be
+   * obtained via {@code Future<Response>.get()}, but multiple invocations of this method
+   * will always return the same cached, potentially incomplete response.
+   * <p>
+   * <b>Important:</b> The response returned by this method does not contain the response body.
+   * Invoking any {@code Response.getResponseBodyXXX()} method will result in an error.
+   * This method may return {@code null} in case of errors.
    *
-   * @return a {@link Response}
-   * @throws InterruptedException if the latch is interrupted
-   * @throws IOException          if the handler completed with an exception
+   * @return a {@link Response} containing status and headers (but no body), or {@code null} on error
+   * @throws InterruptedException if the current thread is interrupted while waiting for headers
+   * @throws IOException if the handler completed with an exception
    */
   public Response getResponse() throws InterruptedException, IOException {
     // block here as long as headers arrive
@@ -237,14 +302,24 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
   // ==
 
   /**
-   * A simple helper class that is used to perform automatic "join" for async
-   * download and the error checking of the Future of the request.
+   * A helper input stream that automatically "joins" (waits for completion of) the async
+   * download and performs error checking on the request's Future.
+   * <p>
+   * This class wraps an input stream connected to the response body and ensures proper
+   * cleanup and error handling when the stream is closed.
    */
   public static class BodyDeferringInputStream extends FilterInputStream {
     private final Future<Response> future;
 
     private final BodyDeferringAsyncHandler bdah;
 
+    /**
+     * Creates a new BodyDeferringInputStream.
+     *
+     * @param future the future representing the async request
+     * @param bdah the handler managing the request
+     * @param in the input stream containing the response body
+     */
     public BodyDeferringInputStream(final Future<Response> future, final BodyDeferringAsyncHandler bdah, final InputStream in) {
       super(in);
       this.future = future;
@@ -252,8 +327,12 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     /**
-     * Closes the input stream, and "joins" (wait for complete execution
-     * together with potential exception thrown) of the async request.
+     * Closes the input stream and waits for the async request to complete.
+     * <p>
+     * This method ensures the async request finishes completely and
+     * propagates any exceptions that occurred during the request.
+     *
+     * @throws IOException if an I/O error occurs or if the request completed with an exception
      */
     @Override
     public void close() throws IOException {
@@ -270,26 +349,29 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
     }
 
     /**
-     * Delegates to {@link BodyDeferringAsyncHandler#getResponse()}. Will
-     * blocks as long as headers arrives only. Might return
-     * <code>null</code>. See
-     * {@link BodyDeferringAsyncHandler#getResponse()} method for details.
+     * Retrieves the response as soon as headers are available.
+     * <p>
+     * Delegates to {@link BodyDeferringAsyncHandler#getResponse()}.
+     * Blocks only until headers arrive. May return {@code null} in case of errors.
+     * See {@link BodyDeferringAsyncHandler#getResponse()} for details.
      *
-     * @return a {@link Response}
-     * @throws InterruptedException if the latch is interrupted
-     * @throws IOException          if the handler completed with an exception
+     * @return a {@link Response} containing status and headers (but no body), or {@code null} on error
+     * @throws InterruptedException if the current thread is interrupted while waiting for headers
+     * @throws IOException if the handler completed with an exception
      */
     public Response getAsapResponse() throws InterruptedException, IOException {
       return bdah.getResponse();
     }
 
     /**
-     * Delegates to <code>Future$lt;Response&gt;#get()</code> method. Will block
-     * as long as complete response arrives.
+     * Retrieves the complete response after it has fully arrived.
+     * <p>
+     * Delegates to {@code Future<Response>#get()}. Blocks until the complete response
+     * (including body) has been received.
      *
-     * @return a {@link Response}
-     * @throws ExecutionException   if the computation threw an exception
-     * @throws InterruptedException if the current thread was interrupted
+     * @return the complete {@link Response}
+     * @throws ExecutionException if the request threw an exception
+     * @throws InterruptedException if the current thread was interrupted while waiting
      */
     public Response getLastResponse() throws InterruptedException, ExecutionException {
       return future.get();

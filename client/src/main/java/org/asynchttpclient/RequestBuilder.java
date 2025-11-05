@@ -18,8 +18,28 @@ package org.asynchttpclient;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 
 /**
- * Builder for a {@link Request}. Warning: mutable and not thread-safe! Beware that it holds a reference to the Request instance it builds, so modifying the builder will modify the
- * request even after it has been built.
+ * Builder for constructing {@link Request} instances.
+ * <p>
+ * <b>Warning:</b> This class is mutable and NOT thread-safe. Do not share instances across threads.
+ * </p>
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * Request request = new RequestBuilder()
+ *     .setUrl("https://api.example.com/users")
+ *     .setMethod("POST")
+ *     .setHeader("Content-Type", "application/json")
+ *     .setHeader("Authorization", "Bearer token123")
+ *     .setBody("{\"name\":\"John Doe\"}")
+ *     .setRequestTimeout(5000)
+ *     .build();
+ *
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * Future<Response> future = client.executeRequest(request);
+ * Response response = future.get();
+ * }</pre>
+ *
+ * @see Request
+ * @see BoundRequestBuilder
  */
 public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
 

@@ -13,22 +13,59 @@
 package org.asynchttpclient.filter;
 
 /**
- * A Filter interface that gets invoked before making the processing of the response bytes. {@link ResponseFilter} are invoked
- * before the actual response's status code get processed. That means authorization, proxy authentication and redirects
- * processing hasn't occurred when {@link ResponseFilter} gets invoked.
+ * Filter interface for preprocessing responses before they are processed by the client.
+ * Response filters are invoked after receiving the response but before authorization,
+ * proxy authentication, redirect handling, and {@link org.asynchttpclient.AsyncHandler}
+ * invocation.
+ *
+ * <p>Response filters can be used to:</p>
+ * <ul>
+ *   <li>Inspect response status codes and headers</li>
+ *   <li>Implement custom retry logic</li>
+ *   <li>Trigger request replay for specific conditions</li>
+ *   <li>Log or audit responses</li>
+ *   <li>Wrap or replace the {@link org.asynchttpclient.AsyncHandler}</li>
+ *   <li>Abort response processing by throwing {@link FilterException}</li>
+ * </ul>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Retry on 503 Service Unavailable
+ * public class RetryOnServiceUnavailableFilter implements ResponseFilter {
+ *     @Override
+ *     public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+ *         HttpResponseStatus status = ctx.getResponseStatus();
+ *         if (status.getStatusCode() == 503) {
+ *             // Trigger request replay
+ *             return new FilterContext.FilterContextBuilder<>(ctx)
+ *                 .replayRequest(true)
+ *                 .build();
+ *         }
+ *         return ctx;
+ *     }
+ * }
+ *
+ * // Register the filter
+ * AsyncHttpClient client = Dsl.asyncHttpClient(
+ *     new DefaultAsyncHttpClientConfig.Builder()
+ *         .addResponseFilter(new RetryOnServiceUnavailableFilter())
+ *         .build()
+ * );
+ * }</pre>
  */
 public interface ResponseFilter {
 
   /**
-   * An {@link org.asynchttpclient.AsyncHttpClient} will invoke {@link ResponseFilter#filter} and will use the
-   * returned {@link FilterContext#replayRequest()} and {@link FilterContext#getAsyncHandler()} to decide if the response
-   * processing can continue. If {@link FilterContext#replayRequest()} return true, a new request will be made
-   * using {@link FilterContext#getRequest()} and the current response processing will be ignored.
+   * Processes the response before it is handled by the client.
+   * The {@link org.asynchttpclient.AsyncHttpClient} will use the returned {@link FilterContext}
+   * to determine if response processing should continue. If {@link FilterContext#replayRequest()}
+   * returns true, a new request will be made using {@link FilterContext#getRequest()} and the
+   * current response processing will be aborted.
    *
-   * @param ctx a {@link FilterContext}
+   * @param ctx the filter context containing the response status, headers, and handler
    * @param <T> the handler result type
-   * @return {@link FilterContext}. The {@link FilterContext} instance may not the same as the original one.
-   * @throws FilterException to interrupt the filter processing.
+   * @return a {@link FilterContext}, which may be the same as or different from the input context
+   * @throws FilterException to abort the response processing and stop filter chain execution
    */
   <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException;
 }

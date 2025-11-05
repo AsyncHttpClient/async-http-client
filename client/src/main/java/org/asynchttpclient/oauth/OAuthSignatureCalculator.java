@@ -23,6 +23,23 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * OAuth {@link SignatureCalculator} that delegates to {@link OAuthSignatureCalculatorInstance}s.
+ * <p>
+ * This class provides a thread-safe OAuth 1.0 signature calculator by maintaining a pool of
+ * {@link OAuthSignatureCalculatorInstance} objects using ThreadLocal storage. Each thread gets
+ * its own instance, avoiding synchronization overhead.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * ConsumerKey consumerKey = new ConsumerKey("consumer-key", "consumer-secret");
+ * RequestToken requestToken = new RequestToken("request-key", "request-secret");
+ * OAuthSignatureCalculator calculator = new OAuthSignatureCalculator(consumerKey, requestToken);
+ *
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * client.prepareGet("https://api.example.com/protected")
+ *       .setSignatureCalculator(calculator)
+ *       .execute();
+ * }</pre>
  */
 public class OAuthSignatureCalculator implements SignatureCalculator {
 
@@ -39,14 +56,28 @@ public class OAuthSignatureCalculator implements SignatureCalculator {
   private final RequestToken userAuth;
 
   /**
+   * Creates a new OAuth signature calculator with the specified credentials.
+   *
    * @param consumerAuth Consumer key to use for signature calculation
-   * @param userAuth     Request/access token to use for signature calculation
+   * @param userAuth Request/access token to use for signature calculation
    */
   public OAuthSignatureCalculator(ConsumerKey consumerAuth, RequestToken userAuth) {
     this.consumerAuth = consumerAuth;
     this.userAuth = userAuth;
   }
 
+  /**
+   * Calculates the OAuth signature and adds it to the request as an Authorization header.
+   * <p>
+   * This method computes the OAuth 1.0 signature based on the request details and the
+   * configured consumer key and request token, then sets the Authorization header on the
+   * request builder.
+   * </p>
+   *
+   * @param request the request to sign
+   * @param requestBuilder the request builder to add the signature to
+   * @throws IllegalArgumentException if the signature cannot be computed due to invalid keys
+   */
   @Override
   public void calculateAndAddSignature(Request request, RequestBuilderBase<?> requestBuilder) {
     try {

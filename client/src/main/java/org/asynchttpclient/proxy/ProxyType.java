@@ -13,19 +13,69 @@
  */
 package org.asynchttpclient.proxy;
 
+/**
+ * Enumeration of supported proxy server types.
+ * <p>
+ * This enum defines the types of proxy protocols that can be used for routing
+ * HTTP requests through a proxy server. Each type has different characteristics
+ * and capabilities.
+ * </p>
+ */
 public enum ProxyType {
-  HTTP(true), SOCKS_V4(false), SOCKS_V5(false);
+  /**
+   * HTTP proxy type.
+   * <p>
+   * HTTP proxies operate at the application layer (Layer 7) and understand HTTP protocol.
+   * They can cache responses, modify headers, and provide content filtering.
+   * This is the most common proxy type for web traffic.
+   * </p>
+   */
+  HTTP(true),
+
+  /**
+   * SOCKS version 4 proxy type.
+   * <p>
+   * SOCKS v4 is a circuit-level proxy that operates at the session layer (Layer 5).
+   * It supports TCP connections but does not support authentication or UDP.
+   * </p>
+   */
+  SOCKS_V4(false),
+
+  /**
+   * SOCKS version 5 proxy type.
+   * <p>
+   * SOCKS v5 is an enhanced version of SOCKS that supports authentication,
+   * UDP traffic, and IPv6. It provides more features than SOCKS v4 while
+   * still operating at the session layer.
+   * </p>
+   */
+  SOCKS_V5(false);
 
   private final boolean http;
 
+  /**
+   * Creates a proxy type with the specified HTTP flag.
+   *
+   * @param http true if this is an HTTP proxy type, false for SOCKS
+   */
   ProxyType(boolean http) {
     this.http = http;
   }
 
+  /**
+   * Checks whether this is an HTTP proxy type.
+   *
+   * @return true if this is an HTTP proxy, false otherwise
+   */
   public boolean isHttp() {
     return http;
   }
 
+  /**
+   * Checks whether this is a SOCKS proxy type.
+   *
+   * @return true if this is a SOCKS proxy (v4 or v5), false otherwise
+   */
   public boolean isSocks() {
     return !isHttp();
   }

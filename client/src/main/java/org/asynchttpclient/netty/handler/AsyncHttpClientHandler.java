@@ -40,6 +40,15 @@ import java.nio.channels.ClosedChannelException;
 
 import static org.asynchttpclient.util.MiscUtils.getCause;
 
+/**
+ * Base handler for processing async HTTP client channel events in Netty pipeline.
+ * <p>
+ * This abstract handler manages the lifecycle of HTTP requests and responses, handling
+ * channel read operations, exceptions, and connection state transitions. It provides
+ * the foundation for specific protocol handlers (HTTP, WebSocket) by defining common
+ * error handling and channel management logic.
+ * </p>
+ */
 public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapter {
 
   protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -50,6 +59,13 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
   final Interceptors interceptors;
   final boolean hasIOExceptionFilters;
 
+  /**
+   * Constructs a new AsyncHttpClientHandler.
+   *
+   * @param config the async HTTP client configuration
+   * @param channelManager the channel manager for managing channel lifecycle
+   * @param requestSender the request sender for sending HTTP requests
+   */
   AsyncHttpClientHandler(AsyncHttpClientConfig config,
                                 ChannelManager channelManager,
                                 NettyRequestSender requestSender) {
@@ -60,6 +76,18 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     hasIOExceptionFilters = !config.getIoExceptionFilters().isEmpty();
   }
 
+  /**
+   * Processes incoming channel messages and routes them to the appropriate handler.
+   * <p>
+   * This method handles different types of channel attributes including {@link NettyResponseFuture},
+   * {@link StreamedResponsePublisher}, and {@link OnLastHttpContentCallback}. It ensures proper
+   * message routing and resource cleanup via reference counting.
+   * </p>
+   *
+   * @param ctx the channel handler context
+   * @param msg the message to process
+   * @throws Exception if an error occurs during message processing
+   */
   @Override
   public void channelRead(final ChannelHandlerContext ctx, Object msg) throws Exception {
 
@@ -114,6 +142,17 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     }
   }
 
+  /**
+   * Handles channel inactivation by cleaning up resources and managing connection state.
+   * <p>
+   * When a channel becomes inactive, this method removes it from the channel manager,
+   * applies IO exception filters if configured, and handles unexpected closures. It
+   * ensures proper cleanup of streaming publishers and callbacks.
+   * </p>
+   *
+   * @param ctx the channel handler context
+   * @throws Exception if an error occurs during channel cleanup
+   */
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 
     if (requestSender.isClosed())
@@ -146,6 +185,17 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     }
   }
 
+  /**
+   * Handles exceptions caught during channel operations.
+   * <p>
+   * This method processes exceptions by attempting recovery through IO exception filters,
+   * and if recovery fails, aborts the request and closes the channel. It ignores expected
+   * exceptions like {@link PrematureChannelClosureException} and {@link ClosedChannelException}.
+   * </p>
+   *
+   * @param ctx the channel handler context
+   * @param e the caught exception
+   */
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) {
     Throwable cause = getCause(e);
@@ -210,11 +260,26 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     Channels.silentlyCloseChannel(channel);
   }
 
+  /**
+   * Handles channel activation by triggering an initial read operation.
+   *
+   * @param ctx the channel handler context
+   */
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
     ctx.read();
   }
 
+  /**
+   * Handles channel read completion by triggering the next read if not using reactive streams.
+   * <p>
+   * When reactive streams (StreamedResponsePublisher) is active, read management is
+   * delegated to the reactive streams implementation. Otherwise, this method triggers
+   * the next read operation to continue processing.
+   * </p>
+   *
+   * @param ctx the channel handler context
+   */
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) {
     if (!isHandledByReactiveStreams(ctx)) {
@@ -228,6 +293,17 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     return Channels.getAttribute(ctx.channel()) instanceof StreamedResponsePublisher;
   }
 
+  /**
+   * Completes the processing of a request-response cycle.
+   * <p>
+   * This method cancels any active timeouts, optionally closes the channel or returns it
+   * to the connection pool, and marks the future as done.
+   * </p>
+   *
+   * @param future the response future to complete
+   * @param channel the channel used for the request
+   * @param close whether to close the channel (true) or return it to the pool (false)
+   */
   void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) {
     future.cancelTimeouts();
 
@@ -245,9 +321,40 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     }
   }
 
+  /**
+   * Processes a message read from the channel for a specific protocol.
+   * <p>
+   * This method must be implemented by protocol-specific handlers to process
+   * incoming messages such as HTTP responses, WebSocket frames, etc.
+   * </p>
+   *
+   * @param channel the channel the message was read from
+   * @param future the response future associated with the request
+   * @param message the message to handle
+   * @throws Exception if an error occurs during message handling
+   */
   public abstract void handleRead(Channel channel, NettyResponseFuture<?> future, Object message) throws Exception;
 
+  /**
+   * Handles exceptions specific to the protocol implementation.
+   * <p>
+   * This method is called when an exception occurs that requires protocol-specific
+   * handling, such as notifying WebSocket listeners or cleaning up HTTP state.
+   * </p>
+   *
+   * @param future the response future associated with the request
+   * @param error the exception to handle
+   */
   public abstract void handleException(NettyResponseFuture<?> future, Throwable error);
 
+  /**
+   * Handles channel inactivation specific to the protocol implementation.
+   * <p>
+   * This method is called when a channel becomes inactive and requires protocol-specific
+   * cleanup, such as notifying WebSocket close handlers or handling unexpected HTTP disconnections.
+   * </p>
+   *
+   * @param future the response future associated with the request
+   */
   public abstract void handleChannelInactive(NettyResponseFuture<?> future);
 }

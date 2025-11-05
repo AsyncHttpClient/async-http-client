@@ -13,6 +13,34 @@
  */
 package org.asynchttpclient.netty.channel;
 
+/**
+ * Represents the lifecycle state of a Netty channel in the connection pool.
+ * <p>
+ * Channels transition through various states from creation to closure, with
+ * pooling and reconnection states in between. This enum tracks these states
+ * for connection management and debugging purposes.
+ * </p>
+ */
 public enum ChannelState {
-  NEW, POOLED, RECONNECTED, CLOSED,
+  /**
+   * Indicates a newly created channel that has not been used yet.
+   */
+  NEW,
+
+  /**
+   * Indicates a channel that has been returned to the connection pool
+   * and is available for reuse.
+   */
+  POOLED,
+
+  /**
+   * Indicates a channel that was taken from the pool and reconnected
+   * for a new request.
+   */
+  RECONNECTED,
+
+  /**
+   * Indicates a channel that has been closed and is no longer usable.
+   */
+  CLOSED,
 }

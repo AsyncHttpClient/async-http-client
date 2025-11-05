@@ -16,35 +16,80 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 
 /**
- * An extended {@link AsyncHandler} with two extra callback who get invoked during the content upload to a remote server.
- * This {@link AsyncHandler} must be used only with PUT and POST request.
+ * An extended {@link AsyncHandler} with additional callbacks invoked during content upload to a remote server.
+ * <p>
+ * This interface provides progress tracking for request body uploads, making it useful for
+ * monitoring file uploads or large POST/PUT requests. It adds three methods to the standard
+ * {@link AsyncHandler} that are called at different stages of the upload process.
+ * <p>
+ * This handler should be used with PUT and POST requests that include a request body.
+ *
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * ProgressAsyncHandler<Response> handler = new AsyncCompletionHandlerBase() {
+ *     @Override
+ *     public State onHeadersWritten() {
+ *         System.out.println("Request headers sent");
+ *         return State.CONTINUE;
+ *     }
+ *
+ *     @Override
+ *     public State onContentWriteProgress(long amount, long current, long total) {
+ *         int percent = (int) ((current * 100.0) / total);
+ *         System.out.println("Upload progress: " + percent + "%");
+ *         return State.CONTINUE;
+ *     }
+ *
+ *     @Override
+ *     public State onContentWritten() {
+ *         System.out.println("Request body fully sent");
+ *         return State.CONTINUE;
+ *     }
+ * };
+ *
+ * client.preparePost("http://example.com/upload")
+ *     .setBody(largeFile)
+ *     .execute(handler);
+ * }</pre>
+ *
+ * @param <T> the response type
  */
 public interface ProgressAsyncHandler<T> extends AsyncHandler<T> {
 
   /**
-   * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
-   * written on the I/O socket.
+   * Invoked when the request headers have been fully written to the I/O socket.
+   * <p>
+   * This callback is triggered after all HTTP headers have been sent to the server,
+   * but before the request body (if any) is transmitted.
    *
-   * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
+   * @return {@link State#CONTINUE} to proceed with sending the request body, or
+   *         {@link State#ABORT} to cancel the request
    */
   State onHeadersWritten();
 
   /**
-   * Invoked when the content (a {@link java.io.File}, {@link String} or {@link java.io.FileInputStream} has been fully
-   * written on the I/O socket.
+   * Invoked when the request body has been fully written to the I/O socket.
+   * <p>
+   * This callback is triggered after the entire request body (such as a {@link java.io.File},
+   * {@link String}, or {@link java.io.InputStream}) has been completely transmitted to the server.
    *
-   * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
+   * @return {@link State#CONTINUE} to proceed with receiving the response, or
+   *         {@link State#ABORT} to cancel the request
    */
   State onContentWritten();
 
   /**
-   * Invoked when the I/O operation associated with the {@link Request} body wasn't fully written in a single I/O write
-   * operation. This method is never invoked if the write operation complete in a sinfle I/O write.
+   * Invoked periodically during the request body upload to report progress.
+   * <p>
+   * This callback is triggered when the I/O operation associated with the {@link Request} body
+   * requires multiple write operations. It is never invoked if the entire body is written
+   * in a single I/O operation. This allows tracking upload progress for large request bodies.
    *
-   * @param amount  The amount of bytes to transfer.
-   * @param current The amount of bytes transferred
-   * @param total   The total number of bytes transferred
-   * @return a {@link AsyncHandler.State} telling to CONTINUE or ABORT the current processing.
+   * @param amount the number of bytes written in the current write operation
+   * @param current the cumulative number of bytes written so far
+   * @param total the total number of bytes to be written
+   * @return {@link State#CONTINUE} to proceed with the upload, or
+   *         {@link State#ABORT} to cancel the request
    */
   State onContentWriteProgress(long amount, long current, long total);
 }

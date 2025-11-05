@@ -26,7 +26,33 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
- * Represents a proxy server.
+ * Represents a proxy server configuration.
+ * <p>
+ * This class encapsulates all the information needed to connect through a proxy server,
+ * including the host, port, authentication realm, and patterns for hosts that should
+ * bypass the proxy. Both HTTP and SOCKS proxy types are supported.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Simple HTTP proxy
+ * ProxyServer proxy = new ProxyServer.Builder("proxy.example.com", 8080)
+ *     .build();
+ *
+ * // Proxy with authentication
+ * Realm realm = new Realm.Builder("username", "password")
+ *     .setScheme(Realm.AuthScheme.BASIC)
+ *     .build();
+ * ProxyServer proxy = new ProxyServer.Builder("proxy.example.com", 8080)
+ *     .setRealm(realm)
+ *     .build();
+ *
+ * // Proxy with non-proxy hosts
+ * ProxyServer proxy = new ProxyServer.Builder("proxy.example.com", 8080)
+ *     .setNonProxyHost("*.internal.com")
+ *     .setNonProxyHost("localhost")
+ *     .build();
+ * }</pre>
  */
 public class ProxyServer {
 
@@ -37,6 +63,16 @@ public class ProxyServer {
   private final List<String> nonProxyHosts;
   private final ProxyType proxyType;
 
+  /**
+   * Creates a new proxy server with the specified configuration.
+   *
+   * @param host the proxy server hostname
+   * @param port the proxy server port for non-SSL connections
+   * @param securedPort the proxy server port for SSL connections
+   * @param realm the authentication realm (can be null)
+   * @param nonProxyHosts list of host patterns that should bypass the proxy (can be null)
+   * @param proxyType the type of proxy (HTTP or SOCKS)
+   */
   public ProxyServer(String host, int port, int securedPort, Realm realm, List<String> nonProxyHosts,
                      ProxyType proxyType) {
     this.host = host;
@@ -47,26 +83,56 @@ public class ProxyServer {
     this.proxyType = proxyType;
   }
 
+  /**
+   * Returns the proxy server hostname.
+   *
+   * @return the proxy server hostname
+   */
   public String getHost() {
     return host;
   }
 
+  /**
+   * Returns the proxy server port for non-SSL connections.
+   *
+   * @return the proxy server port
+   */
   public int getPort() {
     return port;
   }
 
+  /**
+   * Returns the proxy server port for SSL connections.
+   *
+   * @return the secured proxy server port
+   */
   public int getSecuredPort() {
     return securedPort;
   }
 
+  /**
+   * Returns the list of host patterns that should bypass the proxy.
+   *
+   * @return the non-proxy hosts list (never null, may be empty)
+   */
   public List<String> getNonProxyHosts() {
     return nonProxyHosts;
   }
 
+  /**
+   * Returns the authentication realm for the proxy server.
+   *
+   * @return the authentication realm, or null if no authentication is configured
+   */
   public Realm getRealm() {
     return realm;
   }
 
+  /**
+   * Returns the type of proxy (HTTP or SOCKS).
+   *
+   * @return the proxy type
+   */
   public ProxyType getProxyType() {
     return proxyType;
   }
@@ -110,6 +176,9 @@ public class ProxyServer {
     return nonProxyHost.equalsIgnoreCase(targetHost);
   }
 
+  /**
+   * Builder for creating ProxyServer instances.
+   */
   public static class Builder {
 
     private String host;
@@ -119,27 +188,68 @@ public class ProxyServer {
     private List<String> nonProxyHosts;
     private ProxyType proxyType;
 
+    /**
+     * Creates a new proxy server builder with the specified host and port.
+     * <p>
+     * The secured port is initially set to the same value as the port.
+     * </p>
+     *
+     * @param host the proxy server hostname
+     * @param port the proxy server port
+     */
     public Builder(String host, int port) {
       this.host = host;
       this.port = port;
       this.securedPort = port;
     }
 
+    /**
+     * Sets the proxy server port for SSL connections.
+     *
+     * @param securedPort the secured port number
+     * @return this builder for method chaining
+     */
     public Builder setSecuredPort(int securedPort) {
       this.securedPort = securedPort;
       return this;
     }
 
+    /**
+     * Sets the authentication realm for the proxy server.
+     *
+     * @param realm the authentication realm
+     * @return this builder for method chaining
+     */
     public Builder setRealm(Realm realm) {
       this.realm = realm;
       return this;
     }
 
+    /**
+     * Sets the authentication realm using a realm builder.
+     *
+     * @param realm the realm builder
+     * @return this builder for method chaining
+     */
     public Builder setRealm(Realm.Builder realm) {
       this.realm = realm.build();
       return this;
     }
 
+    /**
+     * Adds a single host pattern that should bypass the proxy.
+     * <p>
+     * Patterns can use wildcards (*) as prefixes or suffixes. For example:
+     * </p>
+     * <ul>
+     *   <li>*.example.com - matches any subdomain of example.com</li>
+     *   <li>192.168.* - matches any IP starting with 192.168.</li>
+     *   <li>localhost - exact match</li>
+     * </ul>
+     *
+     * @param nonProxyHost the host pattern to bypass the proxy
+     * @return this builder for method chaining
+     */
     public Builder setNonProxyHost(String nonProxyHost) {
       if (nonProxyHosts == null)
         nonProxyHosts = new ArrayList<>(1);
@@ -147,16 +257,37 @@ public class ProxyServer {
       return this;
     }
 
+    /**
+     * Sets the list of host patterns that should bypass the proxy.
+     *
+     * @param nonProxyHosts the list of host patterns
+     * @return this builder for method chaining
+     */
     public Builder setNonProxyHosts(List<String> nonProxyHosts) {
       this.nonProxyHosts = nonProxyHosts;
       return this;
     }
 
+    /**
+     * Sets the proxy type (HTTP or SOCKS).
+     *
+     * @param proxyType the proxy type
+     * @return this builder for method chaining
+     */
     public Builder setProxyType(ProxyType proxyType) {
       this.proxyType = proxyType;
       return this;
     }
 
+    /**
+     * Builds a new ProxyServer instance with the configured settings.
+     * <p>
+     * If no proxy type is set, defaults to HTTP. If no non-proxy hosts are set,
+     * uses an empty list.
+     * </p>
+     *
+     * @return a new ProxyServer instance
+     */
     public ProxyServer build() {
       List<String> nonProxyHosts = this.nonProxyHosts != null ? Collections.unmodifiableList(this.nonProxyHosts)
               : Collections.emptyList();

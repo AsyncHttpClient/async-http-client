@@ -17,16 +17,39 @@ import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
 /**
- * A request body which supports random access to its contents.
+ * A request body that supports random access to its contents via channel-based transfer.
+ * <p>
+ * This interface extends {@link Body} to provide an additional transfer method using
+ * {@link WritableByteChannel}, which enables efficient zero-copy transfer for certain
+ * types of bodies (e.g., file-based bodies). This is particularly useful for HTTP
+ * connections where zero-copy optimizations can be applied.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * RandomAccessBody body = new FileBodyGenerator(new File("data.bin")).createBody();
+ * try (FileChannel channel = FileChannel.open(outputPath, StandardOpenOption.WRITE)) {
+ *     long transferred = body.transferTo(channel);
+ *     System.out.println("Transferred " + transferred + " bytes");
+ * } finally {
+ *     body.close();
+ * }
+ * }</pre>
  */
 public interface RandomAccessBody extends Body {
 
   /**
-   * Transfers the specified chunk of bytes from this body to the specified channel.
+   * Transfers bytes from this body to the specified writable channel.
+   * <p>
+   * This method performs an efficient transfer of body content to the target channel,
+   * potentially using zero-copy optimizations when supported by the underlying
+   * implementation. The transfer is typically more efficient than buffer-based
+   * transfers for file-based bodies.
+   * </p>
    *
-   * @param target The destination channel to transfer the body chunk to, must not be {@code null}.
-   * @return The non-negative number of bytes actually transferred.
-   * @throws IOException If the body chunk could not be transferred.
+   * @param target the destination channel to transfer the body chunk to, must not be {@code null}
+   * @return the non-negative number of bytes actually transferred
+   * @throws IOException if the body chunk could not be transferred due to an I/O error
    */
   long transferTo(WritableByteChannel target) throws IOException;
 }

@@ -14,9 +14,26 @@ package org.asynchttpclient.exception;
 
 import java.io.IOException;
 
+/**
+ * Exception thrown when the maximum number of total connections has been reached.
+ * This occurs when the client attempts to open a new connection but has already
+ * reached the configured {@code maxConnections} limit.
+ *
+ * <p>To resolve this, either:</p>
+ * <ul>
+ *   <li>Increase the {@code maxConnections} configuration value</li>
+ *   <li>Ensure connections are being properly closed and returned to the pool</li>
+ *   <li>Reduce the number of concurrent requests</li>
+ * </ul>
+ */
 @SuppressWarnings("serial")
 public class TooManyConnectionsException extends IOException {
 
+  /**
+   * Constructs a new exception with the maximum number of connections.
+   *
+   * @param max the maximum number of connections that was exceeded
+   */
   public TooManyConnectionsException(int max) {
     super("Too many connections: " + max);
   }

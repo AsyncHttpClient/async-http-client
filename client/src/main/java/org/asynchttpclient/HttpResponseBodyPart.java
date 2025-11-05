@@ -18,7 +18,18 @@ package org.asynchttpclient;
 import java.nio.ByteBuffer;
 
 /**
- * A callback class used when an HTTP response body is received.
+ * Represents a chunk of the HTTP response body.
+ * <p>
+ * When using {@link AsyncHandler}, the response body is delivered incrementally as
+ * multiple HttpResponseBodyPart instances. This allows for streaming processing of
+ * large responses without buffering the entire body in memory.
+ * </p>
+ * <p>
+ * <b>Note:</b> Depending on the underlying provider (Netty), this callback may be
+ * invoked with empty body parts. Always check {@link #length()} before processing.
+ * </p>
+ *
+ * @see AsyncHandler#onBodyPartReceived(HttpResponseBodyPart)
  */
 public abstract class HttpResponseBodyPart {
 
@@ -29,23 +40,31 @@ public abstract class HttpResponseBodyPart {
   }
 
   /**
-   * @return length of this part in bytes
+   * Returns the length of this body part in bytes.
+   *
+   * @return the number of bytes in this body part
    */
   public abstract int length();
 
   /**
-   * @return the response body's part bytes received.
+   * Returns the body part content as a byte array.
+   *
+   * @return the bytes of this body part
    */
   public abstract byte[] getBodyPartBytes();
 
   /**
-   * @return a {@link ByteBuffer} that wraps the actual bytes read from the response's chunk.
-   * The {@link ByteBuffer}'s capacity is equal to the number of bytes available.
+   * Returns the body part content as a ByteBuffer.
+   * The ByteBuffer's capacity equals the number of bytes available in this part.
+   *
+   * @return a ByteBuffer wrapping the body part bytes
    */
   public abstract ByteBuffer getBodyByteBuffer();
 
   /**
-   * @return true if this is the last part.
+   * Indicates whether this is the last body part of the response.
+   *
+   * @return true if this is the last body part, false otherwise
    */
   public boolean isLast() {
     return last;

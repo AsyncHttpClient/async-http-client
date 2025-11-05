@@ -47,9 +47,28 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 /**
- * Builder for {@link Request}
+ * Abstract base class for building {@link Request} instances.
+ * <p>
+ * This class provides a fluent API for constructing HTTP requests with various options
+ * including headers, body, authentication, timeouts, and more. It uses the builder pattern
+ * with method chaining for convenient request configuration.
+ * </p>
+ * <p>
+ * <b>Important:</b> This builder is mutable and NOT thread-safe. Create a new instance
+ * for each request or ensure proper synchronization when reusing builders.
+ * </p>
+ * <p>
+ * Most applications should use the concrete subclasses:
+ * <ul>
+ *   <li>{@link RequestBuilder} - for building requests independently</li>
+ *   <li>{@link BoundRequestBuilder} - for building and executing requests with a client</li>
+ * </ul>
+ * </p>
  *
- * @param <T> the builder type
+ * @param <T> the concrete builder type (for method chaining)
+ * @see Request
+ * @see RequestBuilder
+ * @see BoundRequestBuilder
  */
 public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 

@@ -20,16 +20,41 @@ import java.util.function.Supplier;
 
 /**
  * Prepares HTTP requests by wrapping them into RxJava 2 {@code Maybe} instances.
+ * <p>
+ * This interface provides a reactive API for executing HTTP requests using RxJava 2's
+ * Maybe type, which can emit zero or one result. Each subscription to the returned
+ * Maybe triggers a new HTTP request execution.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create an RxHttpClient
+ * AsyncHttpClient client = asyncHttpClient();
+ * RxHttpClient rxClient = RxHttpClient.create(client);
+ *
+ * // Simple GET request
+ * Request request = get("http://www.example.com").build();
+ * rxClient.prepare(request)
+ *     .subscribe(
+ *         response -> System.out.println("Status: " + response.getStatusCode()),
+ *         error -> System.err.println("Failed: " + error)
+ *     );
+ *
+ * // Chain with RxJava operators
+ * rxClient.prepare(request)
+ *     .map(Response::getResponseBody)
+ *     .filter(body -> body.contains("success"))
+ *     .subscribe(body -> System.out.println("Body: " + body));
+ * }</pre>
  *
  * @see <a href="https://github.com/ReactiveX/RxJava">RxJava – Reactive Extensions for the JVM</a>
  */
 public interface RxHttpClient {
 
   /**
-   * Returns a new {@code RxHttpClient} instance that uses the given {@code asyncHttpClient} under the hoods.
+   * Creates a new RxHttpClient instance that delegates to the given AsyncHttpClient.
    *
-   * @param asyncHttpClient the Async HTTP Client instance to be used
-   * @return a new {@code RxHttpClient} instance
+   * @param asyncHttpClient the Async HTTP Client instance to be used for executing requests
+   * @return a new RxHttpClient instance
    * @throws NullPointerException if {@code asyncHttpClient} is {@code null}
    */
   static RxHttpClient create(AsyncHttpClient asyncHttpClient) {
@@ -37,11 +62,13 @@ public interface RxHttpClient {
   }
 
   /**
-   * Prepares the given {@code request}. For each subscription to the returned {@code Maybe}, a new HTTP request will
-   * be executed and its response will be emitted.
+   * Prepares a request for execution, returning a Maybe that emits the response.
+   * <p>
+   * Each subscription to the returned Maybe triggers a new HTTP request execution.
+   * The response is processed using a default AsyncCompletionHandlerBase.
    *
-   * @param request the request that is to be executed
-   * @return a {@code Maybe} that executes {@code request} upon subscription and emits the response
+   * @param request the HTTP request to execute
+   * @return a Maybe that executes the request upon subscription and emits the response
    * @throws NullPointerException if {@code request} is {@code null}
    */
   default Maybe<Response> prepare(Request request) {
@@ -49,15 +76,16 @@ public interface RxHttpClient {
   }
 
   /**
-   * Prepares the given {@code request}. For each subscription to the returned {@code Maybe}, a new HTTP request will
-   * be executed and the results of {@code AsyncHandlers} obtained from {@code handlerSupplier} will be emitted.
+   * Prepares a request for execution with a custom handler supplier.
+   * <p>
+   * Each subscription to the returned Maybe triggers a new HTTP request execution.
+   * The response is processed by an AsyncHandler obtained from the handlerSupplier,
+   * and the handler's result is emitted by the Maybe.
    *
-   * @param <T>             the result type produced by handlers produced by {@code handlerSupplier} and emitted by the returned
-   *                        {@code Maybe} instance
-   * @param request         the request that is to be executed
-   * @param handlerSupplier supplies the desired {@code AsyncHandler} instances that are used to produce results
-   * @return a {@code Maybe} that executes {@code request} upon subscription and that emits the results produced by
-   * the supplied handlers
+   * @param <T>             the result type produced by the handler and emitted by the Maybe
+   * @param request         the HTTP request to execute
+   * @param handlerSupplier a supplier that provides AsyncHandler instances for processing responses
+   * @return a Maybe that executes the request upon subscription and emits the handler's result
    * @throws NullPointerException if at least one of the parameters is {@code null}
    */
   <T> Maybe<T> prepare(Request request, Supplier<? extends AsyncHandler<T>> handlerSupplier);

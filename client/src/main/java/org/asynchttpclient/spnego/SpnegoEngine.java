@@ -62,6 +62,35 @@ import java.util.Map;
 
 /**
  * SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) authentication scheme.
+ * <p>
+ * This class implements the SPNEGO authentication protocol used primarily for Kerberos-based
+ * authentication in enterprise environments. SPNEGO allows HTTP clients to authenticate to
+ * servers using GSS-API tokens, typically wrapping Kerberos tickets.
+ * </p>
+ * <p>
+ * The implementation supports both SPNEGO (OID 1.3.6.1.5.5.2) and Kerberos v5
+ * (OID 1.2.840.113554.1.2.2) mechanisms, with automatic fallback to Kerberos if SPNEGO
+ * is not supported by the JRE.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Using default instance
+ * SpnegoEngine engine = new SpnegoEngine();
+ * String token = engine.generateToken("example.com");
+ *
+ * // Using configured instance with credentials
+ * SpnegoEngine engine = SpnegoEngine.instance(
+ *     "username",
+ *     "password",
+ *     null,                   // servicePrincipalName
+ *     "EXAMPLE.COM",          // realmName
+ *     true,                   // useCanonicalHostname
+ *     null,                   // customLoginConfig
+ *     "MyLoginContext"        // loginContextName
+ * );
+ * String token = engine.generateToken("server.example.com");
+ * }</pre>
  *
  * @since 4.1
  */
@@ -80,6 +109,18 @@ public class SpnegoEngine {
   private final String loginContextName;
   private final Map<String, String> customLoginConfig;
 
+  /**
+   * Creates a new SPNEGO engine with the specified configuration.
+   *
+   * @param username the username for authentication (can be null for default credentials)
+   * @param password the password for authentication (can be null for default credentials)
+   * @param servicePrincipalName the service principal name (can be null to use default HTTP@host)
+   * @param realmName the Kerberos realm name (can be null)
+   * @param useCanonicalHostname whether to use canonical hostname resolution
+   * @param customLoginConfig custom login configuration map for Krb5LoginModule (can be null)
+   * @param loginContextName the name of the login context (can be null)
+   * @param spnegoGenerator optional SPNEGO token generator for wrapping Kerberos tickets (can be null)
+   */
   public SpnegoEngine(final String username,
                       final String password,
                       final String servicePrincipalName,
@@ -98,6 +139,13 @@ public class SpnegoEngine {
     this.loginContextName = loginContextName;
   }
 
+  /**
+   * Creates a new SPNEGO engine with default configuration.
+   * <p>
+   * This constructor initializes the engine to use canonical hostname resolution
+   * and default credentials from the system.
+   * </p>
+   */
   public SpnegoEngine() {
     this(null,
         null,
@@ -109,6 +157,23 @@ public class SpnegoEngine {
         null);
   }
 
+  /**
+   * Returns a cached SPNEGO engine instance for the given configuration.
+   * <p>
+   * This factory method maintains a cache of engine instances keyed by the configuration
+   * parameters. If an engine with the same configuration already exists, it is returned;
+   * otherwise, a new instance is created and cached.
+   * </p>
+   *
+   * @param username the username for authentication (can be null for default credentials)
+   * @param password the password for authentication (can be null for default credentials)
+   * @param servicePrincipalName the service principal name (can be null to use default HTTP@host)
+   * @param realmName the Kerberos realm name (can be null)
+   * @param useCanonicalHostname whether to use canonical hostname resolution
+   * @param customLoginConfig custom login configuration map for Krb5LoginModule (can be null)
+   * @param loginContextName the name of the login context (can be null)
+   * @return a cached or new SPNEGO engine instance
+   */
   public static SpnegoEngine instance(final String username,
                                       final String password,
                                       final String servicePrincipalName,
@@ -144,6 +209,28 @@ public class SpnegoEngine {
     return instances.get(key);
   }
 
+  /**
+   * Generates a SPNEGO authentication token for the specified host.
+   * <p>
+   * This method creates a GSS security context and generates a Base64-encoded authentication
+   * token that can be used in an HTTP Authorization header. The method handles:
+   * </p>
+   * <ul>
+   *   <li>Creating a GSS context with SPNEGO or Kerberos OID</li>
+   *   <li>Performing Kerberos login if credentials are configured</li>
+   *   <li>Initializing the security context with the server name</li>
+   *   <li>Wrapping Kerberos tickets in SPNEGO format if needed</li>
+   * </ul>
+   * <p>
+   * The method will attempt to use SPNEGO by default and fall back to Kerberos v5
+   * if SPNEGO is not supported by the JRE (typically JRE 1.5 and earlier).
+   * </p>
+   *
+   * @param host the target server hostname for which to generate the token
+   * @return a Base64-encoded SPNEGO or Kerberos authentication token
+   * @throws SpnegoEngineException if token generation fails due to invalid credentials,
+   *         GSS-API errors, or login failures
+   */
   public String generateToken(String host) throws SpnegoEngineException {
     GSSContext gssContext = null;
     byte[] token = null; // base64 decoded challenge
@@ -256,6 +343,17 @@ public class SpnegoEngine {
     }
   }
 
+  /**
+   * Constructs the complete service principal name (SPN) for the given host.
+   * <p>
+   * If a custom service principal name is configured, it is used directly. Otherwise,
+   * the method constructs an SPN in the format "HTTP@hostname". If canonical hostname
+   * resolution is enabled, the hostname is resolved to its canonical form.
+   * </p>
+   *
+   * @param host the hostname for which to construct the SPN
+   * @return the complete service principal name
+   */
   String getCompleteServicePrincipalName(String host) {
     String name;
     if (servicePrincipalName == null) {
@@ -292,6 +390,16 @@ public class SpnegoEngine {
     return new NamePasswordCallbackHandler(username, password);
   }
 
+  /**
+   * Returns the login configuration for Kerberos authentication.
+   * <p>
+   * If custom login configuration is provided, returns a configuration that uses
+   * the Krb5LoginModule with the custom settings. Otherwise, returns null to use
+   * the default system configuration.
+   * </p>
+   *
+   * @return the login configuration, or null to use system defaults
+   */
   public Configuration getLoginConfiguration() {
     if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
       return new Configuration() {

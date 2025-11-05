@@ -33,156 +33,226 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 /**
- * The Request class can be used to construct HTTP request:
- * <blockquote><pre>
- *   Request r = new RequestBuilder()
- *      .setUrl("url")
- *      .setRealm(
- *          new Realm.Builder("principal", "password")
- *              .setRealmName("MyRealm")
- *              .setScheme(Realm.AuthScheme.BASIC)
- *      ).build();
- * </pre></blockquote>
+ * Represents an immutable HTTP request.
+ * <p>
+ * Request instances are built using {@link RequestBuilder} and contain all the information
+ * needed to execute an HTTP request including the URL, HTTP method, headers, body, and
+ * various configuration options.
+ * </p>
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * Request request = new RequestBuilder()
+ *     .setUrl("https://api.example.com/users")
+ *     .setMethod("POST")
+ *     .setHeader("Content-Type", "application/json")
+ *     .setBody("{\"name\":\"John\"}")
+ *     .setRealm(new Realm.Builder("username", "password")
+ *         .setScheme(Realm.AuthScheme.BASIC)
+ *         .build())
+ *     .build();
+ *
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * Future<Response> future = client.executeRequest(request);
+ * }</pre>
  */
 public interface Request {
 
   /**
-   * @return the request's HTTP method (GET, POST, etc.)
+   * Returns the HTTP method of this request.
+   *
+   * @return the HTTP method (e.g., "GET", "POST", "PUT", "DELETE")
    */
   String getMethod();
 
   /**
-   * @return the uri
+   * Returns the URI of this request.
+   *
+   * @return the parsed {@link Uri} object
    */
   Uri getUri();
 
   /**
-   * @return the url (the uri's String form)
+   * Returns the URL of this request as a string.
+   *
+   * @return the URL string representation
    */
   String getUrl();
 
   /**
-   * @return the InetAddress to be used to bypass uri's hostname resolution
+   * Returns the specific InetAddress to use for this request, bypassing DNS resolution.
+   *
+   * @return the InetAddress to connect to, or null to use normal DNS resolution
    */
   InetAddress getAddress();
 
   /**
-   * @return the local address to bind from
+   * Returns the local address to bind from when making this request.
+   *
+   * @return the local InetAddress to bind from, or null for default behavior
    */
   InetAddress getLocalAddress();
 
   /**
-   * @return the HTTP headers
+   * Returns the HTTP headers for this request.
+   *
+   * @return the HTTP headers collection
    */
   HttpHeaders getHeaders();
 
   /**
-   * @return the HTTP cookies
+   * Returns the cookies to be sent with this request.
+   *
+   * @return the list of cookies, or an empty list if none
    */
   List<Cookie> getCookies();
 
   /**
-   * @return the request's body byte array (only non null if it was set this way)
+   * Returns the request body as a byte array, if set.
+   *
+   * @return the request body byte array, or null if the body was not set this way
    */
   byte[] getByteData();
 
   /**
-   * @return the request's body array of byte arrays (only non null if it was set this way)
+   * Returns the request body as a composite list of byte arrays, if set.
+   *
+   * @return the list of byte arrays, or null if the body was not set this way
    */
   List<byte[]> getCompositeByteData();
 
   /**
-   * @return the request's body string (only non null if it was set this way)
+   * Returns the request body as a string, if set.
+   *
+   * @return the request body string, or null if the body was not set this way
    */
   String getStringData();
 
   /**
-   * @return the request's body ByteBuffer (only non null if it was set this way)
+   * Returns the request body as a ByteBuffer, if set.
+   *
+   * @return the request body ByteBuffer, or null if the body was not set this way
    */
   ByteBuffer getByteBufferData();
 
   /**
-   * @return the request's body InputStream (only non null if it was set this way)
+   * Returns the request body as an InputStream, if set.
+   *
+   * @return the request body InputStream, or null if the body was not set this way
    */
   InputStream getStreamData();
 
   /**
-   * @return the request's body BodyGenerator (only non null if it was set this way)
+   * Returns the request body generator, if set.
+   *
+   * @return the BodyGenerator, or null if the body was not set this way
    */
   BodyGenerator getBodyGenerator();
 
   /**
-   * @return the request's form parameters
+   * Returns the form parameters for this request.
+   *
+   * @return the list of form parameters, or an empty list if none
    */
   List<Param> getFormParams();
 
   /**
-   * @return the multipart parts
+   * Returns the multipart body parts for this request.
+   *
+   * @return the list of multipart parts, or an empty list if none
    */
   List<Part> getBodyParts();
 
   /**
-   * @return the virtual host to connect to
+   * Returns the virtual host header value for this request.
+   *
+   * @return the virtual host, or null if not set
    */
   String getVirtualHost();
 
   /**
-   * @return the query params resolved from the url/uri
+   * Returns the query parameters extracted from the URL.
+   *
+   * @return the list of query parameters, or an empty list if none
    */
   List<Param> getQueryParams();
 
   /**
-   * @return the proxy server to be used to perform this request (overrides the one defined in config)
+   * Returns the proxy server to use for this request.
+   * If set, this overrides the proxy server defined in the client configuration.
+   *
+   * @return the proxy server, or null to use the client's default configuration
    */
   ProxyServer getProxyServer();
 
   /**
-   * @return the realm to be used to perform this request (overrides the one defined in config)
+   * Returns the authentication realm for this request.
+   * If set, this overrides the realm defined in the client configuration.
+   *
+   * @return the authentication realm, or null to use the client's default configuration
    */
   Realm getRealm();
 
   /**
-   * @return the file to be uploaded
+   * Returns the file to be uploaded as the request body.
+   *
+   * @return the file to upload, or null if not set
    */
   File getFile();
 
   /**
-   * @return if this request is to follow redirects. Non null values means "override config value".
+   * Returns whether this request should follow redirects.
+   *
+   * @return true to follow redirects, false to not follow them, or null to use the client's default configuration
    */
   Boolean getFollowRedirect();
 
   /**
-   * @return the request timeout. Non zero values means "override config value".
+   * Returns the request timeout in milliseconds.
+   *
+   * @return the request timeout in milliseconds, or 0 to use the client's default configuration
    */
   int getRequestTimeout();
 
   /**
-   * @return the read timeout. Non zero values means "override config value".
+   * Returns the read timeout in milliseconds.
+   *
+   * @return the read timeout in milliseconds, or 0 to use the client's default configuration
    */
   int getReadTimeout();
 
   /**
-   * @return the range header value, or 0 is not set.
+   * Returns the byte offset for HTTP range requests.
+   *
+   * @return the range offset in bytes, or 0 if not set
    */
   long getRangeOffset();
 
   /**
-   * @return the charset value used when decoding the request's body.
+   * Returns the charset used for encoding/decoding the request body.
+   *
+   * @return the charset, or null to use the default charset
    */
   Charset getCharset();
 
   /**
-   * @return the strategy to compute ChannelPool's keys
+   * Returns the channel pool partitioning strategy for this request.
+   *
+   * @return the channel pool partitioning strategy
    */
   ChannelPoolPartitioning getChannelPoolPartitioning();
 
   /**
-   * @return the NameResolver to be used to resolve hostnams's IP
+   * Returns the name resolver to use for hostname resolution.
+   *
+   * @return the name resolver, or null to use the client's default resolver
    */
   NameResolver<InetAddress> getNameResolver();
 
   /**
-   * @return a new request builder using this request as a prototype
+   * Creates a new {@link RequestBuilder} initialized with this request's values.
+   * This allows modification of an existing request.
+   *
+   * @return a new RequestBuilder based on this request
    */
   @SuppressWarnings("deprecation")
   default RequestBuilder toBuilder() {

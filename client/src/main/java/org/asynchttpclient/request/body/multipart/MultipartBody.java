@@ -29,6 +29,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
+/**
+ * A body implementation for multipart/form-data requests.
+ * <p>
+ * This class implements {@link RandomAccessBody} to provide both buffer-based and
+ * channel-based transfer of multipart data. It manages a list of {@link MultipartPart}s
+ * and transfers them sequentially, handling proper encoding according to the
+ * multipart/form-data specification.
+ * </p>
+ * <p>
+ * The body computes the total content length if all parts have known lengths, or
+ * returns -1 for chunked transfer encoding if any part has unknown length. Transfer
+ * operations are stateful and track the current part being transferred.
+ * </p>
+ */
 public class MultipartBody implements RandomAccessBody {
 
   private final static Logger LOGGER = LoggerFactory.getLogger(MultipartBody.class);
@@ -41,6 +55,13 @@ public class MultipartBody implements RandomAccessBody {
   private boolean done = false;
   private AtomicBoolean closed = new AtomicBoolean();
 
+  /**
+   * Constructs a multipart body with the specified parts, content type, and boundary.
+   *
+   * @param parts       the list of multipart parts to include
+   * @param contentType the Content-Type header value (typically includes the boundary)
+   * @param boundary    the multipart boundary bytes
+   */
   public MultipartBody(List<MultipartPart<? extends Part>> parts, String contentType, byte[] boundary) {
     this.boundary = boundary;
     this.contentType = contentType;

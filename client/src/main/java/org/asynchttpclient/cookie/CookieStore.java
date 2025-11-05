@@ -23,14 +23,43 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * This interface represents an abstract store for {@link Cookie} objects.
+ * Interface representing a storage mechanism for {@link Cookie} objects.
+ * The cookie store automatically manages cookie lifecycle including expiration,
+ * domain matching, path matching, and secure cookie handling according to RFC 6265.
  *
- * <p>{@link CookieManager} will call {@code CookieStore.add} to save cookies
- * for every incoming HTTP response, and call {@code CookieStore.get} to
- * retrieve cookie for every outgoing HTTP request. A CookieStore
- * is responsible for removing HttpCookie instances which have expired.
+ * <p>The {@link org.asynchttpclient.AsyncHttpClient} calls {@link #add(Uri, Cookie)}
+ * to save cookies for every incoming HTTP response, and calls {@link #get(Uri)} to
+ * retrieve matching cookies for every outgoing HTTP request.</p>
+ *
+ * <p>Implementations are responsible for:</p>
+ * <ul>
+ *   <li>Storing and retrieving cookies efficiently</li>
+ *   <li>Removing expired cookies periodically</li>
+ *   <li>Matching cookies by domain and path</li>
+ *   <li>Handling secure and host-only cookies</li>
+ *   <li>Thread-safety for concurrent access</li>
+ * </ul>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Use the default thread-safe cookie store
+ * AsyncHttpClient client = Dsl.asyncHttpClient(
+ *     new DefaultAsyncHttpClientConfig.Builder()
+ *         .setCookieStore(new ThreadSafeCookieStore())
+ *         .build()
+ * );
+ *
+ * // Manually add a cookie
+ * CookieStore store = new ThreadSafeCookieStore();
+ * Cookie cookie = new DefaultCookie("session", "abc123");
+ * store.add(Uri.create("http://example.com"), cookie);
+ *
+ * // Retrieve cookies for a URI
+ * List<Cookie> cookies = store.get(Uri.create("http://example.com/path"));
+ * }</pre>
  *
  * @since 2.1
+ * @see ThreadSafeCookieStore
  */
 public interface CookieStore extends Counted {
   /**

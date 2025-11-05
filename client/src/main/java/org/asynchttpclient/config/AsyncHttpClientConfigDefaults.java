@@ -16,6 +16,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Provides default configuration values for {@link org.asynchttpclient.AsyncHttpClient}.
+ * Configuration values are loaded from property files and system properties, with the following precedence:
+ * <ol>
+ *   <li>System properties (-Dorg.asynchttpclient.propertyName)</li>
+ *   <li>Custom ahc.properties file</li>
+ *   <li>Default ahc-default.properties file</li>
+ * </ol>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Get default values
+ * int defaultConnectTimeout = AsyncHttpClientConfigDefaults.defaultConnectTimeout();
+ * int defaultMaxConnections = AsyncHttpClientConfigDefaults.defaultMaxConnections();
+ *
+ * // Override via system property
+ * System.setProperty("org.asynchttpclient.connectTimeout", "10000");
+ * }</pre>
+ */
 public final class AsyncHttpClientConfigDefaults {
 
   public static final String ASYNC_CLIENT_CONFIG_ROOT = "org.asynchttpclient.";
@@ -90,22 +109,47 @@ public final class AsyncHttpClientConfigDefaults {
   private AsyncHttpClientConfigDefaults() {
   }
 
+  /**
+   * Returns the default thread pool name.
+   *
+   * @return the default thread pool name
+   */
   public static String defaultThreadPoolName() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + THREAD_POOL_NAME_CONFIG);
   }
 
+  /**
+   * Returns the default maximum number of connections.
+   *
+   * @return the default maximum number of connections
+   */
   public static int defaultMaxConnections() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + MAX_CONNECTIONS_CONFIG);
   }
 
+  /**
+   * Returns the default maximum number of connections per host.
+   *
+   * @return the default maximum number of connections per host
+   */
   public static int defaultMaxConnectionsPerHost() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + MAX_CONNECTIONS_PER_HOST_CONFIG);
   }
 
+  /**
+   * Returns the default timeout for acquiring a free channel from the pool in milliseconds.
+   *
+   * @return the default acquire free channel timeout in milliseconds
+   */
   public static int defaultAcquireFreeChannelTimeout() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + ACQUIRE_FREE_CHANNEL_TIMEOUT);
   }
 
+  /**
+   * Returns the default connection timeout in milliseconds.
+   *
+   * @return the default connection timeout in milliseconds
+   */
   public static int defaultConnectTimeout() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_TIMEOUT_CONFIG);
   }

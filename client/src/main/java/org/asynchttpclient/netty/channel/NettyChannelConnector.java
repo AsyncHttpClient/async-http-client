@@ -26,6 +26,14 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+/**
+ * Manages connection attempts to multiple resolved addresses with automatic failover.
+ * <p>
+ * This class iterates through a list of resolved IP addresses, attempting to connect
+ * to each in sequence until one succeeds. It notifies the AsyncHandler of connection
+ * attempts and outcomes, supporting transparent failover for multi-homed hosts.
+ * </p>
+ */
 public class NettyChannelConnector {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyChannelConnector.class);
@@ -39,6 +47,14 @@ public class NettyChannelConnector {
   private final AsyncHttpClientState clientState;
   private volatile int i = 0;
 
+  /**
+   * Constructs a new NettyChannelConnector.
+   *
+   * @param localAddress the local address to bind to, or null for automatic
+   * @param remoteAddresses the list of resolved remote addresses to try
+   * @param asyncHandler the async handler for connection notifications
+   * @param clientState the client state for shutdown checks
+   */
   public NettyChannelConnector(InetAddress localAddress,
                                List<InetSocketAddress> remoteAddresses,
                                AsyncHandler<?> asyncHandler,
@@ -54,6 +70,17 @@ public class NettyChannelConnector {
     return i < remoteAddresses.size();
   }
 
+  /**
+   * Initiates a connection attempt to the current remote address.
+   * <p>
+   * This method notifies the async handler of the connection attempt and
+   * initiates the asynchronous connect operation. On failure, it automatically
+   * tries the next address if available.
+   * </p>
+   *
+   * @param bootstrap the Netty bootstrap to use for connecting
+   * @param connectListener the listener for connection outcome
+   */
   public void connect(final Bootstrap bootstrap, final NettyConnectListener<?> connectListener) {
     final InetSocketAddress remoteAddress = remoteAddresses.get(i);
 

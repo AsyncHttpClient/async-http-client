@@ -29,6 +29,33 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Wraps HTTP requests into RxJava {@code Single} instances.
+ * <p>
+ * This utility class provides methods to create RxJava Singles from AsyncHttpClient
+ * requests, enabling reactive programming patterns for HTTP operations.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = asyncHttpClient();
+ *
+ * // Simple Single from BoundRequestBuilder
+ * Single<Response> single = AsyncHttpSingle.create(
+ *     client.prepareGet("http://www.example.com")
+ * );
+ * single.subscribe(
+ *     response -> System.out.println("Status: " + response.getStatusCode()),
+ *     error -> System.err.println("Error: " + error)
+ * );
+ *
+ * // Single with custom AsyncHandler
+ * Single<String> customSingle = AsyncHttpSingle.create(
+ *     client.prepareGet("http://www.example.com"),
+ *     () -> new AsyncCompletionHandler<String>() {
+ *         public String onCompleted(Response response) {
+ *             return response.getResponseBody();
+ *         }
+ *     }
+ * );
+ * }</pre>
  *
  * @see <a href="https://github.com/ReactiveX/RxJava">https://github.com/
  * ReactiveX/RxJava</a>
@@ -40,12 +67,13 @@ public final class AsyncHttpSingle {
   }
 
   /**
-   * Emits the responses to HTTP requests obtained from {@code builder}.
+   * Creates a Single that emits the HTTP response from the given request builder.
+   * <p>
+   * The request is executed when the Single is subscribed to, using a default
+   * AsyncCompletionHandlerBase to handle the response.
    *
-   * @param builder used to build the HTTP request that is to be executed
-   * @return a {@code Single} that executes new requests on subscription
-   * obtained from {@code builder} on subscription and that emits the
-   * response
+   * @param builder the request builder used to execute the HTTP request
+   * @return a Single that executes the request on subscription and emits the response
    * @throws NullPointerException if {@code builder} is {@code null}
    */
   public static Single<Response> create(BoundRequestBuilder builder) {
@@ -54,17 +82,19 @@ public final class AsyncHttpSingle {
   }
 
   /**
-   * Emits the responses to HTTP requests obtained by calling
-   * {@code requestTemplate}.
+   * Creates a Single that emits HTTP responses using a request template function.
+   * <p>
+   * This overload provides more control over request execution by accepting a function
+   * that receives an AsyncHandler and returns a Future. The Future is used for
+   * cancellation support when the Single is unsubscribed.
    *
-   * @param requestTemplate called to start the HTTP request with an
-   *                        {@code AysncHandler} that builds the HTTP response and
-   *                        propagates results to the returned {@code Single}. The
-   *                        {@code Future} that is returned by {@code requestTemplate}
-   *                        will be used to cancel the request when the {@code Single} is
-   *                        unsubscribed.
-   * @return a {@code Single} that executes new requests on subscription by
-   * calling {@code requestTemplate} and that emits the response
+   * @param requestTemplate a function called to start the HTTP request with an
+   *                        AsyncHandler that builds the HTTP response and
+   *                        propagates results to the returned Single. The
+   *                        Future returned by this function is used to cancel
+   *                        the request when the Single is unsubscribed
+   * @return a Single that executes new requests on subscription by
+   * calling the request template and emits the response
    * @throws NullPointerException if {@code requestTemplate} is {@code null}
    */
   public static Single<Response> create(Func1<? super AsyncHandler<?>, ? extends Future<?>> requestTemplate) {
@@ -72,17 +102,19 @@ public final class AsyncHttpSingle {
   }
 
   /**
-   * Emits the results of {@code AsyncHandlers} obtained from
-   * {@code handlerSupplier} for HTTP requests obtained from {@code builder}.
+   * Creates a Single that emits results from a custom AsyncHandler.
+   * <p>
+   * This method allows you to provide a custom handler supplier that produces
+   * AsyncHandler instances for processing the HTTP response. The handler's result
+   * type determines the Single's emission type.
    *
-   * @param builder         used to build the HTTP request that is to be executed
-   * @param handlerSupplier supplies the desired {@code AsyncHandler}
-   *                        instances that are used to produce results
-   * @return a {@code Single} that executes new requests on subscription
-   * obtained from {@code builder} and that emits the result of the
-   * {@code AsyncHandler} obtained from {@code handlerSupplier}
-   * @throws NullPointerException if at least one of the parameters is
-   *                              {@code null}
+   * @param builder the request builder used to execute the HTTP request
+   * @param handlerSupplier a function that supplies AsyncHandler instances
+   *                        to process the HTTP response and produce results
+   * @param <T> the type of result produced by the AsyncHandler
+   * @return a Single that executes the request on subscription and emits
+   * the result produced by the supplied AsyncHandler
+   * @throws NullPointerException if at least one of the parameters is {@code null}
    */
   public static <T> Single<T> create(BoundRequestBuilder builder, Func0<? extends AsyncHandler<? extends T>> handlerSupplier) {
     requireNonNull(builder);
@@ -90,24 +122,25 @@ public final class AsyncHttpSingle {
   }
 
   /**
-   * Emits the results of {@code AsyncHandlers} obtained from
-   * {@code handlerSupplier} for HTTP requests obtained obtained by calling
-   * {@code requestTemplate}.
+   * Creates a Single using both a request template and a custom handler supplier.
+   * <p>
+   * This is the most flexible creation method, allowing full control over both
+   * request execution and response handling. The request template provides control
+   * over how the request is executed and cancelled, while the handler supplier
+   * determines how the response is processed.
    *
-   * @param requestTemplate called to start the HTTP request with an
-   *                        {@code AysncHandler} that builds the HTTP response and
-   *                        propagates results to the returned {@code Single}.  The
-   *                        {@code Future} that is returned by {@code requestTemplate}
-   *                        will be used to cancel the request when the {@code Single} is
-   *                        unsubscribed.
-   * @param handlerSupplier supplies the desired {@code AsyncHandler}
-   *                        instances that are used to produce results
-   * @return a {@code Single} that executes new requests on subscription by
-   * calling {@code requestTemplate} and that emits the results
-   * produced by the {@code AsyncHandlers} supplied by
-   * {@code handlerSupplier}
-   * @throws NullPointerException if at least one of the parameters is
-   *                              {@code null}
+   * @param requestTemplate a function called to start the HTTP request with an
+   *                        AsyncHandler that builds the HTTP response and
+   *                        propagates results to the returned Single. The
+   *                        Future returned by this function is used to cancel
+   *                        the request when the Single is unsubscribed
+   * @param handlerSupplier a function that supplies AsyncHandler instances
+   *                        to process the HTTP response and produce results
+   * @param <T> the type of result produced by the AsyncHandler
+   * @return a Single that executes new requests on subscription by
+   * calling the request template and emits the results produced by
+   * the supplied AsyncHandler
+   * @throws NullPointerException if at least one of the parameters is {@code null}
    */
   public static <T> Single<T> create(Func1<? super AsyncHandler<?>, ? extends Future<?>> requestTemplate,
                                      Func0<? extends AsyncHandler<? extends T>> handlerSupplier) {

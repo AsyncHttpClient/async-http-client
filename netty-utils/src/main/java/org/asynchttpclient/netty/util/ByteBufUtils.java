@@ -28,6 +28,26 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.netty.util.Utf8ByteBufCharsetDecoder.*;
 
+/**
+ * Utility class for converting Netty ByteBuf instances to bytes, strings, and character arrays.
+ * <p>
+ * This class provides optimized conversion methods that handle both heap and direct buffers
+ * efficiently, with special optimizations for UTF-8 and US-ASCII charsets.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * ByteBuf buf = Unpooled.copiedBuffer("Hello World", UTF_8);
+ *
+ * // Convert to byte array
+ * byte[] bytes = ByteBufUtils.byteBuf2Bytes(buf);
+ *
+ * // Convert to String
+ * String str = ByteBufUtils.byteBuf2String(UTF_8, buf);
+ *
+ * // Convert to char array
+ * char[] chars = ByteBufUtils.byteBuf2Chars(UTF_8, buf);
+ * }</pre>
+ */
 public final class ByteBufUtils {
 
   private static final char[] EMPTY_CHARS = new char[0];
@@ -36,6 +56,15 @@ public final class ByteBufUtils {
   private ByteBufUtils() {
   }
 
+  /**
+   * Converts a ByteBuf to a byte array.
+   * <p>
+   * If the ByteBuf is backed by an array and the array covers the entire readable range,
+   * the underlying array is returned directly. Otherwise, a copy is made.
+   *
+   * @param buf the ByteBuf to convert
+   * @return a byte array containing the readable bytes from the buffer
+   */
   public static byte[] byteBuf2Bytes(ByteBuf buf) {
     int readable = buf.readableBytes();
     int readerIndex = buf.readerIndex();
@@ -50,18 +79,54 @@ public final class ByteBufUtils {
     return array;
   }
 
+  /**
+   * Converts a ByteBuf to a String using the specified charset.
+   * <p>
+   * Uses optimized UTF-8 decoding for UTF-8 and US-ASCII charsets.
+   *
+   * @param charset the charset to use for decoding
+   * @param buf the ByteBuf to convert
+   * @return a String containing the decoded bytes
+   */
   public static String byteBuf2String(Charset charset, ByteBuf buf) {
     return isUtf8OrUsAscii(charset) ? decodeUtf8(buf) : buf.toString(charset);
   }
 
+  /**
+   * Converts multiple ByteBufs to a single String using the specified charset.
+   * <p>
+   * Uses optimized UTF-8 decoding for UTF-8 and US-ASCII charsets.
+   *
+   * @param charset the charset to use for decoding
+   * @param bufs the ByteBufs to convert
+   * @return a String containing the decoded bytes from all buffers
+   */
   public static String byteBuf2String(Charset charset, ByteBuf... bufs) {
     return isUtf8OrUsAscii(charset) ? decodeUtf8(bufs) : byteBuf2String0(charset, bufs);
   }
 
+  /**
+   * Converts a ByteBuf to a character array using the specified charset.
+   * <p>
+   * Uses optimized UTF-8 decoding for UTF-8 and US-ASCII charsets.
+   *
+   * @param charset the charset to use for decoding
+   * @param buf the ByteBuf to convert
+   * @return a character array containing the decoded bytes
+   */
   public static char[] byteBuf2Chars(Charset charset, ByteBuf buf) {
     return isUtf8OrUsAscii(charset) ? decodeUtf8Chars(buf) : decodeChars(buf, charset);
   }
 
+  /**
+   * Converts multiple ByteBufs to a single character array using the specified charset.
+   * <p>
+   * Uses optimized UTF-8 decoding for UTF-8 and US-ASCII charsets.
+   *
+   * @param charset the charset to use for decoding
+   * @param bufs the ByteBufs to convert
+   * @return a character array containing the decoded bytes from all buffers
+   */
   public static char[] byteBuf2Chars(Charset charset, ByteBuf... bufs) {
     return isUtf8OrUsAscii(charset) ? decodeUtf8Chars(bufs) : byteBuf2Chars0(charset, bufs);
   }

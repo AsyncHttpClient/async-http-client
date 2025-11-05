@@ -18,15 +18,35 @@ import org.asynchttpclient.AsyncHandler;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Concrete bridge implementation for standard AsyncHandlers.
+ * <p>
+ * This bridge adapts a regular AsyncHandler to work with RxJava 2 Maybe,
+ * without progress tracking support. It handles the conversion between
+ * AsyncHttpClient's callback-based API and RxJava's reactive API.
+ *
+ * @param <T> the result type produced by the wrapped AsyncHandler and emitted via RxJava
+ */
 public final class MaybeAsyncHandlerBridge<T> extends AbstractMaybeAsyncHandlerBridge<T> {
 
   private final AsyncHandler<? extends T> delegate;
 
+  /**
+   * Creates a new async handler bridge.
+   *
+   * @param emitter the RxJava MaybeEmitter to bridge to
+   * @param delegate the AsyncHandler to delegate operations to
+   */
   public MaybeAsyncHandlerBridge(MaybeEmitter<T> emitter, AsyncHandler<? extends T> delegate) {
     super(emitter);
     this.delegate = requireNonNull(delegate);
   }
 
+  /**
+   * Returns the underlying AsyncHandler delegate.
+   *
+   * @return the delegate handler
+   */
   @Override
   protected AsyncHandler<? extends T> delegate() {
     return delegate;

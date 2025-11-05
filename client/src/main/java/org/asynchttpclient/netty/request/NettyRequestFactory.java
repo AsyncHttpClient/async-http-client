@@ -37,6 +37,20 @@ import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 
+/**
+ * Factory for creating Netty HTTP requests from async-http-client Request objects.
+ * <p>
+ * This factory handles the transformation of high-level Request objects into Netty-specific
+ * HttpRequest instances, including:
+ * <ul>
+ *   <li>Header configuration (User-Agent, Accept, Content-Type, etc.)</li>
+ *   <li>Body encoding (form params, multipart, files, streams, etc.)</li>
+ *   <li>Authentication headers (Basic, Digest, NTLM, OAuth)</li>
+ *   <li>Proxy configuration and CONNECT requests</li>
+ *   <li>WebSocket upgrade headers</li>
+ * </ul>
+ * </p>
+ */
 public final class NettyRequestFactory {
 
   private static final Integer ZERO_CONTENT_LENGTH = 0;
@@ -44,6 +58,11 @@ public final class NettyRequestFactory {
   private final AsyncHttpClientConfig config;
   private final ClientCookieEncoder cookieEncoder;
 
+  /**
+   * Constructs a new NettyRequestFactory.
+   *
+   * @param config the async HTTP client configuration
+   */
   NettyRequestFactory(AsyncHttpClientConfig config) {
     this.config = config;
     cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
@@ -97,17 +116,48 @@ public final class NettyRequestFactory {
     return nettyBody;
   }
 
+  /**
+   * Adds an authorization header to the request.
+   * <p>
+   * This method appends (not replaces) the authorization header, allowing
+   * multiple authorization schemes to be present.
+   * </p>
+   *
+   * @param headers the HTTP headers to modify
+   * @param authorizationHeader the authorization header value, or null
+   */
   public void addAuthorizationHeader(HttpHeaders headers, String authorizationHeader) {
     if (authorizationHeader != null)
       // don't override authorization but append
       headers.add(AUTHORIZATION, authorizationHeader);
   }
 
+  /**
+   * Sets the proxy authorization header for the request.
+   *
+   * @param headers the HTTP headers to modify
+   * @param proxyAuthorizationHeader the proxy authorization header value, or null
+   */
   public void setProxyAuthorizationHeader(HttpHeaders headers, String proxyAuthorizationHeader) {
     if (proxyAuthorizationHeader != null)
       headers.set(PROXY_AUTHORIZATION, proxyAuthorizationHeader);
   }
 
+  /**
+   * Creates a new NettyRequest from a high-level Request object.
+   * <p>
+   * This method handles all aspects of request construction including method selection,
+   * URI formatting (for proxies and CONNECT requests), body encoding, header configuration,
+   * authentication, and WebSocket upgrade headers.
+   * </p>
+   *
+   * @param request the async-http-client request
+   * @param performConnectRequest whether to create an HTTP CONNECT request for tunneling
+   * @param proxyServer the proxy server configuration, or null
+   * @param realm the authentication realm, or null
+   * @param proxyRealm the proxy authentication realm, or null
+   * @return a new NettyRequest ready to be written to a channel
+   */
   public NettyRequest newNettyRequest(Request request, boolean performConnectRequest, ProxyServer proxyServer, Realm realm, Realm proxyRealm) {
 
     Uri uri = request.getUri();

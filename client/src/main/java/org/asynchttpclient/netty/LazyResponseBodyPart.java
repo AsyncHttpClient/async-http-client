@@ -19,17 +19,45 @@ import org.asynchttpclient.netty.util.ByteBufUtils;
 import java.nio.ByteBuffer;
 
 /**
- * A callback class used when an HTTP response body is received.
+ * Response body part that lazily accesses bytes from the Netty ByteBuf.
+ * <p>
+ * This implementation retains a reference to the original ByteBuf without copying its contents,
+ * allowing for zero-copy access to response data. This is more memory efficient but requires
+ * careful ByteBuf lifecycle management to avoid use-after-release bugs.
+ * </p>
+ * <p>
+ * The lazy strategy is suitable for advanced use cases where:
+ * <ul>
+ *   <li>Response bodies are very large and copying would be expensive</li>
+ *   <li>The application can properly manage ByteBuf reference counts</li>
+ *   <li>Zero-copy semantics are desired (e.g., writing directly to a file or network)</li>
+ * </ul>
+ * </p>
  */
 public class LazyResponseBodyPart extends HttpResponseBodyPart {
 
   private final ByteBuf buf;
 
+  /**
+   * Constructs a lazy response body part.
+   *
+   * @param buf the Netty ByteBuf containing the response body chunk
+   * @param last whether this is the final body part
+   */
   public LazyResponseBodyPart(ByteBuf buf, boolean last) {
     super(last);
     this.buf = buf;
   }
 
+  /**
+   * Returns the underlying Netty ByteBuf.
+   * <p>
+   * <b>Warning:</b> The returned ByteBuf must be properly released when no longer needed
+   * to avoid memory leaks. Callers are responsible for reference count management.
+   * </p>
+   *
+   * @return the Netty ByteBuf containing the body data
+   */
   public ByteBuf getBuf() {
     return buf;
   }

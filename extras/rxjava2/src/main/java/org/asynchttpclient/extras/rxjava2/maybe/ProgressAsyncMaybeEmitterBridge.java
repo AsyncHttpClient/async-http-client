@@ -18,15 +18,36 @@ import org.asynchttpclient.handler.ProgressAsyncHandler;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Concrete bridge implementation for ProgressAsyncHandlers.
+ * <p>
+ * This bridge adapts a ProgressAsyncHandler to work with RxJava 2 Maybe,
+ * providing progress tracking support for content write operations. It handles
+ * the conversion between AsyncHttpClient's callback-based API and RxJava's
+ * reactive API while supporting progress callbacks.
+ *
+ * @param <T> the result type produced by the wrapped ProgressAsyncHandler and emitted via RxJava
+ */
 public final class ProgressAsyncMaybeEmitterBridge<T> extends AbstractMaybeProgressAsyncHandlerBridge<T> {
 
   private final ProgressAsyncHandler<? extends T> delegate;
 
+  /**
+   * Creates a new progress-aware async handler bridge.
+   *
+   * @param emitter the RxJava MaybeEmitter to bridge to
+   * @param delegate the ProgressAsyncHandler to delegate operations to
+   */
   public ProgressAsyncMaybeEmitterBridge(MaybeEmitter<T> emitter, ProgressAsyncHandler<? extends T> delegate) {
     super(emitter);
     this.delegate = requireNonNull(delegate);
   }
 
+  /**
+   * Returns the underlying ProgressAsyncHandler delegate.
+   *
+   * @return the delegate handler
+   */
   @Override
   protected ProgressAsyncHandler<? extends T> delegate() {
     return delegate;

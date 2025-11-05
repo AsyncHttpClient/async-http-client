@@ -16,22 +16,49 @@ package org.asynchttpclient.extras.simple;
 import java.io.IOException;
 
 /**
+ * A {@link BodyConsumer} that supports resuming interrupted downloads.
+ * <p>
+ * This interface extends BodyConsumer to provide methods for tracking the number
+ * of bytes already transferred and resuming from that position. This is useful
+ * for large file downloads that may be interrupted and need to continue from
+ * where they left off.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * RandomAccessFile file = new RandomAccessFile("large-file.zip", "rw");
+ * ResumableBodyConsumer consumer = new FileBodyConsumer(file);
+ *
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ *     .setUrl("http://www.example.com/large-file.zip")
+ *     .setResumableDownload(true)
+ *     .build();
+ *
+ * // Download will resume from current file position if interrupted
+ * Future<Response> future = client.get(consumer);
+ * }</pre>
+ *
  * @author Benjamin Hanzelmann
  */
 public interface ResumableBodyConsumer extends BodyConsumer {
 
   /**
-   * Prepare this consumer to resume a download, for example by seeking to the end of the underlying file.
+   * Prepares this consumer to resume a download from the current position.
+   * <p>
+   * For example, a file-based implementation would seek to the end of the file
+   * so that new bytes will be appended.
    *
-   * @throws IOException IO exception
+   * @throws IOException if an I/O error occurs during preparation
    */
   void resume() throws IOException;
 
   /**
-   * Get the previously transferred bytes, for example the current file size.
+   * Returns the number of bytes already transferred.
+   * <p>
+   * For example, a file-based implementation would return the current file size.
+   * This value is used to send a Range header to continue the download.
    *
    * @return the number of transferred bytes
-   * @throws IOException IO exception
+   * @throws IOException if an I/O error occurs reading the transferred byte count
    */
   long getTransferredBytes() throws IOException;
 }

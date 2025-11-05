@@ -67,6 +67,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Central manager for Netty channel lifecycle and pipeline configuration.
+ * <p>
+ * This class is responsible for:
+ * <ul>
+ *   <li>Creating and configuring Netty bootstraps for HTTP and WebSocket connections</li>
+ *   <li>Managing channel pools for connection reuse</li>
+ *   <li>Configuring SSL/TLS handlers</li>
+ *   <li>Setting up protocol-specific pipeline handlers</li>
+ *   <li>Tracking open channels and connection statistics</li>
+ * </ul>
+ * </p>
+ * <p>
+ * The ChannelManager supports multiple transport implementations (NIO, Epoll, KQueue)
+ * and handles both HTTP and WebSocket protocols with automatic pipeline reconfiguration.
+ * </p>
+ */
 public class ChannelManager {
 
   public static final String HTTP_CLIENT_CODEC = "http";
@@ -95,6 +112,19 @@ public class ChannelManager {
 
   private AsyncHttpClientHandler wsHandler;
 
+  /**
+   * Constructs a new ChannelManager with the specified configuration.
+   * <p>
+   * This constructor initializes the event loop group, channel pool, SSL engine factory,
+   * and bootstraps for HTTP and WebSocket connections. It automatically selects the
+   * appropriate transport implementation (NIO, Epoll, or KQueue) based on the platform
+   * and configuration.
+   * </p>
+   *
+   * @param config the async HTTP client configuration
+   * @param nettyTimer the timer for scheduling timeouts and periodic tasks
+   * @throws RuntimeException if SSL engine factory initialization fails
+   */
   public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
 
     this.config = config;
@@ -153,6 +183,12 @@ public class ChannelManager {
     httpBootstrap.option(ChannelOption.AUTO_READ, false);
   }
 
+  /**
+   * Checks if an SSL handler is configured in the pipeline.
+   *
+   * @param pipeline the channel pipeline to check
+   * @return true if an SSL handler is present in the pipeline
+   */
   public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
     return pipeline.get(SSL_HANDLER) != null;
   }
@@ -207,6 +243,16 @@ public class ChannelManager {
     throw new IllegalArgumentException("No suitable native transport (epoll or kqueue) available");
   }
 
+  /**
+   * Configures the HTTP and WebSocket bootstraps with protocol handlers.
+   * <p>
+   * This method sets up the channel initializers that install the appropriate
+   * handlers in the pipeline for HTTP and WebSocket connections. It must be
+   * called after construction and before any connections are made.
+   * </p>
+   *
+   * @param requestSender the request sender for handling outgoing requests
+   */
   public void configureBootstraps(NettyRequestSender requestSender) {
 
     final AsyncHttpClientHandler httpHandler = new HttpHandler(config, this, requestSender);
@@ -265,6 +311,19 @@ public class ChannelManager {
       return new HttpContentDecompressor();
   }
 
+  /**
+   * Attempts to return a channel to the connection pool for reuse.
+   * <p>
+   * This method first notifies the async handler via {@link AsyncHandler#onConnectionOffer(Channel)},
+   * then offers the channel to the pool if it's active and keepAlive is true. If the pool
+   * rejects the channel or keepAlive is false, the channel is closed.
+   * </p>
+   *
+   * @param channel the channel to offer to the pool
+   * @param asyncHandler the async handler to notify of the connection offer
+   * @param keepAlive whether to keep the connection alive
+   * @param partitionKey the pool partition key (typically based on host/port)
+   */
   public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> asyncHandler, boolean keepAlive, Object partitionKey) {
     if (channel.isActive() && keepAlive) {
       LOGGER.debug("Adding key: {} for channel {}", partitionKey, channel);
@@ -286,11 +345,33 @@ public class ChannelManager {
     }
   }
 
+  /**
+   * Polls an idle channel from the connection pool.
+   * <p>
+   * This method attempts to retrieve an existing connection from the pool based on
+   * the partition key determined by the URI, virtual host, and proxy settings.
+   * </p>
+   *
+   * @param uri the target URI
+   * @param virtualHost the virtual host header value, or null
+   * @param proxy the proxy server configuration, or null
+   * @param connectionPoolPartitioning the partitioning strategy for the pool
+   * @return a channel from the pool, or null if none available
+   */
   public Channel poll(Uri uri, String virtualHost, ProxyServer proxy, ChannelPoolPartitioning connectionPoolPartitioning) {
     Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
     return channelPool.poll(partitionKey);
   }
 
+  /**
+   * Removes all instances of a channel from the connection pool.
+   * <p>
+   * This method is called when a channel becomes unusable and should be
+   * removed from all pool partitions where it might be stored.
+   * </p>
+   *
+   * @param connection the channel to remove from the pool
+   */
   public void removeAll(Channel connection) {
     channelPool.removeAll(connection);
   }
@@ -311,6 +392,15 @@ public class ChannelManager {
     }
   }
 
+  /**
+   * Closes a channel and removes it from the pool and open channels group.
+   * <p>
+   * This method marks the channel for discard, removes it from the pool,
+   * and performs a silent close operation.
+   * </p>
+   *
+   * @param channel the channel to close
+   */
   public void closeChannel(Channel channel) {
     LOGGER.debug("Closing Channel {} ", channel);
     Channels.setDiscard(channel);
@@ -318,6 +408,15 @@ public class ChannelManager {
     Channels.silentlyCloseChannel(channel);
   }
 
+  /**
+   * Registers a newly opened channel with the manager.
+   * <p>
+   * This method adds the channel to the tracked open channels group,
+   * allowing it to be managed and closed during shutdown.
+   * </p>
+   *
+   * @param channel the channel to register
+   */
   public void registerOpenChannel(Channel channel) {
     openChannels.add(channel);
   }
@@ -340,6 +439,18 @@ public class ChannelManager {
     return sslHandler;
   }
 
+  /**
+   * Updates the pipeline for HTTP tunneling through a proxy (HTTP CONNECT).
+   * <p>
+   * This method reconfigures the pipeline after a successful CONNECT request,
+   * adding SSL if needed and reinstalling the HTTP codec. For WebSocket upgrades
+   * through tunnels, it also switches to the WebSocket handler.
+   * </p>
+   *
+   * @param pipeline the channel pipeline to update
+   * @param requestUri the target URI after tunneling
+   * @return a Future that completes when SSL handshake finishes (if SSL), or null
+   */
   public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
 
     Future<Channel> whenHandshaked = null;
@@ -371,6 +482,19 @@ public class ChannelManager {
     return whenHandshaked;
   }
 
+  /**
+   * Adds an SSL handler to the pipeline for secure connections.
+   * <p>
+   * This method creates and installs an SSL handler configured for the target
+   * host and port. The virtualHost parameter is used for SNI (Server Name Indication).
+   * </p>
+   *
+   * @param pipeline the channel pipeline to modify
+   * @param uri the target URI
+   * @param virtualHost the virtual host for SNI, or null to use the URI host
+   * @param hasSocksProxyHandler whether a SOCKS proxy handler is already in the pipeline
+   * @return the created SslHandler
+   */
   public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {
     String peerHost;
     int peerPort;
@@ -399,6 +523,19 @@ public class ChannelManager {
     return sslHandler;
   }
 
+  /**
+   * Retrieves or creates an appropriate bootstrap for the connection.
+   * <p>
+   * This method selects the correct bootstrap (HTTP or WebSocket) and configures
+   * it for SOCKS proxy if needed. For SOCKS proxies, it clones the HTTP bootstrap
+   * and adds the SOCKS handler after resolving the proxy address.
+   * </p>
+   *
+   * @param uri the target URI
+   * @param nameResolver the name resolver for resolving proxy addresses
+   * @param proxy the proxy server configuration, or null for direct connections
+   * @return a Future containing the configured Bootstrap
+   */
   public Future<Bootstrap> getBootstrap(Uri uri, NameResolver<InetAddress> nameResolver, ProxyServer proxy) {
 
     final Promise<Bootstrap> promise = ImmediateEventExecutor.INSTANCE.newPromise();
@@ -455,6 +592,16 @@ public class ChannelManager {
     return promise;
   }
 
+  /**
+   * Upgrades the pipeline from HTTP to WebSocket protocol.
+   * <p>
+   * This method replaces the HTTP codec with WebSocket frame encoder/decoder
+   * and optionally adds a frame aggregator for fragmented messages. It is called
+   * after a successful WebSocket handshake upgrade.
+   * </p>
+   *
+   * @param pipeline the channel pipeline to upgrade
+   */
   public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
     pipeline.addAfter(HTTP_CLIENT_CODEC, WS_ENCODER_HANDLER, new WebSocket08FrameEncoder(true));
     pipeline.addAfter(WS_ENCODER_HANDLER, WS_DECODER_HANDLER, new WebSocket08FrameDecoder(false, config.isEnableWebSocketCompression(), config.getWebSocketMaxFrameSize()));
@@ -482,14 +629,33 @@ public class ChannelManager {
     Channels.setAttribute(channel, newDrainCallback(future, channel, keepAlive, partitionKey));
   }
 
+  /**
+   * Returns the channel pool used by this manager.
+   *
+   * @return the ChannelPool instance
+   */
   public ChannelPool getChannelPool() {
     return channelPool;
   }
 
+  /**
+   * Returns the event loop group used by this manager.
+   *
+   * @return the EventLoopGroup instance
+   */
   public EventLoopGroup getEventLoopGroup() {
     return eventLoopGroup;
   }
 
+  /**
+   * Retrieves statistics about open and idle connections.
+   * <p>
+   * This method aggregates connection statistics per host, including total
+   * connections, idle connections in the pool, and active connections.
+   * </p>
+   *
+   * @return ClientStats containing per-host connection statistics
+   */
   public ClientStats getClientStats() {
     Map<String, Long> totalConnectionsPerHost = openChannels.stream().map(Channel::remoteAddress).filter(a -> a instanceof InetSocketAddress)
             .map(a -> (InetSocketAddress) a).map(InetSocketAddress::getHostString).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
@@ -503,6 +669,11 @@ public class ChannelManager {
     return new ClientStats(statsPerHost);
   }
 
+  /**
+   * Checks if the channel manager is open and accepting connections.
+   *
+   * @return true if the manager and its channel pool are open
+   */
   public boolean isOpen() {
     return channelPool.isOpen();
   }

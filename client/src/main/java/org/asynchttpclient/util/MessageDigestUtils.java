@@ -16,6 +16,14 @@ package org.asynchttpclient.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Utility class for managing pooled MessageDigest instances.
+ * <p>
+ * This class provides thread-local pools of MessageDigest instances for commonly used
+ * hashing algorithms (MD5 and SHA-1). Using pooled instances improves performance by
+ * avoiding the overhead of repeatedly creating new MessageDigest instances.
+ * </p>
+ */
 public final class MessageDigestUtils {
 
   private static final ThreadLocal<MessageDigest> MD5_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
@@ -34,12 +42,46 @@ public final class MessageDigestUtils {
     }
   });
 
+  /**
+   * Returns a thread-local, reset MD5 MessageDigest instance.
+   * <p>
+   * The returned MessageDigest is reset and ready for use. Each thread gets its own
+   * instance, making this method thread-safe without requiring synchronization.
+   * </p>
+   *
+   * <p><b>Usage Examples:</b></p>
+   * <pre>{@code
+   * MessageDigest md5 = pooledMd5MessageDigest();
+   * md5.update(data);
+   * byte[] hash = md5.digest();
+   * }</pre>
+   *
+   * @return a reset MD5 MessageDigest instance
+   * @throws InternalError if MD5 algorithm is not supported on this platform
+   */
   public static MessageDigest pooledMd5MessageDigest() {
     MessageDigest md = MD5_MESSAGE_DIGESTS.get();
     md.reset();
     return md;
   }
 
+  /**
+   * Returns a thread-local, reset SHA-1 MessageDigest instance.
+   * <p>
+   * The returned MessageDigest is reset and ready for use. Each thread gets its own
+   * instance, making this method thread-safe without requiring synchronization.
+   * </p>
+   *
+   * <p><b>Usage Examples:</b></p>
+   * <pre>{@code
+   * MessageDigest sha1 = pooledSha1MessageDigest();
+   * sha1.update(data);
+   * byte[] hash = sha1.digest();
+   * }</pre>
+   *
+   * @return a reset SHA-1 MessageDigest instance
+   * @throws InternalError if SHA-1 algorithm is not supported on this platform
+   */
   public static MessageDigest pooledSha1MessageDigest() {
     MessageDigest md = SHA1_MESSAGE_DIGESTS.get();
     md.reset();

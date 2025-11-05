@@ -26,6 +26,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.asynchttpclient.util.Assertions.assertNotNull;
 
+/**
+ * A {@link BodyGenerator} that integrates with Reactive Streams publishers.
+ * <p>
+ * This implementation bridges the Reactive Streams specification with the async-http-client
+ * body generator API. It subscribes to a {@link Publisher} of {@link ByteBuf} and feeds
+ * the emitted buffers to an underlying {@link FeedableBodyGenerator}.
+ * </p>
+ * <p>
+ * The publisher is subscribed to lazily when the body transfer begins. Data from the
+ * publisher is automatically fed to the request as it becomes available, following
+ * the Reactive Streams backpressure protocol.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create a publisher that emits ByteBuf chunks
+ * Publisher<ByteBuf> publisher = Flux.just(
+ *     Unpooled.wrappedBuffer("Hello ".getBytes()),
+ *     Unpooled.wrappedBuffer("World!".getBytes())
+ * );
+ *
+ * // Create a reactive streams body generator
+ * // Use -1 for chunked transfer encoding, or specify actual length
+ * ReactiveStreamsBodyGenerator generator = new ReactiveStreamsBodyGenerator(publisher, -1L);
+ *
+ * // Use with AsyncHttpClient
+ * AsyncHttpClient client = asyncHttpClient();
+ * client.preparePost("http://example.com/stream")
+ *     .setBody(generator)
+ *     .execute();
+ * }</pre>
+ */
 public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
 
   private final Publisher<ByteBuf> publisher;
@@ -34,12 +66,14 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
   private volatile FeedListener feedListener;
 
   /**
-   * Creates a Streamable Body which takes a Content-Length.
-   * If the contentLength parameter is -1L a Http Header of Transfer-Encoding: chunked will be set.
-   * Otherwise it will set the Content-Length header to the value provided
+   * Constructs a reactive streams body generator.
+   * <p>
+   * If the content length is -1, the HTTP request will use Transfer-Encoding: chunked.
+   * Otherwise, the Content-Length header will be set to the specified value.
+   * </p>
    *
-   * @param publisher     Body as a Publisher
-   * @param contentLength Content-Length of the Body
+   * @param publisher     the reactive streams publisher that will emit body chunks
+   * @param contentLength the total content length in bytes, or -1 for chunked encoding
    */
   public ReactiveStreamsBodyGenerator(Publisher<ByteBuf> publisher, long contentLength) {
     this.publisher = publisher;
@@ -47,25 +81,61 @@ public class ReactiveStreamsBodyGenerator implements FeedableBodyGenerator {
     this.contentLength = contentLength;
   }
 
+  /**
+   * Gets the publisher that this generator uses as a data source.
+   *
+   * @return the reactive streams publisher
+   */
   public Publisher<ByteBuf> getPublisher() {
     return this.publisher;
   }
 
+  /**
+   * Feeds a chunk of data to the underlying body generator.
+   * <p>
+   * This method is called by the Reactive Streams subscriber to feed data from
+   * the publisher into the request body.
+   * </p>
+   *
+   * @param buffer the buffer containing the chunk data
+   * @param isLast {@code true} if this is the last chunk, {@code false} otherwise
+   * @return {@code true} if the chunk was accepted, {@code false} otherwise
+   * @throws Exception if an error occurs while feeding the chunk
+   */
   @Override
   public boolean feed(ByteBuf buffer, boolean isLast) throws Exception {
     return feedableBodyGenerator.feed(buffer, isLast);
   }
 
+  /**
+   * Sets the listener to be notified of feed events.
+   *
+   * @param listener the listener to notify, or {@code null} to remove the current listener
+   */
   @Override
   public void setListener(FeedListener listener) {
     feedListener = listener;
     feedableBodyGenerator.setListener(listener);
   }
 
+  /**
+   * Gets the content length of the body.
+   *
+   * @return the content length in bytes, or -1 if unknown (chunked encoding)
+   */
   public long getContentLength() {
     return contentLength;
   }
 
+  /**
+   * Creates a new body instance that subscribes to the publisher.
+   * <p>
+   * The publisher subscription is initiated lazily when the first transfer
+   * operation begins.
+   * </p>
+   *
+   * @return a new streamed body instance
+   */
   @Override
   public Body createBody() {
     return new StreamedBody(feedableBodyGenerator, contentLength);

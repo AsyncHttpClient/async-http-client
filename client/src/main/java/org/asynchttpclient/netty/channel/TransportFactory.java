@@ -19,8 +19,26 @@ import io.netty.channel.EventLoopGroup;
 
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * Factory for creating transport-specific channel and event loop group instances.
+ * <p>
+ * This interface abstracts the creation of Netty transport components, allowing
+ * support for multiple transport implementations (NIO, Epoll, KQueue). Each implementation
+ * provides optimized channel and event loop classes for their respective platform.
+ * </p>
+ *
+ * @param <C> the channel type (e.g., NioSocketChannel, EpollSocketChannel)
+ * @param <L> the event loop group type (e.g., NioEventLoopGroup, EpollEventLoopGroup)
+ */
 public interface TransportFactory<C extends Channel, L extends EventLoopGroup> extends ChannelFactory<C> {
 
+  /**
+   * Creates a new event loop group for this transport.
+   *
+   * @param ioThreadsCount the number of I/O threads to create
+   * @param threadFactory the factory for creating threads
+   * @return a new event loop group instance
+   */
   L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
 
 }

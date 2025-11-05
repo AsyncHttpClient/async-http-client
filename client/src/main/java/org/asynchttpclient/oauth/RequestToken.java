@@ -16,29 +16,66 @@ package org.asynchttpclient.oauth;
 import org.asynchttpclient.util.Utf8UrlEncoder;
 
 /**
- * Value class used for OAuth tokens (request secret, access secret);
- * simple container with two parts, public id part ("key") and
- * confidential ("secret") part.
+ * Value class used for OAuth tokens (request token or access token).
+ * <p>
+ * This is a simple container with two parts: a public identifier ("key") and a
+ * confidential ("secret") part. The key is automatically percent-encoded for use
+ * in OAuth signatures.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * RequestToken requestToken = new RequestToken("request-key", "request-secret");
+ * String key = requestToken.getKey();
+ * String encodedKey = requestToken.getPercentEncodedKey();
+ * }</pre>
  */
 public class RequestToken {
   private final String key;
   private final String secret;
   private final String percentEncodedKey;
 
+  /**
+   * Creates a new request token with the specified key and secret.
+   * <p>
+   * The key is automatically percent-encoded using UTF-8 URL encoding for use in OAuth signatures.
+   * </p>
+   *
+   * @param key the token key (public identifier)
+   * @param token the token secret (confidential part)
+   */
   public RequestToken(String key, String token) {
     this.key = key;
     this.secret = token;
     this.percentEncodedKey = Utf8UrlEncoder.percentEncodeQueryElement(key);
   }
 
+  /**
+   * Returns the token key (public identifier).
+   *
+   * @return the token key
+   */
   public String getKey() {
     return key;
   }
 
+  /**
+   * Returns the token secret (confidential part).
+   *
+   * @return the token secret
+   */
   public String getSecret() {
     return secret;
   }
 
+  /**
+   * Returns the percent-encoded token key.
+   * <p>
+   * This is the URL-encoded version of the key, ready for use in OAuth signature calculations.
+   * </p>
+   *
+   * @return the percent-encoded token key
+   */
   public String getPercentEncodedKey() {
     return percentEncodedKey;
   }

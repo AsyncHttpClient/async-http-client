@@ -20,7 +20,17 @@ import java.nio.charset.Charset;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 /**
- * This class is an adaptation of the Apache HttpClient implementation
+ * Abstract base class for file-like multipart parts.
+ * <p>
+ * This class provides common functionality for parts that represent file-like content,
+ * including file uploads ({@link FilePart}), byte arrays ({@link ByteArrayPart}), and
+ * input streams ({@link InputStreamPart}). It handles automatic content type detection
+ * based on file name extensions using a MIME types mapping.
+ * </p>
+ * <p>
+ * This class is an adaptation of the Apache HttpClient implementation and includes
+ * a built-in MIME types file (ahc-mime.types) for content type detection.
+ * </p>
  */
 public abstract class FileLikePart extends PartBase {
 
@@ -35,19 +45,23 @@ public abstract class FileLikePart extends PartBase {
   }
 
   /**
-   * Default content encoding of file attachments.
+   * The file name associated with this part.
    */
   private String fileName;
 
   /**
-   * FilePart Constructor.
+   * Constructs a file-like part with the specified parameters.
+   * <p>
+   * If no content type is provided, it will be automatically determined from the
+   * file name extension using the built-in MIME types mapping.
+   * </p>
    *
-   * @param name              the name for this part
-   * @param contentType       the content type for this part, if <code>null</code> try to figure out from the fileName mime type
-   * @param charset           the charset encoding for this part
-   * @param fileName          the fileName
-   * @param contentId         the content id
-   * @param transferEncoding the transfer encoding
+   * @param name             the name of the form field
+   * @param contentType      the content type, or {@code null} to auto-detect from fileName
+   * @param charset          the character encoding, or {@code null} for default
+   * @param fileName         the file name for content type detection and disposition header
+   * @param contentId        the content ID, or {@code null} if not needed
+   * @param transferEncoding the transfer encoding, or {@code null} for default
    */
   public FileLikePart(String name, String contentType, Charset charset, String fileName, String contentId, String transferEncoding) {
     super(name,
@@ -58,14 +72,35 @@ public abstract class FileLikePart extends PartBase {
     this.fileName = fileName;
   }
 
+  /**
+   * Computes the content type based on the provided type or file name.
+   * <p>
+   * If a content type is explicitly provided, it is used. Otherwise, the content type
+   * is determined from the file name extension using the MIME types mapping.
+   * </p>
+   *
+   * @param contentType the explicit content type, or {@code null}
+   * @param fileName    the file name for type detection, or {@code null}
+   * @return the computed content type
+   */
   private static String computeContentType(String contentType, String fileName) {
     return contentType != null ? contentType : MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
   }
 
+  /**
+   * Returns the file name associated with this part.
+   *
+   * @return the file name, or {@code null} if not set
+   */
   public String getFileName() {
     return fileName;
   }
 
+  /**
+   * Returns a string representation of this part including the file name.
+   *
+   * @return a string representation of this part
+   */
   @Override
   public String toString() {
     return super.toString() + " filename=" + fileName;

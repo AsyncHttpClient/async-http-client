@@ -17,15 +17,32 @@ import rx.SingleSubscriber;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Concrete bridge implementation for standard AsyncHandlers.
+ * <p>
+ * This bridge adapts a regular AsyncHandler to work with RxJava Singles,
+ * without progress tracking support.
+ */
 final class AsyncSingleSubscriberBridge<T> extends AbstractSingleSubscriberBridge<T> {
 
   private final AsyncHandler<? extends T> delegate;
 
+  /**
+   * Creates a new async subscriber bridge.
+   *
+   * @param subscriber the RxJava SingleSubscriber to bridge to
+   * @param delegate the AsyncHandler to delegate operations to
+   */
   public AsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, AsyncHandler<? extends T> delegate) {
     super(subscriber);
     this.delegate = requireNonNull(delegate);
   }
 
+  /**
+   * Returns the underlying AsyncHandler delegate.
+   *
+   * @return the delegate handler
+   */
   @Override
   protected AsyncHandler<? extends T> delegate() {
     return delegate;

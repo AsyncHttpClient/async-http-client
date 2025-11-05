@@ -18,11 +18,31 @@ package org.asynchttpclient;
 
 
 /**
- * Simple {@link AsyncHandler} of type {@link Response}
+ * A simple {@link AsyncCompletionHandler} implementation that returns the complete {@link Response}.
+ * <p>
+ * This is the simplest way to execute an HTTP request and get the complete response back.
+ * The response body will be fully buffered in memory.
+ * </p>
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * Future<Response> future = client.prepareGet("http://example.com")
+ *     .execute(new AsyncCompletionHandlerBase());
+ * Response response = future.get();
+ * System.out.println(response.getResponseBody());
+ * }</pre>
+ * <p>
+ * Note: You can also use {@link AsyncHttpClient#executeRequest(Request)} directly,
+ * which uses this handler internally.
+ * </p>
  */
 public class AsyncCompletionHandlerBase extends AsyncCompletionHandler<Response> {
   /**
-   * {@inheritDoc}
+   * Returns the complete response as-is.
+   *
+   * @param response the fully assembled HTTP response
+   * @return the same response object
+   * @throws Exception if an error occurs during processing
    */
   @Override
   public Response onCompleted(Response response) throws Exception {

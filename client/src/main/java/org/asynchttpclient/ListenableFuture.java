@@ -33,49 +33,80 @@ package org.asynchttpclient;
 import java.util.concurrent.*;
 
 /**
- * Extended {@link Future}
+ * An extended {@link Future} that provides additional control and listener capabilities.
+ * <p>
+ * This interface extends the standard Java {@link Future} with async-http-client specific
+ * functionality including the ability to abort requests, add completion listeners, and
+ * convert to {@link CompletableFuture}.
+ * </p>
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = Dsl.asyncHttpClient();
+ * ListenableFuture<Response> future = client.prepareGet("http://example.com").execute();
  *
- * @param <V> Type of the value that will be returned.
+ * // Add a listener for completion
+ * future.addListener(() -> System.out.println("Request completed"),
+ *     Executors.newSingleThreadExecutor());
+ *
+ * // Convert to CompletableFuture for modern async APIs
+ * CompletableFuture<Response> cf = future.toCompletableFuture();
+ *
+ * // Block and get the result
+ * Response response = future.get();
+ * }</pre>
+ *
+ * @param <V> the type of value that will be returned
+ * @see Future
+ * @see CompletableFuture
  */
 public interface ListenableFuture<V> extends Future<V> {
 
   /**
-   * Terminate and if there is no exception, mark this Future as done and release the internal lock.
+   * Marks this future as done and releases any internal locks.
+   * This should be called when the operation completes successfully without exceptions.
    */
   void done();
 
   /**
-   * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}
+   * Aborts the current operation and propagates the exception to the {@link AsyncHandler} or {@link Future}.
+   * This will cause {@link #get()} to throw an {@link java.util.concurrent.ExecutionException}.
    *
-   * @param t the exception
+   * @param t the exception that caused the abort
    */
   void abort(Throwable t);
 
   /**
-   * Touch the current instance to prevent external service to times out.
+   * Touches this future to prevent timeout.
+   * This is useful for long-running operations where you want to signal progress
+   * without completing the future.
    */
   void touch();
 
   /**
-   * Adds a listener and executor to the ListenableFuture.
-   * The listener will be {@linkplain java.util.concurrent.Executor#execute(Runnable) passed
-   * to the executor} for execution when the {@code Future}'s computation is
-   * {@linkplain Future#isDone() complete}.
-   * <br>
-   * Executor can be <code>null</code>, in that case executor will be executed
-   * in the thread where completion happens.
-   * <br>
-   * There is no guaranteed ordering of execution of listeners, they may get
-   * called in the order they were added and they may get called out of order,
-   * but any listener added through this method is guaranteed to be called once
-   * the computation is complete.
+   * Adds a listener to be executed when this future completes.
+   * <p>
+   * The listener will be passed to the executor for execution when the future's
+   * computation is {@linkplain Future#isDone() complete}. If the executor is null,
+   * the listener will be executed in the thread that completes the future.
+   * </p>
+   * <p>
+   * There is no guaranteed ordering of listener execution. Listeners may be called
+   * in the order they were added or out of order, but all listeners are guaranteed
+   * to be called once the computation completes.
+   * </p>
    *
-   * @param listener the listener to run when the computation is complete.
-   * @param exec     the executor to run the listener in.
-   * @return this Future
+   * @param listener the listener to run when the computation is complete
+   * @param exec the executor to run the listener in, or null to run in the completing thread
+   * @return this future instance for method chaining
    */
   ListenableFuture<V> addListener(Runnable listener, Executor exec);
 
+  /**
+   * Converts this ListenableFuture to a {@link CompletableFuture}.
+   * This allows integration with Java 8+ async APIs and functional composition.
+   *
+   * @return a CompletableFuture that completes with the same result or exception as this future
+   */
   CompletableFuture<V> toCompletableFuture();
 
   class CompletedFailure<T> implements ListenableFuture<T> {

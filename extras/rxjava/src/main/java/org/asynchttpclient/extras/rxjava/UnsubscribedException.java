@@ -15,14 +15,25 @@ package org.asynchttpclient.extras.rxjava;
 import java.util.concurrent.CancellationException;
 
 /**
- * Indicates that an {@code Observer} unsubscribed during the processing of a HTTP request.
+ * Indicates that an {@code Observer} unsubscribed during the processing of an HTTP request.
+ * <p>
+ * This exception is used to signal early termination of HTTP request processing when
+ * the RxJava subscriber unsubscribes before the request completes.
  */
 @SuppressWarnings("serial")
 public class UnsubscribedException extends CancellationException {
 
+  /**
+   * Creates a new UnsubscribedException with no detail message.
+   */
   public UnsubscribedException() {
   }
 
+  /**
+   * Creates a new UnsubscribedException with the specified cause.
+   *
+   * @param cause the underlying cause of this exception
+   */
   public UnsubscribedException(final Throwable cause) {
     initCause(cause);
   }

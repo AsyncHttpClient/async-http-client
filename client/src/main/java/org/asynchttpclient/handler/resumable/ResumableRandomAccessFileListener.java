@@ -19,21 +19,50 @@ import java.nio.ByteBuffer;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 /**
- * A {@link org.asynchttpclient.handler.resumable.ResumableListener} which use a {@link RandomAccessFile} for storing the received bytes.
+ * A {@link ResumableListener} implementation that writes response body bytes to a {@link RandomAccessFile}.
+ * <p>
+ * This listener enables resumable file downloads by using a RandomAccessFile that can seek to
+ * specific positions. When resuming a download, the file pointer is positioned at the end of
+ * the existing file content, allowing new bytes to be appended seamlessly.
+ * <p>
+ * The listener automatically seeks to the end of the file before each write operation,
+ * ensuring proper positioning even when resuming from a previous download attempt.
+ *
+ * <p><b>Usage Example:</b></p>
+ * <pre>{@code
+ * File outputFile = new File("largefile.zip");
+ * RandomAccessFile raf = new RandomAccessFile(outputFile, "rw");
+ *
+ * ResumableRandomAccessFileListener listener = new ResumableRandomAccessFileListener(raf);
+ * ResumableAsyncHandler handler = new ResumableAsyncHandler();
+ * handler.setResumableListener(listener);
+ *
+ * // If the download is interrupted and resumed, the file will continue from where it left off
+ * client.prepareGet("http://example.com/largefile.zip")
+ *     .execute(handler)
+ *     .get();
+ * }</pre>
  */
 public class ResumableRandomAccessFileListener implements ResumableListener {
   private final RandomAccessFile file;
 
+  /**
+   * Creates a new listener that writes to the specified RandomAccessFile.
+   *
+   * @param file the RandomAccessFile where response body bytes will be written
+   */
   public ResumableRandomAccessFileListener(RandomAccessFile file) {
     this.file = file;
   }
 
   /**
-   * This method uses the last valid bytes written on disk to position a {@link RandomAccessFile}, allowing
-   * resumable file download.
+   * Writes a chunk of response body bytes to the file.
+   * <p>
+   * This method positions the file pointer at the end of the file before writing,
+   * enabling resumable downloads. The method handles both heap and direct ByteBuffers.
    *
-   * @param buffer a {@link ByteBuffer}
-   * @throws IOException exception while writing into the file
+   * @param buffer the ByteBuffer containing response body bytes
+   * @throws IOException if an I/O error occurs while writing to the file
    */
   public void onBytesReceived(ByteBuffer buffer) throws IOException {
     file.seek(file.length());
@@ -49,14 +78,20 @@ public class ResumableRandomAccessFileListener implements ResumableListener {
   }
 
   /**
-   * {@inheritDoc}
+   * Invoked when all response bytes have been received.
+   * <p>
+   * Closes the RandomAccessFile to release system resources.
    */
   public void onAllBytesReceived() {
     closeSilently(file);
   }
 
   /**
-   * {@inheritDoc}
+   * Returns the current length of the file in bytes.
+   * <p>
+   * This is used to determine the resume position when continuing an interrupted download.
+   *
+   * @return the current file length in bytes, or 0 if an error occurs
    */
   public long length() {
     try {

@@ -41,14 +41,31 @@ package org.asynchttpclient.spnego;
 import java.io.IOException;
 
 /**
- * Abstract SPNEGO token generator. Implementations should take an Kerberos ticket and transform
- * into a SPNEGO token.
- * <br>
+ * Interface for generating SPNEGO tokens from Kerberos tickets.
+ * <p>
+ * Implementations of this interface transform Kerberos tickets into SPNEGO tokens
+ * by wrapping them in the appropriate DER-encoded SPNEGO structure. This is necessary
+ * for servers that only accept SPNEGO tokens but not raw Kerberos tickets.
+ * </p>
+ * <p>
  * Implementations of this interface are expected to be thread-safe.
+ * </p>
  *
  * @since 4.1
  */
 public interface SpnegoTokenGenerator {
 
+  /**
+   * Generates a SPNEGO DER-encoded object from a Kerberos ticket.
+   * <p>
+   * This method wraps the provided Kerberos ticket in a SPNEGO token structure
+   * according to RFC 4178. The resulting token can be sent to servers that require
+   * SPNEGO authentication.
+   * </p>
+   *
+   * @param kerberosTicket the Kerberos ticket bytes to wrap
+   * @return the SPNEGO DER-encoded token bytes
+   * @throws IOException if an error occurs during token generation
+   */
   byte[] generateSpnegoDERObject(byte[] kerberosTicket) throws IOException;
 }

@@ -9,17 +9,44 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 /**
- * Wrapper for {@link AsyncHandler}s to release a permit on {@link AsyncHandler#onCompleted()}. This is done via a dynamic proxy to preserve all interfaces of the wrapped handler.
+ * Utility class for wrapping {@link AsyncHandler}s to automatically release a semaphore permit
+ * upon request completion. This is primarily used by {@link ThrottleRequestFilter} to manage
+ * concurrent request limits.
+ *
+ * <p>The wrapper is implemented using a dynamic proxy to preserve all interfaces
+ * of the wrapped handler, ensuring full compatibility with custom handler implementations.</p>
+ *
+ * <p>The semaphore permit is released when either:</p>
+ * <ul>
+ *   <li>{@link AsyncHandler#onCompleted()} is called (successful completion)</li>
+ *   <li>{@link AsyncHandler#onThrowable(Throwable)} is called (error completion)</li>
+ * </ul>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * Semaphore semaphore = new Semaphore(10);
+ * AsyncHandler<String> originalHandler = new AsyncCompletionHandler<String>() {
+ *     @Override
+ *     public String onCompleted(Response response) {
+ *         return response.getResponseBody();
+ *     }
+ * };
+ *
+ * // Wrap the handler to release semaphore on completion
+ * AsyncHandler<String> wrappedHandler = ReleasePermitOnComplete.wrap(originalHandler, semaphore);
+ * }</pre>
  */
 public class ReleasePermitOnComplete {
 
   /**
-   * Wrap handler to release the permit of the semaphore on {@link AsyncHandler#onCompleted()}.
+   * Wraps an {@link AsyncHandler} to automatically release a semaphore permit on completion.
+   * The permit is released when either {@link AsyncHandler#onCompleted()} or
+   * {@link AsyncHandler#onThrowable(Throwable)} is invoked.
    *
-   * @param handler   the handler to be wrapped
-   * @param available the Semaphore to be released when the wrapped handler is completed
-   * @param <T>       the handler result type
-   * @return the wrapped handler
+   * @param handler the handler to be wrapped
+   * @param available the semaphore whose permit will be released on completion
+   * @param <T> the handler result type
+   * @return the wrapped handler that releases the permit on completion
    */
   @SuppressWarnings("unchecked")
   public static <T> AsyncHandler<T> wrap(final AsyncHandler<T> handler, final Semaphore available) {

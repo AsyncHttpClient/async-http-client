@@ -20,10 +20,23 @@ import org.asynchttpclient.request.body.multipart.ByteArrayPart;
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
+/**
+ * Multipart part implementation for {@link ByteArrayPart}.
+ * <p>
+ * This class handles encoding and transfer of in-memory byte array data as a multipart
+ * part. The byte array is wrapped in a ByteBuf for efficient transfer operations.
+ * </p>
+ */
 public class ByteArrayMultipartPart extends FileLikeMultipartPart<ByteArrayPart> {
 
   private final ByteBuf contentBuffer;
 
+  /**
+   * Constructs a byte array multipart part.
+   *
+   * @param part     the byte array part containing the data and metadata
+   * @param boundary the multipart boundary bytes
+   */
   public ByteArrayMultipartPart(ByteArrayPart part, byte[] boundary) {
     super(part, boundary);
     contentBuffer = Unpooled.wrappedBuffer(part.getBytes());

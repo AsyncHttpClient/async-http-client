@@ -20,10 +20,23 @@ import org.asynchttpclient.request.body.multipart.StringPart;
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
+/**
+ * Multipart part implementation for {@link StringPart}.
+ * <p>
+ * This class handles encoding and transfer of text field data as multipart parts. The
+ * string value is encoded using the part's charset and wrapped in a ByteBuf for transfer.
+ * </p>
+ */
 public class StringMultipartPart extends MultipartPart<StringPart> {
 
   private final ByteBuf contentBuffer;
 
+  /**
+   * Constructs a string multipart part.
+   *
+   * @param part     the string part containing the text and metadata
+   * @param boundary the multipart boundary bytes
+   */
   public StringMultipartPart(StringPart part, byte[] boundary) {
     super(part, boundary);
     contentBuffer = Unpooled.wrappedBuffer(part.getValue().getBytes(part.getCharset()));

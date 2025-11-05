@@ -60,66 +60,67 @@ import java.util.List;
 public interface AsyncHandler<T> {
 
   /**
-   * Invoked as soon as the HTTP status line has been received
+   * Invoked as soon as the HTTP status line has been received.
    *
-   * @param responseStatus the status code and test of the response
-   * @return a {@link State} telling to CONTINUE or ABORT the current processing.
-   * @throws Exception if something wrong happens
+   * @param responseStatus the status code and text of the response
+   * @return a {@link State} indicating whether to CONTINUE or ABORT the current processing
+   * @throws Exception if an error occurs during processing
    */
   State onStatusReceived(HttpResponseStatus responseStatus) throws Exception;
 
   /**
    * Invoked as soon as the HTTP headers have been received.
    *
-   * @param headers the HTTP headers.
-   * @return a {@link State} telling to CONTINUE or ABORT the current processing.
-   * @throws Exception if something wrong happens
+   * @param headers the HTTP response headers
+   * @return a {@link State} indicating whether to CONTINUE or ABORT the current processing
+   * @throws Exception if an error occurs during processing
    */
   State onHeadersReceived(HttpHeaders headers) throws Exception;
 
   /**
-   * Invoked as soon as some response body part are received. Could be invoked many times.
-   * Beware that, depending on the provider (Netty) this can be notified with empty body parts.
+   * Invoked as soon as a response body part is received. May be invoked multiple times.
+   * Note: Depending on the provider (Netty), this can be called with empty body parts.
    *
-   * @param bodyPart response's body part.
-   * @return a {@link State} telling to CONTINUE or ABORT the current processing. Aborting will also close the connection.
-   * @throws Exception if something wrong happens
+   * @param bodyPart the response body part
+   * @return a {@link State} indicating whether to CONTINUE or ABORT the current processing.
+   *         Aborting will also close the connection.
+   * @throws Exception if an error occurs during processing
    */
   State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception;
 
   /**
-   * Invoked when trailing headers have been received.
+   * Invoked when trailing HTTP headers have been received (HTTP/1.1 chunked encoding).
+   * This is optional and only called if trailing headers are present in the response.
    *
-   * @param headers the trailing HTTP headers.
-   * @return a {@link State} telling to CONTINUE or ABORT the current processing.
-   * @throws Exception if something wrong happens
+   * @param headers the trailing HTTP headers
+   * @return a {@link State} indicating whether to CONTINUE or ABORT the current processing
+   * @throws Exception if an error occurs during processing
    */
   default State onTrailingHeadersReceived(HttpHeaders headers) throws Exception {
     return State.CONTINUE;
   }
 
   /**
-   * Invoked when an unexpected exception occurs during the processing of the response. The exception may have been
-   * produced by implementation of onXXXReceived method invocation.
+   * Invoked when an unexpected exception occurs during response processing.
+   * The exception may have been produced by the implementation of any onXXXReceived method.
    *
-   * @param t a {@link Throwable}
+   * @param t the throwable that was caught
    */
   void onThrowable(Throwable t);
 
   /**
    * Invoked once the HTTP response processing is finished.
-   * <br>
-   * Gets always invoked as last callback method.
+   * This method is always invoked as the last callback method.
    *
-   * @return T Value that will be returned by the associated {@link java.util.concurrent.Future}
-   * @throws Exception if something wrong happens
+   * @return the value of type T that will be returned by the associated {@link java.util.concurrent.Future}
+   * @throws Exception if an error occurs during processing
    */
   T onCompleted() throws Exception;
 
   /**
-   * Notify the callback before hostname resolution
+   * Notifies the handler before hostname resolution begins.
    *
-   * @param name the name to be resolved
+   * @param name the hostname to be resolved
    */
   default void onHostnameResolutionAttempt(String name) {
   }
@@ -127,19 +128,19 @@ public interface AsyncHandler<T> {
   // ////////// DNS /////////////////
 
   /**
-   * Notify the callback after hostname resolution was successful.
+   * Notifies the handler after hostname resolution has succeeded.
    *
-   * @param name      the name to be resolved
-   * @param addresses the resolved addresses
+   * @param name      the hostname that was resolved
+   * @param addresses the list of resolved socket addresses
    */
   default void onHostnameResolutionSuccess(String name, List<InetSocketAddress> addresses) {
   }
 
   /**
-   * Notify the callback after hostname resolution failed.
+   * Notifies the handler after hostname resolution has failed.
    *
-   * @param name  the name to be resolved
-   * @param cause the failure cause
+   * @param name  the hostname that failed to resolve
+   * @param cause the cause of the resolution failure
    */
   default void onHostnameResolutionFailure(String name, Throwable cause) {
   }
@@ -147,31 +148,31 @@ public interface AsyncHandler<T> {
   // ////////////// TCP CONNECT ////////
 
   /**
-   * Notify the callback when trying to open a new connection.
-   * <p>
-   * Might be called several times if the name was resolved to multiple addresses and we failed to connect to the first(s) one(s).
+   * Notifies the handler when attempting to open a new TCP connection.
+   * This may be called multiple times if the hostname resolved to multiple addresses
+   * and connection attempts to earlier addresses failed.
    *
-   * @param remoteAddress the address we try to connect to
+   * @param remoteAddress the remote address being connected to
    */
   default void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
   }
 
   /**
-   * Notify the callback after a successful connect
+   * Notifies the handler after a successful TCP connection.
    *
-   * @param remoteAddress the address we try to connect to
-   * @param connection    the connection
+   * @param remoteAddress the remote address that was successfully connected to
+   * @param connection    the established Netty channel
    */
   default void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
   }
 
   /**
-   * Notify the callback after a failed connect.
-   * <p>
-   * Might be called several times, or be followed by onTcpConnectSuccess when the name was resolved to multiple addresses.
+   * Notifies the handler after a failed TCP connection attempt.
+   * This may be called multiple times, or be followed by onTcpConnectSuccess,
+   * when the hostname resolved to multiple addresses.
    *
-   * @param remoteAddress the address we try to connect to
-   * @param cause         the cause of the failure
+   * @param remoteAddress the remote address that failed to connect
+   * @param cause         the cause of the connection failure
    */
   default void onTcpConnectFailure(InetSocketAddress remoteAddress, Throwable cause) {
   }
@@ -179,21 +180,23 @@ public interface AsyncHandler<T> {
   // ////////////// TLS ///////////////
 
   /**
-   * Notify the callback before TLS handshake
+   * Notifies the handler before TLS handshake begins.
    */
   default void onTlsHandshakeAttempt() {
   }
 
   /**
-   * Notify the callback after the TLS was successful
+   * Notifies the handler after a successful TLS handshake.
+   *
+   * @param sslSession the established SSL session
    */
   default void onTlsHandshakeSuccess(SSLSession sslSession) {
   }
 
   /**
-   * Notify the callback after the TLS failed
+   * Notifies the handler after a failed TLS handshake.
    *
-   * @param cause the cause of the failure
+   * @param cause the cause of the handshake failure
    */
   default void onTlsHandshakeFailure(Throwable cause) {
   }
@@ -201,23 +204,23 @@ public interface AsyncHandler<T> {
   // /////////// POOLING /////////////
 
   /**
-   * Notify the callback when trying to fetch a connection from the pool.
+   * Notifies the handler when attempting to fetch a connection from the pool.
    */
   default void onConnectionPoolAttempt() {
   }
 
   /**
-   * Notify the callback when a new connection was successfully fetched from the pool.
+   * Notifies the handler when a connection was successfully fetched from the pool.
    *
-   * @param connection the connection
+   * @param connection the pooled Netty channel
    */
   default void onConnectionPooled(Channel connection) {
   }
 
   /**
-   * Notify the callback when trying to offer a connection to the pool.
+   * Notifies the handler when attempting to offer a connection back to the pool.
    *
-   * @param connection the connection
+   * @param connection the Netty channel being offered to the pool
    */
   default void onConnectionOffer(Channel connection) {
   }
@@ -225,28 +228,32 @@ public interface AsyncHandler<T> {
   // //////////// SENDING //////////////
 
   /**
-   * Notify the callback when a request is being written on the channel. If the original request causes multiple requests to be sent, for example, because of authorization or
-   * retry, it will be notified multiple times.
+   * Notifies the handler when a request is being written to the channel.
+   * If the original request causes multiple requests to be sent (e.g., due to
+   * authorization challenges or retries), this will be called multiple times.
    *
-   * @param request the real request object as passed to the provider
+   * @param request the actual request object being sent to the server
    */
   default void onRequestSend(NettyRequest request) {
   }
 
   /**
-   * Notify the callback every time a request is being retried.
+   * Notifies the handler each time a request is being retried.
    */
   default void onRetry() {
   }
 
+  /**
+   * State enum to control response processing flow.
+   */
   enum State {
 
     /**
-     * Stop the processing.
+     * Abort the processing and close the connection.
      */
     ABORT,
     /**
-     * Continue the processing
+     * Continue processing the response.
      */
     CONTINUE
   }

@@ -21,7 +21,15 @@ import org.asynchttpclient.uri.Uri;
 import java.net.SocketAddress;
 
 /**
- * A class that represent the HTTP response' status line (code + text)
+ * Represents the HTTP response status line containing the status code and reason phrase.
+ * <p>
+ * This class is delivered to {@link AsyncHandler#onStatusReceived(HttpResponseStatus)}
+ * as the first callback when processing an HTTP response. It includes the status code
+ * (e.g., 200, 404), status text (e.g., "OK", "Not Found"), protocol information,
+ * and network addresses.
+ * </p>
+ *
+ * @see AsyncHandler#onStatusReceived(HttpResponseStatus)
  */
 public abstract class HttpResponseStatus {
 
@@ -32,7 +40,7 @@ public abstract class HttpResponseStatus {
   }
 
   /**
-   * Return the request {@link Uri}
+   * Returns the request URI associated with this response.
    *
    * @return the request {@link Uri}
    */
@@ -41,65 +49,65 @@ public abstract class HttpResponseStatus {
   }
 
   /**
-   * Return the response status code
+   * Returns the HTTP status code.
    *
-   * @return the response status code
+   * @return the status code (e.g., 200, 404, 500)
    */
   public abstract int getStatusCode();
 
   /**
-   * Return the response status text
+   * Returns the HTTP status text (reason phrase).
    *
-   * @return the response status text
+   * @return the status text (e.g., "OK", "Not Found", "Internal Server Error")
    */
   public abstract String getStatusText();
 
   /**
-   * Protocol name from status line.
+   * Returns the protocol name from the status line.
    *
-   * @return Protocol name.
+   * @return the protocol name (e.g., "HTTP")
    */
   public abstract String getProtocolName();
 
   /**
-   * Protocol major version.
+   * Returns the major version number of the protocol.
    *
-   * @return Major version.
+   * @return the major version (e.g., 1 for HTTP/1.1)
    */
   public abstract int getProtocolMajorVersion();
 
   /**
-   * Protocol minor version.
+   * Returns the minor version number of the protocol.
    *
-   * @return Minor version.
+   * @return the minor version (e.g., 1 for HTTP/1.1)
    */
   public abstract int getProtocolMinorVersion();
 
   /**
-   * Full protocol name + version
+   * Returns the complete protocol name and version.
    *
-   * @return protocol name + version
+   * @return the protocol text (e.g., "HTTP/1.1")
    */
   public abstract String getProtocolText();
 
   /**
-   * Get remote address client initiated request to.
+   * Returns the remote socket address that the client connected to.
    *
-   * @return remote address client initiated request to, may be {@code null}
-   * if asynchronous provider is unable to provide the remote address
+   * @return the remote address, or null if not available
    */
   public abstract SocketAddress getRemoteAddress();
 
   /**
-   * Get local address client initiated request from.
+   * Returns the local socket address that the client connected from.
    *
-   * @return local address client initiated request from, may be {@code null}
-   * if asynchronous provider is unable to provide the local address
+   * @return the local address, or null if not available
    */
   public abstract SocketAddress getLocalAddress();
 
   /**
-   * Code followed by text.
+   * Returns a string representation showing the status code and text.
+   *
+   * @return status code followed by status text (e.g., "200 OK")
    */
   @Override
   public String toString() {

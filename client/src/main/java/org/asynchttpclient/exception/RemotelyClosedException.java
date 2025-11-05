@@ -16,9 +16,20 @@ import java.io.IOException;
 
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
+/**
+ * Exception thrown when the remote server closes the connection unexpectedly.
+ * This occurs when the server terminates the connection before the request
+ * has been fully processed or the response has been completely received.
+ *
+ * <p>This is a singleton exception optimized for performance by using a shared
+ * instance with no stack trace.</p>
+ */
 @SuppressWarnings("serial")
 public final class RemotelyClosedException extends IOException {
 
+  /**
+   * Singleton instance of this exception with no stack trace for performance optimization.
+   */
   public static final RemotelyClosedException INSTANCE = unknownStackTrace(new RemotelyClosedException(), RemotelyClosedException.class, "INSTANCE");
 
   private RemotelyClosedException() {

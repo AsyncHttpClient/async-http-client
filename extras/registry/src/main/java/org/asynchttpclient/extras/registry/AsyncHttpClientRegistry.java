@@ -16,13 +16,36 @@ import org.asynchttpclient.AsyncHttpClient;
 
 import java.util.Set;
 
+/**
+ * A registry for managing named AsyncHttpClient instances.
+ * <p>
+ * This interface provides a centralized repository for storing and retrieving
+ * AsyncHttpClient instances by name, enabling sharing of client instances
+ * across an application and preventing resource leaks.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * AsyncHttpClientRegistry registry = AsyncHttpClientRegistryImpl.getInstance();
+ *
+ * // Register a client
+ * AsyncHttpClient client = asyncHttpClient();
+ * registry.addOrReplace("myClient", client);
+ *
+ * // Retrieve it later
+ * AsyncHttpClient retrieved = registry.get("myClient");
+ *
+ * // Unregister when done
+ * registry.unregister("myClient");
+ * client.close();
+ * }</pre>
+ */
 public interface AsyncHttpClientRegistry {
 
   /**
-   * Returns back the AsyncHttpClient associated with this name
+   * Retrieves the AsyncHttpClient associated with the specified name.
    *
    * @param name the name of the client instance in the registry
-   * @return the client
+   * @return the client instance, or null if no client is registered with this name
    */
   AsyncHttpClient get(String name);
 

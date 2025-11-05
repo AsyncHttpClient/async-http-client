@@ -26,14 +26,29 @@ import static org.asynchttpclient.util.Assertions.assertNotNull;
 import static org.asynchttpclient.util.HttpUtils.*;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+/**
+ * Utility class for creating multipart request bodies.
+ * <p>
+ * This class provides static methods for constructing {@link MultipartBody} instances
+ * from a list of {@link Part}s. It handles boundary generation, Content-Type header
+ * construction, and conversion of parts to their multipart representation.
+ * </p>
+ */
 public class MultipartUtils {
 
   /**
-   * Creates a new multipart entity containing the given parts.
+   * Creates a new multipart body containing the specified parts.
+   * <p>
+   * This method generates a multipart boundary, constructs the appropriate Content-Type
+   * header, and creates a {@link MultipartBody} that encodes all the parts according to
+   * the multipart/form-data specification. If a Content-Type header with a boundary is
+   * already present in the request headers, that boundary is used; otherwise, a new
+   * boundary is generated.
+   * </p>
    *
-   * @param parts          the parts to include.
-   * @param requestHeaders the request headers
-   * @return a MultipartBody
+   * @param parts          the parts to include in the multipart body
+   * @param requestHeaders the request headers, used to check for existing boundary
+   * @return a new multipart body containing the specified parts
    */
   public static MultipartBody newMultipartBody(List<Part> parts, HttpHeaders requestHeaders) {
     assertNotNull(parts, "parts");
@@ -63,6 +78,20 @@ public class MultipartUtils {
     return new MultipartBody(multipartParts, contentType, boundary);
   }
 
+  /**
+   * Generates multipart part representations from a list of parts.
+   * <p>
+   * This method converts high-level {@link Part} objects into their corresponding
+   * {@link MultipartPart} implementations that handle the actual encoding and transfer
+   * of data. Each part type (FilePart, ByteArrayPart, etc.) is mapped to its specific
+   * multipart implementation. A message end part is automatically appended to properly
+   * terminate the multipart message.
+   * </p>
+   *
+   * @param parts    the list of parts to convert
+   * @param boundary the multipart boundary bytes
+   * @return a list of multipart part implementations, including a terminating message end part
+   */
   public static List<MultipartPart<? extends Part>> generateMultipartParts(List<Part> parts, byte[] boundary) {
     List<MultipartPart<? extends Part>> multipartParts = new ArrayList<>(parts.size());
     for (Part part : parts) {

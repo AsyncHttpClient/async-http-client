@@ -39,7 +39,13 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 /**
- * Wrapper around the {@link org.asynchttpclient.Response} API.
+ * Netty-based implementation of the {@link Response} interface.
+ * <p>
+ * This class aggregates the HTTP response status, headers, and body parts collected
+ * during the request-response cycle. It provides convenient methods for accessing
+ * response data in various formats (bytes, String, ByteBuffer, InputStream) and
+ * handles cookie parsing from Set-Cookie headers.
+ * </p>
  */
 public class NettyResponse implements Response {
 
@@ -48,6 +54,13 @@ public class NettyResponse implements Response {
   private final HttpResponseStatus status;
   private List<Cookie> cookies;
 
+  /**
+   * Constructs a new NettyResponse.
+   *
+   * @param status the HTTP response status
+   * @param headers the HTTP response headers
+   * @param bodyParts the list of body parts received
+   */
   public NettyResponse(HttpResponseStatus status,
                        HttpHeaders headers,
                        List<HttpResponseBodyPart> bodyParts) {

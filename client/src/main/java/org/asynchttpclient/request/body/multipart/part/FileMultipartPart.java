@@ -23,12 +23,28 @@ import java.nio.channels.WritableByteChannel;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
+/**
+ * Multipart part implementation for {@link FilePart}.
+ * <p>
+ * This class handles encoding and transfer of file uploads as multipart parts. It uses
+ * {@link FileChannel} for efficient file reading and supports both buffer-based and
+ * channel-based transfer operations. The file is validated for existence and readability
+ * during construction.
+ * </p>
+ */
 public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
   private final long length;
   private FileChannel channel;
   private long position = 0L;
 
+  /**
+   * Constructs a file multipart part.
+   *
+   * @param part     the file part containing the file and metadata
+   * @param boundary the multipart boundary bytes
+   * @throws IllegalArgumentException if the file doesn't exist or can't be read
+   */
   public FileMultipartPart(FilePart part, byte[] boundary) {
     super(part, boundary);
     File file = part.getFile();

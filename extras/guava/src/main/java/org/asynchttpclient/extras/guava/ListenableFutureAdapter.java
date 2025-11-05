@@ -19,12 +19,41 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * Adapter utility to convert AsyncHttpClient's ListenableFuture to Guava's ListenableFuture.
+ * <p>
+ * This adapter allows seamless integration between AsyncHttpClient and Guava's utilities
+ * for working with futures and callbacks.
+ */
 public final class ListenableFutureAdapter {
 
   /**
-   * @param future an AHC ListenableFuture
-   * @param <V>    the Future's value type
-   * @return a Guava ListenableFuture
+   * Converts an AsyncHttpClient ListenableFuture to a Guava ListenableFuture.
+   * <p>
+   * The returned future delegates all operations to the original AsyncHttpClient future,
+   * preserving cancellation, execution, and listener behavior.
+   *
+   * <p><b>Usage Examples:</b></p>
+   * <pre>{@code
+   * AsyncHttpClient client = asyncHttpClient();
+   * ListenableFuture<Response> ahcFuture = client.prepareGet("http://www.example.com").execute();
+   * com.google.common.util.concurrent.ListenableFuture<Response> guavaFuture =
+   *     ListenableFutureAdapter.asGuavaFuture(ahcFuture);
+   *
+   * // Now you can use Guava utilities
+   * Futures.addCallback(guavaFuture, new FutureCallback<Response>() {
+   *     public void onSuccess(Response response) {
+   *         System.out.println("Status: " + response.getStatusCode());
+   *     }
+   *     public void onFailure(Throwable thrown) {
+   *         System.err.println("Request failed: " + thrown);
+   *     }
+   * }, MoreExecutors.directExecutor());
+   * }</pre>
+   *
+   * @param future an AsyncHttpClient ListenableFuture to adapt
+   * @param <V>    the type of the future's result value
+   * @return a Guava ListenableFuture that delegates to the provided future
    */
   public static <V> com.google.common.util.concurrent.ListenableFuture<V> asGuavaFuture(final ListenableFuture<V> future) {
 

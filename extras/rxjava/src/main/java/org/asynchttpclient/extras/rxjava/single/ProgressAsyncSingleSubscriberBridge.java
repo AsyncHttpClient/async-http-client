@@ -17,15 +17,32 @@ import rx.SingleSubscriber;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Concrete bridge implementation for ProgressAsyncHandlers.
+ * <p>
+ * This bridge adapts a ProgressAsyncHandler to work with RxJava Singles,
+ * providing progress tracking support for content write operations.
+ */
 final class ProgressAsyncSingleSubscriberBridge<T> extends AbstractProgressSingleSubscriberBridge<T> {
 
   private final ProgressAsyncHandler<? extends T> delegate;
 
+  /**
+   * Creates a new progress-aware subscriber bridge.
+   *
+   * @param subscriber the RxJava SingleSubscriber to bridge to
+   * @param delegate the ProgressAsyncHandler to delegate operations to
+   */
   public ProgressAsyncSingleSubscriberBridge(SingleSubscriber<T> subscriber, ProgressAsyncHandler<? extends T> delegate) {
     super(subscriber);
     this.delegate = requireNonNull(delegate);
   }
 
+  /**
+   * Returns the underlying ProgressAsyncHandler delegate.
+   *
+   * @return the delegate handler
+   */
   @Override
   protected ProgressAsyncHandler<? extends T> delegate() {
     return delegate;

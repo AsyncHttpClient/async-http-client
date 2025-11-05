@@ -35,6 +35,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.asynchttpclient.netty.util.ByteBufUtils.byteBuf2Bytes;
 
+/**
+ * Netty-based WebSocket implementation.
+ * <p>
+ * This class provides a complete WebSocket client implementation supporting:
+ * <ul>
+ *   <li>Text and binary message frames</li>
+ *   <li>Fragmented messages via continuation frames</li>
+ *   <li>Ping/pong frames for keep-alive</li>
+ *   <li>Close frames with status codes and reason text</li>
+ *   <li>Multiple listener registration for event notification</li>
+ * </ul>
+ * </p>
+ * <p>
+ * The implementation handles frame buffering during the upgrade handshake and
+ * correctly manages fragmented message reassembly according to RFC 6455.
+ * </p>
+ */
 public final class NettyWebSocket implements WebSocket {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyWebSocket.class);
@@ -47,6 +64,12 @@ public final class NettyWebSocket implements WebSocket {
   private boolean ready;
   private List<WebSocketFrame> bufferedFrames;
 
+  /**
+   * Constructs a new NettyWebSocket.
+   *
+   * @param channel the Netty channel for this WebSocket connection
+   * @param upgradeHeaders the HTTP headers from the upgrade response
+   */
   public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders) {
     this(channel, upgradeHeaders, new ConcurrentLinkedQueue<>());
   }
@@ -179,10 +202,29 @@ public final class NettyWebSocket implements WebSocket {
 
   // INTERNAL, NOT FOR PUBLIC USAGE!!!
 
+  /**
+   * Checks if the WebSocket is ready to process frames.
+   * <p>
+   * Internal method used to determine if the upgrade handshake has completed
+   * and listeners have been notified.
+   * </p>
+   *
+   * @return true if ready to process frames
+   */
   public boolean isReady() {
     return ready;
   }
 
+  /**
+   * Buffers a frame received before the WebSocket was fully initialized.
+   * <p>
+   * During the upgrade handshake, frames may arrive before the WebSocket
+   * has been fully set up. These frames are buffered and replayed once
+   * initialization completes.
+   * </p>
+   *
+   * @param frame the frame to buffer
+   */
   public void bufferFrame(WebSocketFrame frame) {
     if (bufferedFrames == null) {
       bufferedFrames = new ArrayList<>(1);
@@ -200,6 +242,13 @@ public final class NettyWebSocket implements WebSocket {
     }
   }
 
+  /**
+   * Processes all buffered frames and marks the WebSocket as ready.
+   * <p>
+   * This method is called after the upgrade handshake completes and listeners
+   * are notified. It replays any frames that arrived during initialization.
+   * </p>
+   */
   public void processBufferedFrames() {
     ready = true;
     if (bufferedFrames != null) {
@@ -214,6 +263,16 @@ public final class NettyWebSocket implements WebSocket {
     }
   }
 
+  /**
+   * Handles an incoming WebSocket frame by dispatching to the appropriate handler.
+   * <p>
+   * This method routes frames based on their type (text, binary, close, ping, pong,
+   * continuation) and notifies registered listeners. For close frames, it also
+   * initiates channel closure.
+   * </p>
+   *
+   * @param frame the WebSocket frame to handle
+   */
   public void handleFrame(WebSocketFrame frame) {
     if (frame instanceof TextWebSocketFrame) {
       onTextFrame((TextWebSocketFrame) frame);
@@ -238,6 +297,15 @@ public final class NettyWebSocket implements WebSocket {
     }
   }
 
+  /**
+   * Notifies all listeners of an error.
+   * <p>
+   * This method is called when an exception occurs during WebSocket operations.
+   * It ensures all buffered frames are released to prevent memory leaks.
+   * </p>
+   *
+   * @param t the error that occurred
+   */
   public void onError(Throwable t) {
     try {
       for (WebSocketListener listener : listeners) {
@@ -252,6 +320,16 @@ public final class NettyWebSocket implements WebSocket {
     }
   }
 
+  /**
+   * Notifies all listeners of WebSocket closure.
+   * <p>
+   * This method is called when the WebSocket connection closes, either normally
+   * or abnormally. It clears all listeners and releases buffered frames.
+   * </p>
+   *
+   * @param code the closure status code (as defined in RFC 6455)
+   * @param reason the closure reason text
+   */
   public void onClose(int code, String reason) {
     try {
       for (WebSocketListener l : listeners) {

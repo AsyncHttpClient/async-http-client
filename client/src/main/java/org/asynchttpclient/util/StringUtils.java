@@ -16,26 +16,79 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
+/**
+ * Utility methods for string and byte conversions.
+ * <p>
+ * This class provides helper methods for converting between CharSequences, ByteBuffers,
+ * and byte arrays, as well as encoding bytes to hexadecimal string representations.
+ * </p>
+ */
 public final class StringUtils {
 
   private StringUtils() {
   }
 
+  /**
+   * Converts a CharSequence to a ByteBuffer using the specified charset.
+   * <p>
+   * This method encodes the character sequence into bytes according to the given charset.
+   * </p>
+   *
+   * @param cs      the CharSequence to convert
+   * @param charset the charset to use for encoding
+   * @return a ByteBuffer containing the encoded bytes
+   */
   public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
     return charset.encode(CharBuffer.wrap(cs));
   }
 
+  /**
+   * Converts a ByteBuffer to a byte array.
+   * <p>
+   * This method extracts the remaining bytes from the ByteBuffer into a new byte array.
+   * The ByteBuffer's position is advanced by the number of bytes read.
+   * </p>
+   *
+   * @param bb the ByteBuffer to convert
+   * @return a byte array containing the remaining bytes
+   */
   public static byte[] byteBuffer2ByteArray(ByteBuffer bb) {
     byte[] rawBase = new byte[bb.remaining()];
     bb.get(rawBase);
     return rawBase;
   }
 
+  /**
+   * Converts a CharSequence to a byte array using the specified charset.
+   * <p>
+   * This is a convenience method that combines {@link #charSequence2ByteBuffer(CharSequence, Charset)}
+   * and {@link #byteBuffer2ByteArray(ByteBuffer)}.
+   * </p>
+   *
+   * @param sb      the CharSequence to convert
+   * @param charset the charset to use for encoding
+   * @return a byte array containing the encoded bytes
+   */
   public static byte[] charSequence2Bytes(CharSequence sb, Charset charset) {
     ByteBuffer bb = charSequence2ByteBuffer(sb, charset);
     return byteBuffer2ByteArray(bb);
   }
 
+  /**
+   * Converts a byte array to a hexadecimal string representation.
+   * <p>
+   * Each byte is represented as two hexadecimal digits (lowercase).
+   * </p>
+   *
+   * <p><b>Usage Examples:</b></p>
+   * <pre>{@code
+   * byte[] data = {0x1A, 0x2B, 0x3C};
+   * String hex = toHexString(data); // Returns "1a2b3c"
+   * }</pre>
+   *
+   * @param data the byte array to convert
+   * @return a hexadecimal string representation
+   */
   public static String toHexString(byte[] data) {
     StringBuilder buffer = StringBuilderPool.DEFAULT.stringBuilder();
     for (byte aData : data) {
@@ -45,6 +98,16 @@ public final class StringUtils {
     return buffer.toString();
   }
 
+  /**
+   * Appends the base-16 (hexadecimal) representation of bytes to a StringBuilder.
+   * <p>
+   * Each byte is represented as two hexadecimal digits (lowercase). This method
+   * modifies the provided StringBuilder in place.
+   * </p>
+   *
+   * @param buf   the StringBuilder to append to
+   * @param bytes the byte array to encode
+   */
   public static void appendBase16(StringBuilder buf, byte[] bytes) {
     int base = 16;
     for (byte b : bytes) {

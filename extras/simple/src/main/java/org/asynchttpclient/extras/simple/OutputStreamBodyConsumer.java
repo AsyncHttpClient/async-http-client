@@ -17,18 +17,45 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
- * A simple {@link OutputStream} implementation for {@link BodyConsumer}
+ * A {@link BodyConsumer} that writes response body bytes to an {@link OutputStream}.
+ * <p>
+ * This consumer writes response bytes directly to any OutputStream, making it
+ * flexible for writing to files, network streams, or any other output destination.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Write to file
+ * OutputStream fos = new FileOutputStream("output.dat");
+ * OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(fos);
+ *
+ * // Write to byte array
+ * ByteArrayOutputStream baos = new ByteArrayOutputStream();
+ * OutputStreamBodyConsumer consumer = new OutputStreamBodyConsumer(baos);
+ *
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ *     .setUrl("http://www.example.com/data")
+ *     .build();
+ * client.get(consumer);
+ * }</pre>
  */
 public class OutputStreamBodyConsumer implements BodyConsumer {
 
   private final OutputStream outputStream;
 
+  /**
+   * Creates a new OutputStreamBodyConsumer that writes to the specified stream.
+   *
+   * @param outputStream the OutputStream to write response body bytes to
+   */
   public OutputStreamBodyConsumer(OutputStream outputStream) {
     this.outputStream = outputStream;
   }
 
   /**
-   * {@inheritDoc}
+   * Writes the received bytes to the underlying OutputStream.
+   *
+   * @param byteBuffer the buffer containing response body bytes
+   * @throws IOException if an I/O error occurs during writing
    */
   @Override
   public void consume(ByteBuffer byteBuffer) throws IOException {
@@ -36,7 +63,9 @@ public class OutputStreamBodyConsumer implements BodyConsumer {
   }
 
   /**
-   * {@inheritDoc}
+   * Closes the underlying OutputStream.
+   *
+   * @throws IOException if an I/O error occurs during closing
    */
   @Override
   public void close() throws IOException {

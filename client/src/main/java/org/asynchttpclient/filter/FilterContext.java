@@ -20,16 +20,46 @@ import org.asynchttpclient.Request;
 import java.io.IOException;
 
 /**
- * A {@link FilterContext} can be used to decorate {@link Request} and {@link AsyncHandler} from a list of {@link RequestFilter}.
- * {@link RequestFilter} gets executed before the HTTP request is made to the remote server. Once the response bytes are
- * received, a {@link FilterContext} is then passed to the list of {@link ResponseFilter}. {@link ResponseFilter}
- * gets invoked before the response gets processed, e.g. before authorization, redirection and invocation of {@link AsyncHandler}
- * gets processed.
- * <br>
- * Invoking {@link FilterContext#getResponseStatus()} returns an instance of {@link HttpResponseStatus}
- * that can be used to decide if the response processing should continue or not. You can stop the current response processing
- * and replay the request but creating a {@link FilterContext}. The {@link org.asynchttpclient.AsyncHttpClient}
- * will interrupt the processing and "replay" the associated {@link Request} instance.
+ * Context object passed through the filter chain, allowing filters to inspect and modify
+ * requests, handlers, and responses. This class is used by {@link RequestFilter},
+ * {@link ResponseFilter}, and {@link IOExceptionFilter} to process HTTP transactions.
+ *
+ * <p>{@link RequestFilter} executes before the HTTP request is sent to the remote server.
+ * {@link ResponseFilter} executes after the response is received but before authorization,
+ * redirection, and {@link AsyncHandler} processing occurs. {@link IOExceptionFilter} executes
+ * when an IOException occurs during the request.</p>
+ *
+ * <p>Filters can use this context to:</p>
+ * <ul>
+ *   <li>Inspect or modify the {@link Request}</li>
+ *   <li>Wrap or replace the {@link AsyncHandler}</li>
+ *   <li>Access response status and headers</li>
+ *   <li>Trigger request replay by setting {@code replayRequest} to true</li>
+ *   <li>Handle IOExceptions</li>
+ * </ul>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // In a RequestFilter - add custom header
+ * public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+ *     Request newRequest = new RequestBuilder(ctx.getRequest())
+ *         .addHeader("X-Custom-Header", "value")
+ *         .build();
+ *     return new FilterContext.FilterContextBuilder<>(ctx)
+ *         .request(newRequest)
+ *         .build();
+ * }
+ *
+ * // In a ResponseFilter - replay on specific status
+ * public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+ *     if (ctx.getResponseStatus().getStatusCode() == 503) {
+ *         return new FilterContext.FilterContextBuilder<>(ctx)
+ *             .replayRequest(true)
+ *             .build();
+ *     }
+ *     return ctx;
+ * }
+ * }</pre>
  *
  * @param <T> the handler result type
  */

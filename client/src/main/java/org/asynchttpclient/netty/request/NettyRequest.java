@@ -16,20 +16,43 @@ package org.asynchttpclient.netty.request;
 import io.netty.handler.codec.http.HttpRequest;
 import org.asynchttpclient.netty.request.body.NettyBody;
 
+/**
+ * Represents a complete Netty HTTP request with optional body.
+ * <p>
+ * This class wraps a Netty {@link HttpRequest} and its associated {@link NettyBody},
+ * providing a unified representation of the request to be written to the channel.
+ * </p>
+ */
 public final class NettyRequest {
 
   private final HttpRequest httpRequest;
   private final NettyBody body;
 
+  /**
+   * Constructs a new NettyRequest.
+   *
+   * @param httpRequest the Netty HTTP request
+   * @param body the request body, or null for requests without a body
+   */
   NettyRequest(HttpRequest httpRequest, NettyBody body) {
     this.httpRequest = httpRequest;
     this.body = body;
   }
 
+  /**
+   * Returns the Netty HTTP request.
+   *
+   * @return the HTTP request containing headers and metadata
+   */
   public HttpRequest getHttpRequest() {
     return httpRequest;
   }
 
+  /**
+   * Returns the request body.
+   *
+   * @return the body to be written, or null if no body
+   */
   public NettyBody getBody() {
     return body;
   }

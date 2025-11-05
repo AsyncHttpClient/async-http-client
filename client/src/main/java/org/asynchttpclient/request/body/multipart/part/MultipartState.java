@@ -13,13 +13,38 @@
  */
 package org.asynchttpclient.request.body.multipart.part;
 
+/**
+ * Represents the state of a multipart part during transfer.
+ * <p>
+ * This enum tracks the progress of transferring a multipart part, which consists of
+ * three phases: pre-content (headers and boundary), content (actual data), and
+ * post-content (trailing boundary). The DONE state indicates the part has been
+ * completely transferred.
+ * </p>
+ */
 public enum MultipartState {
 
+  /**
+   * The part is transferring pre-content data (boundary, headers).
+   * This is the initial state when a part begins transfer.
+   */
   PRE_CONTENT,
 
+  /**
+   * The part is transferring the actual content data.
+   * This state follows PRE_CONTENT once all headers have been written.
+   */
   CONTENT,
 
+  /**
+   * The part is transferring post-content data (trailing CRLF).
+   * This state follows CONTENT once all data has been written.
+   */
   POST_CONTENT,
 
+  /**
+   * The part transfer is complete.
+   * All data for this part has been successfully transferred.
+   */
   DONE
 }

@@ -19,16 +19,67 @@ import org.asynchttpclient.Request;
 
 import java.net.InetSocketAddress;
 
+/**
+ * Strategy interface for determining whether HTTP connections should be kept alive.
+ * <p>
+ * Keep-alive strategies control connection reuse by deciding whether a connection
+ * should remain open after completing an HTTP request-response exchange. This allows
+ * for custom policies beyond the standard HTTP keep-alive behavior, such as
+ * considering server load, connection age, or application-specific requirements.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Using the default keep-alive strategy
+ * KeepAliveStrategy strategy = new DefaultKeepAliveStrategy();
+ *
+ * // Check if connection should be kept alive
+ * InetSocketAddress remoteAddress = ...;
+ * Request ahcRequest = ...;
+ * HttpRequest nettyRequest = ...;
+ * HttpResponse nettyResponse = ...;
+ *
+ * boolean shouldKeepAlive = strategy.keepAlive(
+ *     remoteAddress,
+ *     ahcRequest,
+ *     nettyRequest,
+ *     nettyResponse
+ * );
+ *
+ * if (shouldKeepAlive) {
+ *     // Return channel to pool
+ * } else {
+ *     // Close the channel
+ * }
+ *
+ * // Custom keep-alive strategy
+ * KeepAliveStrategy customStrategy = (addr, ahcReq, nettyReq, nettyResp) -> {
+ *     // Custom logic, e.g., never keep alive for certain hosts
+ *     if (addr.getHostString().equals("no-keepalive.example.com")) {
+ *         return false;
+ *     }
+ *     // Default to standard keep-alive behavior
+ *     return HttpUtil.isKeepAlive(nettyResp) && HttpUtil.isKeepAlive(nettyReq);
+ * };
+ * }</pre>
+ */
 public interface KeepAliveStrategy {
 
   /**
    * Determines whether the connection should be kept alive after this HTTP message exchange.
+   * <p>
+   * Implementations should examine the request and response headers, connection state,
+   * and any other relevant factors to decide if the connection can be safely reused
+   * for subsequent requests. This method is called after each HTTP response is received
+   * and before deciding whether to return the channel to the pool or close it.
+   * </p>
    *
-   * @param remoteAddress  the remote InetSocketAddress associated with the request
-   * @param ahcRequest     the Request, as built by AHC
-   * @param nettyRequest   the HTTP request sent to Netty
-   * @param nettyResponse  the HTTP response received from Netty
-   * @return true if the connection should be kept alive, false if it should be closed.
+   * @param remoteAddress the remote {@link InetSocketAddress} associated with the request
+   * @param ahcRequest the {@link Request} object, as built by AsyncHttpClient
+   * @param nettyRequest the {@link HttpRequest} sent to Netty
+   * @param nettyResponse the {@link HttpResponse} received from Netty
+   * @return {@code true} if the connection should be kept alive for reuse,
+   *         {@code false} if it should be closed
    */
   boolean keepAlive(InetSocketAddress remoteAddress, Request ahcRequest, HttpRequest nettyRequest, HttpResponse nettyResponse);
 }

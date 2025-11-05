@@ -32,9 +32,37 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+/**
+ * HTTP protocol handler for processing HTTP request-response cycles.
+ * <p>
+ * This handler manages HTTP response processing including status lines, headers,
+ * body chunks, and trailer headers. It supports both buffered and streaming response
+ * handling through the AsyncHandler and StreamedAsyncHandler interfaces.
+ * </p>
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // The HttpHandler is automatically installed in the pipeline
+ * AsyncHttpClient client = new DefaultAsyncHttpClient();
+ * client.prepareGet("http://example.com")
+ *     .execute(new AsyncCompletionHandler<Response>() {
+ *         @Override
+ *         public Response onCompleted(Response response) {
+ *             // HttpHandler processed the complete response
+ *             return response;
+ *         }
+ *     });
+ * }</pre>
+ */
 @Sharable
 public final class HttpHandler extends AsyncHttpClientHandler {
 
+  /**
+   * Constructs a new HttpHandler.
+   *
+   * @param config the async HTTP client configuration
+   * @param channelManager the channel manager for managing channel lifecycle
+   * @param requestSender the request sender for sending HTTP requests
+   */
   public HttpHandler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
     super(config, channelManager, requestSender);
   }
@@ -114,6 +142,23 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     }
   }
 
+  /**
+   * Processes HTTP protocol messages including responses and body chunks.
+   * <p>
+   * This method handles:
+   * <ul>
+   *   <li>HttpResponse - status line and headers</li>
+   *   <li>HttpContent - response body chunks and trailer headers</li>
+   *   <li>DecoderResult errors from the HTTP codec</li>
+   * </ul>
+   * It also applies IO exception filters and retry logic when appropriate.
+   * </p>
+   *
+   * @param channel the channel the message was read from
+   * @param future the response future associated with the request
+   * @param e the message to handle (HttpResponse or HttpContent)
+   * @throws Exception if an error occurs during message handling
+   */
   @Override
   public void handleRead(final Channel channel, final NettyResponseFuture<?> future, final Object e) throws Exception {
 
@@ -165,10 +210,29 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     }
   }
 
+  /**
+   * Handles exceptions for HTTP protocol operations.
+   * <p>
+   * This method provides no additional exception handling beyond the base class,
+   * as HTTP-specific error handling is performed in {@link #handleRead}.
+   * </p>
+   *
+   * @param future the response future associated with the request
+   * @param error the exception that occurred
+   */
   @Override
   public void handleException(NettyResponseFuture<?> future, Throwable error) {
   }
 
+  /**
+   * Handles channel inactivation for HTTP protocol operations.
+   * <p>
+   * This method provides no additional handling beyond the base class,
+   * as HTTP channel lifecycle management is performed in the base handler.
+   * </p>
+   *
+   * @param future the response future associated with the request
+   */
   @Override
   public void handleChannelInactive(NettyResponseFuture<?> future) {
   }

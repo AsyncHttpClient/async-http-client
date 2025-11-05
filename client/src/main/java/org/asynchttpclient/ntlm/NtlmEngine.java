@@ -43,12 +43,47 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 /**
  * Provides an implementation for NTLMv1, NTLMv2, and NTLM2 Session forms of the NTLM
  * authentication protocol.
+ * <p>
+ * This class implements the Windows NT LAN Manager (NTLM) authentication protocol,
+ * which is used for authentication in Windows-based networks. It supports multiple
+ * versions of the protocol including NTLMv1, NTLMv2, and NTLM2 Session.
+ * </p>
+ * <p>
+ * This implementation is based on Apache HttpComponents and supports HMAC-SHA1
+ * signature calculation and header inclusion methods. The protocol involves a
+ * three-way handshake:
+ * </p>
+ * <ol>
+ *   <li>Type 1 message: Client sends authentication request</li>
+ *   <li>Type 2 message: Server responds with challenge</li>
+ *   <li>Type 3 message: Client sends encrypted response</li>
+ * </ol>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * NtlmEngine engine = NtlmEngine.INSTANCE;
+ *
+ * // Generate Type 1 message (initial request)
+ * String type1Msg = engine.generateType1Msg();
+ *
+ * // After receiving Type 2 message from server, generate Type 3 response
+ * String type3Msg = engine.generateType3Msg(
+ *     "username",
+ *     "password",
+ *     "DOMAIN",
+ *     "WORKSTATION",
+ *     serverChallenge
+ * );
+ * }</pre>
  *
  * @since 4.1
  */
 @SuppressWarnings("unused")
 public final class NtlmEngine {
 
+    /**
+     * Singleton instance of the NTLM engine.
+     */
     public static final NtlmEngine INSTANCE = new NtlmEngine();
 
     /** Unicode encoding */
@@ -1511,16 +1546,44 @@ public final class NtlmEngine {
     }
 
     /**
-     * Creates the first message (type 1 message) in the NTLM authentication
-     * sequence. This message includes the user name, domain and host for the
-     * authentication session.
+     * Creates the first message (Type 1 message) in the NTLM authentication sequence.
+     * <p>
+     * This message is the initial authentication request sent to the server. It includes
+     * protocol version and supported flags but does not include credentials. The server
+     * will respond with a Type 2 message containing a challenge.
+     * </p>
+     * <p>
+     * The message is Base64-encoded and ready to be added to the HTTP Authorization header.
+     * </p>
      *
-     * @return String the message to add to the HTTP request header.
-     */    
+     * @return the Base64-encoded Type 1 message to add to the HTTP Authorization header
+     */
     public String generateType1Msg() {
         return TYPE_1_MESSAGE;
     }
 
+    /**
+     * Creates the third message (Type 3 message) in the NTLM authentication sequence.
+     * <p>
+     * This message is the authentication response that proves the client knows the password
+     * without transmitting it. It includes the username, domain, workstation name, and
+     * encrypted responses to the server's challenge.
+     * </p>
+     * <p>
+     * The method decodes the server's Type 2 challenge message, extracts the server nonce
+     * and flags, and generates appropriate responses based on the protocol version supported
+     * by the server (NTLMv1, NTLMv2, or NTLM2 Session).
+     * </p>
+     *
+     * @param username the username for authentication (without domain prefix)
+     * @param password the user's password
+     * @param domain the Windows domain name (can be null)
+     * @param workstation the client workstation name (can be null)
+     * @param challenge the Base64-encoded Type 2 message received from the server
+     * @return the Base64-encoded Type 3 message to add to the HTTP Authorization header
+     * @throws NtlmEngineException if the challenge message is invalid, encryption fails,
+     *         or required cryptographic algorithms are unavailable
+     */
     public String generateType3Msg(final String username, final String password, final String domain, final String workstation,
             final String challenge) throws NtlmEngineException {
         final Type2Message t2m = new Type2Message(challenge);

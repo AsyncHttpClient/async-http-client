@@ -20,12 +20,45 @@ import io.netty.util.concurrent.Future;
 import java.net.SocketAddress;
 
 /**
- * A WebSocket client
+ * A WebSocket client interface for sending and receiving WebSocket frames.
+ * <p>
+ * This interface provides methods for sending various types of WebSocket frames
+ * (text, binary, ping, pong, close) and managing WebSocket listeners. It supports
+ * both simple and advanced use cases, including message fragmentation and WebSocket
+ * extensions through RSV bits.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Simple text message
+ * websocket.sendTextFrame("Hello, WebSocket!");
+ *
+ * // Binary message
+ * byte[] data = {1, 2, 3, 4};
+ * websocket.sendBinaryFrame(data);
+ *
+ * // Fragmented message (3 parts)
+ * websocket.sendTextFrame("First part ", false, 0);
+ * websocket.sendContinuationFrame("middle part ", false, 0);
+ * websocket.sendContinuationFrame("last part", true, 0);
+ *
+ * // Ping/Pong for keepalive
+ * websocket.sendPingFrame();
+ *
+ * // Close connection
+ * websocket.sendCloseFrame(1000, "Normal closure");
+ * }</pre>
  */
 public interface WebSocket {
 
   /**
-   * @return the headers received in the Upgrade response
+   * Returns the HTTP headers received in the WebSocket upgrade response.
+   * <p>
+   * These headers may include server information, protocol negotiation results,
+   * and custom headers sent by the server during the handshake.
+   * </p>
+   *
+   * @return the headers received in the upgrade response
    */
   HttpHeaders getUpgradeHeaders();
 

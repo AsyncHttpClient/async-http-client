@@ -18,57 +18,122 @@ import io.netty.channel.Channel;
 import java.util.Map;
 import java.util.function.Predicate;
 
+/**
+ * Pool for managing and reusing Netty channels for persistent HTTP connections.
+ * <p>
+ * The channel pool maintains idle channels grouped by partition keys, allowing
+ * connection reuse across multiple HTTP requests to reduce connection overhead.
+ * Channels are organized using a partitioning strategy to ensure proper isolation
+ * between different connection configurations (hosts, proxies, etc.).
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create a channel pool
+ * ChannelPool pool = new DefaultChannelPool(...);
+ *
+ * // Offer a channel to the pool
+ * Channel channel = ...;
+ * Object partitionKey = "https://example.com:443";
+ * boolean added = pool.offer(channel, partitionKey);
+ *
+ * // Poll a channel from the pool
+ * Channel reusedChannel = pool.poll(partitionKey);
+ * if (reusedChannel != null) {
+ *     // Reuse the channel
+ * }
+ *
+ * // Clean up when done
+ * pool.destroy();
+ * }</pre>
+ */
 public interface ChannelPool {
 
   /**
-   * Add a channel to the pool
+   * Adds a channel to the pool for potential reuse.
+   * <p>
+   * The channel is stored under the specified partition key and can be retrieved
+   * later using {@link #poll(Object)} with the same key. If the pool is closed
+   * or the channel cannot be cached for any reason, this method returns {@code false}.
+   * </p>
    *
-   * @param channel      an I/O channel
-   * @param partitionKey a key used to retrieve the cached channel
-   * @return true if added.
+   * @param channel the I/O channel to add to the pool
+   * @param partitionKey the key used to partition and retrieve the cached channel
+   * @return {@code true} if the channel was successfully added to the pool, {@code false} otherwise
    */
   boolean offer(Channel channel, Object partitionKey);
 
   /**
-   * Remove the channel associated with the uri.
+   * Retrieves and removes a channel from the pool.
+   * <p>
+   * Returns an idle channel associated with the specified partition key, if available.
+   * The channel is removed from the pool and becomes the caller's responsibility to
+   * manage. Returns {@code null} if no channel is available for the given partition key.
+   * </p>
    *
-   * @param partitionKey the partition used when invoking offer
-   * @return the channel associated with the uri
+   * @param partitionKey the partition key used when the channel was offered via {@link #offer(Channel, Object)}
+   * @return an idle channel associated with the partition key, or {@code null} if none available
    */
   Channel poll(Object partitionKey);
 
   /**
-   * Remove all channels from the cache. A channel might have been associated
-   * with several uri.
+   * Removes all occurrences of the specified channel from the pool.
+   * <p>
+   * A channel may be associated with multiple partition keys. This method removes
+   * the channel from all partitions where it appears, ensuring complete cleanup.
+   * </p>
    *
-   * @param channel a channel
-   * @return the true if the channel has been removed
+   * @param channel the channel to remove from all partitions
+   * @return {@code true} if the channel was found and removed, {@code false} otherwise
    */
   boolean removeAll(Channel channel);
 
   /**
-   * Return true if a channel can be cached. A implementation can decide based
-   * on some rules to allow caching Calling this method is equivalent of
-   * checking the returned value of {@link ChannelPool#offer(Channel, Object)}
+   * Checks whether the pool is open and accepting channels.
+   * <p>
+   * When the pool is closed, calls to {@link #offer(Channel, Object)} will return
+   * {@code false}, and no new channels will be cached. This method can be used to
+   * check the pool's state before attempting to offer a channel.
+   * </p>
    *
-   * @return true if a channel can be cached.
+   * @return {@code true} if the pool is open and can cache channels, {@code false} otherwise
    */
   boolean isOpen();
 
   /**
-   * Destroy all channels that has been cached by this instance.
+   * Destroys the pool and closes all cached channels.
+   * <p>
+   * This method closes all idle channels in the pool and releases associated resources.
+   * After calling this method, the pool should not be used further. Any subsequent
+   * operations may throw exceptions or return immediately without performing any action.
+   * </p>
    */
   void destroy();
 
   /**
-   * Flush partitions based on a predicate
+   * Removes all channels from partitions matching the specified predicate.
+   * <p>
+   * This method evaluates each partition key against the provided predicate. If the
+   * predicate returns {@code true} for a partition key, all channels in that partition
+   * are removed and closed. This is useful for selective cleanup, such as removing
+   * channels for specific hosts or proxy configurations.
+   * </p>
    *
-   * @param predicate the predicate
+   * @param predicate the predicate to evaluate partition keys; partitions for which
+   *                  the predicate returns {@code true} will be flushed
    */
   void flushPartitions(Predicate<Object> predicate);
 
   /**
-   * @return The number of idle channels per host.
+   * Returns statistics about idle channels grouped by host.
+   * <p>
+   * This method provides visibility into the pool's current state, showing how many
+   * idle channels are cached for each host. The returned map uses host identifiers
+   * as keys and channel counts as values. This information is useful for monitoring
+   * and debugging connection pooling behavior.
+   * </p>
+   *
+   * @return an immutable map of host identifiers to idle channel counts
    */
   Map<String, Long> getIdleChannelCountPerHost();
 }

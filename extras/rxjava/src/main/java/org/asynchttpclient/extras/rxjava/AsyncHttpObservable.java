@@ -21,17 +21,45 @@ import rx.functions.Func0;
 import rx.subjects.ReplaySubject;
 
 /**
- * Provide RxJava support for executing requests. Request can be subscribed to and manipulated as needed.
+ * Provides RxJava support for executing HTTP requests as Observables.
+ * <p>
+ * This class enables integration between AsyncHttpClient and RxJava, allowing
+ * HTTP requests to be observed and manipulated using reactive programming patterns.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * AsyncHttpClient client = asyncHttpClient();
+ *
+ * // Cold Observable - executes when subscribed
+ * Observable<Response> coldObservable = AsyncHttpObservable.toObservable(
+ *     () -> client.prepareGet("http://www.example.com")
+ * );
+ * coldObservable.subscribe(response -> {
+ *     System.out.println("Status: " + response.getStatusCode());
+ * });
+ *
+ * // Hot Observable - executes immediately
+ * Observable<Response> hotObservable = AsyncHttpObservable.observe(
+ *     () -> client.prepareGet("http://www.example.com")
+ * );
+ * // Request starts executing immediately, even before subscription
+ * hotObservable.subscribe(response -> {
+ *     System.out.println("Status: " + response.getStatusCode());
+ * });
+ * }</pre>
  *
  * @see <a href="https://github.com/ReactiveX/RxJava">https://github.com/ReactiveX/RxJava</a>
  */
 public class AsyncHttpObservable {
 
   /**
-   * Observe a request execution and emit the response to the observer.
+   * Creates a cold Observable that executes the HTTP request when subscribed.
+   * <p>
+   * Each subscription triggers a new HTTP request execution. The request is not
+   * executed until the Observable is subscribed to.
    *
-   * @param supplier the supplier
-   * @return The cold observable (must be subscribed to in order to execute).
+   * @param supplier a function that provides the BoundRequestBuilder for the HTTP request
+   * @return a cold Observable that emits the HTTP response when subscribed
    */
   public static Observable<Response> toObservable(final Func0<BoundRequestBuilder> supplier) {
 
@@ -68,10 +96,14 @@ public class AsyncHttpObservable {
   }
 
   /**
-   * Observe a request execution and emit the response to the observer.
+   * Creates a hot Observable that executes the HTTP request immediately.
+   * <p>
+   * The request begins execution as soon as this method is called, regardless of
+   * whether any observers have subscribed. Multiple subscribers will receive the
+   * same response via a ReplaySubject.
    *
-   * @param supplier teh supplier
-   * @return The hot observable (eagerly executes).
+   * @param supplier a function that provides the BoundRequestBuilder for the HTTP request
+   * @return a hot Observable that emits the HTTP response (request executes eagerly)
    */
   public static Observable<Response> observe(final Func0<BoundRequestBuilder> supplier) {
     //use a ReplaySubject to buffer the eagerly subscribed-to Observable

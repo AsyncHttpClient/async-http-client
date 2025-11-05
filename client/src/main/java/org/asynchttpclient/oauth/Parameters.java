@@ -19,19 +19,50 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Collection of OAuth parameters used for signature calculation.
+ * <p>
+ * This class maintains a list of parameters that can be sorted and concatenated
+ * according to OAuth 1.0 specifications. Parameters should be added in their
+ * percent-encoded form.
+ * </p>
+ */
 final class Parameters {
 
   private List<Parameter> parameters = new ArrayList<>();
 
+  /**
+   * Adds a parameter to the collection.
+   *
+   * @param key the parameter key (should be percent-encoded)
+   * @param value the parameter value (should be percent-encoded)
+   * @return this Parameters instance for method chaining
+   */
   public Parameters add(String key, String value) {
     parameters.add(new Parameter(key, value));
     return this;
   }
 
+  /**
+   * Clears all parameters from the collection.
+   * <p>
+   * This method allows the Parameters instance to be reused for multiple signature calculations.
+   * </p>
+   */
   public void reset() {
     parameters.clear();
   }
 
+  /**
+   * Sorts the parameters and concatenates them into a query string.
+   * <p>
+   * Parameters are sorted according to OAuth specifications (first by key, then by value),
+   * then concatenated with '&' separators. The result is used in OAuth signature base string
+   * construction.
+   * </p>
+   *
+   * @return the sorted and concatenated parameter string
+   */
   String sortAndConcat() {
     // then sort them (AFTER encoding, important)
     Collections.sort(parameters);

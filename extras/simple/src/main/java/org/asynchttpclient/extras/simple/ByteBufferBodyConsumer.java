@@ -16,18 +16,42 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link ByteBuffer} implementation of {@link BodyConsumer}
+ * A {@link BodyConsumer} that writes response body bytes into a {@link ByteBuffer}.
+ * <p>
+ * This consumer accumulates response bytes directly into a ByteBuffer, which is
+ * useful when you need the response data in ByteBuffer form for further processing.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * ByteBuffer buffer = ByteBuffer.allocate(8192);
+ * ByteBufferBodyConsumer consumer = new ByteBufferBodyConsumer(buffer);
+ *
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ *     .setUrl("http://www.example.com")
+ *     .build();
+ *
+ * Future<Response> future = client.get(consumer);
+ * // After completion, buffer contains the response data
+ * }</pre>
  */
 public class ByteBufferBodyConsumer implements BodyConsumer {
 
   private final ByteBuffer byteBuffer;
 
+  /**
+   * Creates a new ByteBufferBodyConsumer that writes to the specified buffer.
+   *
+   * @param byteBuffer the ByteBuffer to write response body bytes into
+   */
   public ByteBufferBodyConsumer(ByteBuffer byteBuffer) {
     this.byteBuffer = byteBuffer;
   }
 
   /**
-   * {@inheritDoc}
+   * Writes the received bytes into the underlying ByteBuffer.
+   *
+   * @param byteBuffer the buffer containing response body bytes
+   * @throws IOException if an I/O error occurs during writing
    */
   @Override
   public void consume(ByteBuffer byteBuffer) throws IOException {
@@ -35,7 +59,11 @@ public class ByteBufferBodyConsumer implements BodyConsumer {
   }
 
   /**
-   * {@inheritDoc}
+   * Flips the underlying ByteBuffer, preparing it for reading.
+   * <p>
+   * After this call, the buffer is ready to be read from the beginning.
+   *
+   * @throws IOException if an I/O error occurs
    */
   @Override
   public void close() throws IOException {

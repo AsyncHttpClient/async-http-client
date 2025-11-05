@@ -30,18 +30,34 @@ import java.nio.charset.Charset;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+/**
+ * Abstract base class for multipart part implementations that handle encoding and transfer.
+ * <p>
+ * This class provides the core functionality for encoding and transferring multipart parts
+ * according to the multipart/form-data specification (RFC 2388). It manages the three-phase
+ * transfer process: pre-content (boundary and headers), content (actual data), and post-content
+ * (trailing CRLF).
+ * </p>
+ * <p>
+ * Subclasses must implement {@link #getContentLength()}, {@link #transferContentTo(ByteBuf)},
+ * and {@link #transferContentTo(WritableByteChannel)} to provide content-specific transfer logic.
+ * The class handles lazy loading of pre-content and post-content buffers to optimize memory usage.
+ * </p>
+ *
+ * @param <T> the type of Part this multipart part represents
+ */
 public abstract class MultipartPart<T extends PartBase> implements Closeable {
 
   /**
-   * Content disposition as a byte
+   * Quote character as a byte, used in headers.
    */
   static final byte QUOTE_BYTE = '\"';
   /**
-   * Carriage return/linefeed as a byte array
+   * Carriage return/line feed sequence as bytes (CRLF).
    */
   protected static final byte[] CRLF_BYTES = "\r\n".getBytes(US_ASCII);
   /**
-   * Extra characters as a byte array
+   * Boundary delimiter prefix ("--") as bytes.
    */
   protected static final byte[] EXTRA_BYTES = "--".getBytes(US_ASCII);
 

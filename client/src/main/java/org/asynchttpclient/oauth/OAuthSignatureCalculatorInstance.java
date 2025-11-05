@@ -35,8 +35,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Non thread-safe {@link SignatureCalculator} for OAuth1.
  * <p>
- * Supports most common signature inclusion and calculation methods: HMAC-SHA1 for calculation, and Header inclusion as inclusion method. Nonce generation uses simple random
- * numbers with base64 encoding.
+ * Supports most common signature inclusion and calculation methods: HMAC-SHA1 for calculation,
+ * and Header inclusion as inclusion method. Nonce generation uses simple random numbers with
+ * base64 encoding.
+ * </p>
+ * <p>
+ * This class is not thread-safe and should be used through the thread-local instance pool
+ * provided by {@link OAuthSignatureCalculator}.
+ * </p>
  */
 public class OAuthSignatureCalculatorInstance {
 
@@ -58,10 +64,34 @@ public class OAuthSignatureCalculatorInstance {
   private final byte[] nonceBuffer = new byte[16];
   private final Parameters parameters = new Parameters();
 
+  /**
+   * Creates a new OAuth signature calculator instance.
+   * <p>
+   * Initializes the HMAC-SHA1 MAC instance used for signature generation.
+   * </p>
+   *
+   * @throws NoSuchAlgorithmException if HMAC-SHA1 algorithm is not available
+   */
   public OAuthSignatureCalculatorInstance() throws NoSuchAlgorithmException {
     mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
   }
 
+  /**
+   * Computes the OAuth authorization header for the given request.
+   * <p>
+   * This method generates a nonce and timestamp, then computes the OAuth signature
+   * and constructs the complete Authorization header value.
+   * </p>
+   *
+   * @param consumerAuth the consumer key credentials
+   * @param userAuth the request/access token credentials
+   * @param uri the request URI
+   * @param method the HTTP method (e.g., GET, POST)
+   * @param formParams the form parameters (can be null)
+   * @param queryParams the query parameters (can be null)
+   * @return the OAuth Authorization header value
+   * @throws InvalidKeyException if the consumer or user secrets are invalid
+   */
   public String computeAuthorizationHeader(ConsumerKey consumerAuth,
                                            RequestToken userAuth,
                                            Uri uri,

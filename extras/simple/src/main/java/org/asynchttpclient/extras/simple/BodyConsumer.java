@@ -18,15 +18,34 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A simple API to be used with the {@link SimpleAsyncHttpClient} class in order to process response's bytes.
+ * A simple API to be used with the {@link SimpleAsyncHttpClient} class in order to process response bytes.
+ * <p>
+ * Implementations of this interface consume response body chunks as they arrive, enabling
+ * streaming processing of HTTP responses without loading the entire response into memory.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Consume to StringBuilder
+ * StringBuilder sb = new StringBuilder();
+ * BodyConsumer consumer = new AppendableBodyConsumer(sb);
+ *
+ * // Consume to File
+ * BodyConsumer fileConsumer = new FileBodyConsumer(new File("output.txt"));
+ *
+ * // Consume to OutputStream
+ * BodyConsumer streamConsumer = new OutputStreamBodyConsumer(outputStream);
+ * }</pre>
  */
 public interface BodyConsumer extends Closeable {
 
   /**
-   * Consume the received bytes.
+   * Consumes the received bytes from an HTTP response body chunk.
+   * <p>
+   * This method is called multiple times as response body chunks arrive,
+   * allowing for streaming processing of the response.
    *
-   * @param byteBuffer a {@link ByteBuffer} representation of the response's chunk.
-   * @throws IOException IO exception
+   * @param byteBuffer a ByteBuffer containing a chunk of the response body
+   * @throws IOException if an I/O error occurs during consumption
    */
   void consume(ByteBuffer byteBuffer) throws IOException;
 }

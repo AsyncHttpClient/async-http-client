@@ -22,11 +22,40 @@ import static org.asynchttpclient.util.Assertions.assertNotEmpty;
 import static org.asynchttpclient.util.MiscUtils.isEmpty;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
+/**
+ * Immutable URI representation optimized for HTTP client operations.
+ * <p>
+ * This class provides a high-performance URI implementation that parses and validates
+ * URI components according to RFC 3986. It supports HTTP, HTTPS, WS (WebSocket), and
+ * WSS (secure WebSocket) schemes.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Parse a URI from string
+ * Uri uri = Uri.create("https://example.com:8443/path?query=value");
+ *
+ * // Access components
+ * String scheme = uri.getScheme();     // "https"
+ * String host = uri.getHost();         // "example.com"
+ * int port = uri.getPort();            // 8443
+ * String path = uri.getPath();         // "/path"
+ * String query = uri.getQuery();       // "query=value"
+ *
+ * // Create with context (relative URL resolution)
+ * Uri base = Uri.create("https://example.com/foo/bar");
+ * Uri relative = Uri.create(base, "../baz");  // resolves to https://example.com/foo/baz
+ * }</pre>
+ */
 public class Uri {
 
+  /** HTTP scheme constant */
   public static final String HTTP = "http";
+  /** HTTPS scheme constant */
   public static final String HTTPS = "https";
+  /** WebSocket scheme constant */
   public static final String WS = "ws";
+  /** Secure WebSocket scheme constant */
   public static final String WSS = "wss";
   private final String scheme;
   private final String userInfo;

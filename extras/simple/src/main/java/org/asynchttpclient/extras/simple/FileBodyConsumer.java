@@ -17,18 +17,42 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link RandomAccessFile} that can be used as a {@link ResumableBodyConsumer}
+ * A {@link BodyConsumer} that writes response body bytes to a {@link RandomAccessFile}.
+ * <p>
+ * This consumer supports resumable downloads by tracking the number of bytes written
+ * to the file and allowing the download to continue from the current file position.
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * RandomAccessFile raf = new RandomAccessFile("output.dat", "rw");
+ * FileBodyConsumer consumer = new FileBodyConsumer(raf);
+ *
+ * SimpleAsyncHttpClient client = new SimpleAsyncHttpClient.Builder()
+ *     .setUrl("http://www.example.com/large-file.zip")
+ *     .setResumableDownload(true)
+ *     .build();
+ *
+ * Future<Response> future = client.get(consumer);
+ * }</pre>
  */
 public class FileBodyConsumer implements ResumableBodyConsumer {
 
   private final RandomAccessFile file;
 
+  /**
+   * Creates a new FileBodyConsumer that writes to the specified RandomAccessFile.
+   *
+   * @param file the RandomAccessFile to write response body bytes to
+   */
   public FileBodyConsumer(RandomAccessFile file) {
     this.file = file;
   }
 
   /**
-   * {@inheritDoc}
+   * Writes the received bytes to the underlying file.
+   *
+   * @param byteBuffer the buffer containing response body bytes
+   * @throws IOException if an I/O error occurs during writing
    */
   @Override
   public void consume(ByteBuffer byteBuffer) throws IOException {
@@ -37,7 +61,9 @@ public class FileBodyConsumer implements ResumableBodyConsumer {
   }
 
   /**
-   * {@inheritDoc}
+   * Closes the underlying RandomAccessFile.
+   *
+   * @throws IOException if an I/O error occurs during closing
    */
   @Override
   public void close() throws IOException {
@@ -45,7 +71,12 @@ public class FileBodyConsumer implements ResumableBodyConsumer {
   }
 
   /**
-   * {@inheritDoc}
+   * Returns the number of bytes already written to the file.
+   * <p>
+   * This is used for resumable downloads to determine where to continue downloading.
+   *
+   * @return the current file length in bytes
+   * @throws IOException if an I/O error occurs reading the file length
    */
   @Override
   public long getTransferredBytes() throws IOException {
@@ -53,7 +84,11 @@ public class FileBodyConsumer implements ResumableBodyConsumer {
   }
 
   /**
-   * {@inheritDoc}
+   * Prepares the file for resuming a download by seeking to the end.
+   * <p>
+   * This positions the file pointer at the end so new bytes will be appended.
+   *
+   * @throws IOException if an I/O error occurs during seeking
    */
   @Override
   public void resume() throws IOException {

@@ -16,16 +16,36 @@ package org.asynchttpclient.request.body.generator;
 import org.asynchttpclient.request.body.Body;
 
 /**
- * Creates a request body.
+ * A factory for creating request bodies.
+ * <p>
+ * Implementations of this interface are responsible for creating {@link Body} instances
+ * that provide the actual data to be sent in HTTP requests. The generator pattern allows
+ * for creating multiple body instances with the same content, which is necessary for
+ * scenarios like authentication challenges and redirects where the request needs to be resent.
+ * </p>
+ *
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * // Create a body generator from a byte array
+ * BodyGenerator generator = new ByteArrayBodyGenerator("Hello World".getBytes());
+ * Body body = generator.createBody();
+ *
+ * // Create a body generator from a file
+ * BodyGenerator fileGenerator = new FileBodyGenerator(new File("data.txt"));
+ * Body fileBody = fileGenerator.createBody();
+ * }</pre>
  */
 public interface BodyGenerator {
 
   /**
-   * Creates a new instance of the request body to be read. While each invocation of this method is supposed to create
-   * a fresh instance of the body, the actual contents of all these body instances is the same. For example, the body
-   * needs to be resend after an authentication challenge of a redirect.
+   * Creates a new instance of the request body to be read.
+   * <p>
+   * Each invocation of this method creates a fresh instance of the body, but the actual
+   * contents of all these body instances is the same. This is necessary for scenarios where
+   * the body needs to be resent, such as after an authentication challenge or redirect.
+   * </p>
    *
-   * @return The request body, never {@code null}.
+   * @return the request body, never {@code null}
    */
   Body createBody();
 }
