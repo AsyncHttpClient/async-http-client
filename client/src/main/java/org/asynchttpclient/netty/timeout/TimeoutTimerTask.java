@@ -57,6 +57,28 @@ public abstract class TimeoutTimerTask implements TimerTask {
 
     void appendRemoteAddress(StringBuilder sb) {
         InetSocketAddress remoteAddress = timeoutsHolder.remoteAddress();
+
+        // Guard against null remoteAddress which can happen when the TimeoutsHolder
+        // was created without an original remote address (for example when using a
+        // pooled channel whose remoteAddress() returned null). In that case fall
+        // back to the URI host/port from the request to avoid a NPE and provide
+        // a useful diagnostic.
+        if (remoteAddress == null) {
+            if (nettyResponseFuture != null && nettyResponseFuture.getTargetRequest() != null) {
+                try {
+                    String host = nettyResponseFuture.getTargetRequest().getUri().getHost();
+                    int port = nettyResponseFuture.getTargetRequest().getUri().getExplicitPort();
+                    sb.append(host == null ? "unknown" : host);
+                    sb.append(':').append(port);
+                } catch (Exception ignored) {
+                    sb.append("unknown:0");
+                }
+            } else {
+                sb.append("unknown:0");
+            }
+            return;
+        }
+
         sb.append(remoteAddress.getHostString());
         if (!remoteAddress.isUnresolved()) {
             sb.append('/').append(remoteAddress.getAddress().getHostAddress());
