@@ -98,7 +98,12 @@ public final class NettyConnectListener<T> {
 
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
-        timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
+        // don't set a null resolved address - if the remoteAddress is null we keep
+        // the previously scheduled (possibly unresolved) address to avoid NPEs in
+        // timeout logging and keep useful diagnostic information
+        if (remoteAddress != null) {
+            timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
+        }
         ProxyServer proxyServer = future.getProxyServer();
 
         // For HTTPS proxies, establish SSL connection to the proxy server first
