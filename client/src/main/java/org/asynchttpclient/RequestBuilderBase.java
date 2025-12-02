@@ -94,7 +94,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
     protected NameResolver<InetAddress> nameResolver = DEFAULT_NAME_RESOLVER;
     // Flag to track if Content-Type was explicitly set by user (should not be modified)
-    private boolean contentTypeLocked;
+    // Keep this field protected for binary compatibility with subclasses compiled
+    // against earlier versions that may have accessed the field directly. New
+    // code should use the doContentTypeLock/resetContentTypeLock/isContentTypeLocked
+    // API instead.
+    @Deprecated
+    protected boolean contentTypeLocked;
 
     /**
      * Mark the Content-Type header as explicitly set by the user. When locked, the
