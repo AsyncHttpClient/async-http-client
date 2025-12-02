@@ -93,6 +93,30 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected @Nullable Charset charset;
     protected ChannelPoolPartitioning channelPoolPartitioning = ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE;
     protected NameResolver<InetAddress> nameResolver = DEFAULT_NAME_RESOLVER;
+    protected boolean contentTypeLocked;
+
+    /**
+     * Mark the Content-Type header as explicitly set by the user. When locked, the
+     * Content-Type header will not be modified by the client (e.g., charset addition).
+     */
+    protected final void doContentTypeLock() {
+        this.contentTypeLocked = true;
+    }
+
+    /**
+     * Clear the Content-Type lock, allowing the client to modify the Content-Type header
+     * if needed (for example, to add charset when it was auto-generated).
+     */
+    protected final void resetContentTypeLock() {
+        this.contentTypeLocked = false;
+    }
+
+    /**
+     * Return whether the Content-Type header has been locked as explicitly set by the user.
+     */
+    protected final boolean isContentTypeLocked() {
+        return this.contentTypeLocked;
+    }
 
     protected RequestBuilderBase(String method, boolean disableUrlEncoding) {
         this(method, disableUrlEncoding, true);
@@ -116,6 +140,10 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         localAddress = prototype.getLocalAddress();
         headers = new DefaultHttpHeaders(validateHeaders);
         headers.add(prototype.getHeaders());
+        // If prototype has Content-Type, consider it as explicitly set
+        if (headers.contains(CONTENT_TYPE)) {
+            doContentTypeLock();
+        }
         if (isNonEmpty(prototype.getCookies())) {
             cookies = new ArrayList<>(prototype.getCookies());
         }
@@ -181,6 +209,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      */
     public T clearHeaders() {
         headers.clear();
+        resetContentTypeLock();
         return asDerivedType();
     }
 
@@ -203,6 +232,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      */
     public T setHeader(CharSequence name, Object value) {
         headers.set(name, value);
+        if (CONTENT_TYPE.contentEqualsIgnoreCase(name)) {
+            doContentTypeLock();
+        }
         return asDerivedType();
     }
 
@@ -215,6 +247,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      */
     public T setHeader(CharSequence name, Iterable<?> values) {
         headers.set(name, values);
+        if (CONTENT_TYPE.contentEqualsIgnoreCase(name)) {
+            doContentTypeLock();
+        }
         return asDerivedType();
     }
 
@@ -243,6 +278,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         }
 
         headers.add(name, value);
+        if (CONTENT_TYPE.contentEqualsIgnoreCase(name)) {
+            doContentTypeLock();
+        }
         return asDerivedType();
     }
 
@@ -256,6 +294,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
      */
     public T addHeader(CharSequence name, Iterable<?> values) {
         headers.add(name, values);
+        if (CONTENT_TYPE.contentEqualsIgnoreCase(name)) {
+            doContentTypeLock();
+        }
         return asDerivedType();
     }
 
@@ -264,6 +305,9 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
             this.headers.clear();
         } else {
             this.headers = headers;
+            if (headers.contains(CONTENT_TYPE)) {
+                doContentTypeLock();
+            }
         }
         return asDerivedType();
     }
@@ -278,7 +322,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setHeaders(Map<? extends CharSequence, ? extends Iterable<?>> headers) {
         clearHeaders();
         if (headers != null) {
-            headers.forEach((name, values) -> this.headers.add(name, values));
+            headers.forEach((name, values) -> {
+                this.headers.add(name, values);
+                if (CONTENT_TYPE.contentEqualsIgnoreCase(name)) {
+                    doContentTypeLock();
+                }
+            });
         }
         return asDerivedType();
     }
@@ -293,7 +342,12 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     public T setSingleHeaders(Map<? extends CharSequence, ?> headers) {
         clearHeaders();
         if (headers != null) {
-            headers.forEach((name, value) -> this.headers.add(name, value));
+            headers.forEach((name, value) -> {
+                this.headers.add(name, value);
+                if (CONTENT_TYPE.contentEqualsIgnoreCase(name)) {
+                    doContentTypeLock();
+                }
+            });
         }
         return asDerivedType();
     }
@@ -634,7 +688,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         String contentTypeHeader = headers.get(CONTENT_TYPE);
         Charset contentTypeCharset = extractContentTypeCharsetAttribute(contentTypeHeader);
         charset = withDefault(contentTypeCharset, withDefault(charset, UTF_8));
-        if (contentTypeHeader != null && contentTypeHeader.regionMatches(true, 0, "text/", 0, 5) && contentTypeCharset == null) {
+        // Only add charset if Content-Type was not explicitly set by user
+        if (!isContentTypeLocked() && contentTypeHeader != null && contentTypeHeader.regionMatches(true, 0, "text/", 0, 5) && contentTypeCharset == null) {
             // add explicit charset to content-type header
             headers.set(CONTENT_TYPE, contentTypeHeader + "; charset=" + charset.name());
         }
