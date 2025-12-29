@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.asynchttpclient.test.ExtendedDigestAuthenticator;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,7 +40,7 @@ import static org.asynchttpclient.Dsl.digestAuthRealm;
 import static org.asynchttpclient.test.TestUtils.ADMIN;
 import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addBasicAuthHandler;
-import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
+// import static org.asynchttpclient.test.TestUtils.addDigestAuthHandler;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,7 +64,8 @@ public class AuthTimeoutTest extends AbstractBasicTest {
 
         server2 = new Server();
         ServerConnector connector2 = addHttpConnector(server2);
-        addDigestAuthHandler(server2, configureHandler());
+        // Use DigestAuthHandler for server2 (digest tests), otherwise use default handler
+        server2.setHandler(new DigestAuthHandler());
         server2.start();
         port2 = connector2.getLocalPort();
 
@@ -179,6 +181,51 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new IncompleteResponseHandler();
+    }
+
+    // DigestAuthHandler for Digest tests (MD5 only, as in old Jetty default)
+    private static class DigestAuthHandler extends AbstractHandler {
+        private final String realm = "MyRealm";
+        private final String user = USER;
+        private final String password = ADMIN;
+        private final ExtendedDigestAuthenticator authenticator = new ExtendedDigestAuthenticator("MD5");
+        private final String nonce = ExtendedDigestAuthenticator.newNonce();
+
+        @Override
+        public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            String authz = request.getHeader("Authorization");
+            if (authz == null || !authz.startsWith("Digest ")) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setHeader("WWW-Authenticate", authenticator.createAuthenticateHeader(realm, nonce, false));
+                response.getOutputStream().close();
+                return;
+            }
+            String credentials = authz.substring("Digest ".length());
+            if (!user.equals(ExtendedDigestAuthenticator.parseCredentials(credentials).get("username"))) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setHeader("WWW-Authenticate", authenticator.createAuthenticateHeader(realm, nonce, true));
+                response.getOutputStream().close();
+                return;
+            }
+            boolean ok = ExtendedDigestAuthenticator.validateDigest(request.getMethod(), credentials, password);
+            if (!ok) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setHeader("WWW-Authenticate", authenticator.createAuthenticateHeader(realm, nonce, true));
+                response.getOutputStream().close();
+                return;
+            }
+            // Success: simulate incomplete response for timeout
+            response.setStatus(200);
+            OutputStream out = response.getOutputStream();
+            response.setIntHeader(CONTENT_LENGTH.toString(), 1000);
+            out.write(0);
+            out.flush();
+            try {
+                Thread.sleep(LONG_FUTURE_TIMEOUT + 100);
+            } catch (InterruptedException e) {
+                //
+            }
+        }
     }
 
     private static class IncompleteResponseHandler extends AbstractHandler {
