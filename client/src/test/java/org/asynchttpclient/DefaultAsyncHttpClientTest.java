@@ -19,10 +19,12 @@ import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.Timer;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -33,9 +35,11 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -76,16 +80,10 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    /**
-     * Test for issue #2121: Setting an EventLoopGroup in config does not work since Netty 4.2.x
-     * This test verifies that when a user provides their own MultiThreadIoEventLoopGroup
-     * (which is the new Netty 4.2 way to create event loop groups), the client correctly
-     * detects the transport type and works properly.
-     */
+    // Issue #2121: External MultiThreadIoEventLoopGroup with EpollIoHandler
     @RepeatedIfExceptionsTest(repeats = 5)
     @EnabledOnOs(OS.LINUX)
     public void testExternalMultiThreadIoEventLoopGroupWithEpoll() throws Exception {
-        // Create external EventLoopGroup using new Netty 4.2 API
         MultiThreadIoEventLoopGroup externalEventLoopGroup = new MultiThreadIoEventLoopGroup(
                 2, io.netty.channel.epoll.EpollIoHandler.newFactory());
 
@@ -93,11 +91,127 @@ public class DefaultAsyncHttpClientTest {
             AsyncHttpClientConfig config = config().setEventLoopGroup(externalEventLoopGroup).build();
             try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
                 assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
-                // Verify the client is using the external event loop group
                 assertSame(externalEventLoopGroup, client.channelManager().getEventLoopGroup());
             }
         } finally {
             externalEventLoopGroup.shutdownGracefully().syncUninterruptibly();
+        }
+    }
+
+    @Test
+    public void testExternalNioEventLoopGroup() throws Exception {
+        NioEventLoopGroup externalEventLoopGroup = new NioEventLoopGroup(2);
+
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(externalEventLoopGroup).build();
+            try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+                assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
+                assertSame(externalEventLoopGroup, client.channelManager().getEventLoopGroup());
+                assertInstanceOf(NioEventLoopGroup.class, client.channelManager().getEventLoopGroup());
+            }
+            assertFalse(externalEventLoopGroup.isShutdown());
+        } finally {
+            externalEventLoopGroup.shutdownGracefully().syncUninterruptibly();
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testExternalLegacyEpollEventLoopGroup() throws Exception {
+        EpollEventLoopGroup externalEventLoopGroup = new EpollEventLoopGroup(2);
+
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(externalEventLoopGroup).build();
+            try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+                assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
+                assertSame(externalEventLoopGroup, client.channelManager().getEventLoopGroup());
+                assertInstanceOf(EpollEventLoopGroup.class, client.channelManager().getEventLoopGroup());
+            }
+            assertFalse(externalEventLoopGroup.isShutdown());
+        } finally {
+            externalEventLoopGroup.shutdownGracefully().syncUninterruptibly();
+        }
+    }
+
+    @Test
+    public void testExternalEventLoopGroupNotReleasedOnClientClose() throws Exception {
+        NioEventLoopGroup externalEventLoopGroup = new NioEventLoopGroup(2);
+
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(externalEventLoopGroup).build();
+
+            for (int i = 0; i < 3; i++) {
+                try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+                    assertSame(externalEventLoopGroup, client.channelManager().getEventLoopGroup());
+                    assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
+                }
+                assertFalse(externalEventLoopGroup.isShutdown());
+                assertFalse(externalEventLoopGroup.isTerminated());
+            }
+        } finally {
+            externalEventLoopGroup.shutdownGracefully().syncUninterruptibly();
+        }
+    }
+
+    @Test
+    public void testInternalEventLoopGroupIsReleasedOnClientClose() throws Exception {
+        AsyncHttpClientConfig config = config().build();
+        NioEventLoopGroup internalEventLoopGroup;
+
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+            internalEventLoopGroup = (NioEventLoopGroup) client.channelManager().getEventLoopGroup();
+            assertFalse(internalEventLoopGroup.isShutdown());
+            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
+        }
+
+        assertTrue(internalEventLoopGroup.isShuttingDown() || internalEventLoopGroup.isShutdown());
+    }
+
+    @Test
+    public void testMultipleClientsShareExternalEventLoopGroup() throws Exception {
+        NioEventLoopGroup sharedEventLoopGroup = new NioEventLoopGroup(4);
+
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(sharedEventLoopGroup).build();
+
+            try (DefaultAsyncHttpClient client1 = (DefaultAsyncHttpClient) asyncHttpClient(config);
+                 DefaultAsyncHttpClient client2 = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+
+                assertSame(sharedEventLoopGroup, client1.channelManager().getEventLoopGroup());
+                assertSame(sharedEventLoopGroup, client2.channelManager().getEventLoopGroup());
+
+                assertDoesNotThrow(() -> client1.prepareGet("https://www.google.com").execute().get());
+                assertDoesNotThrow(() -> client2.prepareGet("https://www.google.com").execute().get());
+            }
+
+            assertFalse(sharedEventLoopGroup.isShutdown());
+        } finally {
+            sharedEventLoopGroup.shutdownGracefully().syncUninterruptibly();
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testMultipleClientsShareExternalMultiThreadIoEventLoopGroup() throws Exception {
+        MultiThreadIoEventLoopGroup sharedEventLoopGroup = new MultiThreadIoEventLoopGroup(
+                4, io.netty.channel.epoll.EpollIoHandler.newFactory());
+
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(sharedEventLoopGroup).build();
+
+            try (DefaultAsyncHttpClient client1 = (DefaultAsyncHttpClient) asyncHttpClient(config);
+                 DefaultAsyncHttpClient client2 = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+
+                assertSame(sharedEventLoopGroup, client1.channelManager().getEventLoopGroup());
+                assertSame(sharedEventLoopGroup, client2.channelManager().getEventLoopGroup());
+
+                assertDoesNotThrow(() -> client1.prepareGet("https://www.google.com").execute().get());
+                assertDoesNotThrow(() -> client2.prepareGet("https://www.google.com").execute().get());
+            }
+
+            assertFalse(sharedEventLoopGroup.isShutdown());
+        } finally {
+            sharedEventLoopGroup.shutdownGracefully().syncUninterruptibly();
         }
     }
 
