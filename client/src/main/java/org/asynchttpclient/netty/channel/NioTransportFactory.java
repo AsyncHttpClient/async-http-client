@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
@@ -32,5 +33,10 @@ enum NioTransportFactory implements TransportFactory<NioSocketChannel, NioEventL
     @Override
     public NioEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new NioEventLoopGroup(ioThreadsCount, threadFactory);
+    }
+
+    @Override
+    public boolean matches(EventLoopGroup eventLoopGroup) {
+        return eventLoopGroup instanceof NioEventLoopGroup;
     }
 }

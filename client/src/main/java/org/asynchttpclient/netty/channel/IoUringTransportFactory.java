@@ -15,6 +15,8 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.IoEventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.uring.IoUring;
 import io.netty.channel.uring.IoUringIoHandler;
@@ -41,5 +43,13 @@ class IoUringTransportFactory implements TransportFactory<IoUringSocketChannel, 
     @Override
     public MultiThreadIoEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new MultiThreadIoEventLoopGroup(ioThreadsCount, threadFactory, IoUringIoHandler.newFactory());
+    }
+
+    @Override
+    public boolean matches(EventLoopGroup eventLoopGroup) {
+        if (eventLoopGroup instanceof IoEventLoopGroup) {
+            return ((IoEventLoopGroup) eventLoopGroup).isIoType(IoUringIoHandler.class);
+        }
+        return false;
     }
 }

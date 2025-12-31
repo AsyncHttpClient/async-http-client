@@ -15,8 +15,11 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.IoEventLoopGroup;
 import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 
 import java.util.concurrent.ThreadFactory;
@@ -40,5 +43,17 @@ class KQueueTransportFactory implements TransportFactory<KQueueSocketChannel, KQ
     @Override
     public KQueueEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new KQueueEventLoopGroup(ioThreadsCount, threadFactory);
+    }
+
+    @Override
+    public boolean matches(EventLoopGroup eventLoopGroup) {
+        // Support both legacy KQueueEventLoopGroup and new MultiThreadIoEventLoopGroup with KQueueIoHandler
+        if (eventLoopGroup instanceof KQueueEventLoopGroup) {
+            return true;
+        }
+        if (eventLoopGroup instanceof IoEventLoopGroup) {
+            return ((IoEventLoopGroup) eventLoopGroup).isIoType(KQueueIoHandler.class);
+        }
+        return false;
     }
 }

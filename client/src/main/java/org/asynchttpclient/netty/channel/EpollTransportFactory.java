@@ -15,8 +15,11 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.IoEventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollIoHandler;
 import io.netty.channel.epoll.EpollSocketChannel;
 
 import java.util.concurrent.ThreadFactory;
@@ -40,5 +43,17 @@ class EpollTransportFactory implements TransportFactory<EpollSocketChannel, Epol
     @Override
     public EpollEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new EpollEventLoopGroup(ioThreadsCount, threadFactory);
+    }
+
+    @Override
+    public boolean matches(EventLoopGroup eventLoopGroup) {
+        // Support both legacy EpollEventLoopGroup and new MultiThreadIoEventLoopGroup with EpollIoHandler
+        if (eventLoopGroup instanceof EpollEventLoopGroup) {
+            return true;
+        }
+        if (eventLoopGroup instanceof IoEventLoopGroup) {
+            return ((IoEventLoopGroup) eventLoopGroup).isIoType(EpollIoHandler.class);
+        }
+        return false;
     }
 }

@@ -24,4 +24,16 @@ import java.util.concurrent.ThreadFactory;
 public interface TransportFactory<C extends Channel, L extends EventLoopGroup> extends ChannelFactory<C> {
 
     L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
+
+    /**
+     * Checks if this transport factory is compatible with the given EventLoopGroup.
+     * This is used when a user provides an external EventLoopGroup to determine
+     * the correct channel type to use.
+     *
+     * @param eventLoopGroup the EventLoopGroup to check compatibility with
+     * @return true if this transport factory can handle the given EventLoopGroup
+     */
+    default boolean matches(EventLoopGroup eventLoopGroup) {
+        return false;
+    }
 }

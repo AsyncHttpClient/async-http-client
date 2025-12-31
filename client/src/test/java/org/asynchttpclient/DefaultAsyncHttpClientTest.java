@@ -34,6 +34,7 @@ import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -72,6 +73,31 @@ public class DefaultAsyncHttpClientTest {
         try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
             assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
             assertInstanceOf(KQueueEventLoopGroup.class, client.channelManager().getEventLoopGroup());
+        }
+    }
+
+    /**
+     * Test for issue #2121: Setting an EventLoopGroup in config does not work since Netty 4.2.x
+     * This test verifies that when a user provides their own MultiThreadIoEventLoopGroup
+     * (which is the new Netty 4.2 way to create event loop groups), the client correctly
+     * detects the transport type and works properly.
+     */
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testExternalMultiThreadIoEventLoopGroupWithEpoll() throws Exception {
+        // Create external EventLoopGroup using new Netty 4.2 API
+        MultiThreadIoEventLoopGroup externalEventLoopGroup = new MultiThreadIoEventLoopGroup(
+                2, io.netty.channel.epoll.EpollIoHandler.newFactory());
+
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(externalEventLoopGroup).build();
+            try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+                assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
+                // Verify the client is using the external event loop group
+                assertSame(externalEventLoopGroup, client.channelManager().getEventLoopGroup());
+            }
+        } finally {
+            externalEventLoopGroup.shutdownGracefully().syncUninterruptibly();
         }
     }
 

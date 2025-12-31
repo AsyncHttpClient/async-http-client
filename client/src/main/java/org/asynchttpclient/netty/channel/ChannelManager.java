@@ -111,16 +111,6 @@ public class ChannelManager {
 
     private AsyncHttpClientHandler wsHandler;
 
-    private boolean isInstanceof(Object object, String name) {
-        final Class<?> clazz;
-        try {
-            clazz = Class.forName(name, false, getClass().getClassLoader());
-        } catch (ClassNotFoundException ignored) {
-            return false;
-        }
-        return clazz.isInstance(object);
-    }
-
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
         this.config = config;
 
@@ -158,22 +148,54 @@ public class ChannelManager {
             eventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
         } else {
             eventLoopGroup = config.getEventLoopGroup();
-
-            if (eventLoopGroup instanceof NioEventLoopGroup) {
-                transportFactory = NioTransportFactory.INSTANCE;
-            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
-                transportFactory = new EpollTransportFactory();
-            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
-                transportFactory = new KQueueTransportFactory();
-            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.uring.IOUringEventLoopGroup")) {
-                transportFactory = new IoUringTransportFactory();
-            } else {
-                throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
-            }
+            transportFactory = getTransportFactoryForEventLoopGroup(eventLoopGroup);
         }
 
         httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
         wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
+    }
+
+    /**
+     * Determines the appropriate TransportFactory for a given EventLoopGroup.
+     * This method checks against all available transport factories to find one that matches
+     * the provided EventLoopGroup. This supports both legacy EventLoopGroup implementations
+     * (like EpollEventLoopGroup) and the new Netty 4.2 MultiThreadIoEventLoopGroup with IoHandler.
+     *
+     * @param eventLoopGroup the EventLoopGroup to find a matching TransportFactory for
+     * @return the matching TransportFactory
+     * @throws IllegalArgumentException if no matching TransportFactory is found
+     */
+    private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getTransportFactoryForEventLoopGroup(EventLoopGroup eventLoopGroup) {
+        // Check NIO first as it's the most common
+        if (NioTransportFactory.INSTANCE.matches(eventLoopGroup)) {
+            return NioTransportFactory.INSTANCE;
+        }
+
+        // Check native transports
+        if (EpollTransportFactory.isAvailable()) {
+            EpollTransportFactory epollFactory = new EpollTransportFactory();
+            if (epollFactory.matches(eventLoopGroup)) {
+                return epollFactory;
+            }
+        }
+
+        if (KQueueTransportFactory.isAvailable()) {
+            KQueueTransportFactory kQueueFactory = new KQueueTransportFactory();
+            if (kQueueFactory.matches(eventLoopGroup)) {
+                return kQueueFactory;
+            }
+        }
+
+        if (IoUringTransportFactory.isAvailable()) {
+            IoUringTransportFactory ioUringFactory = new IoUringTransportFactory();
+            if (ioUringFactory.matches(eventLoopGroup)) {
+                return ioUringFactory;
+            }
+        }
+
+        throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName() +
+                ". Please ensure you're using a compatible EventLoopGroup (NioEventLoopGroup, EpollEventLoopGroup, " +
+                "KQueueEventLoopGroup, or MultiThreadIoEventLoopGroup with a supported IoHandler).");
     }
 
     private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory(AsyncHttpClientConfig config) {
