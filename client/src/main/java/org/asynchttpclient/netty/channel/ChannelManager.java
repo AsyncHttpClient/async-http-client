@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -509,13 +508,9 @@ public class ChannelManager {
                 if (whenProxyAddress.isSuccess()) {
                     socksBootstrap.handler(new ChannelInitializer<Channel>() {
                         @Override
-                        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-                            httpBootstrapHandler.handlerAdded(ctx);
-                            super.handlerAdded(ctx);
-                        }
-
-                        @Override
                         protected void initChannel(Channel channel) throws Exception {
+                            channel.pipeline().addLast(httpBootstrapHandler);
+
                             InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
                             Realm realm = proxy.getRealm();
                             String username = realm != null ? realm.getPrincipal() : null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 AsyncHttpClient Project. All rights reserved.
+ * Copyright (c) 2024-2026 AsyncHttpClient Project. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,24 +23,39 @@ import org.asynchttpclient.testserver.SocksProxy;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for SOCKS proxy support with both HTTP and HTTPS.
+ * Validates fix for GitHub issue #2139 (SOCKS proxy support broken).
  */
 public class SocksProxyTest extends AbstractBasicTest {
 
     @Override
     public AbstractHandler configureHandler() throws Exception {
         return new ProxyTest.ProxyHandler();
+    }
+
+    /**
+     * Returns a port that is not in use by binding to port 0 and then closing the socket.
+     */
+    private static int findFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
@@ -70,183 +85,133 @@ public class SocksProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
-    public void testSocks5ProxyWithHttp() throws Exception {
-        // Start SOCKS proxy in background thread
-        Thread socksProxyThread = new Thread(() -> {
-            try {
-                new SocksProxy(60000);
-            } catch (Exception e) {
-                logger.error("Failed to establish SocksProxy", e);
-            }
-        });
-        socksProxyThread.start();
+    /**
+     * Validates that when a SOCKS5 proxy is configured at an address where no
+     * SOCKS server is running, the HTTP request FAILS instead of silently
+     * bypassing the proxy and using normal routing.
+     * This is the core regression test for GitHub issue #2139.
+     */
+    @Test
+    public void testSocks5ProxyNotRunningMustFailHttp() throws Exception {
+        int freePort = findFreePort();
 
-        // Give the proxy time to start
-        Thread.sleep(1000);
-
-        try (AsyncHttpClient client = asyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setConnectTimeout(Duration.ofMillis(5000))
+                .setRequestTimeout(Duration.ofMillis(10000)))) {
             String target = "http://localhost:" + port1 + '/';
             Future<Response> f = client.prepareGet(target)
-                    .setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V5))
+                    .setProxyServer(new ProxyServer.Builder("127.0.0.1", freePort)
+                            .setProxyType(ProxyType.SOCKS_V5))
                     .execute();
-
-            Response response = f.get(60, TimeUnit.SECONDS);
-            assertNotNull(response);
-            assertEquals(200, response.getStatusCode());
+            assertThrows(ExecutionException.class, () -> f.get(10, TimeUnit.SECONDS),
+                    "Request should fail when SOCKS5 proxy is not running, not bypass proxy");
         }
     }
 
+    /**
+     * Validates that when a SOCKS4 proxy is configured at an address where no
+     * SOCKS server is running, the HTTP request FAILS instead of silently
+     * bypassing the proxy and using normal routing.
+     */
     @Test
-    public void testSocks5ProxyWithHttpsDoesNotThrowException() throws Exception {
-        // This test specifically verifies that HTTPS requests through SOCKS5 proxy
-        // do not throw NoSuchElementException: socks anymore
-
-        // Start SOCKS proxy in background thread
-        Thread socksProxyThread = new Thread(() -> {
-            try {
-                new SocksProxy(10000); // shorter time for test
-            } catch (Exception e) {
-                logger.error("Failed to establish SocksProxy", e);
-            }
-        });
-        socksProxyThread.start();
-
-        // Give the proxy time to start
-        Thread.sleep(1000);
+    public void testSocks4ProxyNotRunningMustFailHttp() throws Exception {
+        int freePort = findFreePort();
 
         try (AsyncHttpClient client = asyncHttpClient(config()
-                .setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V5))
                 .setConnectTimeout(Duration.ofMillis(5000))
                 .setRequestTimeout(Duration.ofMillis(10000)))) {
-
-            // This would previously throw: java.util.NoSuchElementException: socks
-            // We expect this to fail with connection timeout (since we don't have a real HTTPS target)
-            // but NOT with NoSuchElementException
-
-            try {
-                Future<Response> f = client.prepareGet("https://httpbin.org/get").execute();
-                f.get(8, TimeUnit.SECONDS);
-                // If we reach here, great! The SOCKS proxy worked
-            } catch (Exception e) {
-                // We should NOT see NoSuchElementException: socks anymore
-                String message = e.getMessage();
-                if (message != null && message.contains("socks") && message.contains("NoSuchElementException")) {
-                    throw new AssertionError("NoSuchElementException: socks still occurs", e);
-                }
-                // Other exceptions like connection timeout are expected since we don't have a real working SOCKS proxy setup
-                logger.info("Expected exception (not the SOCKS handler bug): " + e.getClass().getSimpleName() + ": " + message);
-            }
+            String target = "http://localhost:" + port1 + '/';
+            Future<Response> f = client.prepareGet(target)
+                    .setProxyServer(new ProxyServer.Builder("127.0.0.1", freePort)
+                            .setProxyType(ProxyType.SOCKS_V4))
+                    .execute();
+            assertThrows(ExecutionException.class, () -> f.get(10, TimeUnit.SECONDS),
+                    "Request should fail when SOCKS4 proxy is not running, not bypass proxy");
         }
     }
 
+    /**
+     * Validates that when a SOCKS5 proxy is configured at an address where no
+     * SOCKS server is running, an HTTPS request FAILS instead of silently
+     * bypassing the proxy and using normal routing.
+     */
     @Test
-    public void testSocks4ProxyWithHttpsDoesNotThrowException() throws Exception {
-        // This test specifically verifies that HTTPS requests through SOCKS4 proxy
-        // do not throw NoSuchElementException: socks anymore
-
-        // Start SOCKS proxy in background thread
-        Thread socksProxyThread = new Thread(() -> {
-            try {
-                new SocksProxy(10000); // shorter time for test
-            } catch (Exception e) {
-                logger.error("Failed to establish SocksProxy", e);
-            }
-        });
-        socksProxyThread.start();
-
-        // Give the proxy time to start
-        Thread.sleep(1000);
+    public void testSocks5ProxyNotRunningMustFailHttps() throws Exception {
+        int freePort = findFreePort();
 
         try (AsyncHttpClient client = asyncHttpClient(config()
-                .setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4))
                 .setConnectTimeout(Duration.ofMillis(5000))
                 .setRequestTimeout(Duration.ofMillis(10000)))) {
-
-            // This would previously throw: java.util.NoSuchElementException: socks
-            // We expect this to fail with connection timeout (since we don't have a real HTTPS target)
-            // but NOT with NoSuchElementException
-
-            try {
-                Future<Response> f = client.prepareGet("https://httpbin.org/get").execute();
-                f.get(8, TimeUnit.SECONDS);
-                // If we reach here, great! The SOCKS proxy worked
-            } catch (Exception e) {
-                // We should NOT see NoSuchElementException: socks anymore
-                String message = e.getMessage();
-                if (message != null && message.contains("socks") && message.contains("NoSuchElementException")) {
-                    throw new AssertionError("NoSuchElementException: socks still occurs", e);
-                }
-                // Other exceptions like connection timeout are expected since we don't have a real working SOCKS proxy setup
-                logger.info("Expected exception (not the SOCKS handler bug): " + e.getClass().getSimpleName() + ": " + message);
-            }
+            String target = "https://localhost:" + port2 + '/';
+            Future<Response> f = client.prepareGet(target)
+                    .setProxyServer(new ProxyServer.Builder("127.0.0.1", freePort)
+                            .setProxyType(ProxyType.SOCKS_V5))
+                    .execute();
+            assertThrows(ExecutionException.class, () -> f.get(10, TimeUnit.SECONDS),
+                    "Request should fail when SOCKS5 proxy is not running, not bypass proxy");
         }
     }
 
+    /**
+     * Validates that when a SOCKS4 proxy is configured at an address where no
+     * SOCKS server is running, an HTTPS request FAILS instead of silently
+     * bypassing the proxy and using normal routing.
+     */
     @Test
-    public void testIssue1913NoSuchElementExceptionSocks5() throws Exception {
-        // Reproduces the exact issue from GitHub issue #1913 with SOCKS5
-        // This uses the exact code pattern from the issue report
-        var proxyServer = new ProxyServer.Builder("127.0.0.1", 1081)
-                .setProxyType(ProxyType.SOCKS_V5);
+    public void testSocks4ProxyNotRunningMustFailHttps() throws Exception {
+        int freePort = findFreePort();
 
-        try (var client = asyncHttpClient(config()
-                .setProxyServer(proxyServer.build())
-                .setConnectTimeout(Duration.ofMillis(2000))
-                .setRequestTimeout(Duration.ofMillis(5000)))) {
-
-            // This would previously throw: java.util.NoSuchElementException: socks
-            // We expect this to fail with connection timeout (since proxy doesn't exist)
-            // but NOT with NoSuchElementException
-
-            try {
-                var response = client.prepareGet("https://cloudflare.com/cdn-cgi/trace").execute().get();
-                // If we reach here, great! The fix worked and proxy connection succeeded
-                logger.info("Connection successful: " + response.getStatusCode());
-            } catch (Exception e) {
-                // Check that we don't get the NoSuchElementException: socks anymore
-                Throwable cause = e.getCause();
-                String message = cause != null ? cause.getMessage() : e.getMessage();
-
-                // This should NOT contain the original error
-                if (message != null && message.contains("socks") && 
-                    (e.toString().contains("NoSuchElementException") || cause != null && cause.toString().contains("NoSuchElementException"))) {
-                    throw new AssertionError("NoSuchElementException: socks still occurs - fix didn't work: " + e.toString());
-                }
-
-                // Other exceptions like connection timeout are expected since we don't have a working SOCKS proxy
-                logger.info("Expected exception (not the SOCKS handler bug): " + e.getClass().getSimpleName() + ": " + message);
-            }
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setConnectTimeout(Duration.ofMillis(5000))
+                .setRequestTimeout(Duration.ofMillis(10000)))) {
+            String target = "https://localhost:" + port2 + '/';
+            Future<Response> f = client.prepareGet(target)
+                    .setProxyServer(new ProxyServer.Builder("127.0.0.1", freePort)
+                            .setProxyType(ProxyType.SOCKS_V4))
+                    .execute();
+            assertThrows(ExecutionException.class, () -> f.get(10, TimeUnit.SECONDS),
+                    "Request should fail when SOCKS4 proxy is not running, not bypass proxy");
         }
     }
 
-    @Test 
-    public void testIssue1913NoSuchElementExceptionSocks4() throws Exception {
-        // Reproduces the exact issue from GitHub issue #1913 with SOCKS4
-        // This uses the exact code pattern from the issue report
-        var proxyServer = new ProxyServer.Builder("127.0.0.1", 1081)
-                .setProxyType(ProxyType.SOCKS_V4);
+    /**
+     * Validates that per-request SOCKS5 proxy config with a non-existent proxy
+     * also correctly fails the request.
+     */
+    @Test
+    public void testPerRequestSocks5ProxyNotRunningMustFail() throws Exception {
+        int freePort = findFreePort();
 
-        try (var client = asyncHttpClient(config()
-                .setProxyServer(proxyServer.build())
-                .setConnectTimeout(Duration.ofMillis(2000))
-                .setRequestTimeout(Duration.ofMillis(5000)))) {
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setConnectTimeout(Duration.ofMillis(5000))
+                .setRequestTimeout(Duration.ofMillis(10000)))) {
+            String target = "http://localhost:" + port1 + '/';
+            Future<Response> f = client.prepareGet(target)
+                    .setProxyServer(new ProxyServer.Builder("127.0.0.1", freePort)
+                            .setProxyType(ProxyType.SOCKS_V5))
+                    .execute();
+            assertThrows(ExecutionException.class, () -> f.get(10, TimeUnit.SECONDS),
+                    "Per-request SOCKS5 proxy config should not be silently ignored");
+        }
+    }
 
-            try {
-                var response = client.prepareGet("https://cloudflare.com/cdn-cgi/trace").execute().get();
-                logger.info("Connection successful: " + response.getStatusCode());
-            } catch (Exception e) {
-                // Check that we don't get the NoSuchElementException: socks anymore
-                Throwable cause = e.getCause();
-                String message = cause != null ? cause.getMessage() : e.getMessage();
+    /**
+     * Validates that client-level SOCKS5 proxy config with a non-existent proxy
+     * also correctly fails the request.
+     */
+    @Test
+    public void testClientLevelSocks5ProxyNotRunningMustFail() throws Exception {
+        int freePort = findFreePort();
 
-                if (message != null && message.contains("socks") && 
-                    (e.toString().contains("NoSuchElementException") || cause != null && cause.toString().contains("NoSuchElementException"))) {
-                    throw new AssertionError("NoSuchElementException: socks still occurs - fix didn't work: " + e.toString());
-                }
-
-                logger.info("Expected exception (not the SOCKS handler bug): " + e.getClass().getSimpleName() + ": " + message);
-            }
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setProxyServer(new ProxyServer.Builder("127.0.0.1", freePort)
+                        .setProxyType(ProxyType.SOCKS_V5))
+                .setConnectTimeout(Duration.ofMillis(5000))
+                .setRequestTimeout(Duration.ofMillis(10000)))) {
+            String target = "http://localhost:" + port1 + '/';
+            Future<Response> f = client.prepareGet(target).execute();
+            assertThrows(ExecutionException.class, () -> f.get(10, TimeUnit.SECONDS),
+                    "Client-level SOCKS5 proxy config should not be silently ignored");
         }
     }
 }

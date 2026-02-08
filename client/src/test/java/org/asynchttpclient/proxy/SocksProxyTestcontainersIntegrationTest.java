@@ -77,6 +77,7 @@ public class SocksProxyTestcontainersIntegrationTest {
         // Allow force-disabling Docker tests
         if ("true".equals(System.getProperty("no.docker.tests"))) {
             LOGGER.info("Docker tests disabled via -Dno.docker.tests=true");
+            dockerAvailable = false;
             return;
         }
         // Only start container if Docker is available
@@ -89,7 +90,7 @@ public class SocksProxyTestcontainersIntegrationTest {
                 )
                         .withExposedPorts(SOCKS_PORT)
                         .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("DANTE"))
-                        .waitingFor(Wait.forLogMessage(".*sockd.*", 1)
+                        .waitingFor(Wait.forLogMessage(".*danted.*running.*", 1)
                                 .withStartupTimeout(Duration.ofMinutes(2)));
                 socksProxy.start();
                 LOGGER.info("Dante SOCKS proxy started successfully on port {}", socksProxy.getMappedPort(SOCKS_PORT));
