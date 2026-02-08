@@ -5,15 +5,11 @@ RUN apt-get update && \
     apt-get install -y dante-server && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy dante configuration
-COPY sockd.conf /etc/sockd.conf
-
-# Create run directory
-RUN mkdir -p /var/run/sockd && \
-    chmod 755 /var/run/sockd
+# Copy dante configuration (danted uses /etc/danted.conf)
+COPY sockd.conf /etc/danted.conf
 
 # Expose SOCKS port
 EXPOSE 1080
 
-# Run dante server (sockd binary is in /usr/sbin)
-CMD ["/usr/sbin/sockd", "-f", "/etc/sockd.conf", "-D"]
+# Run dante server (binary is /usr/sbin/danted)
+CMD ["/usr/sbin/danted"]

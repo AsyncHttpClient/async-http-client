@@ -30,7 +30,7 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw -B -ntp test
+        run: ./mvnw -B -ntp test -Ddocker.tests=true
 
   RunOnMacOs:
     runs-on: macos-latest

@@ -27,8 +27,8 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
-      - name: Run Tests
-        run: ./mvnw -B -ntp clean test
+      - name: Run Tests (force Docker tests)
+        run: ./mvnw -B -ntp clean test -Ddocker.tests=true
 
   RunOnMacOs:
     runs-on: macos-latest
@@ -40,8 +40,8 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
-      - name: Run Tests
-        run: ./mvnw -B -ntp clean test
+      - name: Run Tests (force Docker tests)
+        run: ./mvnw -B -ntp clean test -Ddocker.tests=true
 
   RunOnWindows:
     runs-on: windows-latest
