@@ -5,8 +5,7 @@
  * and you may not use this file except in compliance with the Apache License Version 2.0.
  * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the Apache License Version 2.0 is distributed on an
+ * Unless required by applicable law or agreed to in writing, software distributed under the Apache License Version 2.0 is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
@@ -70,9 +69,7 @@ public final class AuthenticatorUtils {
     }
 
     private static String computeDigestAuthentication(Realm realm, Uri uri) {
-
         String realmUri = computeRealmURI(uri, realm.isUseAbsoluteURI(), realm.isOmitQuery());
-
         StringBuilder builder = new StringBuilder().append("Digest ");
         append(builder, "username", realm.getPrincipal(), true);
         append(builder, "realm", realm.getRealmName(), true);
@@ -81,22 +78,17 @@ public final class AuthenticatorUtils {
         if (isNonEmpty(realm.getAlgorithm())) {
             append(builder, "algorithm", realm.getAlgorithm(), false);
         }
-
         append(builder, "response", realm.getResponse(), true);
-
         if (realm.getOpaque() != null) {
             append(builder, "opaque", realm.getOpaque(), true);
         }
-
         if (realm.getQop() != null) {
             append(builder, "qop", realm.getQop(), false);
-            // nc and cnonce only sent if server sent qop
             append(builder, "nc", realm.getNc(), false);
             append(builder, "cnonce", realm.getCnonce(), true);
         }
+        // RFC7616: userhash parameter (optional, not implemented yet)
         builder.setLength(builder.length() - 2); // remove tailing ", "
-
-        // FIXME isn't there a more efficient way?
         return new String(StringUtils.charSequence2Bytes(builder, ISO_8859_1), StandardCharsets.UTF_8);
     }
 

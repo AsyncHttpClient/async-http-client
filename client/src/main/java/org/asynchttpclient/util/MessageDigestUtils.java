@@ -36,19 +36,88 @@ public final class MessageDigestUtils {
         }
     });
 
+    private static final ThreadLocal<MessageDigest> SHA256_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new InternalError("SHA-256 not supported on this platform");
+        }
+    });
+
+    private static final ThreadLocal<MessageDigest> SHA512_256_MESSAGE_DIGESTS = ThreadLocal.withInitial(() -> {
+        try {
+            return MessageDigest.getInstance("SHA-512/256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new InternalError("SHA-512/256 not supported on this platform");
+        }
+    });
+
     private MessageDigestUtils() {
         // Prevent outside initialization
     }
 
-    public static MessageDigest pooledMd5MessageDigest() {
-        MessageDigest md = MD5_MESSAGE_DIGESTS.get();
+    /**
+     * Returns a pooled MessageDigest instance for the given algorithm name.
+     * Supported: "MD5", "SHA-1", "SHA-256", "SHA-512/256" (and aliases).
+     * The returned instance is thread-local and reset before use.
+     *
+     * @param algorithm the algorithm name (e.g., "MD5", "SHA-256", "SHA-512/256")
+     * @return a reset MessageDigest instance for the algorithm
+     * @throws IllegalArgumentException if the algorithm is not supported
+     */
+    public static MessageDigest pooledMessageDigest(String algorithm) {
+        String alg = algorithm.replace("_", "-").toUpperCase();
+        MessageDigest md;
+        switch (alg) {
+            case "MD5":
+                md = MD5_MESSAGE_DIGESTS.get();
+                break;
+            case "SHA1":
+            case "SHA-1":
+                md = SHA1_MESSAGE_DIGESTS.get();
+                break;
+            case "SHA-256":
+                md = SHA256_MESSAGE_DIGESTS.get();
+                break;
+            case "SHA-512/256":
+                md = SHA512_256_MESSAGE_DIGESTS.get();
+                break;
+            default:
+                try {
+                    md = MessageDigest.getInstance(algorithm);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new IllegalArgumentException("Unsupported digest algorithm: " + algorithm, e);
+                }
+        }
         md.reset();
         return md;
     }
 
+    /**
+     * @return a pooled, reset MessageDigest for MD5
+     */
+    public static MessageDigest pooledMd5MessageDigest() {
+        return pooledMessageDigest("MD5");
+    }
+
+    /**
+     * @return a pooled, reset MessageDigest for SHA-1
+     */
     public static MessageDigest pooledSha1MessageDigest() {
-        MessageDigest md = SHA1_MESSAGE_DIGESTS.get();
-        md.reset();
-        return md;
+        return pooledMessageDigest("SHA-1");
+    }
+
+    /**
+     * @return a pooled, reset MessageDigest for SHA-256
+     */
+    public static MessageDigest pooledSha256MessageDigest() {
+        return pooledMessageDigest("SHA-256");
+    }
+
+    /**
+     * @return a pooled, reset MessageDigest for SHA-512/256
+     */
+    public static MessageDigest pooledSha512_256MessageDigest() {
+        return pooledMessageDigest("SHA-512/256");
     }
 }
