@@ -200,6 +200,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
     private final int ioThreadsCount;
+    private final boolean enableHttp2;
     private final long hashedWheelTimerTickDuration;
     private final int hashedWheelTimerSize;
 
@@ -290,6 +291,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          @Nullable Consumer<Channel> httpAdditionalChannelInitializer,
                                          @Nullable Consumer<Channel> wsAdditionalChannelInitializer,
                                          ResponseBodyPartFactory responseBodyPartFactory,
+                                         boolean enableHttp2,
                                          int ioThreadsCount,
                                          long hashedWheelTimerTickDuration,
                                          int hashedWheelTimerSize) {
@@ -388,6 +390,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.httpAdditionalChannelInitializer = httpAdditionalChannelInitializer;
         this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
         this.responseBodyPartFactory = responseBodyPartFactory;
+        this.enableHttp2 = enableHttp2;
         this.ioThreadsCount = ioThreadsCount;
         this.hashedWheelTimerTickDuration = hashedWheelTimerTickDuration;
         this.hashedWheelTimerSize = hashedWheelTimerSize;
@@ -782,6 +785,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return ioThreadsCount;
     }
 
+    @Override
+    public boolean isEnableHttp2() {
+        return enableHttp2;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -871,6 +879,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean useOnlyEpollNativeTransport = defaultUseOnlyEpollNativeTransport();
         private @Nullable ByteBufAllocator allocator;
         private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
+        private boolean enableHttp2;
         private @Nullable EventLoopGroup eventLoopGroup;
         private @Nullable Timer nettyTimer;
         private @Nullable ThreadFactory threadFactory;
@@ -968,7 +977,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             eventLoopGroup = config.getEventLoopGroup();
             useNativeTransport = config.isUseNativeTransport();
             useOnlyEpollNativeTransport = config.isUseOnlyEpollNativeTransport();
-
+enableHttp2 = config.isEnableHttp2();
+            
             allocator = config.getAllocator();
             nettyTimer = config.getNettyTimer();
             threadFactory = config.getThreadFactory();
@@ -1419,6 +1429,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setEnableHttp2(boolean enableHttp2) {
+            this.enableHttp2 = enableHttp2;
+            return this;
+        }
+
         public Builder setIoThreadsCount(int ioThreadsCount) {
             this.ioThreadsCount = ioThreadsCount;
             return this;
@@ -1515,6 +1530,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     httpAdditionalChannelInitializer,
                     wsAdditionalChannelInitializer,
                     responseBodyPartFactory,
+                    enableHttp2,
                     ioThreadsCount,
                     hashedWheelTickDuration,
                     hashedWheelSize);

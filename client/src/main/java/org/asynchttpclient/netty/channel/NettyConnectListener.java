@@ -17,8 +17,10 @@ package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslHandler;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
@@ -185,6 +187,14 @@ public final class NettyConnectListener<T> {
                         NettyConnectListener.this.onFailure(channel, e);
                         return;
                     }
+
+                    // Check ALPN negotiated protocol for HTTP/2
+                    String protocol = sslHandler.applicationProtocol();
+                    if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                        LOGGER.debug("HTTP/2 negotiated via ALPN on channel {}", channel);
+                        channelManager.upgradePipelineForHttp2(channel.pipeline());
+                    }
+
                     writeRequest(channel);
                 }
 

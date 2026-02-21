@@ -375,6 +375,8 @@ public interface AsyncHttpClientConfig {
 
     int getIoThreadsCount();
 
+    boolean isEnableHttp2();
+
     /**
      * Indicates whether the Authorization header should be stripped during redirects to a different domain.
      *

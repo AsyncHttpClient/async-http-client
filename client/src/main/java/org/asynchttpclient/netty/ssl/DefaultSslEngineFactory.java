@@ -16,6 +16,8 @@
 package org.asynchttpclient.netty.ssl;
 
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -60,6 +62,15 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
         sslContextBuilder.endpointIdentificationAlgorithm(
                 config.isDisableHttpsEndpointIdentificationAlgorithm() ? "" : "HTTPS");
+
+        if (config.isEnableHttp2()) {
+            sslContextBuilder.applicationProtocolConfig(new ApplicationProtocolConfig(
+                    ApplicationProtocolConfig.Protocol.ALPN,
+                    ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                    ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                    ApplicationProtocolNames.HTTP_2,
+                    ApplicationProtocolNames.HTTP_1_1));
+        }
 
         return configureSslContextBuilder(sslContextBuilder).build();
     }

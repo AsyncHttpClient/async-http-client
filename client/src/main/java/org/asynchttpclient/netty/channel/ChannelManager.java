@@ -34,11 +34,15 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2MultiplexHandler;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.resolver.NameResolver;
@@ -61,6 +65,8 @@ import org.asynchttpclient.channel.NoopChannelPool;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
+import org.asynchttpclient.netty.handler.Http2ConnectionHandler;
+import org.asynchttpclient.netty.handler.Http2Handler;
 import org.asynchttpclient.netty.handler.HttpHandler;
 import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -95,6 +101,10 @@ public class ChannelManager {
     public static final String WS_ENCODER_HANDLER = "ws-encoder";
     public static final String AHC_HTTP_HANDLER = "ahc-http";
     public static final String AHC_WS_HANDLER = "ahc-ws";
+    public static final String AHC_H2_HANDLER = "ahc-h2";
+    public static final String H2_FRAME_CODEC = "h2-codec";
+    public static final String H2_MULTIPLEX = "h2-multiplex";
+    public static final String H2_CONNECTION_HANDLER = "h2-conn-handler";
     public static final String LOGGING_HANDLER = "logging";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
     private final AsyncHttpClientConfig config;
@@ -109,6 +119,7 @@ public class ChannelManager {
     private final ChannelGroup openChannels;
 
     private AsyncHttpClientHandler wsHandler;
+    private Http2Handler http2Handler;
 
     private boolean isInstanceof(Object object, String name) {
         final Class<?> clazz;
@@ -239,6 +250,7 @@ public class ChannelManager {
     public void configureBootstraps(NettyRequestSender requestSender) {
         final AsyncHttpClientHandler httpHandler = new HttpHandler(config, this, requestSender);
         wsHandler = new WebSocketHandler(config, this, requestSender);
+        http2Handler = new Http2Handler(config, this, requestSender);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -376,6 +388,40 @@ public class ChannelManager {
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);
         }
         return sslHandler;
+    }
+
+    public void upgradePipelineForHttp2(ChannelPipeline pipeline) {
+        // Remove HTTP/1.1 handlers
+        if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
+            pipeline.remove(HTTP_CLIENT_CODEC);
+        }
+        if (pipeline.get(INFLATER_HANDLER) != null) {
+            pipeline.remove(INFLATER_HANDLER);
+        }
+        if (pipeline.get(CHUNKED_WRITER_HANDLER) != null) {
+            pipeline.remove(CHUNKED_WRITER_HANDLER);
+        }
+        if (pipeline.get(AHC_HTTP_HANDLER) != null) {
+            pipeline.remove(AHC_HTTP_HANDLER);
+        }
+
+        // Add HTTP/2 frame codec and multiplex handler
+        Http2ConnectionHandler connectionHandler = new Http2ConnectionHandler();
+        pipeline.addLast(H2_FRAME_CODEC, Http2FrameCodecBuilder.forClient()
+                .initialSettings(Http2Settings.defaultSettings())
+                .autoAckSettingsFrame(true)
+                .autoAckPingFrame(true)
+                .build());
+        pipeline.addLast(H2_MULTIPLEX, new Http2MultiplexHandler(connectionHandler));
+        pipeline.addLast(H2_CONNECTION_HANDLER, connectionHandler);
+    }
+
+    public Http2Handler getHttp2Handler() {
+        return http2Handler;
+    }
+
+    public boolean isHttp2Channel(Channel channel) {
+        return channel.pipeline().get(H2_FRAME_CODEC) != null;
     }
 
     public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {

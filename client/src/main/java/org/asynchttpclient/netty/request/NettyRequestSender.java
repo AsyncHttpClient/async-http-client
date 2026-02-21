@@ -21,10 +21,17 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -382,6 +389,12 @@ public final class NettyRequestSender {
 
         // if the channel is dead because it was pooled and the remote server decided to
         // close it,
+        // Check if this is an HTTP/2 connection
+        if (channelManager.isHttp2Channel(channel)) {
+            writeHttp2Request(future, channel);
+            return;
+        }
+
         // we just let it go and the channelInactive do its work
         if (!Channels.isChannelActive(channel)) {
             return;
@@ -430,6 +443,103 @@ public final class NettyRequestSender {
             abort(channel, future, e);
         }
     }
+
+    private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel) {
+        NettyRequest nettyRequest = future.getNettyRequest();
+        HttpRequest httpRequest = nettyRequest.getHttpRequest();
+        AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+
+        try {
+            asyncHandler.onRequestSend(nettyRequest);
+        } catch (Exception e) {
+            LOGGER.error("onRequestSend crashed", e);
+            abort(parentChannel, future, e);
+            return;
+        }
+
+        Http2StreamChannelBootstrap streamBootstrap = new Http2StreamChannelBootstrap(parentChannel)
+                .handler(channelManager.getHttp2Handler());
+
+        try {
+            Future<Http2StreamChannel> streamFuture = streamBootstrap.open();
+            streamFuture.addListener(f -> {
+                if (!f.isSuccess()) {
+                    LOGGER.error("Failed to create HTTP/2 stream", f.cause());
+                    abort(parentChannel, future, f.cause());
+                    return;
+                }
+
+                Http2StreamChannel streamChannel = (Http2StreamChannel) f.get();
+                Channels.setAttribute(streamChannel, future);
+                future.attachChannel(streamChannel, false);
+
+                // Build HTTP/2 headers from HTTP/1.1 request
+                Http2Headers h2Headers = new DefaultHttp2Headers();
+                h2Headers.method(httpRequest.method().name());
+
+                // Parse path from request URI
+                String uri = httpRequest.uri();
+                h2Headers.path(uri);
+
+                // Set scheme based on original request
+                h2Headers.scheme(future.getUri().getScheme());
+
+                // Set authority (host header)
+                String host = httpRequest.headers().get("host");
+                if (host != null) {
+                    h2Headers.authority(host);
+                }
+
+                // Copy other headers (skip connection-specific headers)
+                for (java.util.Map.Entry<String, String> header : httpRequest.headers()) {
+                    String name = header.getKey().toLowerCase(java.util.Locale.US);
+                    if (!name.equals("host") && !name.equals("connection") &&
+                            !name.equals("transfer-encoding") && !name.equals("upgrade") &&
+                            !name.equals("http2-settings")) {
+                        h2Headers.add(name, header.getValue());
+                    }
+                }
+
+                // Check for embedded body (FullHttpRequest) or streaming body
+                boolean hasEmbeddedBody = httpRequest instanceof FullHttpRequest
+                        && ((FullHttpRequest) httpRequest).content().isReadable();
+                boolean hasStreamingBody = !future.isDontWriteBodyBecauseExpectContinue()
+                        && httpRequest.method() != HttpMethod.CONNECT
+                        && nettyRequest.getBody() != null;
+                boolean endStream = !hasEmbeddedBody && !hasStreamingBody;
+
+                DefaultHttp2HeadersFrame headersFrame = new DefaultHttp2HeadersFrame(h2Headers, endStream);
+                ChannelFuture writeFuture = streamChannel.writeAndFlush(headersFrame);
+                writeFuture.addListener(wf -> {
+                    if (!wf.isSuccess()) {
+                        LOGGER.error("Failed to write HTTP/2 headers", wf.cause());
+                        abort(streamChannel, future, wf.cause());
+                        return;
+                    }
+
+                    if (hasEmbeddedBody) {
+                        io.netty.buffer.ByteBuf body = ((FullHttpRequest) httpRequest).content().retain();
+                        DefaultHttp2DataFrame dataFrame = new DefaultHttp2DataFrame(body, true);
+                        streamChannel.writeAndFlush(dataFrame).addListener(df -> {
+                            if (!df.isSuccess()) {
+                                LOGGER.error("Failed to write HTTP/2 data", df.cause());
+                                abort(streamChannel, future, df.cause());
+                            }
+                        });
+                    } else if (hasStreamingBody) {
+                        nettyRequest.getBody().write(streamChannel, future);
+                    }
+                });
+
+                if (Channels.isChannelActive(streamChannel)) {
+                    scheduleReadTimeout(future);
+                }
+            });
+        } catch (Exception e) {
+            LOGGER.error("Can't write HTTP/2 request", e);
+            abort(parentChannel, future, e);
+        }
+    }   
 
     private static void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
         HttpHeaders h = new DefaultHttpHeaders().set(httpRequest.headers());

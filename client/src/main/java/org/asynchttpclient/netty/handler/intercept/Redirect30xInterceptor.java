@@ -29,6 +29,7 @@ import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
@@ -85,6 +86,12 @@ public class Redirect30xInterceptor {
 
     public boolean exitAfterHandlingRedirect(Channel channel, NettyResponseFuture<?> future, HttpResponse response, Request request,
                                              int statusCode, Realm realm) throws Exception {
+        return exitAfterHandlingRedirect(channel, future, response, response != null ? response.headers() : new io.netty.handler.codec.http.DefaultHttpHeaders(), request, statusCode, realm);
+    }
+
+    public boolean exitAfterHandlingRedirect(Channel channel, NettyResponseFuture<?> future, HttpResponse response,
+                                             HttpHeaders responseHeaders, Request request,
+                                             int statusCode, Realm realm) throws Exception {
 
         if (followRedirect(config, request)) {
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
@@ -135,8 +142,8 @@ public class Redirect30xInterceptor {
                 final boolean initialConnectionKeepAlive = future.isKeepAlive();
                 final Object initialPartitionKey = future.getPartitionKey();
 
-                HttpHeaders responseHeaders = response.headers();
-                String location = responseHeaders.get(LOCATION);
+                HttpHeaders redirectHeaders = responseHeaders;
+                String location = redirectHeaders.get(LOCATION);
                 Uri newUri = Uri.create(future.getUri(), location);
                 LOGGER.debug("Redirecting to {}", newUri);
 
@@ -159,7 +166,12 @@ public class Redirect30xInterceptor {
 
                 LOGGER.debug("Sending redirect to {}", newUri);
 
-                if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(response)) {
+                // For HTTP/2 stream channels, close the stream and send a new request
+                // (streams are single-use; cannot be reused for redirects)
+                if (channel instanceof io.netty.handler.codec.http2.Http2StreamChannel) {
+                    Channels.silentlyCloseChannel(channel);
+                    requestSender.sendNextRequest(nextRequest, future);
+                } else if (future.isKeepAlive() && (response == null || !HttpUtil.isTransferEncodingChunked(response))) {
                     if (sameBase) {
                         future.setReuseChannel(true);
                         // we can't directly send the next request because we still have to received LastContent
