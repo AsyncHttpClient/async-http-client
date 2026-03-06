@@ -278,6 +278,11 @@ public interface AsyncHttpClientConfig {
     boolean isFilterInsecureCipherSuites();
 
     /**
+     * @return true if HTTP/2 is enabled (negotiated via ALPN for HTTPS connections)
+     */
+    boolean isHttp2Enabled();
+
+    /**
      * @return the size of the SSL session cache, 0 means using the default value
      */
     int getSslSessionCacheSize();
