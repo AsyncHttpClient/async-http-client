@@ -34,6 +34,10 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.codec.http2.Http2FrameCodec;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2MultiplexHandler;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.ProxyHandler;
@@ -61,6 +65,7 @@ import org.asynchttpclient.channel.NoopChannelPool;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
+import org.asynchttpclient.netty.handler.Http2Handler;
 import org.asynchttpclient.netty.handler.HttpHandler;
 import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -96,6 +101,9 @@ public class ChannelManager {
     public static final String AHC_HTTP_HANDLER = "ahc-http";
     public static final String AHC_WS_HANDLER = "ahc-ws";
     public static final String LOGGING_HANDLER = "logging";
+    public static final String HTTP2_FRAME_CODEC = "http2-frame-codec";
+    public static final String HTTP2_MULTIPLEX = "http2-multiplex";
+    public static final String AHC_HTTP2_HANDLER = "ahc-http2";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
@@ -109,6 +117,7 @@ public class ChannelManager {
     private final ChannelGroup openChannels;
 
     private AsyncHttpClientHandler wsHandler;
+    private Http2Handler http2Handler;
 
     private boolean isInstanceof(Object object, String name) {
         final Class<?> clazz;
@@ -239,6 +248,7 @@ public class ChannelManager {
     public void configureBootstraps(NettyRequestSender requestSender) {
         final AsyncHttpClientHandler httpHandler = new HttpHandler(config, this, requestSender);
         wsHandler = new WebSocketHandler(config, this, requestSender);
+        http2Handler = new Http2Handler(config, this, requestSender);
 
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
@@ -547,6 +557,58 @@ public class ChannelManager {
         }
 
         return promise;
+    }
+
+    /**
+     * Checks whether the given channel is an HTTP/2 connection (i.e. has the HTTP/2 multiplex handler installed).
+     */
+    public static boolean isHttp2(Channel channel) {
+        return channel.pipeline().get(HTTP2_MULTIPLEX) != null;
+    }
+
+    /**
+     * Returns the shared {@link Http2Handler} instance for use with stream child channels.
+     */
+    public Http2Handler getHttp2Handler() {
+        return http2Handler;
+    }
+
+    /**
+     * Upgrades the pipeline from HTTP/1.1 to HTTP/2 after ALPN negotiates "h2".
+     * Removes HTTP/1.1 handlers and adds {@link Http2FrameCodec} + {@link Http2MultiplexHandler}.
+     * The per-stream {@link Http2Handler} is added separately on each stream child channel.
+     */
+    public void upgradePipelineToHttp2(ChannelPipeline pipeline) {
+        // Remove HTTP/1.1 specific handlers
+        if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
+            pipeline.remove(HTTP_CLIENT_CODEC);
+        }
+        if (pipeline.get(INFLATER_HANDLER) != null) {
+            pipeline.remove(INFLATER_HANDLER);
+        }
+        if (pipeline.get(CHUNKED_WRITER_HANDLER) != null) {
+            pipeline.remove(CHUNKED_WRITER_HANDLER);
+        }
+        if (pipeline.get(AHC_HTTP_HANDLER) != null) {
+            pipeline.remove(AHC_HTTP_HANDLER);
+        }
+
+        // Add HTTP/2 frame codec (handles connection preface, SETTINGS, PING, flow control, etc.)
+        Http2FrameCodec frameCodec = Http2FrameCodecBuilder.forClient()
+                .initialSettings(Http2Settings.defaultSettings())
+                .build();
+
+        // Http2MultiplexHandler creates a child channel per HTTP/2 stream.
+        // Server-push streams are silently ignored (no-op initializer) since AHC is client-only.
+        Http2MultiplexHandler multiplexHandler = new Http2MultiplexHandler(new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel ch) {
+                // Server push not supported — ignore inbound pushed streams
+            }
+        });
+
+        pipeline.addLast(HTTP2_FRAME_CODEC, frameCodec);
+        pipeline.addLast(HTTP2_MULTIPLEX, multiplexHandler);
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {

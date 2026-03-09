@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
+import org.asynchttpclient.HttpProtocol;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
@@ -159,6 +160,20 @@ public class NettyResponse implements Response {
     }
 
     @Override
+    public HttpProtocol getProtocol() {
+        if (status == null) {
+            return HttpProtocol.HTTP_1_1;
+        }
+        int major = status.getProtocolMajorVersion();
+        if (major == 2) {
+            return HttpProtocol.HTTP_2;
+        } else if (status.getProtocolMinorVersion() == 0) {
+            return HttpProtocol.HTTP_1_0;
+        }
+        return HttpProtocol.HTTP_1_1;
+    }
+
+    @Override
     public boolean hasResponseStatus() {
         return status != null;
     }
@@ -223,6 +238,7 @@ public class NettyResponse implements Response {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getClass().getSimpleName()).append(" {\n")
+                .append("\tprotocol=").append(getProtocol()).append('\n')
                 .append("\tstatusCode=").append(getStatusCode()).append('\n')
                 .append("\theaders=\n");
 

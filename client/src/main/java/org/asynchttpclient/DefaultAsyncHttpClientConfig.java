@@ -166,6 +166,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int sslSessionTimeout;
     private final @Nullable SslContext sslContext;
     private final @Nullable SslEngineFactory sslEngineFactory;
+    private final boolean http2Enabled;
 
     // filters
     private final List<RequestFilter> requestFilters;
@@ -253,6 +254,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int sslSessionTimeout,
                                          @Nullable SslContext sslContext,
                                          @Nullable SslEngineFactory sslEngineFactory,
+                                         boolean http2Enabled,
 
                                          // filters
                                          List<RequestFilter> requestFilters,
@@ -348,6 +350,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.sslSessionTimeout = sslSessionTimeout;
         this.sslContext = sslContext;
         this.sslEngineFactory = sslEngineFactory;
+        this.http2Enabled = http2Enabled;
 
         // filters
         this.requestFilters = requestFilters;
@@ -609,6 +612,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public boolean isHttp2Enabled() {
+        return http2Enabled;
+    }
+
+    @Override
     public int getSslSessionCacheSize() {
         return sslSessionCacheSize;
     }
@@ -847,6 +855,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int sslSessionTimeout = defaultSslSessionTimeout();
         private @Nullable SslContext sslContext;
         private @Nullable SslEngineFactory sslEngineFactory;
+        private boolean http2Enabled = true;
 
         // cookie store
         private CookieStore cookieStore = new ThreadSafeCookieStore();
@@ -939,6 +948,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             sslSessionTimeout = config.getSslSessionTimeout();
             sslContext = config.getSslContext();
             sslEngineFactory = config.getSslEngineFactory();
+            http2Enabled = config.isHttp2Enabled();
 
             // filters
             requestFilters.addAll(config.getRequestFilters());
@@ -1254,6 +1264,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setHttp2Enabled(boolean http2Enabled) {
+            this.http2Enabled = http2Enabled;
+            return this;
+        }
+
         // filters
         public Builder addRequestFilter(RequestFilter requestFilter) {
             requestFilters.add(requestFilter);
@@ -1486,6 +1501,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     sslSessionTimeout,
                     sslContext,
                     sslEngineFactory,
+                    http2Enabled,
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters),
                     responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),
                     ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),
