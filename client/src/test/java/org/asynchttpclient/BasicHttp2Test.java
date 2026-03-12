@@ -587,19 +587,19 @@ public class BasicHttp2Test {
     }
 
     @Test
-    public void http2IsEnabledByDefault() {
+    public void http2IsDisabledByDefault() {
         AsyncHttpClientConfig defaultConfig = config().build();
-        assertTrue(defaultConfig.isHttp2Enabled(),
-                "HTTP/2 should be enabled by default");
+        assertFalse(defaultConfig.isHttp2Enabled(),
+                "HTTP/2 should be disabled by default for backward compatibility");
     }
 
     @Test
-    public void http2CanBeDisabledViaConfig() {
-        AsyncHttpClientConfig configWithHttp2Disabled = config()
-                .setHttp2Enabled(false)
+    public void http2CanBeEnabledViaConfig() {
+        AsyncHttpClientConfig configWithHttp2Enabled = config()
+                .setHttp2Enabled(true)
                 .build();
-        assertFalse(configWithHttp2Disabled.isHttp2Enabled(),
-                "HTTP/2 should be disabled when setHttp2Enabled(false) is called");
+        assertTrue(configWithHttp2Enabled.isHttp2Enabled(),
+                "HTTP/2 should be enabled when setHttp2Enabled(true) is called");
     }
 
     // -------------------------------------------------------------------------

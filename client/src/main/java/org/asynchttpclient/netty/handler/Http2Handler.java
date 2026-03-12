@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http2.Http2DataFrame;
+import io.netty.handler.codec.http2.Http2GoAwayFrame;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
 import io.netty.handler.codec.http2.Http2ResetFrame;
@@ -73,11 +74,18 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         AsyncHandler<?> handler = future.getAsyncHandler();
         try {
             if (e instanceof Http2HeadersFrame) {
-                handleHttp2HeadersFrame((Http2HeadersFrame) e, channel, future, handler);
+                Http2HeadersFrame headersFrame = (Http2HeadersFrame) e;
+                if (headersFrame.headers().status() != null) {
+                    handleHttp2HeadersFrame(headersFrame, channel, future, handler);
+                } else {
+                    handleHttp2TrailingHeadersFrame(headersFrame, channel, future, handler);
+                }
             } else if (e instanceof Http2DataFrame) {
                 handleHttp2DataFrame((Http2DataFrame) e, channel, future, handler);
             } else if (e instanceof Http2ResetFrame) {
                 handleHttp2ResetFrame((Http2ResetFrame) e, channel, future);
+            } else if (e instanceof Http2GoAwayFrame) {
+                handleHttp2GoAwayFrame((Http2GoAwayFrame) e, channel, future);
             }
         } catch (Exception t) {
             if (hasIOExceptionFilters && t instanceof IOException
@@ -104,7 +112,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(statusCode);
 
         // Build HTTP/1.1-style headers, skipping HTTP/2 pseudo-headers (start with ':')
-        HttpHeaders responseHeaders = new DefaultHttpHeaders(false);
+        HttpHeaders responseHeaders = new DefaultHttpHeaders();
         h2Headers.forEach(entry -> {
             CharSequence name = entry.getKey();
             if (name.length() > 0 && name.charAt(0) != ':') {
@@ -122,7 +130,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, syntheticResponse, status, responseHeaders)) {
             boolean abort = handler.onStatusReceived(status) == State.ABORT;
-            if (!abort && !responseHeaders.isEmpty()) {
+            if (!abort) {
                 abort = handler.onHeadersReceived(responseHeaders) == State.ABORT;
             }
             if (abort) {
@@ -157,11 +165,54 @@ public final class Http2Handler extends AsyncHttpClientHandler {
     }
 
     /**
+     * Processes trailing HTTP/2 HEADERS frame (no :status pseudo-header), which carries trailer headers
+     * sent after the DATA frames. Delegates to {@link AsyncHandler#onTrailingHeadersReceived}.
+     */
+    private void handleHttp2TrailingHeadersFrame(Http2HeadersFrame headersFrame, Channel channel,
+                                                  NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
+        Http2Headers h2Headers = headersFrame.headers();
+
+        HttpHeaders trailingHeaders = new DefaultHttpHeaders();
+        h2Headers.forEach(entry -> {
+            CharSequence name = entry.getKey();
+            if (name.length() > 0 && name.charAt(0) != ':') {
+                trailingHeaders.add(name, entry.getValue());
+            }
+        });
+
+        boolean abort = false;
+        if (!trailingHeaders.isEmpty()) {
+            abort = handler.onTrailingHeadersReceived(trailingHeaders) == State.ABORT;
+        }
+
+        if (abort || headersFrame.isEndStream()) {
+            finishUpdate(future, channel, false);
+        }
+    }
+
+    /**
      * Processes an HTTP/2 RST_STREAM frame, which indicates the server aborted the stream.
      */
     private void handleHttp2ResetFrame(Http2ResetFrame resetFrame, Channel channel, NettyResponseFuture<?> future) {
         long errorCode = resetFrame.errorCode();
         readFailed(channel, future, new IOException("HTTP/2 stream reset by server, error code: " + errorCode));
+    }
+
+    /**
+     * Processes an HTTP/2 GOAWAY frame, which indicates the server is shutting down the connection.
+     * The parent connection is removed from the pool to prevent new streams from being created on it.
+     * The current stream's future is failed so the request can be retried on a new connection.
+     */
+    private void handleHttp2GoAwayFrame(Http2GoAwayFrame goAwayFrame, Channel channel, NettyResponseFuture<?> future) {
+        long errorCode = goAwayFrame.errorCode();
+
+        // Remove the parent connection from the pool so no new streams are opened on it
+        Channel parentChannel = (channel instanceof Http2StreamChannel)
+                ? ((Http2StreamChannel) channel).parent()
+                : channel;
+        channelManager.removeAll(parentChannel);
+
+        readFailed(channel, future, new IOException("HTTP/2 connection GOAWAY received, error code: " + errorCode));
     }
 
     /**

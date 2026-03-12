@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.Channels;
@@ -32,14 +33,21 @@ class Continue100Interceptor {
     public boolean exitAfterHandling100(final Channel channel, final NettyResponseFuture<?> future) {
         future.setHeadersAlreadyWrittenOnContinue(true);
         future.setDontWriteBodyBecauseExpectContinue(false);
-        // directly send the body
-        Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
-            @Override
-            public void call() {
-                Channels.setAttribute(channel, future);
-                requestSender.writeRequest(future, channel);
-            }
-        });
+
+        if (channel instanceof Http2StreamChannel) {
+            // HTTP/2 stream channels don't produce LastHttpContent.
+            // Directly write the body on the stream channel.
+            requestSender.writeRequest(future, channel);
+        } else {
+            // HTTP/1.1: wait for LastHttpContent before sending the body
+            Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
+                @Override
+                public void call() {
+                    Channels.setAttribute(channel, future);
+                    requestSender.writeRequest(future, channel);
+                }
+            });
+        }
         return true;
     }
 }

@@ -855,7 +855,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int sslSessionTimeout = defaultSslSessionTimeout();
         private @Nullable SslContext sslContext;
         private @Nullable SslEngineFactory sslEngineFactory;
-        private boolean http2Enabled = true;
+        private boolean http2Enabled = false;
 
         // cookie store
         private CookieStore cookieStore = new ThreadSafeCookieStore();

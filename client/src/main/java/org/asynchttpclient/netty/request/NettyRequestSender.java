@@ -63,6 +63,7 @@ import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.request.body.NettyBody;
+import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -480,6 +481,19 @@ public final class NettyRequestSender {
                         Channels.setAttribute(streamChannel, future);
                         future.attachChannel(streamChannel, false);
                         try {
+                            AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                            try {
+                                asyncHandler.onRequestSend(future.getNettyRequest());
+                            } catch (Exception e) {
+                                LOGGER.error("onRequestSend crashed", e);
+                                abort(parentChannel, future, e);
+                                return;
+                            }
+
+                            if (asyncHandler instanceof TransferCompletionHandler) {
+                                configureTransferAdapter(asyncHandler, future.getNettyRequest().getHttpRequest());
+                            }
+
                             sendHttp2Frames(future, streamChannel);
                             scheduleReadTimeout(future);
                         } catch (Exception e) {
@@ -499,6 +513,10 @@ public final class NettyRequestSender {
      * :scheme, :authority) plus all regular request headers, then writes them as a
      * {@link DefaultHttp2HeadersFrame}. If the request has a body, writes it as a
      * {@link DefaultHttp2DataFrame} with {@code endStream=true}.
+     * <p>
+     * Currently supports in-memory bodies ({@link DefaultFullHttpRequest} content and
+     * {@link org.asynchttpclient.netty.request.body.NettyDirectBody}). Streaming bodies
+     * (file uploads, input streams) are not yet supported over HTTP/2.
      */
     private <T> void sendHttp2Frames(NettyResponseFuture<T> future, Http2StreamChannel streamChannel) {
         NettyRequest nettyRequest = future.getNettyRequest();
@@ -506,7 +524,7 @@ public final class NettyRequestSender {
         Uri uri = future.getUri();
 
         // Build HTTP/2 pseudo-headers + regular headers
-        Http2Headers h2Headers = new DefaultHttp2Headers(false)
+        Http2Headers h2Headers = new DefaultHttp2Headers()
                 .method(httpRequest.method().name())
                 .path(uri.getNonEmptyPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : ""))
                 .scheme(uri.getScheme())
@@ -521,12 +539,27 @@ public final class NettyRequestSender {
             }
         });
 
-        // Determine if we have a body to write
+        // Determine if we have a body to write.
+        // Support both DefaultFullHttpRequest (inline content) and NettyDirectBody (byte array/buffer bodies).
         ByteBuf bodyBuf = null;
         if (httpRequest instanceof DefaultFullHttpRequest) {
             ByteBuf content = ((DefaultFullHttpRequest) httpRequest).content();
             if (content != null && content.isReadable()) {
                 bodyBuf = content;
+            }
+        }
+
+        NettyBody nettyBody = nettyRequest.getBody();
+        if (bodyBuf == null && nettyBody != null) {
+            if (nettyBody instanceof NettyDirectBody) {
+                ByteBuf directBuf = ((NettyDirectBody) nettyBody).byteBuf();
+                if (directBuf != null && directBuf.isReadable()) {
+                    bodyBuf = directBuf;
+                }
+            } else {
+                throw new UnsupportedOperationException(
+                        "Streaming request bodies (" + nettyBody.getClass().getSimpleName()
+                                + ") are not yet supported over HTTP/2. Use an in-memory body or disable HTTP/2.");
             }
         }
 

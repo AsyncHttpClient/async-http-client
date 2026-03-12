@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.handler.intercept;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.util.concurrent.Future;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -40,6 +41,12 @@ public class ConnectSuccessInterceptor {
     }
 
     public boolean exitAfterHandlingConnect(Channel channel, NettyResponseFuture<?> future, Request request, ProxyServer proxyServer) {
+        // CONNECT tunneling is an HTTP/1.1 concept — it should never occur on HTTP/2 stream channels.
+        if (channel instanceof Http2StreamChannel) {
+            LOGGER.warn("CONNECT success on HTTP/2 stream channel is unexpected — ignoring");
+            return false;
+        }
+
         if (future.isKeepAlive()) {
             future.attachChannel(channel, true);
         }

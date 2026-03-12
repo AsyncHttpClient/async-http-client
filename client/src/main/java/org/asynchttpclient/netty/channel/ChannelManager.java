@@ -38,6 +38,7 @@ import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.ProxyHandler;
@@ -564,6 +565,14 @@ public class ChannelManager {
      */
     public static boolean isHttp2(Channel channel) {
         return channel.pipeline().get(HTTP2_MULTIPLEX) != null;
+    }
+
+    /**
+     * Checks whether the given channel is an HTTP/2 stream child channel.
+     * Stream channels are single-use and don't support HTTP/1.1 operations like draining or pipeline modification.
+     */
+    public static boolean isHttp2StreamChannel(Channel channel) {
+        return channel instanceof Http2StreamChannel;
     }
 
     /**

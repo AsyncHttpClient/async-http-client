@@ -29,6 +29,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
@@ -170,7 +171,11 @@ public class ProxyUnauthorized407Interceptor {
         final Request nextRequest = nextRequestBuilder.build();
 
         LOGGER.debug("Sending proxy authentication to {}", request.getUri());
-        if (future.isKeepAlive()
+        if (channel instanceof Http2StreamChannel) {
+            // HTTP/2 stream channels are single-use — close the stream and send the auth retry.
+            channel.close();
+            requestSender.sendNextRequest(nextRequest, future);
+        } else if (future.isKeepAlive()
                 && !HttpUtil.isTransferEncodingChunked(httpRequest)
                 && !HttpUtil.isTransferEncodingChunked(response)) {
             future.setConnectAllowed(true);

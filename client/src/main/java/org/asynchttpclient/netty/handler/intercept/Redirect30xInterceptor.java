@@ -30,6 +30,7 @@ import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,7 +160,12 @@ public class Redirect30xInterceptor {
 
                 LOGGER.debug("Sending redirect to {}", newUri);
 
-                if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(response)) {
+                if (channel instanceof Http2StreamChannel) {
+                    // HTTP/2 stream channels are single-use and close immediately after the response.
+                    // No draining needed — just close the stream and send the next request.
+                    channel.close();
+                    requestSender.sendNextRequest(nextRequest, future);
+                } else if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(response)) {
                     if (sameBase) {
                         future.setReuseChannel(true);
                         // we can't directly send the next request because we still have to received LastContent
