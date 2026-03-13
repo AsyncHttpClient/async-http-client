@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -34,13 +35,17 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
+import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2SettingsFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
@@ -67,6 +72,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
 import org.asynchttpclient.netty.handler.Http2Handler;
+import org.asynchttpclient.netty.handler.Http2PingHandler;
 import org.asynchttpclient.netty.handler.HttpHandler;
 import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -603,21 +609,62 @@ public class ChannelManager {
         }
 
         // Add HTTP/2 frame codec (handles connection preface, SETTINGS, PING, flow control, etc.)
+        Http2Settings settings = new Http2Settings()
+                .initialWindowSize(config.getHttp2InitialWindowSize())
+                .maxFrameSize(config.getHttp2MaxFrameSize())
+                .headerTableSize(config.getHttp2HeaderTableSize())
+                .maxHeaderListSize(config.getHttp2MaxHeaderListSize());
+
         Http2FrameCodec frameCodec = Http2FrameCodecBuilder.forClient()
-                .initialSettings(Http2Settings.defaultSettings())
+                .initialSettings(settings)
                 .build();
 
         // Http2MultiplexHandler creates a child channel per HTTP/2 stream.
-        // Server-push streams are silently ignored (no-op initializer) since AHC is client-only.
+        // Server-push streams are rejected with RST_STREAM(REFUSED_STREAM).
         Http2MultiplexHandler multiplexHandler = new Http2MultiplexHandler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) {
-                // Server push not supported — ignore inbound pushed streams
+                // Reject server push by sending RST_STREAM(REFUSED_STREAM)
+                ch.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.REFUSED_STREAM))
+                        .addListener(f -> ch.close());
             }
         });
 
         pipeline.addLast(HTTP2_FRAME_CODEC, frameCodec);
         pipeline.addLast(HTTP2_MULTIPLEX, multiplexHandler);
+
+        // Attach HTTP/2 connection state for MAX_CONCURRENT_STREAMS tracking and GOAWAY draining
+        Http2ConnectionState state = new Http2ConnectionState();
+        int configMaxStreams = config.getHttp2MaxConcurrentStreams();
+        if (configMaxStreams > 0) {
+            state.updateMaxConcurrentStreams(configMaxStreams);
+        }
+        pipeline.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
+
+        // Install SETTINGS listener to update MAX_CONCURRENT_STREAMS from server
+        pipeline.addLast("http2-settings-listener", new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelRead(io.netty.channel.ChannelHandlerContext ctx, Object msg) throws Exception {
+                if (msg instanceof Http2SettingsFrame) {
+                    Http2SettingsFrame settingsFrame = (Http2SettingsFrame) msg;
+                    Long maxStreams = settingsFrame.settings().maxConcurrentStreams();
+                    if (maxStreams != null) {
+                        Http2ConnectionState connState = ctx.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+                        if (connState != null) {
+                            connState.updateMaxConcurrentStreams(maxStreams.intValue());
+                        }
+                    }
+                }
+                ctx.fireChannelRead(msg);
+            }
+        });
+
+        // Install PING handler for keepalive if configured
+        long pingIntervalMs = config.getHttp2PingInterval().toMillis();
+        if (pingIntervalMs > 0) {
+            pipeline.addLast("http2-idle-state", new IdleStateHandler(0, 0, pingIntervalMs, java.util.concurrent.TimeUnit.MILLISECONDS));
+            pipeline.addLast("http2-ping", new Http2PingHandler());
+        }
     }
 
     public void upgradePipelineForWebSockets(ChannelPipeline pipeline) {
@@ -680,5 +727,9 @@ public class ChannelManager {
 
     public boolean isOpen() {
         return channelPool.isOpen();
+    }
+
+    public boolean isHttp2CleartextEnabled() {
+        return config.isHttp2Enabled() && config.isHttp2CleartextEnabled();
     }
 }

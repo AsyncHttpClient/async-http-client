@@ -83,6 +83,13 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
     public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
     public static final String EXPIRED_COOKIE_EVICTION_DELAY = "expiredCookieEvictionDelay";
+    public static final String HTTP2_INITIAL_WINDOW_SIZE_CONFIG = "http2InitialWindowSize";
+    public static final String HTTP2_MAX_FRAME_SIZE_CONFIG = "http2MaxFrameSize";
+    public static final String HTTP2_HEADER_TABLE_SIZE_CONFIG = "http2HeaderTableSize";
+    public static final String HTTP2_MAX_HEADER_LIST_SIZE_CONFIG = "http2MaxHeaderListSize";
+    public static final String HTTP2_MAX_CONCURRENT_STREAMS_CONFIG = "http2MaxConcurrentStreams";
+    public static final String HTTP2_PING_INTERVAL_CONFIG = "http2PingInterval";
+    public static final String HTTP2_CLEARTEXT_ENABLED_CONFIG = "http2CleartextEnabled";
 
     public static final String AHC_VERSION;
 
@@ -331,5 +338,33 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static int defaultExpiredCookieEvictionDelay() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + EXPIRED_COOKIE_EVICTION_DELAY);
+    }
+
+    public static int defaultHttp2InitialWindowSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_INITIAL_WINDOW_SIZE_CONFIG);
+    }
+
+    public static int defaultHttp2MaxFrameSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_MAX_FRAME_SIZE_CONFIG);
+    }
+
+    public static int defaultHttp2HeaderTableSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_HEADER_TABLE_SIZE_CONFIG);
+    }
+
+    public static int defaultHttp2MaxHeaderListSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_MAX_HEADER_LIST_SIZE_CONFIG);
+    }
+
+    public static int defaultHttp2MaxConcurrentStreams() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_MAX_CONCURRENT_STREAMS_CONFIG);
+    }
+
+    public static Duration defaultHttp2PingInterval() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_PING_INTERVAL_CONFIG);
+    }
+
+    public static boolean defaultHttp2CleartextEnabled() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_CLEARTEXT_ENABLED_CONFIG);
     }
 }

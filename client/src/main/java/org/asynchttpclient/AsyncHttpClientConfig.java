@@ -282,6 +282,20 @@ public interface AsyncHttpClientConfig {
      */
     boolean isHttp2Enabled();
 
+    int getHttp2InitialWindowSize();
+
+    int getHttp2MaxFrameSize();
+
+    int getHttp2HeaderTableSize();
+
+    int getHttp2MaxHeaderListSize();
+
+    int getHttp2MaxConcurrentStreams();
+
+    Duration getHttp2PingInterval();
+
+    boolean isHttp2CleartextEnabled();
+
     /**
      * @return the size of the SSL session cache, 0 means using the default value
      */

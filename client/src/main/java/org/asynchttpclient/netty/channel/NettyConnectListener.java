@@ -208,6 +208,10 @@ public final class NettyConnectListener<T> {
             });
 
         } else {
+            // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS
+            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled()) {
+                channelManager.upgradePipelineToHttp2(channel.pipeline());
+            }
             writeRequest(channel);
         }
     }

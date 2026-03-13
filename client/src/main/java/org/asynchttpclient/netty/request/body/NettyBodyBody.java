@@ -15,19 +15,25 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 import org.asynchttpclient.request.body.Body;
+import org.asynchttpclient.request.body.Body.BodyState;
 import org.asynchttpclient.request.body.RandomAccessBody;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.FeedListener;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
+
+import java.io.IOException;
 
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
@@ -85,5 +91,36 @@ public class NettyBodyBody implements NettyBody {
                     }
                 });
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
+    }
+
+    @Override
+    public void writeHttp2(Http2StreamChannel channel, NettyResponseFuture<?> future) throws IOException {
+        try {
+            ByteBuf buf = channel.alloc().buffer(8192);
+            ByteBuf pending = null;
+            while (true) {
+                buf.clear();
+                BodyState state = body.transferTo(buf);
+                if (buf.isReadable()) {
+                    if (pending != null) {
+                        channel.write(new DefaultHttp2DataFrame(pending, false));
+                    }
+                    pending = buf;
+                    buf = channel.alloc().buffer(8192);
+                }
+                if (state == BodyState.STOP) {
+                    break;
+                }
+            }
+            buf.release();
+            if (pending != null) {
+                channel.write(new DefaultHttp2DataFrame(pending, true));
+            } else {
+                channel.write(new DefaultHttp2DataFrame(channel.alloc().buffer(0), true));
+            }
+            channel.flush();
+        } finally {
+            closeSilently(body);
+        }
     }
 }

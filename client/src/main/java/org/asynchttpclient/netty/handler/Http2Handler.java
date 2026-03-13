@@ -37,6 +37,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
@@ -205,6 +206,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
      */
     private void handleHttp2GoAwayFrame(Http2GoAwayFrame goAwayFrame, Channel channel, NettyResponseFuture<?> future) {
         long errorCode = goAwayFrame.errorCode();
+        int lastStreamId = goAwayFrame.lastStreamId();
 
         // Remove the parent connection from the pool so no new streams are opened on it
         Channel parentChannel = (channel instanceof Http2StreamChannel)
@@ -212,7 +214,23 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                 : channel;
         channelManager.removeAll(parentChannel);
 
-        readFailed(channel, future, new IOException("HTTP/2 connection GOAWAY received, error code: " + errorCode));
+        // Mark the connection as draining
+        Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        if (state != null) {
+            state.setDraining(lastStreamId);
+        }
+
+        // Check if this stream's ID is within the allowed range
+        if (channel instanceof Http2StreamChannel) {
+            int streamId = ((Http2StreamChannel) channel).stream().id();
+            if (streamId <= lastStreamId) {
+                // This stream is allowed to complete — don't fail it
+                return;
+            }
+        }
+
+        readFailed(channel, future, new IOException("HTTP/2 connection GOAWAY received, error code: " + errorCode
+                + ", lastStreamId: " + lastStreamId));
     }
 
     /**
@@ -237,8 +255,25 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                 ? ((Http2StreamChannel) streamChannel).parent()
                 : null;
 
+        // Release the stream count so pending openers can proceed
+        if (parentChannel != null) {
+            Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+            if (state != null) {
+                state.releaseStream();
+            }
+        }
+
         if (!close && future.isKeepAlive() && parentChannel != null && parentChannel.isActive()) {
-            channelManager.tryToOfferChannelToPool(parentChannel, future.getAsyncHandler(), true, future.getPartitionKey());
+            Http2ConnectionState connState = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+            if (connState != null && connState.isDraining()) {
+                // Connection is draining; close parent when no more active streams
+                if (connState.getActiveStreams() <= 0) {
+                    channelManager.closeChannel(parentChannel);
+                }
+                // else: leave parent open for remaining streams to complete
+            } else {
+                channelManager.tryToOfferChannelToPool(parentChannel, future.getAsyncHandler(), true, future.getPartitionKey());
+            }
         } else if (parentChannel != null) {
             channelManager.closeChannel(parentChannel);
         }

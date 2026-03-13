@@ -59,9 +59,11 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.ConnectionSemaphore;
+import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
+import org.asynchttpclient.netty.handler.Http2ContentDecompressor;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
@@ -466,10 +468,31 @@ public final class NettyRequestSender {
      * and the {@link NettyResponseFuture} attached to it, mirroring the HTTP/1.1 channel model.
      */
     private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel) {
+        Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        Runnable openStream = () -> openHttp2Stream(future, parentChannel);
+
+        if (state != null && !state.tryAcquireStream()) {
+            if (state.isDraining()) {
+                // Connection is draining from GOAWAY, must use a new connection
+                abort(parentChannel, future, new java.io.IOException("HTTP/2 connection is draining (GOAWAY received)"));
+                return;
+            }
+            // Queue for later when a stream slot opens up
+            state.addPendingOpener(openStream);
+            return;
+        }
+        openStream.run();
+    }
+
+    private <T> void openHttp2Stream(NettyResponseFuture<T> future, Channel parentChannel) {
         new Http2StreamChannelBootstrap(parentChannel)
                 .handler(new ChannelInitializer<Http2StreamChannel>() {
                     @Override
                     protected void initChannel(Http2StreamChannel streamCh) {
+                        if (config.isEnableAutomaticDecompression()) {
+                            streamCh.pipeline().addLast("http2-decompressor",
+                                    new Http2ContentDecompressor(config.isKeepEncodingHeader()));
+                        }
                         streamCh.pipeline().addLast(channelManager.getHttp2Handler());
                     }
                 })
@@ -556,24 +579,32 @@ public final class NettyRequestSender {
                 if (directBuf != null && directBuf.isReadable()) {
                     bodyBuf = directBuf;
                 }
-            } else {
-                throw new UnsupportedOperationException(
-                        "Streaming request bodies (" + nettyBody.getClass().getSimpleName()
-                                + ") are not yet supported over HTTP/2. Use an in-memory body or disable HTTP/2.");
             }
         }
 
-        boolean hasBody = bodyBuf != null;
+        // Determine if we have a streaming body that needs writeHttp2()
+        boolean hasStreamingBody = bodyBuf == null && nettyBody != null && !(nettyBody instanceof NettyDirectBody);
+        boolean hasBody = bodyBuf != null || hasStreamingBody;
 
         // Write HEADERS frame (endStream=true when there is no body)
         streamChannel.write(new DefaultHttp2HeadersFrame(h2Headers, !hasBody));
 
-        if (hasBody) {
+        if (hasStreamingBody) {
+            streamChannel.flush();
+            try {
+                nettyBody.writeHttp2(streamChannel, future);
+            } catch (Exception e) {
+                throw new UnsupportedOperationException(
+                        "Failed to write streaming body (" + nettyBody.getClass().getSimpleName()
+                                + ") over HTTP/2", e);
+            }
+        } else if (bodyBuf != null) {
             // Write DATA frame with endStream=true — body is sent as a single frame
             streamChannel.write(new DefaultHttp2DataFrame(bodyBuf.retainedDuplicate(), true));
+            streamChannel.flush();
+        } else {
+            streamChannel.flush();
         }
-
-        streamChannel.flush();
 
         // Release the original HTTP/1.1 request — in the HTTP/2 path it is not written to the channel,
         // so we must release it manually to avoid leaking its content ByteBuf.

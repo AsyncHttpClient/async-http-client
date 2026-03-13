@@ -1063,6 +1063,7 @@ public class BasicHttp2Test {
                     CONNECTION_SUCCESS_EVENT,
                     TLS_HANDSHAKE_EVENT,
                     TLS_HANDSHAKE_SUCCESS_EVENT,
+                    REQUEST_SEND_EVENT,
                     STATUS_RECEIVED_EVENT,
                     HEADERS_RECEIVED_EVENT,
                     CONNECTION_OFFER_EVENT,
