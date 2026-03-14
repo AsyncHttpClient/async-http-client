@@ -278,6 +278,62 @@ public interface AsyncHttpClientConfig {
     boolean isFilterInsecureCipherSuites();
 
     /**
+     * @return true if HTTP/2 is enabled (negotiated via ALPN for HTTPS connections)
+     */
+    default boolean isHttp2Enabled() {
+        return true;
+    }
+
+    /**
+     * @return the HTTP/2 initial window size in bytes, defaults to 65535
+     */
+    default int getHttp2InitialWindowSize() {
+        return 65_535;
+    }
+
+    /**
+     * @return the HTTP/2 max frame size in bytes, must be between 16384 and 16777215 per RFC 7540 §4.2
+     */
+    default int getHttp2MaxFrameSize() {
+        return 16_384;
+    }
+
+    /**
+     * @return the HTTP/2 HPACK header table size in bytes, defaults to 4096
+     */
+    default int getHttp2HeaderTableSize() {
+        return 4_096;
+    }
+
+    /**
+     * @return the HTTP/2 max header list size in bytes, defaults to 8192
+     */
+    default int getHttp2MaxHeaderListSize() {
+        return 8_192;
+    }
+
+    /**
+     * @return the HTTP/2 max concurrent streams per connection, -1 means unlimited (server-controlled)
+     */
+    default int getHttp2MaxConcurrentStreams() {
+        return -1;
+    }
+
+    /**
+     * @return the interval between HTTP/2 PING keepalive frames, {@link Duration#ZERO} disables pinging
+     */
+    default Duration getHttp2PingInterval() {
+        return Duration.ZERO;
+    }
+
+    /**
+     * @return true if cleartext HTTP/2 (h2c) via prior knowledge is enabled for non-TLS connections
+     */
+    default boolean isHttp2CleartextEnabled() {
+        return false;
+    }
+
+    /**
      * @return the size of the SSL session cache, 0 means using the default value
      */
     int getSslSessionCacheSize();

@@ -16,15 +16,25 @@
 package org.asynchttpclient.netty.request;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -49,9 +59,13 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.ConnectionSemaphore;
+import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
+import org.asynchttpclient.netty.handler.Http2ContentDecompressor;
+import org.asynchttpclient.netty.request.body.NettyBody;
+import org.asynchttpclient.netty.request.body.NettyDirectBody;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -65,14 +79,17 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static java.util.Set.of;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 
@@ -298,7 +315,19 @@ public final class NettyRequestSender {
 
             // Do not throw an exception when we need an extra connection for a
             // redirect.
-            future.acquirePartitionLockLazily();
+            try {
+                future.acquirePartitionLockLazily();
+            } catch (IOException semaphoreException) {
+                // If HTTP/2 is enabled, another thread may be establishing an H2 connection.
+                // Poll the H2 registry with brief retries before giving up.
+                if (config.isHttp2Enabled()) {
+                    Channel h2Channel = waitForHttp2Connection(request, proxy);
+                    if (h2Channel != null) {
+                        return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
+                    }
+                }
+                throw semaphoreException;
+            }
         } catch (Throwable t) {
             abort(null, future, getCause(t));
             // exit and don't try to resolve address
@@ -375,17 +404,30 @@ public final class NettyRequestSender {
         return future;
     }
 
-    public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
-        NettyRequest nettyRequest = future.getNettyRequest();
-        HttpRequest httpRequest = nettyRequest.getHttpRequest();
-        AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+    /**
+     * HTTP/2 connection-specific headers that must NOT be forwarded as per RFC 7540 §8.1.2.2.
+     * These are HTTP/1.1 connection-specific headers that have no meaning in HTTP/2.
+     */
+    private static final Set<String> HTTP2_EXCLUDED_HEADERS = of(
+            "connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "host"
+    );
 
-        // if the channel is dead because it was pooled and the remote server decided to
-        // close it,
+    public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
+        // if the channel is dead because it was pooled and the remote server decided to close it,
         // we just let it go and the channelInactive do its work
         if (!Channels.isChannelActive(channel)) {
             return;
         }
+
+        // Route to HTTP/2 path if the parent channel has the HTTP/2 multiplex handler installed
+        if (ChannelManager.isHttp2(channel)) {
+            writeHttp2Request(future, channel);
+            return;
+        }
+
+        NettyRequest nettyRequest = future.getNettyRequest();
+        HttpRequest httpRequest = nettyRequest.getHttpRequest();
+        AsyncHandler<T> asyncHandler = future.getAsyncHandler();
 
         try {
             if (asyncHandler instanceof TransferCompletionHandler) {
@@ -428,6 +470,153 @@ public final class NettyRequestSender {
         } catch (Exception e) {
             LOGGER.error("Can't write request", e);
             abort(channel, future, e);
+        }
+    }
+
+    /**
+     * Opens a new HTTP/2 stream child channel on the given parent connection channel and writes the request
+     * as HTTP/2 frames ({@link DefaultHttp2HeadersFrame} + optional {@link DefaultHttp2DataFrame}).
+     * The stream child channel has the {@link org.asynchttpclient.netty.handler.Http2Handler} installed
+     * and the {@link NettyResponseFuture} attached to it, mirroring the HTTP/1.1 channel model.
+     */
+    private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel) {
+        Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        Runnable openStream = () -> openHttp2Stream(future, parentChannel);
+
+        if (state != null && !state.tryAcquireStream()) {
+            if (state.isDraining()) {
+                // Connection is draining from GOAWAY — fail the future so it retries on a new connection.
+                // Don't close the parent channel since it may still have active streams.
+                future.abort(new java.io.IOException("HTTP/2 connection is draining (GOAWAY received)"));
+                return;
+            }
+            // Queue for later when a stream slot opens up
+            state.addPendingOpener(openStream);
+            return;
+        }
+        openStream.run();
+    }
+
+    private <T> void openHttp2Stream(NettyResponseFuture<T> future, Channel parentChannel) {
+        new Http2StreamChannelBootstrap(parentChannel)
+                .handler(new ChannelInitializer<Http2StreamChannel>() {
+                    @Override
+                    protected void initChannel(Http2StreamChannel streamCh) {
+                        if (config.isEnableAutomaticDecompression()) {
+                            streamCh.pipeline().addLast("http2-decompressor",
+                                    new Http2ContentDecompressor(config.isKeepEncodingHeader()));
+                        }
+                        streamCh.pipeline().addLast(channelManager.getHttp2Handler());
+                    }
+                })
+                .open()
+                .addListener((Future<Http2StreamChannel> f) -> {
+                    if (f.isSuccess()) {
+                        Http2StreamChannel streamChannel = f.getNow();
+                        channelManager.registerOpenChannel(streamChannel);
+                        Channels.setAttribute(streamChannel, future);
+                        future.attachChannel(streamChannel, false);
+                        try {
+                            AsyncHandler<T> asyncHandler = future.getAsyncHandler();
+                            try {
+                                asyncHandler.onRequestSend(future.getNettyRequest());
+                            } catch (Exception e) {
+                                LOGGER.error("onRequestSend crashed", e);
+                                abort(streamChannel, future, e);
+                                return;
+                            }
+
+                            if (asyncHandler instanceof TransferCompletionHandler) {
+                                configureTransferAdapter(asyncHandler, future.getNettyRequest().getHttpRequest());
+                            }
+
+                            sendHttp2Frames(future, streamChannel);
+                            scheduleReadTimeout(future);
+                        } catch (Exception e) {
+                            LOGGER.error("Can't write HTTP/2 request", e);
+                            abort(streamChannel, future, e);
+                        }
+                    } else {
+                        abort(parentChannel, future, f.cause());
+                    }
+                });
+    }
+
+    /**
+     * Builds and writes HTTP/2 frames for the given request on the stream child channel.
+     * <p>
+     * Manually assembles {@link DefaultHttp2Headers} with HTTP/2 pseudo-headers (:method, :path,
+     * :scheme, :authority) plus all regular request headers, then writes them as a
+     * {@link DefaultHttp2HeadersFrame}. If the request has a body, writes it as a
+     * {@link DefaultHttp2DataFrame} with {@code endStream=true}.
+     * <p>
+     * Currently supports in-memory bodies ({@link DefaultFullHttpRequest} content and
+     * {@link org.asynchttpclient.netty.request.body.NettyDirectBody}). Streaming bodies
+     * (file uploads, input streams) are not yet supported over HTTP/2.
+     */
+    private <T> void sendHttp2Frames(NettyResponseFuture<T> future, Http2StreamChannel streamChannel) throws IOException {
+        NettyRequest nettyRequest = future.getNettyRequest();
+        HttpRequest httpRequest = nettyRequest.getHttpRequest();
+        Uri uri = future.getUri();
+
+        try {
+            // Build HTTP/2 pseudo-headers + regular headers
+            Http2Headers h2Headers = new DefaultHttp2Headers()
+                    .method(httpRequest.method().name())
+                    .path(uri.getNonEmptyPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : ""))
+                    .scheme(uri.getScheme())
+                    .authority(hostHeader(uri));
+
+            // Copy HTTP/1.1 headers, skipping connection-specific ones that are forbidden in HTTP/2.
+            // RFC 7540 §8.1.2 requires all header field names to be lowercase in HTTP/2.
+            httpRequest.headers().forEach(entry -> {
+                String name = entry.getKey().toLowerCase();
+                if (!HTTP2_EXCLUDED_HEADERS.contains(name)) {
+                    h2Headers.add(name, entry.getValue());
+                }
+            });
+
+            // Determine if we have a body to write.
+            // Support both DefaultFullHttpRequest (inline content) and NettyDirectBody (byte array/buffer bodies).
+            ByteBuf bodyBuf = null;
+            if (httpRequest instanceof DefaultFullHttpRequest) {
+                ByteBuf content = ((DefaultFullHttpRequest) httpRequest).content();
+                if (content != null && content.isReadable()) {
+                    bodyBuf = content;
+                }
+            }
+
+            NettyBody nettyBody = nettyRequest.getBody();
+            if (bodyBuf == null && nettyBody != null) {
+                if (nettyBody instanceof NettyDirectBody) {
+                    ByteBuf directBuf = ((NettyDirectBody) nettyBody).byteBuf();
+                    if (directBuf != null && directBuf.isReadable()) {
+                        bodyBuf = directBuf;
+                    }
+                }
+            }
+
+            // Determine if we have a streaming body that needs writeHttp2()
+            boolean hasStreamingBody = bodyBuf == null && nettyBody != null && !(nettyBody instanceof NettyDirectBody);
+            boolean hasBody = bodyBuf != null || hasStreamingBody;
+
+            // Write HEADERS frame (endStream=true when there is no body)
+            streamChannel.write(new DefaultHttp2HeadersFrame(h2Headers, !hasBody));
+
+            if (hasStreamingBody) {
+                streamChannel.flush();
+                nettyBody.writeHttp2(streamChannel, future);
+            } else if (bodyBuf != null) {
+                // Write DATA frame with endStream=true — body is sent as a single frame
+                streamChannel.write(new DefaultHttp2DataFrame(bodyBuf.retainedDuplicate(), true));
+                streamChannel.flush();
+            } else {
+                streamChannel.flush();
+            }
+        } finally {
+            // Release the original HTTP/1.1 request — in the HTTP/2 path it is not written to the channel,
+            // so we must release it manually to avoid leaking its content ByteBuf.
+            ReferenceCountUtil.release(httpRequest);
         }
     }
 
@@ -554,6 +743,31 @@ public final class NettyRequestSender {
         }
     }
 
+    /**
+     * Waits briefly for an HTTP/2 connection to appear in the registry.
+     * Used when the semaphore blocks a new connection but another thread is establishing
+     * an HTTP/2 connection that this request can multiplex onto.
+     */
+    private Channel waitForHttp2Connection(Request request, ProxyServer proxy) {
+        Uri uri = request.getUri();
+        String virtualHost = request.getVirtualHost();
+        long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
+
+        while (System.nanoTime() < deadline) {
+            Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+            if (h2Channel != null) {
+                return h2Channel;
+            }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }
+        return null;
+    }
+
     private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
         try {
             asyncHandler.onConnectionPoolAttempt();
@@ -563,6 +777,15 @@ public final class NettyRequestSender {
 
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();
+
+        // Check HTTP/2 connection registry first — these connections support multiplexing
+        // and are not removed from the registry on poll (unlike the regular pool)
+        Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+        if (h2Channel != null) {
+            LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+            return h2Channel;
+        }
+
         final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
 
         if (channel != null) {

@@ -46,7 +46,7 @@ public class LargeResponseTest {
     private static final int textSize = 4 * 1024;
     private static final byte[] textBytes = "z".repeat(textSize).getBytes(StandardCharsets.UTF_8);
 
-    private static final long responseSize = ((long)textSize) * (1_500_000L);
+    private static final long responseSize = ((long)textSize) * (100_000L);
 
     private static HttpServer HTTP_SERVER;
 

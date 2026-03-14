@@ -40,7 +40,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testMaxTotalConnectionsExceedingException() throws IOException {
-        String[] urls = {"https://google.com", "https://github.com"};
+        String[] urls = {getTargetUrl(), String.format("http://localhost:%d/foo/test", port2)};
 
         AsyncHttpClientConfig config = config()
                 .setConnectTimeout(Duration.ofSeconds(1))
@@ -76,7 +76,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testMaxTotalConnections() throws Exception {
-        String[] urls = {"https://www.google.com", "https://www.youtube.com"};
+        String[] urls = {getTargetUrl(), String.format("http://localhost:%d/foo/test", port2)};
 
         final CountDownLatch latch = new CountDownLatch(2);
         final AtomicReference<Throwable> ex = new AtomicReference<>();

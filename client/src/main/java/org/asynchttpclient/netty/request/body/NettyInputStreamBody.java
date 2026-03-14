@@ -15,9 +15,12 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedStream;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.WriteProgressListener;
@@ -78,5 +81,43 @@ public class NettyInputStreamBody implements NettyBody {
                     }
                 });
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
+    }
+
+    @Override
+    public void writeHttp2(Http2StreamChannel channel, NettyResponseFuture<?> future) throws IOException {
+        final InputStream is = inputStream;
+
+        if (future.isStreamConsumed()) {
+            if (is.markSupported()) {
+                is.reset();
+            } else {
+                LOGGER.warn("Stream has already been consumed and cannot be reset");
+                return;
+            }
+        } else {
+            future.setStreamConsumed(true);
+        }
+
+        try {
+            // Read all data into chunks, then send with last frame having endStream=true
+            byte[] buffer = new byte[8192];
+            ByteBuf pending = null;
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                if (pending != null) {
+                    channel.write(new DefaultHttp2DataFrame(pending, false));
+                }
+                pending = channel.alloc().buffer(read);
+                pending.writeBytes(buffer, 0, read);
+            }
+            if (pending != null) {
+                channel.write(new DefaultHttp2DataFrame(pending, true));
+            } else {
+                channel.write(new DefaultHttp2DataFrame(channel.alloc().buffer(0), true));
+            }
+            channel.flush();
+        } finally {
+            closeSilently(is);
+        }
     }
 }

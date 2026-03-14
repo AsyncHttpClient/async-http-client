@@ -28,6 +28,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
@@ -162,7 +163,11 @@ public class Unauthorized401Interceptor {
         final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
 
         LOGGER.debug("Sending authentication to {}", request.getUri());
-        if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(httpRequest) && !HttpUtil.isTransferEncodingChunked(response)) {
+        if (channel instanceof Http2StreamChannel) {
+            // HTTP/2 stream channels are single-use — close the stream and send the auth retry.
+            channel.close();
+            requestSender.sendNextRequest(nextRequest, future);
+        } else if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(httpRequest) && !HttpUtil.isTransferEncodingChunked(response)) {
             future.setReuseChannel(true);
             requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
         } else {

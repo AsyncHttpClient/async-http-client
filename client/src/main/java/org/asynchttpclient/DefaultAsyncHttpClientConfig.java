@@ -101,6 +101,13 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUs
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUserAgent;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultValidateResponseHeaders;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2CleartextEnabled;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2HeaderTableSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2InitialWindowSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxConcurrentStreams;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxFrameSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxHeaderListSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2PingInterval;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxFrameSize;
 
 /**
@@ -166,6 +173,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int sslSessionTimeout;
     private final @Nullable SslContext sslContext;
     private final @Nullable SslEngineFactory sslEngineFactory;
+    private final boolean http2Enabled;
+    private final int http2InitialWindowSize;
+    private final int http2MaxFrameSize;
+    private final int http2HeaderTableSize;
+    private final int http2MaxHeaderListSize;
+    private final int http2MaxConcurrentStreams;
+    private final Duration http2PingInterval;
+    private final boolean http2CleartextEnabled;
 
     // filters
     private final List<RequestFilter> requestFilters;
@@ -253,6 +268,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int sslSessionTimeout,
                                          @Nullable SslContext sslContext,
                                          @Nullable SslEngineFactory sslEngineFactory,
+                                         boolean http2Enabled,
+                                         int http2InitialWindowSize,
+                                         int http2MaxFrameSize,
+                                         int http2HeaderTableSize,
+                                         int http2MaxHeaderListSize,
+                                         int http2MaxConcurrentStreams,
+                                         Duration http2PingInterval,
+                                         boolean http2CleartextEnabled,
 
                                          // filters
                                          List<RequestFilter> requestFilters,
@@ -348,6 +371,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.sslSessionTimeout = sslSessionTimeout;
         this.sslContext = sslContext;
         this.sslEngineFactory = sslEngineFactory;
+        this.http2Enabled = http2Enabled;
+        this.http2InitialWindowSize = http2InitialWindowSize;
+        this.http2MaxFrameSize = http2MaxFrameSize;
+        this.http2HeaderTableSize = http2HeaderTableSize;
+        this.http2MaxHeaderListSize = http2MaxHeaderListSize;
+        this.http2MaxConcurrentStreams = http2MaxConcurrentStreams;
+        this.http2PingInterval = http2PingInterval;
+        this.http2CleartextEnabled = http2CleartextEnabled;
 
         // filters
         this.requestFilters = requestFilters;
@@ -380,6 +411,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         if (useOnlyEpollNativeTransport && !useNativeTransport) {
             throw new IllegalArgumentException("Native Transport must be enabled to use Epoll Native Transport only");
+        }
+
+        if (http2MaxFrameSize < 16384 || http2MaxFrameSize > 16777215) {
+            throw new IllegalArgumentException("HTTP/2 max frame size must be between 16384 and 16777215 per RFC 7540 §4.2");
+        }
+
+        if (http2InitialWindowSize < 0) {
+            throw new IllegalArgumentException("HTTP/2 initial window size must be non-negative");
         }
 
         this.allocator = allocator;
@@ -606,6 +645,46 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public boolean isFilterInsecureCipherSuites() {
         return filterInsecureCipherSuites;
+    }
+
+    @Override
+    public boolean isHttp2Enabled() {
+        return http2Enabled;
+    }
+
+    @Override
+    public int getHttp2InitialWindowSize() {
+        return http2InitialWindowSize;
+    }
+
+    @Override
+    public int getHttp2MaxFrameSize() {
+        return http2MaxFrameSize;
+    }
+
+    @Override
+    public int getHttp2HeaderTableSize() {
+        return http2HeaderTableSize;
+    }
+
+    @Override
+    public int getHttp2MaxHeaderListSize() {
+        return http2MaxHeaderListSize;
+    }
+
+    @Override
+    public int getHttp2MaxConcurrentStreams() {
+        return http2MaxConcurrentStreams;
+    }
+
+    @Override
+    public Duration getHttp2PingInterval() {
+        return http2PingInterval;
+    }
+
+    @Override
+    public boolean isHttp2CleartextEnabled() {
+        return http2CleartextEnabled;
     }
 
     @Override
@@ -847,6 +926,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int sslSessionTimeout = defaultSslSessionTimeout();
         private @Nullable SslContext sslContext;
         private @Nullable SslEngineFactory sslEngineFactory;
+        private boolean http2Enabled = true;
+        private int http2InitialWindowSize = defaultHttp2InitialWindowSize();
+        private int http2MaxFrameSize = defaultHttp2MaxFrameSize();
+        private int http2HeaderTableSize = defaultHttp2HeaderTableSize();
+        private int http2MaxHeaderListSize = defaultHttp2MaxHeaderListSize();
+        private int http2MaxConcurrentStreams = defaultHttp2MaxConcurrentStreams();
+        private Duration http2PingInterval = defaultHttp2PingInterval();
+        private boolean http2CleartextEnabled = defaultHttp2CleartextEnabled();
 
         // cookie store
         private CookieStore cookieStore = new ThreadSafeCookieStore();
@@ -939,6 +1026,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             sslSessionTimeout = config.getSslSessionTimeout();
             sslContext = config.getSslContext();
             sslEngineFactory = config.getSslEngineFactory();
+            http2Enabled = config.isHttp2Enabled();
+            http2InitialWindowSize = config.getHttp2InitialWindowSize();
+            http2MaxFrameSize = config.getHttp2MaxFrameSize();
+            http2HeaderTableSize = config.getHttp2HeaderTableSize();
+            http2MaxHeaderListSize = config.getHttp2MaxHeaderListSize();
+            http2MaxConcurrentStreams = config.getHttp2MaxConcurrentStreams();
+            http2PingInterval = config.getHttp2PingInterval();
+            http2CleartextEnabled = config.isHttp2CleartextEnabled();
 
             // filters
             requestFilters.addAll(config.getRequestFilters());
@@ -1254,6 +1349,46 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setHttp2Enabled(boolean http2Enabled) {
+            this.http2Enabled = http2Enabled;
+            return this;
+        }
+
+        public Builder setHttp2InitialWindowSize(int http2InitialWindowSize) {
+            this.http2InitialWindowSize = http2InitialWindowSize;
+            return this;
+        }
+
+        public Builder setHttp2MaxFrameSize(int http2MaxFrameSize) {
+            this.http2MaxFrameSize = http2MaxFrameSize;
+            return this;
+        }
+
+        public Builder setHttp2HeaderTableSize(int http2HeaderTableSize) {
+            this.http2HeaderTableSize = http2HeaderTableSize;
+            return this;
+        }
+
+        public Builder setHttp2MaxHeaderListSize(int http2MaxHeaderListSize) {
+            this.http2MaxHeaderListSize = http2MaxHeaderListSize;
+            return this;
+        }
+
+        public Builder setHttp2MaxConcurrentStreams(int http2MaxConcurrentStreams) {
+            this.http2MaxConcurrentStreams = http2MaxConcurrentStreams;
+            return this;
+        }
+
+        public Builder setHttp2PingInterval(Duration http2PingInterval) {
+            this.http2PingInterval = http2PingInterval;
+            return this;
+        }
+
+        public Builder setHttp2CleartextEnabled(boolean http2CleartextEnabled) {
+            this.http2CleartextEnabled = http2CleartextEnabled;
+            return this;
+        }
+
         // filters
         public Builder addRequestFilter(RequestFilter requestFilter) {
             requestFilters.add(requestFilter);
@@ -1486,6 +1621,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     sslSessionTimeout,
                     sslContext,
                     sslEngineFactory,
+                    http2Enabled,
+                    http2InitialWindowSize,
+                    http2MaxFrameSize,
+                    http2HeaderTableSize,
+                    http2MaxHeaderListSize,
+                    http2MaxConcurrentStreams,
+                    http2PingInterval,
+                    http2CleartextEnabled,
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters),
                     responseFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(responseFilters),
                     ioExceptionFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ioExceptionFilters),

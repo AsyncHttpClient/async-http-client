@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.request.body;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.netty.NettyResponseFuture;
 
 import java.io.IOException;
@@ -29,4 +30,10 @@ public interface NettyBody {
     }
 
     void write(Channel channel, NettyResponseFuture<?> future) throws IOException;
+
+    default void writeHttp2(Http2StreamChannel channel, NettyResponseFuture<?> future) throws IOException {
+        throw new UnsupportedOperationException(
+                "Streaming request bodies (" + getClass().getSimpleName()
+                        + ") are not yet supported over HTTP/2. Use an in-memory body or disable HTTP/2.");
+    }
 }

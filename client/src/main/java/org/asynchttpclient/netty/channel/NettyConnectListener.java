@@ -17,12 +17,14 @@ package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
+import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -80,14 +82,9 @@ public final class NettyConnectListener<T> {
     }
 
     public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
-        if (connectionSemaphore != null) {
-            // transfer lock from future to channel
-            Object partitionKeyLock = future.takePartitionKeyLock();
-
-            if (partitionKeyLock != null) {
-                channel.closeFuture().addListener(future -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
-            }
-        }
+        // Take the semaphore lock from the future. For HTTP/1.1, we'll transfer it to channel.closeFuture().
+        // For HTTP/2, we release it immediately after ALPN negotiation since the connection is multiplexed.
+        final Object partitionKeyLock = (connectionSemaphore != null) ? future.takePartitionKeyLock() : null;
 
         Channels.setActiveToken(channel);
         TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
@@ -139,6 +136,7 @@ public final class NettyConnectListener<T> {
                         return;
                     }
                     // After SSL handshake to proxy, continue with normal proxy request
+                    attachSemaphoreToChannelClose(channel, partitionKeyLock);
                     writeRequest(channel);
                 }
 
@@ -185,6 +183,15 @@ public final class NettyConnectListener<T> {
                         NettyConnectListener.this.onFailure(channel, e);
                         return;
                     }
+                    // Detect ALPN-negotiated protocol and upgrade pipeline to HTTP/2 if "h2" was selected
+                    String alpnProtocol = sslHandler.applicationProtocol();
+                    if (ApplicationProtocolNames.HTTP_2.equals(alpnProtocol)) {
+                        channelManager.upgradePipelineToHttp2(channel.pipeline());
+                        registerHttp2AndReleaseSemaphore(channel);
+                        releaseSemaphoreImmediately(partitionKeyLock);
+                    } else {
+                        attachSemaphoreToChannelClose(channel, partitionKeyLock);
+                    }
                     writeRequest(channel);
                 }
 
@@ -202,8 +209,49 @@ public final class NettyConnectListener<T> {
             });
 
         } else {
+            // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS
+            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled()) {
+                channelManager.upgradePipelineToHttp2(channel.pipeline());
+                registerHttp2AndReleaseSemaphore(channel);
+                releaseSemaphoreImmediately(partitionKeyLock);
+            } else {
+                attachSemaphoreToChannelClose(channel, partitionKeyLock);
+            }
             writeRequest(channel);
         }
+    }
+
+    /**
+     * Attaches the semaphore lock to the channel's close future (HTTP/1.1 behavior).
+     * The semaphore slot is released when the connection closes.
+     */
+    private void attachSemaphoreToChannelClose(Channel channel, Object partitionKeyLock) {
+        if (connectionSemaphore != null && partitionKeyLock != null) {
+            channel.closeFuture().addListener(f -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
+        }
+    }
+
+    /**
+     * Releases the semaphore lock immediately (HTTP/2 behavior).
+     * HTTP/2 connections are multiplexed, so the semaphore should not be held
+     * for the lifetime of the connection.
+     */
+    private void releaseSemaphoreImmediately(Object partitionKeyLock) {
+        if (connectionSemaphore != null && partitionKeyLock != null) {
+            connectionSemaphore.releaseChannelLock(partitionKeyLock);
+        }
+    }
+
+    /**
+     * Registers the HTTP/2 connection in the channel manager's H2 registry.
+     */
+    private void registerHttp2AndReleaseSemaphore(Channel channel) {
+        Request request = future.getTargetRequest();
+        Uri uri = request.getUri();
+        ProxyServer proxy = future.getProxyServer();
+        ChannelPoolPartitioning partitioning = request.getChannelPoolPartitioning();
+        Object partitionKey = partitioning.getPartitionKey(uri, request.getVirtualHost(), proxy);
+        channelManager.registerHttp2Connection(partitionKey, channel);
     }
 
     public void onFailure(Channel channel, Throwable cause) {

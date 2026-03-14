@@ -170,6 +170,15 @@ public interface Response {
     boolean hasResponseBody();
 
     /**
+     * Return the HTTP protocol version used for this response.
+     *
+     * @return the protocol, defaults to {@link HttpProtocol#HTTP_1_1}
+     */
+    default HttpProtocol getProtocol() {
+        return HttpProtocol.HTTP_1_1;
+    }
+
+    /**
      * Get the remote address that the client initiated the request to.
      *
      * @return The remote address that the client initiated the request to. May be {@code null} if asynchronous provider is unable to provide the remote address

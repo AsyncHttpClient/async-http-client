@@ -15,9 +15,12 @@
  */
 package org.asynchttpclient.netty.request.body;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedNioFile;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -27,6 +30,7 @@ import org.asynchttpclient.netty.request.WriteProgressListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class NettyFileBody implements NettyBody {
@@ -70,5 +74,29 @@ public class NettyFileBody implements NettyBody {
         channel.write(body, channel.newProgressivePromise())
                 .addListener(new WriteProgressListener(future, false, length));
         channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT, channel.voidPromise());
+    }
+
+    @Override
+    public void writeHttp2(Http2StreamChannel channel, NettyResponseFuture<?> future) throws IOException {
+        int chunkSize = config.getChunkedFileChunkSize();
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r");
+             FileChannel fileChannel = raf.getChannel()) {
+            long remaining = length;
+            long pos = offset;
+            while (remaining > 0) {
+                int toRead = (int) Math.min(chunkSize, remaining);
+                ByteBuf buf = channel.alloc().buffer(toRead);
+                int read = buf.writeBytes(fileChannel, pos, toRead);
+                if (read <= 0) {
+                    buf.release();
+                    break;
+                }
+                remaining -= read;
+                pos += read;
+                boolean last = remaining <= 0;
+                channel.write(new DefaultHttp2DataFrame(buf, last));
+            }
+            channel.flush();
+        }
     }
 }
