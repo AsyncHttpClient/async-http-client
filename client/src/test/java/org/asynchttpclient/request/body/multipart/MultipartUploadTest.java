@@ -16,11 +16,10 @@ import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.fileupload2.FileItemIterator;
-import org.apache.commons.fileupload2.FileItemStream;
-import org.apache.commons.fileupload2.FileUploadException;
-import org.apache.commons.fileupload2.jaksrvlt.JakSrvltFileUpload;
-import org.apache.commons.fileupload2.util.Streams;
+import org.apache.commons.fileupload2.core.FileItemInput;
+import org.apache.commons.fileupload2.core.FileItemInputIterator;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet5.JakartaServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.AbstractBasicTest;
@@ -372,21 +371,21 @@ public class MultipartUploadTest extends AbstractBasicTest {
         @Override
         public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
             // Check that we have a file upload request
-            boolean isMultipart = JakSrvltFileUpload.isMultipartContent(request);
+            boolean isMultipart = JakartaServletFileUpload.isMultipartContent(request);
             if (isMultipart) {
                 List<String> files = new ArrayList<>();
-                JakSrvltFileUpload upload = new JakSrvltFileUpload();
+                JakartaServletFileUpload upload = new JakartaServletFileUpload();
                 // Parse the request
-                FileItemIterator iter;
+                FileItemInputIterator iter;
                 try {
                     iter = upload.getItemIterator(request);
                     while (iter.hasNext()) {
-                        FileItemStream item = iter.next();
+                        FileItemInput item = iter.next();
                         String name = item.getFieldName();
-                        try (InputStream stream = item.openStream()) {
+                        try (InputStream stream = item.getInputStream()) {
 
                             if (item.isFormField()) {
-                                LOGGER.debug("Form field " + name + " with value " + Streams.asString(stream) + " detected.");
+                                LOGGER.debug("Form field " + name + " with value " + IOUtils.toString(stream, UTF_8) + " detected.");
                                 incrementStringsProcessed();
                             } else {
                                 LOGGER.debug("File field " + name + " with file name " + item.getName() + " detected.");
