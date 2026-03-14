@@ -926,7 +926,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int sslSessionTimeout = defaultSslSessionTimeout();
         private @Nullable SslContext sslContext;
         private @Nullable SslEngineFactory sslEngineFactory;
-        private boolean http2Enabled = false;
+        private boolean http2Enabled = true;
         private int http2InitialWindowSize = defaultHttp2InitialWindowSize();
         private int http2MaxFrameSize = defaultHttp2MaxFrameSize();
         private int http2HeaderTableSize = defaultHttp2HeaderTableSize();
