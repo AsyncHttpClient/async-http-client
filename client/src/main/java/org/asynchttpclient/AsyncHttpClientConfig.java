@@ -282,18 +282,39 @@ public interface AsyncHttpClientConfig {
      */
     boolean isHttp2Enabled();
 
+    /**
+     * @return the HTTP/2 initial window size in bytes, defaults to 65535
+     */
     int getHttp2InitialWindowSize();
 
+    /**
+     * @return the HTTP/2 max frame size in bytes, must be between 16384 and 16777215 per RFC 7540 §4.2
+     */
     int getHttp2MaxFrameSize();
 
+    /**
+     * @return the HTTP/2 HPACK header table size in bytes, defaults to 4096
+     */
     int getHttp2HeaderTableSize();
 
+    /**
+     * @return the HTTP/2 max header list size in bytes, defaults to 8192
+     */
     int getHttp2MaxHeaderListSize();
 
+    /**
+     * @return the HTTP/2 max concurrent streams per connection, -1 means unlimited (server-controlled)
+     */
     int getHttp2MaxConcurrentStreams();
 
+    /**
+     * @return the interval between HTTP/2 PING keepalive frames, {@link Duration#ZERO} disables pinging
+     */
     Duration getHttp2PingInterval();
 
+    /**
+     * @return true if cleartext HTTP/2 (h2c) via prior knowledge is enabled for non-TLS connections
+     */
     boolean isHttp2CleartextEnabled();
 
     /**

@@ -35,6 +35,7 @@ public class Http2ConnectionState {
     private final AtomicBoolean draining = new AtomicBoolean(false);
     private volatile int lastGoAwayStreamId = Integer.MAX_VALUE;
     private final ConcurrentLinkedQueue<Runnable> pendingOpeners = new ConcurrentLinkedQueue<>();
+    private volatile Object partitionKey;
 
     public boolean tryAcquireStream() {
         if (draining.get()) {
@@ -96,5 +97,13 @@ public class Http2ConnectionState {
 
     public int getLastGoAwayStreamId() {
         return lastGoAwayStreamId;
+    }
+
+    public void setPartitionKey(Object partitionKey) {
+        this.partitionKey = partitionKey;
+    }
+
+    public Object getPartitionKey() {
+        return partitionKey;
     }
 }

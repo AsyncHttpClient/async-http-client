@@ -22,7 +22,7 @@ public enum HttpProtocol {
 
     HTTP_1_0("HTTP/1.0"),
     HTTP_1_1("HTTP/1.1"),
-    HTTP_2("HTTP/2.0");
+    HTTP_2("HTTP/2");
 
     private final String text;
 
@@ -31,7 +31,7 @@ public enum HttpProtocol {
     }
 
     /**
-     * @return the protocol version string (e.g. "HTTP/1.1", "HTTP/2.0")
+     * @return the protocol version string (e.g. "HTTP/1.1", "HTTP/2")
      */
     public String getText() {
         return text;

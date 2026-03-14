@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -41,16 +42,17 @@ import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2GoAwayFrame;
 import io.netty.handler.codec.http2.Http2SettingsFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.resolver.NameResolver;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -89,6 +91,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -122,6 +125,7 @@ public class ChannelManager {
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
+    private final ConcurrentHashMap<Object, Channel> http2Connections = new ConcurrentHashMap<>();
 
     private AsyncHttpClientHandler wsHandler;
     private Http2Handler http2Handler;
@@ -338,6 +342,59 @@ public class ChannelManager {
         }
     }
 
+    /**
+     * Registers an HTTP/2 connection in the registry for the given partition key.
+     * The connection stays in the registry (not the regular pool) to allow multiplexing —
+     * multiple requests can share the same connection concurrently.
+     */
+    public void registerHttp2Connection(Object partitionKey, Channel channel) {
+        Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        if (state != null) {
+            state.setPartitionKey(partitionKey);
+        }
+        http2Connections.put(partitionKey, channel);
+        // Auto-remove from registry when the connection closes
+        channel.closeFuture().addListener(future -> removeHttp2Connection(partitionKey, channel));
+    }
+
+    /**
+     * Removes an HTTP/2 connection from the registry, but only if it's the currently registered
+     * connection for that partition key (avoids removing a replacement connection).
+     */
+    public void removeHttp2Connection(Object partitionKey, Channel channel) {
+        http2Connections.remove(partitionKey, channel);
+    }
+
+    /**
+     * Returns an active, non-draining HTTP/2 connection for the given partition key, or {@code null}.
+     * Unlike the regular pool, this does NOT remove the connection — it remains available for
+     * concurrent multiplexed requests.
+     */
+    public Channel pollHttp2Connection(Object partitionKey) {
+        Channel channel = http2Connections.get(partitionKey);
+        if (channel == null) {
+            return null;
+        }
+        if (!channel.isActive()) {
+            http2Connections.remove(partitionKey, channel);
+            return null;
+        }
+        Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        if (state != null && state.isDraining()) {
+            return null;
+        }
+        return channel;
+    }
+
+    /**
+     * Polls for an HTTP/2 connection by URI/virtualHost/proxy, using the same partition key logic
+     * as the regular pool. Returns the connection without removing it from the registry.
+     */
+    public Channel pollHttp2(Uri uri, String virtualHost, ProxyServer proxy, ChannelPoolPartitioning connectionPoolPartitioning) {
+        Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
+        return pollHttp2Connection(partitionKey);
+    }
+
     public Channel poll(Uri uri, String virtualHost, ProxyServer proxy, ChannelPoolPartitioning connectionPoolPartitioning) {
         Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
         return channelPool.poll(partitionKey);
@@ -348,6 +405,7 @@ public class ChannelManager {
     }
 
     private void doClose() {
+        http2Connections.clear();
         ChannelGroupFuture groupFuture = openChannels.close();
         channelPool.destroy();
         groupFuture.addListener(future -> sslEngineFactory.destroy());
@@ -644,7 +702,7 @@ public class ChannelManager {
         // Install SETTINGS listener to update MAX_CONCURRENT_STREAMS from server
         pipeline.addLast("http2-settings-listener", new ChannelInboundHandlerAdapter() {
             @Override
-            public void channelRead(io.netty.channel.ChannelHandlerContext ctx, Object msg) throws Exception {
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                 if (msg instanceof Http2SettingsFrame) {
                     Http2SettingsFrame settingsFrame = (Http2SettingsFrame) msg;
                     Long maxStreams = settingsFrame.settings().maxConcurrentStreams();
@@ -659,10 +717,38 @@ public class ChannelManager {
             }
         });
 
+        // Install GOAWAY handler on the parent channel to mark the connection as draining
+        // and remove it from the HTTP/2 registry. GOAWAY is a connection-level frame that
+        // arrives on the parent channel, not on stream child channels.
+        pipeline.addLast("http2-goaway-listener", new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                if (msg instanceof Http2GoAwayFrame) {
+                    Http2GoAwayFrame goAwayFrame = (Http2GoAwayFrame) msg;
+                    int lastStreamId = goAwayFrame.lastStreamId();
+                    Http2ConnectionState connState = ctx.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+                    if (connState != null) {
+                        connState.setDraining(lastStreamId);
+                        Object pk = connState.getPartitionKey();
+                        if (pk != null) {
+                            removeHttp2Connection(pk, ctx.channel());
+                        }
+                    }
+                    LOGGER.debug("HTTP/2 GOAWAY received on {}, lastStreamId={}, errorCode={}",
+                            ctx.channel(), lastStreamId, goAwayFrame.errorCode());
+                    // Close the connection when no more active streams
+                    if (connState != null && connState.getActiveStreams() <= 0) {
+                        closeChannel(ctx.channel());
+                    }
+                }
+                ctx.fireChannelRead(msg);
+            }
+        });
+
         // Install PING handler for keepalive if configured
         long pingIntervalMs = config.getHttp2PingInterval().toMillis();
         if (pingIntervalMs > 0) {
-            pipeline.addLast("http2-idle-state", new IdleStateHandler(0, 0, pingIntervalMs, java.util.concurrent.TimeUnit.MILLISECONDS));
+            pipeline.addLast("http2-idle-state", new IdleStateHandler(0, 0, pingIntervalMs, TimeUnit.MILLISECONDS));
             pipeline.addLast("http2-ping", new Http2PingHandler());
         }
     }

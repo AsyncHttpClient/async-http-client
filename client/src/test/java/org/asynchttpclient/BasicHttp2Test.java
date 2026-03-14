@@ -1121,4 +1121,82 @@ public class BasicHttp2Test {
             assertArrayEquals(bodyBytes, response.getResponseBodyAsBytes());
         }
     }
+
+    // -------------------------------------------------------------------------
+    // HTTP/2 multiplexing and connection management tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void http2MultiplexesConcurrentRequestsOnSingleConnection() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setMaxConnectionsPerHost(1))) {
+            int concurrentRequests = 10;
+            CountDownLatch latch = new CountDownLatch(concurrentRequests);
+            AtomicInteger successCount = new AtomicInteger(0);
+            AtomicReference<Throwable> firstError = new AtomicReference<>();
+
+            // Fire off concurrent requests — with maxConnectionsPerHost=1 and HTTP/1.1,
+            // these would block waiting for the single connection. With HTTP/2 multiplexing,
+            // they should all complete on the same connection concurrently.
+            for (int i = 0; i < concurrentRequests; i++) {
+                final int idx = i;
+                client.prepareGet(httpsUrl("/delay/100"))
+                        .execute(new AsyncCompletionHandlerBase() {
+                            @Override
+                            public Response onCompleted(Response response) throws Exception {
+                                if (response.getStatusCode() == 200) {
+                                    successCount.incrementAndGet();
+                                }
+                                latch.countDown();
+                                return response;
+                            }
+
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                firstError.compareAndSet(null, t);
+                                latch.countDown();
+                            }
+                        });
+            }
+
+            assertTrue(latch.await(30, SECONDS), "All requests should complete within 30s");
+            assertNull(firstError.get(), "No errors expected, got: " + firstError.get());
+            assertEquals(concurrentRequests, successCount.get(),
+                    "All concurrent requests should succeed via HTTP/2 multiplexing");
+        }
+    }
+
+    @Test
+    public void http2ConnectionIsReusedAcrossSequentialRequests() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            // First request — establishes the HTTP/2 connection
+            Response response1 = client.prepareGet(httpsUrl("/ok")).execute().get(30, SECONDS);
+            assertEquals(200, response1.getStatusCode());
+
+            // Second request — should reuse the same HTTP/2 connection from the registry
+            EventCollectingHandler handler = new EventCollectingHandler();
+            Response response2 = client.prepareGet(httpsUrl("/ok")).execute(handler).get(30, SECONDS);
+            assertEquals(200, response2.getStatusCode());
+            handler.waitForCompletion(30, SECONDS);
+
+            // The second request should hit the connection pool (HTTP/2 registry) and NOT
+            // open a new connection — no DNS resolution, no TLS handshake
+            var events = handler.firedEvents;
+            assertTrue(events.contains(CONNECTION_POOL_EVENT), "Should attempt pool lookup");
+            assertFalse(events.contains(HOSTNAME_RESOLUTION_EVENT),
+                    "Should NOT resolve hostname for reused H2 connection");
+            assertFalse(events.contains(TLS_HANDSHAKE_EVENT),
+                    "Should NOT do TLS handshake for reused H2 connection");
+        }
+    }
+
+    @Test
+    public void http2SequentialRequestsWithMaxConnectionsPerHostOne() throws Exception {
+        // Verify that with maxConnectionsPerHost=1, sequential HTTP/2 requests don't deadlock
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setMaxConnectionsPerHost(1))) {
+            for (int i = 0; i < 5; i++) {
+                Response response = client.prepareGet(httpsUrl("/ok")).execute().get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+        }
+    }
 }

@@ -19,28 +19,24 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.compression.JdkZlibDecoder;
+import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
-
-import java.io.ByteArrayOutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
-import java.io.ByteArrayInputStream;
 
 /**
  * HTTP/2 content decompressor that transparently decompresses gzip/deflate response bodies.
  * Installed on stream child channels when automatic decompression is enabled.
  * <p>
- * Accumulates compressed data frames, then decompresses on the final frame.
- * This is simpler and more robust than trying to decompress individual frames.
+ * Uses Netty's {@link JdkZlibDecoder} via an {@link EmbeddedChannel} for streaming decompression,
+ * forwarding decompressed data frames as they arrive rather than buffering the entire response.
  */
 public class Http2ContentDecompressor extends ChannelInboundHandlerAdapter {
 
     private final boolean keepEncodingHeader;
-    private String encoding;
-    private CompositeByteBuf accumulator;
+    private EmbeddedChannel decompressor;
 
     public Http2ContentDecompressor(boolean keepEncodingHeader) {
         this.keepEncodingHeader = keepEncodingHeader;
@@ -54,7 +50,8 @@ public class Http2ContentDecompressor extends ChannelInboundHandlerAdapter {
             if (contentEncoding != null) {
                 String enc = contentEncoding.toString().toLowerCase();
                 if (enc.contains("gzip") || enc.contains("deflate")) {
-                    encoding = enc;
+                    ZlibWrapper wrapper = enc.contains("gzip") ? ZlibWrapper.GZIP : ZlibWrapper.ZLIB_OR_NONE;
+                    decompressor = new EmbeddedChannel(false, new JdkZlibDecoder(wrapper));
                     if (!keepEncodingHeader) {
                         headersFrame.headers().remove("content-encoding");
                     }
@@ -62,70 +59,52 @@ public class Http2ContentDecompressor extends ChannelInboundHandlerAdapter {
                 }
             }
             ctx.fireChannelRead(msg);
-        } else if (msg instanceof Http2DataFrame && encoding != null) {
+        } else if (msg instanceof Http2DataFrame && decompressor != null) {
             Http2DataFrame dataFrame = (Http2DataFrame) msg;
             ByteBuf content = dataFrame.content();
             boolean endStream = dataFrame.isEndStream();
 
             if (content.isReadable()) {
-                if (accumulator == null) {
-                    accumulator = ctx.alloc().compositeBuffer();
-                }
-                accumulator.addComponent(true, content.retain());
+                decompressor.writeInbound(content.retain());
             }
 
             // Release the original frame
             dataFrame.release();
 
-            if (endStream) {
-                ByteBuf decompressed;
-                if (accumulator != null && accumulator.isReadable()) {
-                    byte[] compressed = new byte[accumulator.readableBytes()];
-                    accumulator.readBytes(compressed);
-                    accumulator.release();
-                    accumulator = null;
-
-                    byte[] result = decompress(compressed, encoding);
-                    decompressed = ctx.alloc().buffer(result.length);
-                    decompressed.writeBytes(result);
-                } else {
-                    if (accumulator != null) {
-                        accumulator.release();
-                        accumulator = null;
-                    }
-                    decompressed = ctx.alloc().buffer(0);
-                }
-                ctx.fireChannelRead(new DefaultHttp2DataFrame(decompressed, true));
+            // Read all decompressed output from the embedded channel
+            CompositeByteBuf decompressed = ctx.alloc().compositeBuffer();
+            ByteBuf decoded;
+            while ((decoded = decompressor.readInbound()) != null) {
+                decompressed.addComponent(true, decoded);
             }
-            // Non-endStream frames with encoding are accumulated, not forwarded
+
+            if (endStream) {
+                decompressor.finish();
+                while ((decoded = decompressor.readInbound()) != null) {
+                    decompressed.addComponent(true, decoded);
+                }
+                releaseDecompressor();
+            }
+
+            if (decompressed.isReadable() || endStream) {
+                ctx.fireChannelRead(new DefaultHttp2DataFrame(decompressed, endStream));
+            } else {
+                decompressed.release();
+            }
         } else {
             ctx.fireChannelRead(msg);
         }
     }
 
-    private static byte[] decompress(byte[] data, String encoding) throws Exception {
-        ByteArrayInputStream bais = new ByteArrayInputStream(data);
-        java.io.InputStream decompressor;
-        if (encoding.contains("gzip")) {
-            decompressor = new GZIPInputStream(bais);
-        } else {
-            decompressor = new InflaterInputStream(bais, new Inflater(true));
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buf = new byte[8192];
-        int n;
-        while ((n = decompressor.read(buf)) != -1) {
-            baos.write(buf, 0, n);
-        }
-        decompressor.close();
-        return baos.toByteArray();
-    }
-
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-        if (accumulator != null) {
-            accumulator.release();
-            accumulator = null;
+        releaseDecompressor();
+    }
+
+    private void releaseDecompressor() {
+        if (decompressor != null) {
+            decompressor.finishAndReleaseAll();
+            decompressor = null;
         }
     }
 }

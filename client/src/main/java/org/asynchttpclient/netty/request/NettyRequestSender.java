@@ -315,7 +315,19 @@ public final class NettyRequestSender {
 
             // Do not throw an exception when we need an extra connection for a
             // redirect.
-            future.acquirePartitionLockLazily();
+            try {
+                future.acquirePartitionLockLazily();
+            } catch (IOException semaphoreException) {
+                // If HTTP/2 is enabled, another thread may be establishing an H2 connection.
+                // Poll the H2 registry with brief retries before giving up.
+                if (config.isHttp2Enabled()) {
+                    Channel h2Channel = waitForHttp2Connection(request, proxy);
+                    if (h2Channel != null) {
+                        return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
+                    }
+                }
+                throw semaphoreException;
+            }
         } catch (Throwable t) {
             abort(null, future, getCause(t));
             // exit and don't try to resolve address
@@ -473,8 +485,9 @@ public final class NettyRequestSender {
 
         if (state != null && !state.tryAcquireStream()) {
             if (state.isDraining()) {
-                // Connection is draining from GOAWAY, must use a new connection
-                abort(parentChannel, future, new java.io.IOException("HTTP/2 connection is draining (GOAWAY received)"));
+                // Connection is draining from GOAWAY — fail the future so it retries on a new connection.
+                // Don't close the parent channel since it may still have active streams.
+                future.abort(new java.io.IOException("HTTP/2 connection is draining (GOAWAY received)"));
                 return;
             }
             // Queue for later when a stream slot opens up
@@ -509,7 +522,7 @@ public final class NettyRequestSender {
                                 asyncHandler.onRequestSend(future.getNettyRequest());
                             } catch (Exception e) {
                                 LOGGER.error("onRequestSend crashed", e);
-                                abort(parentChannel, future, e);
+                                abort(streamChannel, future, e);
                                 return;
                             }
 
@@ -521,7 +534,7 @@ public final class NettyRequestSender {
                             scheduleReadTimeout(future);
                         } catch (Exception e) {
                             LOGGER.error("Can't write HTTP/2 request", e);
-                            abort(parentChannel, future, e);
+                            abort(streamChannel, future, e);
                         }
                     } else {
                         abort(parentChannel, future, f.cause());
@@ -541,74 +554,70 @@ public final class NettyRequestSender {
      * {@link org.asynchttpclient.netty.request.body.NettyDirectBody}). Streaming bodies
      * (file uploads, input streams) are not yet supported over HTTP/2.
      */
-    private <T> void sendHttp2Frames(NettyResponseFuture<T> future, Http2StreamChannel streamChannel) {
+    private <T> void sendHttp2Frames(NettyResponseFuture<T> future, Http2StreamChannel streamChannel) throws IOException {
         NettyRequest nettyRequest = future.getNettyRequest();
         HttpRequest httpRequest = nettyRequest.getHttpRequest();
         Uri uri = future.getUri();
 
-        // Build HTTP/2 pseudo-headers + regular headers
-        Http2Headers h2Headers = new DefaultHttp2Headers()
-                .method(httpRequest.method().name())
-                .path(uri.getNonEmptyPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : ""))
-                .scheme(uri.getScheme())
-                .authority(hostHeader(uri));
+        try {
+            // Build HTTP/2 pseudo-headers + regular headers
+            Http2Headers h2Headers = new DefaultHttp2Headers()
+                    .method(httpRequest.method().name())
+                    .path(uri.getNonEmptyPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : ""))
+                    .scheme(uri.getScheme())
+                    .authority(hostHeader(uri));
 
-        // Copy HTTP/1.1 headers, skipping connection-specific ones that are forbidden in HTTP/2.
-        // RFC 7540 §8.1.2 requires all header field names to be lowercase in HTTP/2.
-        httpRequest.headers().forEach(entry -> {
-            String name = entry.getKey().toLowerCase();
-            if (!HTTP2_EXCLUDED_HEADERS.contains(name)) {
-                h2Headers.add(name, entry.getValue());
-            }
-        });
+            // Copy HTTP/1.1 headers, skipping connection-specific ones that are forbidden in HTTP/2.
+            // RFC 7540 §8.1.2 requires all header field names to be lowercase in HTTP/2.
+            httpRequest.headers().forEach(entry -> {
+                String name = entry.getKey().toLowerCase();
+                if (!HTTP2_EXCLUDED_HEADERS.contains(name)) {
+                    h2Headers.add(name, entry.getValue());
+                }
+            });
 
-        // Determine if we have a body to write.
-        // Support both DefaultFullHttpRequest (inline content) and NettyDirectBody (byte array/buffer bodies).
-        ByteBuf bodyBuf = null;
-        if (httpRequest instanceof DefaultFullHttpRequest) {
-            ByteBuf content = ((DefaultFullHttpRequest) httpRequest).content();
-            if (content != null && content.isReadable()) {
-                bodyBuf = content;
-            }
-        }
-
-        NettyBody nettyBody = nettyRequest.getBody();
-        if (bodyBuf == null && nettyBody != null) {
-            if (nettyBody instanceof NettyDirectBody) {
-                ByteBuf directBuf = ((NettyDirectBody) nettyBody).byteBuf();
-                if (directBuf != null && directBuf.isReadable()) {
-                    bodyBuf = directBuf;
+            // Determine if we have a body to write.
+            // Support both DefaultFullHttpRequest (inline content) and NettyDirectBody (byte array/buffer bodies).
+            ByteBuf bodyBuf = null;
+            if (httpRequest instanceof DefaultFullHttpRequest) {
+                ByteBuf content = ((DefaultFullHttpRequest) httpRequest).content();
+                if (content != null && content.isReadable()) {
+                    bodyBuf = content;
                 }
             }
-        }
 
-        // Determine if we have a streaming body that needs writeHttp2()
-        boolean hasStreamingBody = bodyBuf == null && nettyBody != null && !(nettyBody instanceof NettyDirectBody);
-        boolean hasBody = bodyBuf != null || hasStreamingBody;
-
-        // Write HEADERS frame (endStream=true when there is no body)
-        streamChannel.write(new DefaultHttp2HeadersFrame(h2Headers, !hasBody));
-
-        if (hasStreamingBody) {
-            streamChannel.flush();
-            try {
-                nettyBody.writeHttp2(streamChannel, future);
-            } catch (Exception e) {
-                throw new UnsupportedOperationException(
-                        "Failed to write streaming body (" + nettyBody.getClass().getSimpleName()
-                                + ") over HTTP/2", e);
+            NettyBody nettyBody = nettyRequest.getBody();
+            if (bodyBuf == null && nettyBody != null) {
+                if (nettyBody instanceof NettyDirectBody) {
+                    ByteBuf directBuf = ((NettyDirectBody) nettyBody).byteBuf();
+                    if (directBuf != null && directBuf.isReadable()) {
+                        bodyBuf = directBuf;
+                    }
+                }
             }
-        } else if (bodyBuf != null) {
-            // Write DATA frame with endStream=true — body is sent as a single frame
-            streamChannel.write(new DefaultHttp2DataFrame(bodyBuf.retainedDuplicate(), true));
-            streamChannel.flush();
-        } else {
-            streamChannel.flush();
-        }
 
-        // Release the original HTTP/1.1 request — in the HTTP/2 path it is not written to the channel,
-        // so we must release it manually to avoid leaking its content ByteBuf.
-        ReferenceCountUtil.release(httpRequest);
+            // Determine if we have a streaming body that needs writeHttp2()
+            boolean hasStreamingBody = bodyBuf == null && nettyBody != null && !(nettyBody instanceof NettyDirectBody);
+            boolean hasBody = bodyBuf != null || hasStreamingBody;
+
+            // Write HEADERS frame (endStream=true when there is no body)
+            streamChannel.write(new DefaultHttp2HeadersFrame(h2Headers, !hasBody));
+
+            if (hasStreamingBody) {
+                streamChannel.flush();
+                nettyBody.writeHttp2(streamChannel, future);
+            } else if (bodyBuf != null) {
+                // Write DATA frame with endStream=true — body is sent as a single frame
+                streamChannel.write(new DefaultHttp2DataFrame(bodyBuf.retainedDuplicate(), true));
+                streamChannel.flush();
+            } else {
+                streamChannel.flush();
+            }
+        } finally {
+            // Release the original HTTP/1.1 request — in the HTTP/2 path it is not written to the channel,
+            // so we must release it manually to avoid leaking its content ByteBuf.
+            ReferenceCountUtil.release(httpRequest);
+        }
     }
 
     private static void configureTransferAdapter(AsyncHandler<?> handler, HttpRequest httpRequest) {
@@ -734,6 +743,31 @@ public final class NettyRequestSender {
         }
     }
 
+    /**
+     * Waits briefly for an HTTP/2 connection to appear in the registry.
+     * Used when the semaphore blocks a new connection but another thread is establishing
+     * an HTTP/2 connection that this request can multiplex onto.
+     */
+    private Channel waitForHttp2Connection(Request request, ProxyServer proxy) {
+        Uri uri = request.getUri();
+        String virtualHost = request.getVirtualHost();
+        long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
+
+        while (System.nanoTime() < deadline) {
+            Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+            if (h2Channel != null) {
+                return h2Channel;
+            }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }
+        return null;
+    }
+
     private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
         try {
             asyncHandler.onConnectionPoolAttempt();
@@ -743,6 +777,15 @@ public final class NettyRequestSender {
 
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();
+
+        // Check HTTP/2 connection registry first — these connections support multiplexing
+        // and are not removed from the registry on poll (unlike the regular pool)
+        Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+        if (h2Channel != null) {
+            LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+            return h2Channel;
+        }
+
         final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
 
         if (channel != null) {

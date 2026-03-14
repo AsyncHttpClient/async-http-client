@@ -413,6 +413,14 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             throw new IllegalArgumentException("Native Transport must be enabled to use Epoll Native Transport only");
         }
 
+        if (http2MaxFrameSize < 16384 || http2MaxFrameSize > 16777215) {
+            throw new IllegalArgumentException("HTTP/2 max frame size must be between 16384 and 16777215 per RFC 7540 §4.2");
+        }
+
+        if (http2InitialWindowSize < 0) {
+            throw new IllegalArgumentException("HTTP/2 initial window size must be non-negative");
+        }
+
         this.allocator = allocator;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
