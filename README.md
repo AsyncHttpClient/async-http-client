@@ -408,7 +408,6 @@ SOCKS4 and SOCKS5 proxies are also supported.
 
 - [GitHub Discussions](https://github.com/AsyncHttpClient/async-http-client/discussions) — questions, ideas, and general discussion
 - [Issue Tracker](https://github.com/AsyncHttpClient/async-http-client/issues) — bug reports and feature requests
-- [Examples](https://github.com/AsyncHttpClient/async-http-client/tree/main/example/src/main/java/org/asynchttpclient/example) — sample projects
 
 ## License
 
