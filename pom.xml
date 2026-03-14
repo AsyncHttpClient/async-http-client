@@ -66,7 +66,7 @@
     <scm>
         <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
         <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
-        <url>https://github.com/AsyncHttpClient/async-http-client/tree/master</url>
+        <url>https://github.com/AsyncHttpClient/async-http-client/tree/main</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -89,10 +89,7 @@
     <mailingLists>
         <mailingList>
             <name>asynchttpclient</name>
-            <archive>https://groups.google.com/group/asynchttpclient/topics</archive>
-            <subscribe>https://groups.google.com/group/asynchttpclient/subscribe</subscribe>
-            <unsubscribe>https://groups.google.com/group/asynchttpclient/subscribe</unsubscribe>
-            <post>asynchttpclient@googlegroups.com</post>
+            <archive>https://github.com/AsyncHttpClient/async-http-client/discussions</archive>
         </mailingList>
     </mailingLists>
 

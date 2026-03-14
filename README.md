@@ -1,263 +1,415 @@
-# Async Http Client 
+# Async Http Client
+
 [![Build](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml/badge.svg)](https://github.com/AsyncHttpClient/async-http-client/actions/workflows/builds.yml)
-![Maven Central](https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client)
+[![Maven Central](https://img.shields.io/maven-central/v/org.asynchttpclient/async-http-client)](https://central.sonatype.com/artifact/org.asynchttpclient/async-http-client)
+[![License](https://img.shields.io/github/license/AsyncHttpClient/async-http-client)](https://www.apache.org/licenses/LICENSE-2.0)
 
-Follow [@AsyncHttpClient](https://twitter.com/AsyncHttpClient) on Twitter.
+AsyncHttpClient (AHC) is a high-performance, asynchronous HTTP client for Java
+built on top of [Netty](https://github.com/netty/netty).
+It supports HTTP/1.1, HTTP/2, and WebSocket protocols.
 
-The AsyncHttpClient (AHC) library allows Java applications to easily execute HTTP requests and asynchronously process HTTP responses.
-The library also supports the WebSocket Protocol.
+## Table of Contents
 
-It's built on top of [Netty](https://github.com/netty/netty). It's compiled with Java 11.
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [HTTP Requests](#http-requests)
+- [Handling Responses](#handling-responses)
+- [HTTP/2](#http2)
+- [WebSocket](#websocket)
+- [Authentication](#authentication)
+- [Proxy Support](#proxy-support)
+- [Community](#community)
+- [License](#license)
+
+## Features
+
+- **HTTP/2 with multiplexing** — enabled by default over TLS via ALPN,
+  with connection multiplexing and GOAWAY handling
+- **HTTP/1.1 and HTTP/1.0** — connection pooling and keep-alive
+- **WebSocket** — text, binary, and ping/pong frame support
+- **Asynchronous API** — non-blocking I/O with `ListenableFuture`
+  and `CompletableFuture`
+- **Compression** — automatic gzip, deflate, Brotli, and Zstd decompression
+- **Authentication** — Basic, Digest, NTLM, and SPNEGO/Kerberos
+- **Proxy** — HTTP, SOCKS4, and SOCKS5 with CONNECT tunneling
+- **Native transports** — optional Epoll, KQueue, and io_uring
+- **Request/response filters** — intercept and transform at each stage
+- **Cookie management** — RFC 6265-compliant cookie store
+- **Multipart uploads** — file, byte array, input stream, and string parts
+- **Resumable downloads** — built-in `ResumableIOExceptionFilter`
+
+## Requirements
+
+Java 11+
 
 ## Installation
 
-Binaries are deployed on Maven Central.
-Add a dependency on the main AsyncHttpClient artifact:
+**Maven:**
 
-Maven:
 ```xml
-<dependencies>
-    <dependency>
-        <groupId>org.asynchttpclient</groupId>
-        <artifactId>async-http-client</artifactId>
-        <version>3.0.7</version>
-    </dependency>
-</dependencies>
+<dependency>
+    <groupId>org.asynchttpclient</groupId>
+    <artifactId>async-http-client</artifactId>
+    <version>3.0.7</version>
+</dependency>
 ```
 
-Gradle:
+**Gradle:**
+
 ```groovy
-dependencies {
-    implementation 'org.asynchttpclient:async-http-client:3.0.7'
+implementation 'org.asynchttpclient:async-http-client:3.0.7'
+```
+
+<details>
+<summary><b>Optional: Native Transport</b></summary>
+
+For lower-latency I/O on Linux, add a native transport dependency:
+
+```xml
+<!-- Epoll (Linux) -->
+<dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-transport-native-epoll</artifactId>
+    <classifier>linux-x86_64</classifier>
+</dependency>
+
+<!-- io_uring (Linux) -->
+<dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-transport-native-io_uring</artifactId>
+    <classifier>linux-x86_64</classifier>
+</dependency>
+```
+
+Then enable in config:
+
+```java
+AsyncHttpClient client = asyncHttpClient(config().setUseNativeTransport(true));
+```
+
+</details>
+
+<details>
+<summary><b>Optional: Brotli / Zstd Compression</b></summary>
+
+```xml
+<dependency>
+    <groupId>com.aayushatharva.brotli4j</groupId>
+    <artifactId>brotli4j</artifactId>
+    <version>1.18.0</version>
+</dependency>
+
+<dependency>
+    <groupId>com.github.luben</groupId>
+    <artifactId>zstd-jni</artifactId>
+    <version>1.5.7-2</version>
+</dependency>
+```
+
+</details>
+
+## Quick Start
+
+Import the DSL helpers:
+
+```java
+import static org.asynchttpclient.Dsl.*;
+```
+
+Create a client, execute a request, and read the response:
+
+```java
+try (AsyncHttpClient client = asyncHttpClient()) {
+    // Asynchronous
+    client.prepareGet("https://www.example.com/")
+        .execute()
+        .toCompletableFuture()
+        .thenApply(Response::getResponseBody)
+        .thenAccept(System.out::println)
+        .join();
+
+    // Synchronous (blocking)
+    Response response = client.prepareGet("https://www.example.com/")
+        .execute()
+        .get();
 }
 ```
 
-### Dsl
-
-Import the Dsl helpers to use convenient methods to bootstrap components:
-
-```java
-import static org.asynchttpclient.Dsl.*;
-```
-
-### Client
-
-```java
-import static org.asynchttpclient.Dsl.*;
-
-AsyncHttpClient asyncHttpClient=asyncHttpClient();
-```
-
-AsyncHttpClient instances must be closed (call the `close` method) once you're done with them, typically when shutting down your application.
-If you don't, you'll experience threads hanging and resource leaks.
-
-AsyncHttpClient instances are intended to be global resources that share the same lifecycle as the application.
-Typically, AHC will usually underperform if you create a new client for each request, as it will create new threads and connection pools for each.
-It's possible to create shared resources (EventLoop and Timer) beforehand and pass them to multiple client instances in the config. You'll then be responsible for closing
-those shared resources.
+> **Note:** `AsyncHttpClient` instances are long-lived, shared resources.
+> Always close them when done. Creating a new client per request will degrade
+> performance due to repeated thread pool and connection pool creation.
 
 ## Configuration
 
-Finally, you can also configure the AsyncHttpClient instance via its AsyncHttpClientConfig object:
+Use `config()` to build an `AsyncHttpClientConfig`:
 
 ```java
-import static org.asynchttpclient.Dsl.*;
-
-AsyncHttpClient c=asyncHttpClient(config().setProxyServer(proxyServer("127.0.0.1",38080)));
+AsyncHttpClient client = asyncHttpClient(config()
+    .setConnectTimeout(Duration.ofSeconds(5))
+    .setRequestTimeout(Duration.ofSeconds(30))
+    .setMaxConnections(500)
+    .setMaxConnectionsPerHost(100)
+    .setFollowRedirect(true)
+    .setMaxRedirects(5)
+    .setCompressionEnforced(true));
 ```
 
-## HTTP
+## HTTP Requests
 
 ### Sending Requests
 
-### Basics
-
-AHC provides 2 APIs for defining requests: bound and unbound.
-`AsyncHttpClient` and Dsl` provide methods for standard HTTP methods (POST, PUT, etc) but you can also pass a custom one.
+**Bound** — build directly from the client:
 
 ```java
-import org.asynchttpclient.*;
-
-// bound
-Future<Response> whenResponse=asyncHttpClient.prepareGet("http://www.example.com/").execute();
-
-// unbound
-        Request request=get("http://www.example.com/").build();
-        Future<Response> whenResponse=asyncHttpClient.executeRequest(request);
+Response response = client
+    .prepareGet("https://api.example.com/users")
+    .addHeader("Accept", "application/json")
+    .addQueryParam("page", "1")
+    .execute()
+    .get();
 ```
 
-#### Setting Request Body
-
-Use the `setBody` method to add a body to the request.
-
-This body can be of type:
-
-* `java.io.File`
-* `byte[]`
-* `List<byte[]>`
-* `String`
-* `java.nio.ByteBuffer`
-* `java.io.InputStream`
-* `Publisher<io.netty.buffer.ByteBuf>`
-* `org.asynchttpclient.request.body.generator.BodyGenerator`
-
-`BodyGenerator` is a generic abstraction that let you create request bodies on the fly.
-Have a look at `FeedableBodyGenerator` if you're looking for a way to pass requests chunks on the fly.
-
-#### Multipart
-
-Use the `addBodyPart` method to add a multipart part to the request.
-
-This part can be of type:
-
-* `ByteArrayPart`
-* `FilePart`
-* `InputStreamPart`
-* `StringPart`
-
-### Dealing with Responses
-
-#### Blocking on the Future
-
-`execute` methods return a `java.util.concurrent.Future`. You can simply block the calling thread to get the response.
+**Unbound** — build standalone via DSL, then execute:
 
 ```java
-Future<Response> whenResponse=asyncHttpClient.prepareGet("http://www.example.com/").execute();
-        Response response=whenResponse.get();
+Request request = get("https://api.example.com/users")
+    .addHeader("Accept", "application/json")
+    .addQueryParam("page", "1")
+    .build();
+
+Response response = client.executeRequest(request).get();
 ```
 
-This is useful for debugging but you'll most likely hurt performance or create bugs when running such code on production.
-The point of using a non blocking client is to *NOT BLOCK* the calling thread!
+Methods: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`.
 
-### Setting callbacks on the ListenableFuture
+### Request Bodies
 
-`execute` methods actually return a `org.asynchttpclient.ListenableFuture` similar to Guava's.
-You can configure listeners to be notified of the Future's completion.
+Use `setBody` to attach a body. Supported types:
+
+| Type | Description |
+|---|---|
+| `String` | Text content |
+| `byte[]` | Raw bytes |
+| `ByteBuffer` | NIO buffer |
+| `InputStream` | Streaming input |
+| `File` | File content |
+| `Publisher<ByteBuf>` | Reactive stream |
+| `BodyGenerator` | Custom body generation |
 
 ```java
-        ListenableFuture<Response> whenResponse = ???;
-        Runnable callback = () - > {
-            try {
-               Response response = whenResponse.get();
-               System.out.println(response);
-            } catch (InterruptedException | ExecutionException e) {
-               e.printStackTrace();
-            }
-        };
-
-        java.util.concurrent.Executor executor = ???;
-        whenResponse.addListener(() - > ??? , executor);
+Response response = client
+    .preparePost("https://api.example.com/data")
+    .setHeader("Content-Type", "application/json")
+    .setBody("{\"name\": \"value\"}")
+    .execute()
+    .get();
 ```
 
-If the `executor` parameter is null, callback will be executed in the IO thread.
-You *MUST NEVER PERFORM BLOCKING* operations in there, typically sending another request and block on a future.
+For streaming bodies, see `FeedableBodyGenerator` which lets you push chunks
+asynchronously.
 
-#### Using custom AsyncHandlers
-
-`execute` methods can take an `org.asynchttpclient.AsyncHandler` to be notified on the different events, such as receiving the status, the headers and body chunks.
-When you don't specify one, AHC will use a `org.asynchttpclient.AsyncCompletionHandler`;
-
-`AsyncHandler` methods can let you abort processing early (return `AsyncHandler.State.ABORT`) and can let you return a computation result from `onCompleted` that will be used
-as the Future's result.
-See `AsyncCompletionHandler` implementation as an example.
-
-The below sample just capture the response status and skips processing the response body chunks.
-
-Note that returning `ABORT` closes the underlying connection.
+### Multipart Uploads
 
 ```java
-import static org.asynchttpclient.Dsl.*;
-
-import org.asynchttpclient.*;
-import io.netty.handler.codec.http.HttpHeaders;
-
-Future<Integer> whenStatusCode = asyncHttpClient.prepareGet("http://www.example.com/")
-        .execute(new AsyncHandler<Integer> () {
-            private Integer status;
-            
-            @Override
-            public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-                status = responseStatus.getStatusCode();
-                return State.ABORT;
-            }
-            
-            @Override
-            public State onHeadersReceived(HttpHeaders headers) throws Exception {
-              return State.ABORT;
-            }
-            
-            @Override
-            public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-                 return State.ABORT;
-            }
-        
-            @Override
-            public Integer onCompleted() throws Exception{
-                return status;
-            }
-        
-            @Override
-            public void onThrowable(Throwable t) {
-                t.printStackTrace();
-            }
-        });
-
-        Integer statusCode = whenStatusCode.get();
+Response response = client
+    .preparePost("https://api.example.com/upload")
+    .addBodyPart(new FilePart("file", new File("report.pdf"), "application/pdf"))
+    .addBodyPart(new StringPart("description", "Monthly report"))
+    .execute()
+    .get();
 ```
 
-#### Using Continuations
+Part types: `FilePart`, `ByteArrayPart`, `InputStreamPart`, `StringPart`.
 
-`ListenableFuture` has a `toCompletableFuture` method that returns a `CompletableFuture`.
-Beware that canceling this `CompletableFuture` won't properly cancel the ongoing request.
-There's a very good chance we'll return a `CompletionStage` instead in the next release.
+## Handling Responses
+
+### Blocking
 
 ```java
-CompletableFuture<Response> whenResponse=asyncHttpClient
-        .prepareGet("http://www.example.com/")
-        .execute()
-        .toCompletableFuture()
-        .exceptionally(t->{ /* Something wrong happened... */  })
-        .thenApply(response->{ /*  Do something with the Response */ return resp;});
-        whenResponse.join(); // wait for completion
+Response response = client.prepareGet("https://www.example.com/").execute().get();
 ```
 
-You may get the complete maven project for this simple demo
-from [org.asynchttpclient.example](https://github.com/AsyncHttpClient/async-http-client/tree/master/example/src/main/java/org/asynchttpclient/example)
+> Useful for debugging, but defeats the purpose of an async client in production.
+
+### ListenableFuture
+
+`execute()` returns a `ListenableFuture` that supports completion listeners:
+
+```java
+ListenableFuture<Response> future = client
+    .prepareGet("https://www.example.com/")
+    .execute();
+
+future.addListener(() -> {
+    Response response = future.get();
+    System.out.println(response.getStatusCode());
+}, executor);
+```
+
+> If `executor` is `null`, the callback runs on the Netty I/O thread.
+> **Never block** inside I/O thread callbacks.
+
+### CompletableFuture
+
+```java
+client.prepareGet("https://www.example.com/")
+    .execute()
+    .toCompletableFuture()
+    .thenApply(Response::getResponseBody)
+    .thenAccept(System.out::println)
+    .join();
+```
+
+### AsyncCompletionHandler
+
+For most async use cases, extend `AsyncCompletionHandler` — it buffers the
+full response and gives you a single `onCompleted(Response)` callback:
+
+```java
+client.prepareGet("https://www.example.com/")
+    .execute(new AsyncCompletionHandler<String>() {
+        @Override
+        public String onCompleted(Response response) {
+            return response.getResponseBody();
+        }
+    });
+```
+
+### AsyncHandler
+
+For fine-grained control, implement `AsyncHandler` directly. This lets you
+inspect status, headers, and body chunks as they arrive and abort early:
+
+```java
+Future<Integer> future = client
+    .prepareGet("https://www.example.com/")
+    .execute(new AsyncHandler<>() {
+        private int status;
+
+        @Override
+        public State onStatusReceived(HttpResponseStatus s) {
+            status = s.getStatusCode();
+            return State.CONTINUE;
+        }
+
+        @Override
+        public State onHeadersReceived(HttpHeaders headers) {
+            return State.CONTINUE;
+        }
+
+        @Override
+        public State onBodyPartReceived(HttpResponseBodyPart part) {
+            return State.ABORT; // stop early — we only needed the status
+        }
+
+        @Override
+        public Integer onCompleted() {
+            return status;
+        }
+
+        @Override
+        public void onThrowable(Throwable t) {
+            t.printStackTrace();
+        }
+    });
+```
+
+## HTTP/2
+
+HTTP/2 is **enabled by default** for HTTPS connections via ALPN negotiation.
+The client uses HTTP/2 when the server supports it and falls back to HTTP/1.1
+otherwise. No additional configuration is required.
+
+- **Connection multiplexing** — concurrent streams over a single TCP connection
+- **GOAWAY handling** — graceful connection draining on server shutdown
+- **PING keepalive** — configurable ping frames to keep connections alive
+
+### HTTP/2 Configuration
+
+```java
+AsyncHttpClient client = asyncHttpClient(config()
+    .setHttp2MaxConcurrentStreams(100)
+    .setHttp2InitialWindowSize(65_535)
+    .setHttp2MaxFrameSize(16_384)
+    .setHttp2MaxHeaderListSize(8_192)
+    .setHttp2PingInterval(Duration.ofSeconds(30))  // keepalive pings
+    .setHttp2CleartextEnabled(true));               // h2c prior knowledge
+```
+
+To force HTTP/1.1, disable HTTP/2:
+
+```java
+AsyncHttpClient client = asyncHttpClient(config().setHttp2Enabled(false));
+```
 
 ## WebSocket
 
-Async Http Client also supports WebSocket.
-You need to pass a `WebSocketUpgradeHandler` where you would register a `WebSocketListener`.
-
 ```java
-WebSocket websocket = c.prepareGet("ws://demos.kaazing.com/echo")
-        .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
-                new WebSocketListener() {
+WebSocket ws = client
+    .prepareGet("wss://echo.example.com/")
+    .execute(new WebSocketUpgradeHandler.Builder()
+        .addWebSocketListener(new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket ws) {
+                ws.sendTextFrame("Hello!");
+            }
 
-                  @Override
-                  public void onOpen(WebSocket websocket) {
-                    websocket.sendTextFrame("...").sendTextFrame("...");
-                  }
+            @Override
+            public void onTextFrame(String payload, boolean finalFragment, int rsv) {
+                System.out.println(payload);
+            }
 
-                  @Override
-                  public void onClose(WebSocket websocket) {
-                    // ...
-                  }
+            @Override
+            public void onClose(WebSocket ws, int code, String reason) {}
 
-                  @Override
-                  public void onTextFrame(String payload, boolean finalFragment, int rsv) {
-                    System.out.println(payload);
-                  }
-
-                  @Override
-                  public void onError(Throwable t) {
-                    t.printStackTrace();
-                  }
-                }).build()).get();
+            @Override
+            public void onError(Throwable t) { t.printStackTrace(); }
+        })
+        .build())
+    .get();
 ```
 
-## User Group
+## Authentication
 
-Keep up to date on the library development by joining the Asynchronous HTTP Client discussion group
+```java
+// Client-wide Basic auth
+AsyncHttpClient client = asyncHttpClient(config()
+    .setRealm(basicAuthRealm("user", "password")));
 
-[GitHub Discussions](https://github.com/AsyncHttpClient/async-http-client/discussions)
+// Per-request Digest auth
+Response response = client
+    .prepareGet("https://api.example.com/protected")
+    .setRealm(digestAuthRealm("user", "password").build())
+    .execute()
+    .get();
+```
+
+Supported schemes: **Basic**, **Digest**, **NTLM**, **SPNEGO/Kerberos**.
+
+## Proxy Support
+
+```java
+// HTTP proxy
+AsyncHttpClient client = asyncHttpClient(config()
+    .setProxyServer(proxyServer("proxy.example.com", 8080)));
+
+// Authenticated proxy
+AsyncHttpClient client = asyncHttpClient(config()
+    .setProxyServer(proxyServer("proxy.example.com", 8080)
+        .setRealm(basicAuthRealm("proxyUser", "proxyPassword"))));
+```
+
+SOCKS4 and SOCKS5 proxies are also supported.
+
+## Community
+
+- [GitHub Discussions](https://github.com/AsyncHttpClient/async-http-client/discussions) — questions, ideas, and general discussion
+- [Issue Tracker](https://github.com/AsyncHttpClient/async-http-client/issues) — bug reports and feature requests
+- [Examples](https://github.com/AsyncHttpClient/async-http-client/tree/main/example/src/main/java/org/asynchttpclient/example) — sample projects
+
+## License
+
+[Apache License 2.0](LICENSE.txt)
