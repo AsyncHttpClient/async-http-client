@@ -2,6 +2,8 @@
 # Docs: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
 name: Build PR
+permissions:
+  contents: read
 
 on:
   push:
