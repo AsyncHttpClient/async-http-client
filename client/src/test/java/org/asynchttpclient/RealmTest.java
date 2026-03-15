@@ -15,6 +15,7 @@ package org.asynchttpclient;
 import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -24,6 +25,9 @@ import static org.asynchttpclient.Dsl.basicAuthRealm;
 import static org.asynchttpclient.Dsl.digestAuthRealm;
 import static org.asynchttpclient.Dsl.realm;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RealmTest {
 
@@ -100,6 +104,112 @@ public class RealmTest {
         String expectedResponse = getMd5(ha1 + ':' + nonce + ':' + nc + ':' + cnonce + ':' + qop + ':' + ha2);
 
         assertEquals(orig.getResponse(), expectedResponse);
+    }
+
+    // Phase 1: matchParam tests
+    @Test
+    public void testMatchParamUnquotedAlgorithm() {
+        assertEquals("SHA-256", Realm.Builder.matchParam("Digest realm=\"test\", algorithm=SHA-256, qop=\"auth\"", "algorithm"));
+    }
+
+    @Test
+    public void testMatchParamQuotedAlgorithm() {
+        assertEquals("SHA-256", Realm.Builder.matchParam("Digest realm=\"test\", algorithm=\"SHA-256\"", "algorithm"));
+    }
+
+    @Test
+    public void testMatchParamStale() {
+        assertEquals("true", Realm.Builder.matchParam("Digest realm=\"test\", stale=true", "stale"));
+    }
+
+    @Test
+    public void testMatchParamUserhash() {
+        assertEquals("true", Realm.Builder.matchParam("Digest realm=\"test\", userhash=true", "userhash"));
+    }
+
+    @Test
+    public void testMatchParamMixed() {
+        String header = "Digest realm=\"MyRealm\", nonce=\"abc123\", algorithm=SHA-512-256, qop=\"auth,auth-int\", stale=false, userhash=true";
+        assertEquals("MyRealm", Realm.Builder.matchParam(header, "realm"));
+        assertEquals("abc123", Realm.Builder.matchParam(header, "nonce"));
+        assertEquals("SHA-512-256", Realm.Builder.matchParam(header, "algorithm"));
+        assertEquals("auth,auth-int", Realm.Builder.matchParam(header, "qop"));
+        assertEquals("false", Realm.Builder.matchParam(header, "stale"));
+        assertEquals("true", Realm.Builder.matchParam(header, "userhash"));
+    }
+
+    @Test
+    public void testMatchParamMissing() {
+        assertNull(Realm.Builder.matchParam("Digest realm=\"test\"", "algorithm"));
+    }
+
+    @Test
+    public void testMatchParamNull() {
+        assertNull(Realm.Builder.matchParam(null, "realm"));
+        assertNull(Realm.Builder.matchParam("Digest realm=\"test\"", null));
+    }
+
+    // Phase 2: stale parsing
+    @Test
+    public void testParseWWWAuthenticateStale() {
+        Realm.Builder builder = new Realm.Builder("user", "pass");
+        builder.parseWWWAuthenticateHeader("Digest realm=\"test\", nonce=\"abc\", stale=true");
+        assertTrue(builder.isStale());
+    }
+
+    @Test
+    public void testParseWWWAuthenticateStaleNotPresent() {
+        Realm.Builder builder = new Realm.Builder("user", "pass");
+        builder.parseWWWAuthenticateHeader("Digest realm=\"test\", nonce=\"abc\"");
+        assertFalse(builder.isStale());
+    }
+
+    @Test
+    public void testParseProxyAuthenticateStale() {
+        Realm.Builder builder = new Realm.Builder("user", "pass");
+        builder.parseProxyAuthenticateHeader("Digest realm=\"test\", nonce=\"abc\", stale=true");
+        assertTrue(builder.isStale());
+    }
+
+    // Phase 6: userhash parsing
+    @Test
+    public void testParseWWWAuthenticateUserhash() {
+        Realm.Builder builder = new Realm.Builder("user", "pass");
+        builder.parseWWWAuthenticateHeader("Digest realm=\"test\", nonce=\"abc\", userhash=true");
+        Realm r = builder.build();
+        assertTrue(r.isUserhash());
+    }
+
+    @Test
+    public void testParseProxyAuthenticateUserhash() {
+        Realm.Builder builder = new Realm.Builder("user", "pass");
+        builder.parseProxyAuthenticateHeader("Digest realm=\"test\", nonce=\"abc\", userhash=true");
+        Realm r = builder.build();
+        assertTrue(r.isUserhash());
+    }
+
+    // Phase 8: Proxy-Authenticate parity (charset + qop parsing)
+    @Test
+    public void testProxyAuthenticateCharset() {
+        Realm.Builder builder = new Realm.Builder("user", "pass");
+        builder.parseProxyAuthenticateHeader("Digest realm=\"test\", nonce=\"abc\", charset=UTF-8, qop=\"auth,auth-int\"");
+        Realm r = builder.build();
+        assertEquals(StandardCharsets.UTF_8, r.getCharset());
+        assertEquals("auth", r.getQop()); // auth preferred over auth-int
+    }
+
+    // Clone with userhash
+    @Test
+    public void testCloneWithUserhash() {
+        Realm orig = digestAuthRealm("user", "pass")
+                .setNonce("nonce")
+                .setRealmName("realm")
+                .setUserhash(true)
+                .build();
+        Realm clone = realm(orig).build();
+        assertTrue(clone.isUserhash());
+        // stale should NOT be copied
+        assertFalse(clone.isStale());
     }
 
     private String getMd5(String what) throws Exception {

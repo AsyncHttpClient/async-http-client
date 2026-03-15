@@ -1,3 +1,18 @@
+/*
+ *    Copyright (c) 2025 AsyncHttpClient Project. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 package org.asynchttpclient.util;
 
 import io.netty.buffer.ByteBuf;
@@ -18,9 +33,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -382,5 +402,94 @@ public class AuthenticatorUtilsTest {
     @Test
     void bytesToHexNullThrows() {
         assertThrows(IllegalArgumentException.class, () -> MessageDigestUtils.bytesToHex(null));
+    }
+
+    // Phase 5: selectBestDigestChallenge tests
+    @Test
+    void selectBestDigestChallenge_selectsFirstSupported() {
+        List<String> headers = Arrays.asList(
+                "Digest realm=\"test\", algorithm=SHA-512-256, nonce=\"a\"",
+                "Digest realm=\"test\", algorithm=SHA-256, nonce=\"b\"",
+                "Digest realm=\"test\", nonce=\"c\""
+        );
+        String best = AuthenticatorUtils.selectBestDigestChallenge(headers);
+        assertNotNull(best);
+        assertTrue(best.contains("SHA-512-256"));
+    }
+
+    @Test
+    void selectBestDigestChallenge_skipsUnsupported() {
+        List<String> headers = Arrays.asList(
+                "Digest realm=\"test\", algorithm=SCRAM-SHA-256, nonce=\"a\"",
+                "Digest realm=\"test\", algorithm=SHA-256, nonce=\"b\""
+        );
+        String best = AuthenticatorUtils.selectBestDigestChallenge(headers);
+        assertNotNull(best);
+        assertTrue(best.contains("SHA-256"));
+    }
+
+    @Test
+    void selectBestDigestChallenge_defaultsMD5() {
+        List<String> headers = List.of("Digest realm=\"test\", nonce=\"a\"");
+        String best = AuthenticatorUtils.selectBestDigestChallenge(headers);
+        assertNotNull(best);
+        // No algorithm specified — defaults to MD5, which is supported
+        assertTrue(best.contains("realm=\"test\""));
+    }
+
+    @Test
+    void selectBestDigestChallenge_skipsNonDigest() {
+        List<String> headers = Arrays.asList("Basic realm=\"test\"", "Digest realm=\"test\", nonce=\"a\"");
+        String best = AuthenticatorUtils.selectBestDigestChallenge(headers);
+        assertNotNull(best);
+        assertTrue(best.startsWith("Digest"));
+    }
+
+    @Test
+    void selectBestDigestChallenge_returnsNull_noDigest() {
+        List<String> headers = List.of("Basic realm=\"test\"");
+        assertNull(AuthenticatorUtils.selectBestDigestChallenge(headers));
+    }
+
+    @Test
+    void selectBestDigestChallenge_returnsNull_allUnsupported() {
+        List<String> headers = List.of("Digest realm=\"test\", algorithm=UNKNOWN-ALG, nonce=\"a\"");
+        assertNull(AuthenticatorUtils.selectBestDigestChallenge(headers));
+    }
+
+    // Phase 6: userhash computation
+    @Test
+    void computeUserhash_md5() throws Exception {
+        String result = AuthenticatorUtils.computeUserhash("user", "realm", "MD5", StandardCharsets.ISO_8859_1);
+        // H("user:realm") using MD5
+        String expected = MessageDigestUtils.bytesToHex(
+                MessageDigest.getInstance("MD5").digest("user:realm".getBytes(StandardCharsets.ISO_8859_1)));
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void computeUserhash_sha256() throws Exception {
+        String result = AuthenticatorUtils.computeUserhash("user", "realm", "SHA-256", StandardCharsets.ISO_8859_1);
+        String expected = MessageDigestUtils.bytesToHex(
+                MessageDigest.getInstance("SHA-256").digest("user:realm".getBytes(StandardCharsets.ISO_8859_1)));
+        assertEquals(expected, result);
+        assertEquals(64, result.length()); // SHA-256 hex is 64 chars
+    }
+
+    // Phase 7: rspauth computation
+    @Test
+    void computeRspAuth_basic() throws Exception {
+        Realm realm = new Realm.Builder("user", "pass")
+                .setScheme(Realm.AuthScheme.DIGEST)
+                .setRealmName("testrealm")
+                .setNonce("testnonce")
+                .setAlgorithm("MD5")
+                .setQop("auth")
+                .setUri(org.asynchttpclient.uri.Uri.create("http://example.com/path"))
+                .build();
+
+        String rspauth = AuthenticatorUtils.computeRspAuth(realm);
+        assertNotNull(rspauth);
+        assertEquals(32, rspauth.length()); // MD5 hex is 32 chars
     }
 }

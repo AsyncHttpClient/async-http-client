@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -49,6 +50,10 @@ public final class AuthenticatorUtils {
         // Prevent outside initialization
     }
 
+    private static final Set<String> SUPPORTED_ALGORITHMS = Set.of(
+            "MD5", "MD5-SESS", "SHA-256", "SHA-256-SESS", "SHA-512-256", "SHA-512-256-SESS"
+    );
+
     public static @Nullable String getHeaderWithPrefix(@Nullable List<String> authenticateHeaders, String prefix) {
         if (authenticateHeaders != null) {
             for (String authenticateHeader : authenticateHeaders) {
@@ -58,6 +63,26 @@ public final class AuthenticatorUtils {
             }
         }
 
+        return null;
+    }
+
+    /**
+     * RFC 7616 Section 4: Select the best Digest challenge from the list.
+     * Iterates in server preference order and returns the first challenge
+     * whose algorithm is supported.
+     */
+    public static @Nullable String selectBestDigestChallenge(@Nullable List<String> authenticateHeaders) {
+        if (authenticateHeaders == null) {
+            return null;
+        }
+        for (String header : authenticateHeaders) {
+            if (header.regionMatches(true, 0, "Digest", 0, 6)) {
+                String algorithm = Realm.Builder.matchParam(header, "algorithm");
+                if (algorithm == null || SUPPORTED_ALGORITHMS.contains(algorithm.toUpperCase())) {
+                    return header;
+                }
+            }
+        }
         return null;
     }
 
@@ -82,7 +107,18 @@ public final class AuthenticatorUtils {
     private static String computeDigestAuthentication(Realm realm, Uri uri) {
         String realmUri = computeRealmURI(uri, realm.isUseAbsoluteURI(), realm.isOmitQuery());
         StringBuilder builder = new StringBuilder().append("Digest ");
-        append(builder, "username", realm.getPrincipal(), true);
+
+        // RFC 7616 Section 3.4.4: userhash support
+        String usernameValue;
+        if (realm.isUserhash() && realm.getPrincipal() != null && realm.getRealmName() != null) {
+            String algo = realm.getAlgorithm() != null ? realm.getAlgorithm() : "MD5";
+            usernameValue = computeUserhash(realm.getPrincipal(), realm.getRealmName(),
+                    algo, realm.getCharset());
+        } else {
+            usernameValue = realm.getPrincipal();
+        }
+
+        append(builder, "username", usernameValue, true);
         append(builder, "realm", realm.getRealmName(), true);
         append(builder, "nonce", realm.getNonce(), true);
         append(builder, "uri", realmUri, true);
@@ -101,12 +137,74 @@ public final class AuthenticatorUtils {
             append(builder, "nc", realm.getNc(), false);
             append(builder, "cnonce", realm.getCnonce(), true);
         }
-        // RFC7616: userhash parameter (optional, not implemented yet)
-        builder.setLength(builder.length() - 2); // remove tailing ", "
+        if (realm.isUserhash()) {
+            append(builder, "userhash", "true", false);
+        }
+        builder.setLength(builder.length() - 2); // remove trailing ", "
         Charset wireCs = (realm.getCharset() == StandardCharsets.UTF_8)
                 ? StandardCharsets.UTF_8
                 : ISO_8859_1;
         return new String(StringUtils.charSequence2Bytes(builder, wireCs), wireCs);
+    }
+
+    /**
+     * RFC 7616 Section 3.4.4: Compute the userhash value.
+     * userhash = H(username ":" realm)
+     */
+    static String computeUserhash(String username, String realmName, String algorithm, Charset charset) {
+        String hashAlgorithm = algorithm != null ? algorithm.replace("-sess", "") : "MD5";
+        MessageDigest md = MessageDigestUtils.pooledMessageDigest(hashAlgorithm);
+        try {
+            String input = username + ":" + realmName;
+            md.update(input.getBytes(charset));
+            return MessageDigestUtils.bytesToHex(md.digest());
+        } finally {
+            md.reset();
+        }
+    }
+
+    /**
+     * RFC 7616 Section 3.5: Compute rspauth value for mutual authentication.
+     * rspauth = H(HA1 : nonce : nc : cnonce : qop : H(":" uri))
+     * Note: HA2' for rspauth uses empty method prefix.
+     */
+    public static String computeRspAuth(Realm realm) {
+        String algorithm = realm.getAlgorithm() != null ? realm.getAlgorithm() : "MD5";
+        String hashAlgorithm = algorithm.replace("-sess", "");
+        Charset wireCs = realm.getCharset() != null ? realm.getCharset() : ISO_8859_1;
+
+        // Calculate HA1 (same as request)
+        String ha1 = calculateHA1(realm, algorithm);
+
+        // Calculate HA2' = H(":" + uri) — no method prefix
+        Uri uri = realm.getUri();
+        String requestUri = uri != null ? computeRealmURI(uri, realm.isUseAbsoluteURI(), realm.isOmitQuery()) : "";
+        String a2 = ":" + requestUri;
+        MessageDigest md = MessageDigestUtils.pooledMessageDigest(hashAlgorithm);
+        String ha2;
+        try {
+            md.update(a2.getBytes(wireCs));
+            ha2 = MessageDigestUtils.bytesToHex(md.digest());
+        } finally {
+            md.reset();
+        }
+
+        // rspauth = H(HA1:nonce:nc:cnonce:qop:HA2')
+        String qop = realm.getQop();
+        String responseInput;
+        if (qop != null) {
+            responseInput = ha1 + ":" + realm.getNonce() + ":" + realm.getNc() + ":"
+                    + realm.getCnonce() + ":" + qop + ":" + ha2;
+        } else {
+            responseInput = ha1 + ":" + realm.getNonce() + ":" + ha2;
+        }
+        md = MessageDigestUtils.pooledMessageDigest(hashAlgorithm);
+        try {
+            md.update(responseInput.getBytes(ISO_8859_1));
+            return MessageDigestUtils.bytesToHex(md.digest());
+        } finally {
+            md.reset();
+        }
     }
 
     /**
@@ -224,7 +322,7 @@ public final class AuthenticatorUtils {
         }
     }
 
-    static String computeBodyHash(Request request, Realm realm) {
+    public static String computeBodyHash(Request request, Realm realm) {
 
         if (request.getStringData() == null &&
                 request.getByteData() == null &&

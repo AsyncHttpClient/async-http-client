@@ -44,8 +44,6 @@ import org.asynchttpclient.util.MessageDigestUtils;
 public class Realm {
 
     private static final String DEFAULT_NC = "00000001";
-    // MD5("")
-    private static final String EMPTY_ENTITY_MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 
     private final @Nullable String principal;
     private final @Nullable String password;
@@ -69,6 +67,8 @@ public class Realm {
     private final @Nullable String servicePrincipalName;
     private final boolean useCanonicalHostname;
     private final @Nullable String loginContextName;
+    private final boolean stale;
+    private final boolean userhash;
 
     private Realm(@Nullable AuthScheme scheme,
                   @Nullable String principal,
@@ -91,7 +91,9 @@ public class Realm {
                   @Nullable String servicePrincipalName,
                   boolean useCanonicalHostname,
                   @Nullable Map<String, String> customLoginConfig,
-                  @Nullable String loginContextName) {
+                  @Nullable String loginContextName,
+                  boolean stale,
+                  boolean userhash) {
 
         this.scheme = requireNonNull(scheme, "scheme");
         this.principal = principal;
@@ -115,6 +117,8 @@ public class Realm {
         this.useCanonicalHostname = useCanonicalHostname;
         this.customLoginConfig = customLoginConfig;
         this.loginContextName = loginContextName;
+        this.stale = stale;
+        this.userhash = userhash;
     }
 
     public @Nullable String getPrincipal() {
@@ -220,6 +224,14 @@ public class Realm {
         return loginContextName;
     }
 
+    public boolean isStale() {
+        return stale;
+    }
+
+    public boolean isUserhash() {
+        return userhash;
+    }
+
     @Override
     public String toString() {
         return "Realm{" +
@@ -285,6 +297,9 @@ public class Realm {
         private boolean useCanonicalHostname;
         private @Nullable String loginContextName;
         private @Nullable String cs;
+        private boolean stale;
+        private boolean userhash;
+        private @Nullable String entityBodyHash;
 
         public Builder() {
             principal = null;
@@ -398,6 +413,33 @@ public class Realm {
             return this;
         }
 
+        public Builder setStale(boolean stale) {
+            this.stale = stale;
+            return this;
+        }
+
+        public boolean isStale() {
+            return stale;
+        }
+
+        public Builder setUserhash(boolean userhash) {
+            this.userhash = userhash;
+            return this;
+        }
+
+        public Builder setEntityBodyHash(@Nullable String entityBodyHash) {
+            this.entityBodyHash = entityBodyHash;
+            return this;
+        }
+
+        public @Nullable String getQopValue() {
+            return qop;
+        }
+
+        public @Nullable String getNonceValue() {
+            return nonce;
+        }
+
         private static @Nullable String parseRawQop(String rawQop) {
             String[] rawServerSupportedQops = rawQop.split(",");
             String[] serverSupportedQops = new String[rawServerSupportedQops.length];
@@ -422,12 +464,12 @@ public class Realm {
         }
 
         public Builder parseWWWAuthenticateHeader(String headerLine) {
-            setRealmName(match(headerLine, "realm"))
-                    .setNonce(match(headerLine, "nonce"))
-                    .setOpaque(match(headerLine, "opaque"))
+            setRealmName(matchParam(headerLine, "realm"))
+                    .setNonce(matchParam(headerLine, "nonce"))
+                    .setOpaque(matchParam(headerLine, "opaque"))
                     .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
-            String algorithm = match(headerLine, "algorithm");
-            String cs = match(headerLine, "charset");
+            String algorithm = matchParam(headerLine, "algorithm");
+            String cs = matchParam(headerLine, "charset");
             if ("UTF-8".equalsIgnoreCase(cs)) {
                 this.digestCharset = UTF_8;
             }
@@ -435,43 +477,109 @@ public class Realm {
                 setAlgorithm(algorithm);
             }
 
-            // FIXME qop is different with proxy?
-            String rawQop = match(headerLine, "qop");
+            String rawQop = matchParam(headerLine, "qop");
             if (rawQop != null) {
                 setQop(parseRawQop(rawQop));
             }
+
+            // Parse stale flag
+            String staleStr = matchParam(headerLine, "stale");
+            this.stale = "true".equalsIgnoreCase(staleStr);
+
+            // Parse userhash flag
+            String userhashStr = matchParam(headerLine, "userhash");
+            this.userhash = "true".equalsIgnoreCase(userhashStr);
 
             return this;
         }
 
         public Builder parseProxyAuthenticateHeader(String headerLine) {
-            setRealmName(match(headerLine, "realm"))
-                    .setNonce(match(headerLine, "nonce"))
-                    .setOpaque(match(headerLine, "opaque"))
+            setRealmName(matchParam(headerLine, "realm"))
+                    .setNonce(matchParam(headerLine, "nonce"))
+                    .setOpaque(matchParam(headerLine, "opaque"))
                     .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
-            String algorithm = match(headerLine, "algorithm");
+            String algorithm = matchParam(headerLine, "algorithm");
             if (isNonEmpty(algorithm)) {
                 setAlgorithm(algorithm);
             }
-            // FIXME qop is different with proxy?
-            setQop(match(headerLine, "qop"));
+
+            String rawQop = matchParam(headerLine, "qop");
+            if (rawQop != null) {
+                setQop(parseRawQop(rawQop));
+            }
+
+            String cs = matchParam(headerLine, "charset");
+            if ("UTF-8".equalsIgnoreCase(cs)) {
+                this.digestCharset = UTF_8;
+            }
+
+            // Parse stale flag
+            String staleStr = matchParam(headerLine, "stale");
+            this.stale = "true".equalsIgnoreCase(staleStr);
+
+            // Parse userhash flag
+            String userhashStr = matchParam(headerLine, "userhash");
+            this.userhash = "true".equalsIgnoreCase(userhashStr);
 
             return this;
         }
 
         /**
          * Extracts the value of a token from a WWW-Authenticate or Proxy-Authenticate header line.
-         * Example: match('Digest realm="test", nonce="abc"', "realm") returns "test"
+         * Handles both quoted values (token="value") and unquoted values (token=value).
+         * Example: matchParam('Digest realm="test", algorithm=SHA-256', "realm") returns "test"
+         * Example: matchParam('Digest algorithm=SHA-256', "algorithm") returns "SHA-256"
          */
-        private static @Nullable String match(String headerLine, String token) {
-            if (headerLine == null || token == null) return null;
-            String pattern = token + "=\"";
-            int start = headerLine.indexOf(pattern);
-            if (start == -1) return null;
-            start += pattern.length();
-            int end = headerLine.indexOf('"', start);
-            if (end == -1) return null;
-            return headerLine.substring(start, end);
+        public static @Nullable String matchParam(String headerLine, String token) {
+            if (headerLine == null || token == null) {
+                return null;
+            }
+            // Look for token= (case-insensitive token match)
+            int len = headerLine.length();
+            int tokenLen = token.length();
+            int i = 0;
+            while (i < len) {
+                int idx = headerLine.indexOf('=', i);
+                if (idx == -1) {
+                    return null;
+                }
+                // Walk backwards from '=' to find the start of the key (skip whitespace)
+                int keyEnd = idx;
+                while (keyEnd > i && headerLine.charAt(keyEnd - 1) == ' ') {
+                    keyEnd--;
+                }
+                int keyStart = keyEnd - tokenLen;
+                if (keyStart >= 0
+                        && headerLine.regionMatches(true, keyStart, token, 0, tokenLen)
+                        && (keyStart == 0 || headerLine.charAt(keyStart - 1) == ' ' || headerLine.charAt(keyStart - 1) == ',')) {
+                    // Found matching token, now extract value
+                    int valStart = idx + 1;
+                    // skip whitespace after '='
+                    while (valStart < len && headerLine.charAt(valStart) == ' ') {
+                        valStart++;
+                    }
+                    if (valStart < len && headerLine.charAt(valStart) == '"') {
+                        // Quoted value
+                        int valEnd = headerLine.indexOf('"', valStart + 1);
+                        if (valEnd == -1) {
+                            return null;
+                        }
+                        return headerLine.substring(valStart + 1, valEnd);
+                    } else {
+                        // Unquoted value — terminated by ',' or end-of-string
+                        int valEnd = valStart;
+                        while (valEnd < len && headerLine.charAt(valEnd) != ',' && headerLine.charAt(valEnd) != ' ') {
+                            valEnd++;
+                        }
+                        if (valEnd > valStart) {
+                            return headerLine.substring(valStart, valEnd);
+                        }
+                        return null;
+                    }
+                }
+                i = idx + 1;
+            }
+            return null;
         }
 
         private void newCnonce(MessageDigest md) {
@@ -530,11 +638,13 @@ public class Realm {
             // if qop is "auth-int" => A2 = Method ":" digest-uri-value ":" H(entity-body)
             sb.append(methodName).append(':').append(digestUri);
             if ("auth-int".equals(qop)) {
-                // when qop == "auth-int", A2 = Method ":" digest-uri-value ":" H(entity-body)
-                // but we don't have the request body here
-                // we would need a new API
-                sb.append(':').append(EMPTY_ENTITY_MD5);
-
+                sb.append(':');
+                if (entityBodyHash != null) {
+                    sb.append(entityBodyHash);
+                } else {
+                    // Hash of empty body using the current algorithm
+                    sb.append(toHexString(md.digest()));
+                }
             } else if (qop != null && !"auth".equals(qop)) {
                 throw new UnsupportedOperationException("Digest qop not supported: " + qop);
             }
@@ -608,7 +718,9 @@ public class Realm {
                     servicePrincipalName,
                     useCanonicalHostname,
                     customLoginConfig,
-                    loginContextName);
+                    loginContextName,
+                    stale,
+                    userhash);
         }
     }
 }
