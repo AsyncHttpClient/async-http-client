@@ -13,12 +13,12 @@ jobs:
   Publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Grant Permission
         run: sudo chmod +x ./mvnw
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'corretto'
           java-version: '11'
@@ -27,7 +27,7 @@ jobs:
         run: rm -f /home/runner/.m2/settings.xml
 
       - name: Maven Settings
-        uses: s4u/maven-settings-action@v3.1.0
+        uses: s4u/maven-settings-action@v4.0.0
         with:
           servers: |
             [{
@@ -37,7 +37,7 @@ jobs:
             }]
 
       - name: Import GPG
-        uses: crazy-max/ghaction-import-gpg@v6.3.0
+        uses: crazy-max/ghaction-import-gpg@v7.0.0
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
