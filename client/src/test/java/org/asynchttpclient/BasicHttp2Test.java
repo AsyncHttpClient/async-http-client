@@ -45,7 +45,8 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
+import io.netty.pkitesting.CertificateBuilder;
+import io.netty.pkitesting.X509Bundle;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.junit.jupiter.api.AfterEach;
@@ -335,9 +336,12 @@ public class BasicHttp2Test {
 
     @BeforeEach
     public void startServer() throws Exception {
-        SelfSignedCertificate ssc = new SelfSignedCertificate();
+        X509Bundle bundle = new CertificateBuilder()
+                .subject("CN=localhost")
+                .setIsCertificateAuthority(true)
+                .buildSelfSigned();
 
-        serverSslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
+        serverSslCtx = SslContextBuilder.forServer(bundle.toKeyManagerFactory())
                 .applicationProtocolConfig(new ApplicationProtocolConfig(
                         ApplicationProtocolConfig.Protocol.ALPN,
                         ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,

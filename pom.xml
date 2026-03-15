@@ -429,26 +429,50 @@
             </plugin>
 
             <plugin>
-                <groupId>com.github.siom79.japicmp</groupId>
-                <artifactId>japicmp-maven-plugin</artifactId>
-                <version>0.23.1</version>
+                <groupId>org.revapi</groupId>
+                <artifactId>revapi-maven-plugin</artifactId>
+                <version>0.15.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.revapi</groupId>
+                        <artifactId>revapi-java</artifactId>
+                        <version>0.28.1</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
-                    <version>
-                        <old>RELEASE</old>
-                        <new>${project.version}</new>
-                    </version>
-                    <parameter>
-                        <onlyModified>true</onlyModified>
-                        <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
-                        <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
-                        <includeSynthetic>false</includeSynthetic>
-                        <accessModifier>public</accessModifier>
-                    </parameter>
+                    <oldArtifacts>
+                        <artifact>org.asynchttpclient:async-http-client:RELEASE</artifact>
+                    </oldArtifacts>
+                    <newArtifacts>
+                        <artifact>${project.groupId}:${project.artifactId}:${project.version}</artifact>
+                    </newArtifacts>
+                    <analysisConfiguration>
+                        <![CDATA[
+                            [
+                                {
+                                    "extension": "revapi.differences",
+                                    "configuration": {
+                                        "ignore": true,
+                                        "differences": [
+                                            {
+                                                "code": "java.class.externalClassExposedInAPI",
+                                                "justification": "Netty types are part of the public API by design"
+                                            },
+                                            {
+                                                "code": "java.class.nonPublicPartOfAPI",
+                                                "justification": "Internal classes exposed via public methods are intentional"
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        ]]>
+                    </analysisConfiguration>
                 </configuration>
                 <executions>
                     <execution>
                         <goals>
-                            <goal>cmp</goal>
+                            <goal>check</goal>
                         </goals>
                         <phase>verify</phase>
                     </execution>
@@ -456,4 +480,38 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>errorprone-jdk25</id>
+            <activation>
+                <jdk>[25,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgs combine.children="append">
+                                <arg>--should-stop=ifError=FLOW</arg>
+                            </compilerArgs>
+                            <annotationProcessorPaths combine.self="override">
+                                <path>
+                                    <groupId>com.google.errorprone</groupId>
+                                    <artifactId>error_prone_core</artifactId>
+                                    <version>2.48.0</version>
+                                </path>
+                                <path>
+                                    <groupId>com.uber.nullaway</groupId>
+                                    <artifactId>nullaway</artifactId>
+                                    <version>0.13.1</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
