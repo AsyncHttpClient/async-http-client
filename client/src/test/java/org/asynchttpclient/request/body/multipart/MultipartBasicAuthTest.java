@@ -62,7 +62,7 @@ public class MultipartBasicAuthTest extends AbstractBasicTest {
     }
 
     private void expectHttpResponse(Function<BoundRequestBuilder, BoundRequestBuilder> f, int expectedResponseCode) throws Throwable {
-        File file = createTempFile(1024 * 1024);
+        File file = createTempFile(1024);
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             Response response = f.apply(client.preparePut(getTargetUrl()).addBodyPart(new FilePart("test", file, APPLICATION_OCTET_STREAM.toString(), UTF_8)))
