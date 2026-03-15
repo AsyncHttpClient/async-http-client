@@ -34,6 +34,8 @@ import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
+import org.asynchttpclient.util.AuthenticatorUtils;
+import org.asynchttpclient.util.NonceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +46,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.NEGOTIATE;
 import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
+import static org.asynchttpclient.util.AuthenticatorUtils.selectBestDigestChallenge;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 
 public class ProxyUnauthorized407Interceptor {
@@ -52,19 +55,16 @@ public class ProxyUnauthorized407Interceptor {
 
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
+    private final NonceCounter nonceCounter;
 
-    ProxyUnauthorized407Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
+    ProxyUnauthorized407Interceptor(ChannelManager channelManager, NettyRequestSender requestSender, NonceCounter nonceCounter) {
         this.channelManager = channelManager;
         this.requestSender = requestSender;
+        this.nonceCounter = nonceCounter;
     }
 
     public boolean exitAfterHandling407(Channel channel, NettyResponseFuture<?> future, HttpResponse response, Request request,
                                         ProxyServer proxyServer, HttpRequest httpRequest) {
-
-        if (future.isAndSetInProxyAuth(true)) {
-            LOGGER.info("Can't handle 407 as auth was already performed");
-            return false;
-        }
 
         Realm proxyRealm = future.getProxyRealm();
 
@@ -80,6 +80,81 @@ public class ProxyUnauthorized407Interceptor {
             return false;
         }
 
+        // For DIGEST, check stale before blocking on isAndSetInProxyAuth
+        if (proxyRealm.getScheme() == AuthScheme.DIGEST) {
+            String digestHeader = selectBestDigestChallenge(proxyAuthHeaders);
+            if (digestHeader == null) {
+                LOGGER.info("Can't handle 407 with Digest realm as Proxy-Authenticate headers don't match");
+                return false;
+            }
+            Realm.Builder realmBuilder = realm(proxyRealm)
+                    .setUri(request.getUri())
+                    .setMethodName(request.getMethod())
+                    .setUsePreemptiveAuth(true)
+                    .parseProxyAuthenticateHeader(digestHeader);
+
+            boolean isStale = realmBuilder.isStale();
+            Realm previousRealm = future.getProxyRealm();
+            boolean alreadyRetriedStale = previousRealm != null && previousRealm.isStale();
+
+            if (isStale && !alreadyRetriedStale) {
+                // First stale response: allow retry by resetting inProxyAuth
+                LOGGER.debug("Proxy indicated stale nonce, retrying with new nonce");
+                future.setInProxyAuth(false);
+                if (proxyRealm.getNonce() != null) {
+                    nonceCounter.reset(proxyRealm.getNonce());
+                }
+            } else if (future.isAndSetInProxyAuth(true)) {
+                LOGGER.info("Can't handle 407 as auth was already performed");
+                return false;
+            }
+
+            // Set nc from counter
+            String nonce = realmBuilder.getNonceValue();
+            if (nonce != null) {
+                realmBuilder.setNc(nonceCounter.nextNc(nonce));
+            }
+
+            // Handle auth-int
+            if ("auth-int".equals(realmBuilder.getQopValue())) {
+                String bodyHash = AuthenticatorUtils.computeBodyHash(request, proxyRealm);
+                realmBuilder.setEntityBodyHash(bodyHash);
+            }
+
+            Realm newDigestRealm = realmBuilder.build();
+            future.setProxyRealm(newDigestRealm);
+
+            future.setChannelState(ChannelState.NEW);
+            HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
+
+            RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+            if (future.getCurrentRequest().getUri().isSecured()) {
+                nextRequestBuilder.setMethod(CONNECT);
+            }
+            final Request nextRequest = nextRequestBuilder.build();
+
+            LOGGER.debug("Sending proxy authentication to {}", request.getUri());
+            if (channel instanceof Http2StreamChannel) {
+                channel.close();
+                requestSender.sendNextRequest(nextRequest, future);
+            } else if (future.isKeepAlive()
+                    && !HttpUtil.isTransferEncodingChunked(httpRequest)
+                    && !HttpUtil.isTransferEncodingChunked(response)) {
+                future.setConnectAllowed(true);
+                future.setReuseChannel(true);
+                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
+            } else {
+                channelManager.closeChannel(channel);
+                requestSender.sendNextRequest(nextRequest, future);
+            }
+            return true;
+        }
+
+        if (future.isAndSetInProxyAuth(true)) {
+            LOGGER.info("Can't handle 407 as auth was already performed");
+            return false;
+        }
+
         // FIXME what's this???
         future.setChannelState(ChannelState.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
@@ -92,35 +167,14 @@ public class ProxyUnauthorized407Interceptor {
                 }
 
                 if (proxyRealm.isUsePreemptiveAuth()) {
-                    // FIXME do we need this, as future.getAndSetAuth
-                    // was tested above?
-                    // auth was already performed, most likely auth
-                    // failed
                     LOGGER.info("Can't handle 407 with Basic realm as auth was preemptive and already performed");
                     return false;
                 }
 
-                // FIXME do we want to update the realm, or directly
-                // set the header?
                 Realm newBasicRealm = realm(proxyRealm)
                         .setUsePreemptiveAuth(true)
                         .build();
                 future.setProxyRealm(newBasicRealm);
-                break;
-
-            case DIGEST:
-                String digestHeader = getHeaderWithPrefix(proxyAuthHeaders, "Digest");
-                if (digestHeader == null) {
-                    LOGGER.info("Can't handle 407 with Digest realm as Proxy-Authenticate headers don't match");
-                    return false;
-                }
-                Realm newDigestRealm = realm(proxyRealm)
-                        .setUri(request.getUri())
-                        .setMethodName(request.getMethod())
-                        .setUsePreemptiveAuth(true)
-                        .parseProxyAuthenticateHeader(digestHeader)
-                        .build();
-                future.setProxyRealm(newDigestRealm);
                 break;
 
             case NTLM:

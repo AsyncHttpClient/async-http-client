@@ -32,14 +32,21 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.util.AuthenticatorUtils;
+import org.asynchttpclient.util.NonceCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
+import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.CONTINUE_100;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.OK_200;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.PROXY_AUTHENTICATION_REQUIRED_407;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.UNAUTHORIZED_401;
 
 public class Interceptors {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Interceptors.class);
 
     private final AsyncHttpClientConfig config;
     private final Unauthorized401Interceptor unauthorized401Interceptor;
@@ -50,13 +57,15 @@ public class Interceptors {
     private final ResponseFiltersInterceptor responseFiltersInterceptor;
     private final boolean hasResponseFilters;
     private final ClientCookieDecoder cookieDecoder;
+    private final NonceCounter nonceCounter;
 
     public Interceptors(AsyncHttpClientConfig config,
                         ChannelManager channelManager,
                         NettyRequestSender requestSender) {
         this.config = config;
-        unauthorized401Interceptor = new Unauthorized401Interceptor(channelManager, requestSender);
-        proxyUnauthorized407Interceptor = new ProxyUnauthorized407Interceptor(channelManager, requestSender);
+        nonceCounter = new NonceCounter();
+        unauthorized401Interceptor = new Unauthorized401Interceptor(channelManager, requestSender, nonceCounter);
+        proxyUnauthorized407Interceptor = new ProxyUnauthorized407Interceptor(channelManager, requestSender, nonceCounter);
         continue100Interceptor = new Continue100Interceptor(requestSender);
         redirect30xInterceptor = new Redirect30xInterceptor(channelManager, config, requestSender);
         connectSuccessInterceptor = new ConnectSuccessInterceptor(channelManager, requestSender);
@@ -109,6 +118,52 @@ public class Interceptors {
         if (httpRequest.method() == HttpMethod.CONNECT && statusCode == OK_200) {
             return connectSuccessInterceptor.exitAfterHandlingConnect(channel, future, request, proxyServer);
         }
+
+        // Process Authentication-Info / Proxy-Authentication-Info headers (RFC 7616 Section 3.5)
+        if (realm != null && realm.getScheme() == Realm.AuthScheme.DIGEST) {
+            processAuthenticationInfo(future, responseHeaders, realm, false);
+        }
+        Realm proxyRealm = future.getProxyRealm();
+        if (proxyRealm != null && proxyRealm.getScheme() == Realm.AuthScheme.DIGEST) {
+            processAuthenticationInfo(future, responseHeaders, proxyRealm, true);
+        }
+
         return false;
+    }
+
+    private void processAuthenticationInfo(NettyResponseFuture<?> future, HttpHeaders responseHeaders,
+                                           Realm currentRealm, boolean proxy) {
+        String headerName = proxy ? "Proxy-Authentication-Info" : "Authentication-Info";
+        String authInfoHeader = responseHeaders.get(headerName);
+        if (authInfoHeader == null) {
+            return;
+        }
+
+        String nextnonce = Realm.Builder.matchParam(authInfoHeader, "nextnonce");
+        if (nextnonce != null) {
+            // Rotate to the new nonce
+            String oldNonce = currentRealm.getNonce();
+            if (oldNonce != null) {
+                nonceCounter.reset(oldNonce);
+            }
+            Realm newRealm = realm(currentRealm)
+                    .setNonce(nextnonce)
+                    .setNc("00000001")
+                    .build();
+            if (proxy) {
+                future.setProxyRealm(newRealm);
+            } else {
+                future.setRealm(newRealm);
+            }
+            LOGGER.debug("Rotated to nextnonce from {} header", headerName);
+        }
+
+        String rspauth = Realm.Builder.matchParam(authInfoHeader, "rspauth");
+        if (rspauth != null) {
+            String expectedRspauth = AuthenticatorUtils.computeRspAuth(currentRealm);
+            if (!rspauth.equalsIgnoreCase(expectedRspauth)) {
+                LOGGER.warn("Server rspauth mismatch: expected={}, got={}", expectedRspauth, rspauth);
+            }
+        }
     }
 }

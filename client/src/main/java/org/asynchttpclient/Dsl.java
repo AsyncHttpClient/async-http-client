@@ -112,7 +112,9 @@ public final class Dsl {
                 .setServicePrincipalName(prototype.getServicePrincipalName())
                 .setUseCanonicalHostname(prototype.isUseCanonicalHostname())
                 .setCustomLoginConfig(prototype.getCustomLoginConfig())
-                .setLoginContextName(prototype.getLoginContextName());
+                .setLoginContextName(prototype.getLoginContextName())
+                .setUserhash(prototype.isUserhash());
+        // Note: stale is NOT copied — it's challenge-specific, always starts false
     }
 
     public static Realm.Builder realm(AuthScheme scheme, String principal, String password) {

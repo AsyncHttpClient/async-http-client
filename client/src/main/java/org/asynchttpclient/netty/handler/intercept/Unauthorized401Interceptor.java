@@ -33,6 +33,8 @@ import org.asynchttpclient.ntlm.NtlmEngine;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.AuthenticatorUtils;
+import org.asynchttpclient.util.NonceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +45,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.WWW_AUTHENTICATE;
 import static org.asynchttpclient.Dsl.realm;
 import static org.asynchttpclient.util.AuthenticatorUtils.NEGOTIATE;
 import static org.asynchttpclient.util.AuthenticatorUtils.getHeaderWithPrefix;
+import static org.asynchttpclient.util.AuthenticatorUtils.selectBestDigestChallenge;
 import static org.asynchttpclient.util.MiscUtils.withDefault;
 
 public class Unauthorized401Interceptor {
@@ -51,20 +54,17 @@ public class Unauthorized401Interceptor {
 
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
+    private final NonceCounter nonceCounter;
 
-    Unauthorized401Interceptor(ChannelManager channelManager, NettyRequestSender requestSender) {
+    Unauthorized401Interceptor(ChannelManager channelManager, NettyRequestSender requestSender, NonceCounter nonceCounter) {
         this.channelManager = channelManager;
         this.requestSender = requestSender;
+        this.nonceCounter = nonceCounter;
     }
 
     public boolean exitAfterHandling401(Channel channel, NettyResponseFuture<?> future, HttpResponse response, Request request, Realm realm, HttpRequest httpRequest) {
         if (realm == null) {
             LOGGER.debug("Can't handle 401 as there's no realm");
-            return false;
-        }
-
-        if (future.isAndSetInAuth(true)) {
-            LOGGER.info("Can't handle 401 as auth was already performed");
             return false;
         }
 
@@ -75,7 +75,78 @@ public class Unauthorized401Interceptor {
             return false;
         }
 
-        // FIXME what's this???
+        // For DIGEST, handle stale nonce before the isAndSetInAuth check
+        if (realm.getScheme() == AuthScheme.DIGEST) {
+            String digestHeader = selectBestDigestChallenge(wwwAuthHeaders);
+            if (digestHeader == null) {
+                LOGGER.info("Can't handle 401 with Digest realm as WWW-Authenticate headers don't match");
+                return false;
+            }
+
+            // Parse the challenge to check for stale flag
+            Realm.Builder realmBuilder = realm(realm)
+                    .setUri(request.getUri())
+                    .setMethodName(request.getMethod())
+                    .setUsePreemptiveAuth(true)
+                    .parseWWWAuthenticateHeader(digestHeader);
+
+            boolean isStale = realmBuilder.isStale();
+
+            // Check if we've already done a stale retry: use future's realm (set by interceptor)
+            // rather than request's realm (user-configured, always has stale=false)
+            Realm previousRealm = future.getRealm();
+            boolean alreadyRetriedStale = previousRealm != null && previousRealm.isStale();
+
+            if (isStale && !alreadyRetriedStale) {
+                // First stale response: allow retry by resetting inAuth
+                LOGGER.debug("Server indicated stale nonce, retrying with new nonce");
+                future.setInAuth(false);
+                if (realm.getNonce() != null) {
+                    nonceCounter.reset(realm.getNonce());
+                }
+            } else if (future.isAndSetInAuth(true)) {
+                LOGGER.info("Can't handle 401 as auth was already performed");
+                return false;
+            }
+
+            // Set nc from counter
+            String nonce = realmBuilder.getNonceValue();
+            if (nonce != null) {
+                realmBuilder.setNc(nonceCounter.nextNc(nonce));
+            }
+
+            // Handle auth-int: compute body hash
+            if ("auth-int".equals(realmBuilder.getQopValue())) {
+                String bodyHash = AuthenticatorUtils.computeBodyHash(request, realm);
+                realmBuilder.setEntityBodyHash(bodyHash);
+            }
+
+            Realm newDigestRealm = realmBuilder.build();
+            future.setRealm(newDigestRealm);
+
+            future.setChannelState(ChannelState.NEW);
+            HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
+
+            final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
+            LOGGER.debug("Sending authentication to {}", request.getUri());
+            if (channel instanceof Http2StreamChannel) {
+                channel.close();
+                requestSender.sendNextRequest(nextRequest, future);
+            } else if (future.isKeepAlive() && !HttpUtil.isTransferEncodingChunked(httpRequest) && !HttpUtil.isTransferEncodingChunked(response)) {
+                future.setReuseChannel(true);
+                requestSender.drainChannelAndExecuteNextRequest(channel, future, nextRequest);
+            } else {
+                channelManager.closeChannel(channel);
+                requestSender.sendNextRequest(nextRequest, future);
+            }
+            return true;
+        }
+
+        if (future.isAndSetInAuth(true)) {
+            LOGGER.info("Can't handle 401 as auth was already performed");
+            return false;
+        }
+
         future.setChannelState(ChannelState.NEW);
         HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
@@ -87,35 +158,14 @@ public class Unauthorized401Interceptor {
                 }
 
                 if (realm.isUsePreemptiveAuth()) {
-                    // FIXME do we need this, as future.getAndSetAuth
-                    // was tested above?
-                    // auth was already performed, most likely auth
-                    // failed
                     LOGGER.info("Can't handle 401 with Basic realm as auth was preemptive and already performed");
                     return false;
                 }
 
-                // FIXME do we want to update the realm, or directly
-                // set the header?
                 Realm newBasicRealm = realm(realm)
                         .setUsePreemptiveAuth(true)
                         .build();
                 future.setRealm(newBasicRealm);
-                break;
-
-            case DIGEST:
-                String digestHeader = getHeaderWithPrefix(wwwAuthHeaders, "Digest");
-                if (digestHeader == null) {
-                    LOGGER.info("Can't handle 401 with Digest realm as WWW-Authenticate headers don't match");
-                    return false;
-                }
-                Realm newDigestRealm = realm(realm)
-                        .setUri(request.getUri())
-                        .setMethodName(request.getMethod())
-                        .setUsePreemptiveAuth(true)
-                        .parseWWWAuthenticateHeader(digestHeader)
-                        .build();
-                future.setRealm(newDigestRealm);
                 break;
 
             case NTLM:
