@@ -17,6 +17,8 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "org.apache.tomcat.embed:tomcat-embed-core"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "org.mockito:mockito-core"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
