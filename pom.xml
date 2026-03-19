@@ -52,12 +52,12 @@
         <activation.version>2.0.1</activation.version>
         <logback.version>1.5.32</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
-        <testcontainers.version>2.0.3</testcontainers.version>
+        <testcontainers.version>2.0.4</testcontainers.version>
 
         <!-- Versions with JDK-specific overrides in profiles below -->
-        <junit-bom.version>5.13.0</junit-bom.version>
-        <errorprone.version>2.31.0</errorprone.version>
-        <nullaway.version>0.12.6</nullaway.version>
+        <junit-bom.version>5.14.3</junit-bom.version>
+        <errorprone.version>2.48.0</errorprone.version>
+        <nullaway.version>0.13.1</nullaway.version>
     </properties>
 
     <developers>
