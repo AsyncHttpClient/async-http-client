@@ -53,6 +53,11 @@
         <logback.version>1.5.32</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <testcontainers.version>2.0.3</testcontainers.version>
+
+        <!-- Versions with JDK-specific overrides in profiles below -->
+        <junit-bom.version>5.13.0</junit-bom.version>
+        <errorprone.version>2.31.0</errorprone.version>
+        <nullaway.version>0.12.6</nullaway.version>
     </properties>
 
     <developers>
@@ -102,7 +107,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>5.13.0</version>
+                <version>${junit-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -325,14 +330,13 @@
                         <path>
                             <groupId>com.google.errorprone</groupId>
                             <artifactId>error_prone_core</artifactId>
-                            <version>2.31.0</version>
+                            <version>${errorprone.version}</version>
                         </path>
                         <path>
                             <groupId>com.uber.nullaway</groupId>
                             <artifactId>nullaway</artifactId>
-                            <version>0.12.6</version>
+                            <version>${nullaway.version}</version>
                         </path>
-                        <!-- Other annotation processors go here -->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -482,39 +486,27 @@
     </build>
 
     <profiles>
+        <!-- JDK 17+: use JUnit 6 (requires JDK 17+) -->
         <profile>
-            <id>errorprone-jdk21</id>
+            <id>jdk17+</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <properties>
+                <junit-bom.version>6.0.3</junit-bom.version>
+            </properties>
+        </profile>
+
+        <!-- JDK 21+: use Error Prone 2.48.0 and NullAway 0.13.1 (require JDK 21+) -->
+        <profile>
+            <id>jdk21+</id>
             <activation>
                 <jdk>[21,)</jdk>
             </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <annotationProcessorPaths combine.self="override">
-                                <path>
-                                    <groupId>com.google.errorprone</groupId>
-                                    <artifactId>error_prone_core</artifactId>
-                                    <version>2.48.0</version>
-                                </path>
-                                <path>
-                                    <groupId>com.uber.nullaway</groupId>
-                                    <artifactId>nullaway</artifactId>
-                                    <version>0.13.1</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>errorprone-jdk25</id>
-            <activation>
-                <jdk>[25,)</jdk>
-            </activation>
+            <properties>
+                <errorprone.version>2.48.0</errorprone.version>
+                <nullaway.version>0.13.1</nullaway.version>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -523,6 +515,7 @@
                         <configuration>
                             <compilerArgs combine.children="append">
                                 <arg>--should-stop=ifError=FLOW</arg>
+                                <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

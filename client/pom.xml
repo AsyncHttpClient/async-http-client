@@ -246,6 +246,16 @@
                 </plugins>
             </build>
         </profile>
+        <!-- JDK 17+: use Tomcat 11 (requires JDK 17+) -->
+        <profile>
+            <id>jdk17+-tomcat</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <properties>
+                <tomcat.version>11.0.18</tomcat.version>
+            </properties>
+        </profile>
         <profile>
             <id>no-docker-tests</id>
             <activation>
