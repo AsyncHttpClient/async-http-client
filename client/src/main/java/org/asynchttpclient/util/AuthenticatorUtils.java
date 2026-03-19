@@ -512,6 +512,9 @@ public final class AuthenticatorUtils {
                     }
 
                     break;
+                case SCRAM_SHA_256:
+                    // SCRAM auth is per-request, not per-connection
+                    break;
                 default:
             }
         }
@@ -549,6 +552,9 @@ public final class AuthenticatorUtils {
                 case SPNEGO:
                     // NTLM, KERBEROS and SPNEGO are only set on the first request with a connection,
                     // see perConnectionProxyAuthorizationHeader
+                    break;
+                case SCRAM_SHA_256:
+                    // SCRAM reauthentication for proxy — handled via interceptor
                     break;
                 default:
                     throw new IllegalStateException("Invalid Authentication scheme " + proxyRealm.getScheme());
@@ -592,6 +598,9 @@ public final class AuthenticatorUtils {
                         throw new RuntimeException(e);
                     }
                     break;
+                case SCRAM_SHA_256:
+                    // SCRAM auth is per-request, not per-connection
+                    break;
                 default:
                     break;
             }
@@ -629,6 +638,9 @@ public final class AuthenticatorUtils {
                 case SPNEGO:
                     // NTLM, KERBEROS and SPNEGO are only set on the first request with a connection,
                     // see perConnectionAuthorizationHeader
+                    break;
+                case SCRAM_SHA_256:
+                    // SCRAM reauthentication — handled via interceptor
                     break;
                 default:
                     throw new IllegalStateException("Invalid Authentication " + realm);

@@ -27,6 +27,7 @@ import org.asynchttpclient.netty.channel.ConnectionSemaphore;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.scram.ScramContext;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,6 +127,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private boolean allowConnect;
     private Realm realm;
     private Realm proxyRealm;
+    private volatile ScramContext scramContext;
 
     public NettyResponseFuture(Request originalRequest,
                                AsyncHandler<V> asyncHandler,
@@ -538,6 +540,14 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setProxyRealm(Realm proxyRealm) {
         this.proxyRealm = proxyRealm;
+    }
+
+    public ScramContext getScramContext() {
+        return scramContext;
+    }
+
+    public void setScramContext(ScramContext scramContext) {
+        this.scramContext = scramContext;
     }
 
     @Override

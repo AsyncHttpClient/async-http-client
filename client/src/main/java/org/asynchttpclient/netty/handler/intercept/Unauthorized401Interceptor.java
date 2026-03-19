@@ -30,6 +30,11 @@ import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.ntlm.NtlmEngine;
+import org.asynchttpclient.scram.ScramContext;
+import org.asynchttpclient.scram.ScramException;
+import org.asynchttpclient.scram.ScramMessageFormatter;
+import org.asynchttpclient.scram.ScramMessageParser;
+import org.asynchttpclient.scram.ScramState;
 import org.asynchttpclient.spnego.SpnegoEngine;
 import org.asynchttpclient.spnego.SpnegoEngineException;
 import org.asynchttpclient.uri.Uri;
@@ -38,6 +43,8 @@ import org.asynchttpclient.util.NonceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
@@ -206,6 +213,67 @@ public class Unauthorized401Interceptor {
                     }
                 }
                 break;
+            case SCRAM_SHA_256:
+                String scramPrefix = "SCRAM-SHA-256";
+                String scramHeader = getHeaderWithPrefix(wwwAuthHeaders, scramPrefix);
+                if (scramHeader == null) {
+                    LOGGER.info("Can't handle 401 with SCRAM realm as WWW-Authenticate headers don't match");
+                    return false;
+                }
+
+                try {
+                    ScramMessageParser.ScramChallengeParams params = ScramMessageParser.parseWwwAuthenticateScram(scramHeader);
+                    ScramContext ctx = future.getScramContext();
+
+                    if (ctx == null) {
+                        // Step 1: First 401 — send client-first
+                        ctx = new ScramContext(realm.getPrincipal(), realm.getPassword(),
+                                params.realm != null ? params.realm : realm.getRealmName(),
+                                scramPrefix);
+                        ctx.setInitialChallengeParams(params);
+
+                        String base64Data = Base64.getEncoder().encodeToString(
+                                ctx.getClientFirstMessage().getBytes(StandardCharsets.UTF_8));
+                        String authHeader = ScramMessageFormatter.formatAuthorizationHeader(
+                                ctx.getMechanism(), ctx.getRealmName(), null, base64Data);
+
+                        requestHeaders.set(AUTHORIZATION, authHeader);
+                        future.setScramContext(ctx);
+                        future.setInAuth(false); // allow second 401
+
+                    } else if (ctx.getState() == ScramState.CLIENT_FIRST_SENT) {
+                        // Step 2: Second 401 — parse server-first, send client-final
+                        if (params.sid == null) {
+                            LOGGER.warn("SCRAM: missing sid in server-first response");
+                            return false;
+                        }
+                        if (params.data == null) {
+                            LOGGER.warn("SCRAM: missing data in server-first response");
+                            return false;
+                        }
+
+                        String serverFirstMsg = new String(Base64.getDecoder().decode(params.data), StandardCharsets.UTF_8);
+                        ctx.processServerFirst(serverFirstMsg, realm.getMaxIterationCount());
+                        ctx.setSid(params.sid);
+
+                        String clientFinalMsg = ctx.computeClientFinal();
+                        String base64Data = Base64.getEncoder().encodeToString(
+                                clientFinalMsg.getBytes(StandardCharsets.UTF_8));
+                        String authHeader = ScramMessageFormatter.formatAuthorizationHeader(
+                                ctx.getMechanism(), null, params.sid, base64Data);
+
+                        requestHeaders.set(AUTHORIZATION, authHeader);
+
+                    } else {
+                        LOGGER.warn("SCRAM authentication failed: unexpected 401 in state {}", ctx.getState());
+                        return false;
+                    }
+                } catch (ScramException e) {
+                    LOGGER.warn("SCRAM authentication failed: {}", e.getMessage());
+                    return false;
+                }
+                break;
+
             default:
                 throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
         }

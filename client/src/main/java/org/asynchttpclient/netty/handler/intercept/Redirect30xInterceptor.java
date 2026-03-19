@@ -95,6 +95,7 @@ public class Redirect30xInterceptor {
                 // We must allow auth handling again.
                 future.setInAuth(false);
                 future.setInProxyAuth(false);
+                future.setScramContext(null);
 
                 String originalMethod = request.getMethod();
                 boolean switchToGet = !originalMethod.equals(GET) &&
@@ -196,7 +197,8 @@ public class Redirect30xInterceptor {
             headers.remove(CONTENT_TYPE);
         }
 
-        if (stripAuthorization || (realm != null && realm.getScheme() == AuthScheme.NTLM)) {
+        if (stripAuthorization || (realm != null && (realm.getScheme() == AuthScheme.NTLM
+                || realm.getScheme() == AuthScheme.SCRAM_SHA_256))) {
             headers.remove(AUTHORIZATION)
                     .remove(PROXY_AUTHORIZATION);
         }

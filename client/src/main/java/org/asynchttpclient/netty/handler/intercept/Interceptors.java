@@ -32,10 +32,16 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.scram.ScramContext;
+import org.asynchttpclient.scram.ScramMessageParser;
+import org.asynchttpclient.scram.ScramState;
 import org.asynchttpclient.util.AuthenticatorUtils;
 import org.asynchttpclient.util.NonceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.asynchttpclient.Dsl.realm;
@@ -128,6 +134,14 @@ public class Interceptors {
             processAuthenticationInfo(future, responseHeaders, proxyRealm, true);
         }
 
+        // Process SCRAM Authentication-Info (RFC 7804 §5)
+        if (realm != null && realm.getScheme() == Realm.AuthScheme.SCRAM_SHA_256) {
+            processScramAuthenticationInfo(future, responseHeaders, "Authentication-Info");
+        }
+        if (proxyRealm != null && proxyRealm.getScheme() == Realm.AuthScheme.SCRAM_SHA_256) {
+            processScramAuthenticationInfo(future, responseHeaders, "Proxy-Authentication-Info");
+        }
+
         return false;
     }
 
@@ -164,6 +178,38 @@ public class Interceptors {
             if (!rspauth.equalsIgnoreCase(expectedRspauth)) {
                 LOGGER.warn("Server rspauth mismatch: expected={}, got={}", expectedRspauth, rspauth);
             }
+        }
+    }
+
+    private void processScramAuthenticationInfo(NettyResponseFuture<?> future, HttpHeaders responseHeaders,
+                                                String headerName) {
+        ScramContext ctx = future.getScramContext();
+        if (ctx == null || ctx.getState() != ScramState.CLIENT_FINAL_SENT) {
+            return;
+        }
+
+        String authInfo = responseHeaders.get(headerName);
+        if (authInfo == null) {
+            // RFC 7804 §6: may be in chunked trailers (not supported by AHC)
+            LOGGER.warn("SCRAM: response without {} header; "
+                    + "ServerSignature cannot be verified (may be in chunked trailers)", headerName);
+            return;
+        }
+
+        String data = Realm.Builder.matchParam(authInfo, "data");
+        if (data == null) {
+            LOGGER.warn("SCRAM: Authentication-Info header missing data attribute");
+            return;
+        }
+
+        String serverFinalMsg = new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
+        if (ctx.verifyServerFinal(serverFinalMsg)) {
+            ctx.setState(ScramState.AUTHENTICATED);
+            LOGGER.debug("SCRAM ServerSignature verified successfully");
+        } else {
+            ctx.setState(ScramState.FAILED);
+            LOGGER.warn("SCRAM ServerSignature verification failed — authentication unsuccessful "
+                    + "(RFC 7804 §5: MUST consider unsuccessful)");
         }
     }
 }

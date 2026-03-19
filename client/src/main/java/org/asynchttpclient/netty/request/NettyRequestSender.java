@@ -305,8 +305,12 @@ public final class NettyRequestSender {
         requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
         requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
 
-        future.setInAuth(realm != null && realm.isUsePreemptiveAuth() && realm.getScheme() != AuthScheme.NTLM);
-        future.setInProxyAuth(proxyRealm != null && proxyRealm.isUsePreemptiveAuth() && proxyRealm.getScheme() != AuthScheme.NTLM);
+        future.setInAuth(realm != null && realm.isUsePreemptiveAuth()
+                && realm.getScheme() != AuthScheme.NTLM
+                && realm.getScheme() != AuthScheme.SCRAM_SHA_256);
+        future.setInProxyAuth(proxyRealm != null && proxyRealm.isUsePreemptiveAuth()
+                && proxyRealm.getScheme() != AuthScheme.NTLM
+                && proxyRealm.getScheme() != AuthScheme.SCRAM_SHA_256);
 
         try {
             if (!channelManager.isOpen()) {

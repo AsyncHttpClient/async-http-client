@@ -69,6 +69,8 @@ public class Realm {
     private final @Nullable String loginContextName;
     private final boolean stale;
     private final boolean userhash;
+    private final @Nullable String sid;
+    private final int maxIterationCount;
 
     private Realm(@Nullable AuthScheme scheme,
                   @Nullable String principal,
@@ -93,7 +95,9 @@ public class Realm {
                   @Nullable Map<String, String> customLoginConfig,
                   @Nullable String loginContextName,
                   boolean stale,
-                  boolean userhash) {
+                  boolean userhash,
+                  @Nullable String sid,
+                  int maxIterationCount) {
 
         this.scheme = requireNonNull(scheme, "scheme");
         this.principal = principal;
@@ -119,6 +123,8 @@ public class Realm {
         this.loginContextName = loginContextName;
         this.stale = stale;
         this.userhash = userhash;
+        this.sid = sid;
+        this.maxIterationCount = maxIterationCount;
     }
 
     public @Nullable String getPrincipal() {
@@ -232,6 +238,14 @@ public class Realm {
         return userhash;
     }
 
+    public @Nullable String getSid() {
+        return sid;
+    }
+
+    public int getMaxIterationCount() {
+        return maxIterationCount;
+    }
+
     @Override
     public String toString() {
         return "Realm{" +
@@ -261,7 +275,7 @@ public class Realm {
     }
 
     public enum AuthScheme {
-        BASIC, DIGEST, NTLM, SPNEGO, KERBEROS
+        BASIC, DIGEST, NTLM, SPNEGO, KERBEROS, SCRAM_SHA_256
     }
 
     /**
@@ -300,6 +314,8 @@ public class Realm {
         private boolean stale;
         private boolean userhash;
         private @Nullable String entityBodyHash;
+        private @Nullable String sid;
+        private int maxIterationCount = 16_384;
 
         public Builder() {
             principal = null;
@@ -429,6 +445,16 @@ public class Realm {
 
         public Builder setEntityBodyHash(@Nullable String entityBodyHash) {
             this.entityBodyHash = entityBodyHash;
+            return this;
+        }
+
+        public Builder setSid(@Nullable String sid) {
+            this.sid = sid;
+            return this;
+        }
+
+        public Builder setMaxIterationCount(int maxIterationCount) {
+            this.maxIterationCount = maxIterationCount;
             return this;
         }
 
@@ -720,7 +746,9 @@ public class Realm {
                     customLoginConfig,
                     loginContextName,
                     stale,
-                    userhash);
+                    userhash,
+                    sid,
+                    maxIterationCount);
         }
     }
 }
