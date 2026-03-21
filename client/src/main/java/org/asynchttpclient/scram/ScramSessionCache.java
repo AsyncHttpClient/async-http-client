@@ -139,7 +139,7 @@ public class ScramSessionCache {
     /**
      * Check if the sr value is still fresh.
      * If ttl == -1: always fresh (no expiration).
-     * If ttl >= 0: check elapsed time since sr was received.
+     * If ttl &gt;= 0: check elapsed time since sr was received.
      */
     public boolean isSrFresh(Entry entry) {
         if (entry.sr == null) {

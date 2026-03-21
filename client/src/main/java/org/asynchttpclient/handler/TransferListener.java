@@ -36,7 +36,7 @@ public interface TransferListener {
     /**
      * Invoked every time response's chunk are received.
      *
-     * @param bytes a {@link byte} array
+     * @param bytes a byte array
      */
     void onBytesReceived(byte[] bytes);
 

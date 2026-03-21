@@ -85,7 +85,7 @@ public final class ScramMessageParser {
     }
 
     /**
-     * Parse a server-first-message (RFC 5802): r=<nonce>,s=<salt>,i=<count>[,extensions]
+     * Parse a server-first-message (RFC 5802): {@code r=<nonce>,s=<salt>,i=<count>[,extensions]}
      */
     public static ServerFirstMessage parseServerFirst(String message) {
         String fullNonce = null;
@@ -133,7 +133,7 @@ public final class ScramMessageParser {
     }
 
     /**
-     * Parse a server-final-message (RFC 5802): v=<verifier> OR e=<error>
+     * Parse a server-final-message (RFC 5802): {@code v=<verifier>} OR {@code e=<error>}
      */
     public static ServerFinalMessage parseServerFinal(String message) {
         if (message.startsWith("v=")) {
