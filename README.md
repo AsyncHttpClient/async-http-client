@@ -33,7 +33,7 @@ It supports HTTP/1.1, HTTP/2, and WebSocket protocols.
 - **Asynchronous API** — non-blocking I/O with `ListenableFuture`
   and `CompletableFuture`
 - **Compression** — automatic gzip, deflate, Brotli, and Zstd decompression
-- **Authentication** — Basic, Digest, NTLM, and SPNEGO/Kerberos
+- **Authentication** — Basic, Digest, NTLM, SPNEGO/Kerberos, and SCRAM-SHA-256
 - **Proxy** — HTTP, SOCKS4, and SOCKS5 with CONNECT tunneling
 - **Native transports** — optional Epoll, KQueue, and io_uring
 - **Request/response filters** — intercept and transform at each stage
@@ -99,13 +99,13 @@ AsyncHttpClient client = asyncHttpClient(config().setUseNativeTransport(true));
 <dependency>
     <groupId>com.aayushatharva.brotli4j</groupId>
     <artifactId>brotli4j</artifactId>
-    <version>1.18.0</version>
+    <version>1.20.0</version>
 </dependency>
 
 <dependency>
     <groupId>com.github.luben</groupId>
     <artifactId>zstd-jni</artifactId>
-    <version>1.5.7-2</version>
+    <version>1.5.7-7</version>
 </dependency>
 ```
 
@@ -385,9 +385,16 @@ Response response = client
     .setRealm(digestAuthRealm("user", "password").build())
     .execute()
     .get();
+
+// SCRAM-SHA-256 (RFC 7804)
+Response response = client
+    .prepareGet("https://api.example.com/protected")
+    .setRealm(scramSha256AuthRealm("user", "password").build())
+    .execute()
+    .get();
 ```
 
-Supported schemes: **Basic**, **Digest**, **NTLM**, **SPNEGO/Kerberos**.
+Supported schemes: **Basic**, **Digest**, **NTLM**, **SPNEGO/Kerberos**, **SCRAM-SHA-256**.
 
 ## Proxy Support
 
