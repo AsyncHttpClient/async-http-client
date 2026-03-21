@@ -202,12 +202,19 @@ public class Interceptors {
             return;
         }
 
-        String serverFinalMsg = new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
+        String serverFinalMsg;
+        try {
+            serverFinalMsg = new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("SCRAM: invalid base64 in {} data attribute: {}", headerName, e.getMessage());
+            ctx.setState(ScramState.FAILED);
+            return;
+        }
+
+        // verifyServerFinal sets state to AUTHENTICATED or FAILED internally
         if (ctx.verifyServerFinal(serverFinalMsg)) {
-            ctx.setState(ScramState.AUTHENTICATED);
             LOGGER.debug("SCRAM ServerSignature verified successfully");
         } else {
-            ctx.setState(ScramState.FAILED);
             LOGGER.warn("SCRAM ServerSignature verification failed — authentication unsuccessful "
                     + "(RFC 7804 §5: MUST consider unsuccessful)");
         }

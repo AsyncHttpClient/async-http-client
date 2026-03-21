@@ -274,7 +274,7 @@ public class ProxyUnauthorized407Interceptor {
                         LOGGER.warn("SCRAM proxy authentication failed: unexpected 407 in state {}", ctx.getState());
                         return false;
                     }
-                } catch (ScramException e) {
+                } catch (ScramException | IllegalArgumentException e) {
                     LOGGER.warn("SCRAM proxy authentication failed: {}", e.getMessage());
                     return false;
                 }

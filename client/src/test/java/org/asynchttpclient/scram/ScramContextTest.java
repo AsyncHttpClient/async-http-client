@@ -124,6 +124,22 @@ class ScramContextTest {
     }
 
     @Test
+    void testProcessServerFirst_minimumIterationCount() {
+        // RFC 5802 doesn't specify a minimum iteration count.
+        // Server sends i=1 — should be accepted (documents that no minimum is enforced).
+        ScramContext ctx = new ScramContext(USERNAME, PASSWORD, REALM, "SCRAM-SHA-256");
+        String clientNonce = ctx.getClientNonce();
+        String fullNonce = clientNonce + "serverpart";
+        String saltBase64 = Base64.getEncoder().encodeToString(SALT);
+        String serverFirstMsg = "r=" + fullNonce + ",s=" + saltBase64 + ",i=1";
+
+        // Should not throw — i=1 is accepted
+        assertDoesNotThrow(() -> ctx.processServerFirst(serverFirstMsg, MAX_ITERATIONS));
+        assertEquals(ScramState.SERVER_FIRST_RECEIVED, ctx.getState());
+        assertEquals(1, ctx.getIterationCount());
+    }
+
+    @Test
     void testGetClientFirstMessage_includesGs2Header() {
         ScramContext ctx = new ScramContext(USERNAME, PASSWORD, REALM, "SCRAM-SHA-256");
         assertTrue(ctx.getClientFirstMessage().startsWith("n,,"));

@@ -155,7 +155,13 @@ public class ScramContext {
         String authMessage = clientFirstMessageBare + "," + serverFirst + "," + clientFinalNoProof;
 
         byte[] expectedServerSignature = ScramEngine.computeServerSignature(currentServerKey, authMessage);
-        byte[] receivedSignature = Base64.getDecoder().decode(parsed.verifier);
+        byte[] receivedSignature;
+        try {
+            receivedSignature = Base64.getDecoder().decode(parsed.verifier);
+        } catch (IllegalArgumentException e) {
+            this.state = ScramState.FAILED;
+            return false;
+        }
 
         // Constant-time comparison to prevent timing side-channel attacks
         if (MessageDigest.isEqual(expectedServerSignature, receivedSignature)) {
@@ -243,15 +249,15 @@ public class ScramContext {
     }
 
     public @Nullable byte[] getClientKey() {
-        return clientKey;
+        return clientKey != null ? clientKey.clone() : null;
     }
 
     public @Nullable byte[] getStoredKey() {
-        return storedKey;
+        return storedKey != null ? storedKey.clone() : null;
     }
 
     public @Nullable byte[] getServerKey() {
-        return serverKey;
+        return serverKey != null ? serverKey.clone() : null;
     }
 
     public @Nullable ScramMessageParser.ScramChallengeParams getInitialChallengeParams() {
@@ -267,7 +273,7 @@ public class ScramContext {
     }
 
     public @Nullable byte[] getSalt() {
-        return salt;
+        return salt != null ? salt.clone() : null;
     }
 
     public @Nullable String getClientFinalMessageWithoutProof() {

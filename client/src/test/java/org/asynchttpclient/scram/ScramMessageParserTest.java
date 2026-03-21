@@ -145,6 +145,12 @@ class ScramMessageParserTest {
     }
 
     @Test
+    void testParseServerFirst_emptySalt() {
+        assertThrows(ScramException.class, () ->
+                ScramMessageParser.parseServerFirst("r=nonce,s=,i=4096"));
+    }
+
+    @Test
     void testValidateGs2Header_valid() {
         assertDoesNotThrow(() -> ScramMessageParser.validateGs2Header("n,,n=user,r=nonce"));
     }

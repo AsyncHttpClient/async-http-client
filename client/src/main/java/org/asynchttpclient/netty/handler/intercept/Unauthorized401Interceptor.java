@@ -268,7 +268,7 @@ public class Unauthorized401Interceptor {
                         LOGGER.warn("SCRAM authentication failed: unexpected 401 in state {}", ctx.getState());
                         return false;
                     }
-                } catch (ScramException e) {
+                } catch (ScramException | IllegalArgumentException e) {
                     LOGGER.warn("SCRAM authentication failed: {}", e.getMessage());
                     return false;
                 }

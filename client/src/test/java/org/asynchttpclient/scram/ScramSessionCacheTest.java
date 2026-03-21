@@ -17,6 +17,14 @@ package org.asynchttpclient.scram;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScramSessionCacheTest {
@@ -172,6 +180,46 @@ class ScramSessionCacheTest {
         assertNotNull(entry.storedKey);
         assertNotNull(entry.serverKey);
         // No saltedPassword field exists — this is verified by compilation
+    }
+
+    @Test
+    void testConcurrentNonceCountReservation() throws Exception {
+        ScramSessionCache cache = new ScramSessionCache();
+        ScramSessionCache.CacheKey key = new ScramSessionCache.CacheKey("host", 80, "realm");
+        ScramSessionCache.Entry entry = createEntry("sr123", 300, 0);
+        cache.put(key, entry);
+
+        int threadCount = 16;
+        int reservationsPerThread = 1000;
+        int totalReservations = threadCount * reservationsPerThread;
+        Set<Integer> reservedValues = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        for (int t = 0; t < threadCount; t++) {
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    for (int i = 0; i < reservationsPerThread; i++) {
+                        int value = cache.reserveNonceCount(key);
+                        assertTrue(reservedValues.add(value),
+                                "Duplicate nonce count reserved: " + value);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        assertTrue(doneLatch.await(30, TimeUnit.SECONDS), "Threads did not complete in time");
+        executor.shutdown();
+
+        assertEquals(totalReservations, reservedValues.size(),
+                "All reserved nonce counts must be unique");
     }
 
     @Test
