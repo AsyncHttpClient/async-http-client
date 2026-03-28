@@ -53,14 +53,14 @@ Java 11+
 <dependency>
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client</artifactId>
-    <version>3.0.7</version>
+    <version>3.0.8</version>
 </dependency>
 ```
 
 **Gradle:**
 
 ```groovy
-implementation 'org.asynchttpclient:async-http-client:3.0.7'
+implementation 'org.asynchttpclient:async-http-client:3.0.8'
 ```
 
 <details>
