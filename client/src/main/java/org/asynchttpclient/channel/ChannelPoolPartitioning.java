@@ -33,19 +33,12 @@ public interface ChannelPoolPartitioning {
 
         @Override
         public Object getPartitionKey(Uri uri, @Nullable String virtualHost, @Nullable ProxyServer proxyServer) {
+            if (proxyServer == null && virtualHost == null) {
+                return new PartitionKey(uri.getScheme(), uri.getHost(), uri.getExplicitPort());
+            }
+
             String targetHostBaseUrl = uri.getBaseUrl();
-            if (proxyServer == null) {
-                if (virtualHost == null) {
-                    return targetHostBaseUrl;
-                } else {
-                    return new CompositePartitionKey(
-                            targetHostBaseUrl,
-                            virtualHost,
-                            null,
-                            0,
-                            null);
-                }
-            } else {
+            if (proxyServer != null) {
                 return new CompositePartitionKey(
                         targetHostBaseUrl,
                         virtualHost,
@@ -55,6 +48,43 @@ public interface ChannelPoolPartitioning {
                                 proxyServer.getPort(),
                         proxyServer.getProxyType());
             }
+
+            return new CompositePartitionKey(
+                    targetHostBaseUrl,
+                    virtualHost,
+                    null,
+                    0,
+                    null);
+        }
+    }
+
+    class PartitionKey {
+        private final String scheme;
+        private final String host;
+        private final int port;
+
+        PartitionKey(String scheme, String host, int port) {
+            this.scheme = scheme;
+            this.host = host;
+            this.port = port;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            PartitionKey that = (PartitionKey) o;
+            return port == that.port && Objects.equals(scheme, that.scheme) && Objects.equals(host, that.host);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(scheme);
+            result = 31 * result + Objects.hashCode(host);
+            result = 31 * result + port;
+            return result;
         }
     }
 
