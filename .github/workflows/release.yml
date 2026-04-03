@@ -43,10 +43,10 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
                 
       - name: Build
-        run: mvn -ntp -B clean verify install -DskipTests
+        run: mvn -ntp -B clean verify install -DskipTests -Prelease
 
       - name: Publish to Maven Central
         env:
             GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
             GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn -ntp -B deploy -DskipTests -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}
+        run: mvn -ntp -B deploy -DskipTests -Prelease -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}
