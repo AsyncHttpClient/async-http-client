@@ -1,16 +1,64 @@
 name: Release
 
 on:
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
     inputs:
-      name:
-        description: 'Github Actions - Release'
-        required: true
-        default: 'Github Actions - Release'
+      snapshot:
+        description: 'Deploy SNAPSHOT'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
 
-  Publish:
+  deploy-snapshot:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.snapshot == true)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+
+      - name: Grant Permission
+        run: chmod +x ./mvnw
+
+      - name: Check SNAPSHOT version
+        id: check-version
+        run: |
+          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" != *-SNAPSHOT ]]; then
+            echo "::error::Version $VERSION is not a SNAPSHOT version"
+            exit 1
+          fi
+
+      - name: Remove old Maven Settings
+        run: rm -f /home/runner/.m2/settings.xml
+
+      - name: Maven Settings
+        uses: s4u/maven-settings-action@v4.0.0
+        with:
+          servers: |
+            [{
+              "id": "central",
+              "username": "${{ secrets.OSSRH_USERNAME }}",
+              "password": "${{ secrets.OSSRH_PASSWORD }}"
+            }]
+
+      - name: Deploy Snapshot
+        run: ./mvnw -B -ntp deploy -DskipTests
+
+  publish-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.snapshot == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -41,7 +89,7 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
-                
+
       - name: Build
         run: mvn -ntp -B clean verify install -DskipTests -Prelease
 
