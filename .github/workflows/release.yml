@@ -17,8 +17,8 @@ permissions:
 
 jobs:
 
-  deploy-snapshot:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.snapshot == true)
+  deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -31,45 +31,14 @@ jobs:
       - name: Grant Permission
         run: chmod +x ./mvnw
 
-      - name: Check SNAPSHOT version
-        id: check-version
+      - name: Validate SNAPSHOT version
+        if: github.event_name == 'push' || inputs.snapshot == true
         run: |
           VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if [[ "$VERSION" != *-SNAPSHOT ]]; then
             echo "::error::Version $VERSION is not a SNAPSHOT version"
             exit 1
           fi
-
-      - name: Remove old Maven Settings
-        run: rm -f /home/runner/.m2/settings.xml
-
-      - name: Maven Settings
-        uses: s4u/maven-settings-action@v4.0.0
-        with:
-          servers: |
-            [{
-              "id": "central",
-              "username": "${{ secrets.OSSRH_USERNAME }}",
-              "password": "${{ secrets.OSSRH_PASSWORD }}"
-            }]
-
-      - name: Deploy Snapshot
-        run: ./mvnw -B -ntp deploy -DskipTests
-
-  publish-release:
-    if: github.event_name == 'workflow_dispatch' && inputs.snapshot == false
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Grant Permission
-        run: sudo chmod +x ./mvnw
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: 'corretto'
-          java-version: '11'
 
       - name: Remove old Maven Settings
         run: rm -f /home/runner/.m2/settings.xml
@@ -90,11 +59,8 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Build
-        run: mvn -ntp -B clean verify install -DskipTests -Prelease
-
-      - name: Publish to Maven Central
+      - name: Deploy
         env:
             GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
             GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn -ntp -B deploy -DskipTests -Prelease -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}
+        run: ./mvnw -B -ntp deploy -DskipTests -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}
