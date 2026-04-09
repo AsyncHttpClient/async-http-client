@@ -16,8 +16,6 @@
 package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.concurrent.ThreadFactory;
@@ -34,10 +32,5 @@ enum NioTransportFactory implements TransportFactory<NioSocketChannel, NioEventL
     @Override
     public NioEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new NioEventLoopGroup(ioThreadsCount, threadFactory);
-    }
-
-    @Override
-    public Class<? extends DatagramChannel> getDatagramChannelClass() {
-        return NioDatagramChannel.class;
     }
 }

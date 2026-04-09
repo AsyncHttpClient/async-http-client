@@ -16,10 +16,8 @@
 package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollDatagramChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
-import io.netty.channel.socket.DatagramChannel;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -42,10 +40,5 @@ class EpollTransportFactory implements TransportFactory<EpollSocketChannel, Epol
     @Override
     public EpollEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new EpollEventLoopGroup(ioThreadsCount, threadFactory);
-    }
-
-    @Override
-    public Class<? extends DatagramChannel> getDatagramChannelClass() {
-        return EpollDatagramChannel.class;
     }
 }

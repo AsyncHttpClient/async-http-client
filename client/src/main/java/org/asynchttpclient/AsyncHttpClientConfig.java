@@ -381,13 +381,14 @@ public interface AsyncHttpClientConfig {
      * Return the {@link AddressResolverGroup} used for asynchronous DNS resolution.
      * <p>
      * When non-null, this resolver group is used for hostname resolution instead of
-     * the per-request {@link io.netty.resolver.NameResolver}. The default implementation
-     * uses Netty's {@link io.netty.resolver.dns.DnsAddressResolverGroup} which provides
+     * the per-request {@link io.netty.resolver.NameResolver}. For example,
+     * Netty's {@link io.netty.resolver.dns.DnsAddressResolverGroup} provides
      * non-blocking DNS lookups with inflight coalescing across concurrent requests for
      * the same hostname.
      * <p>
-     * Providing {@code null} disables the group resolver and falls back to
-     * per-request name resolvers (legacy behavior).
+     * By default this returns {@code null}, preserving the legacy per-request name
+     * resolver behavior. Set via
+     * {@link DefaultAsyncHttpClientConfig.Builder#setAddressResolverGroup(AddressResolverGroup)}.
      *
      * @return the {@link AddressResolverGroup} or {@code null} to use per-request resolvers
      */

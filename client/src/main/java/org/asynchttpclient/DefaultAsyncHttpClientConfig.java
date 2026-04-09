@@ -1530,10 +1530,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          * Set a custom {@link AddressResolverGroup} for asynchronous DNS resolution.
          * <p>
          * When set, this resolver group is used instead of the per-request {@link io.netty.resolver.NameResolver}.
-         * Pass {@code null} to disable the group resolver and fall back to per-request resolvers (legacy behavior).
-         * <p>
-         * If not explicitly set, a {@link io.netty.resolver.dns.DnsAddressResolverGroup} is created automatically,
-         * providing non-blocking DNS with inflight coalescing.
+         * Pass {@code null} (the default) to use per-request resolvers (legacy behavior).
          *
          * @param addressResolverGroup the resolver group, or {@code null} to use per-request resolvers
          * @return the same builder instance
