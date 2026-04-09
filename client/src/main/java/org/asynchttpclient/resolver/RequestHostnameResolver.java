@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,14 +126,21 @@ public enum RequestHostnameResolver {
 
             @Override
             protected void onFailure(Throwable t) {
+                // Wrap non-UnknownHostException DNS errors for backward compatibility.
+                // The JDK resolver always threw UnknownHostException; Netty's async DNS
+                // resolver may throw DnsErrorCauseException for SERVFAIL or other errors.
+                Throwable cause = t instanceof UnknownHostException ? t : new UnknownHostException(hostname);
+                if (!(t instanceof UnknownHostException)) {
+                    cause.initCause(t);
+                }
                 try {
-                    asyncHandler.onHostnameResolutionFailure(hostname, t);
+                    asyncHandler.onHostnameResolutionFailure(hostname, cause);
                 } catch (Exception e) {
                     LOGGER.error("onHostnameResolutionFailure crashed", e);
                     promise.tryFailure(e);
                     return;
                 }
-                promise.tryFailure(t);
+                promise.tryFailure(cause);
             }
         });
 

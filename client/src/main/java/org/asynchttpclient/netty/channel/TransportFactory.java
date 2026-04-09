@@ -18,10 +18,17 @@ package org.asynchttpclient.netty.channel;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
 
 import java.util.concurrent.ThreadFactory;
 
 public interface TransportFactory<C extends Channel, L extends EventLoopGroup> extends ChannelFactory<C> {
 
     L newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory);
+
+    /**
+     * Return the {@link DatagramChannel} class suitable for this transport.
+     * Used by DNS resolution to create UDP channels compatible with the event loop group.
+     */
+    Class<? extends DatagramChannel> getDatagramChannelClass();
 }

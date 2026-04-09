@@ -16,8 +16,10 @@
 package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueDatagramChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueSocketChannel;
+import io.netty.channel.socket.DatagramChannel;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -40,5 +42,10 @@ class KQueueTransportFactory implements TransportFactory<KQueueSocketChannel, KQ
     @Override
     public KQueueEventLoopGroup newEventLoopGroup(int ioThreadsCount, ThreadFactory threadFactory) {
         return new KQueueEventLoopGroup(ioThreadsCount, threadFactory);
+    }
+
+    @Override
+    public Class<? extends DatagramChannel> getDatagramChannelClass() {
+        return KQueueDatagramChannel.class;
     }
 }

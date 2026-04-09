@@ -204,7 +204,7 @@ public class ChannelManager {
             addressResolverGroup = config.getAddressResolverGroup();
             allowCloseAddressResolverGroup = false;
         } else {
-            addressResolverGroup = new DnsAddressResolverGroup(io.netty.channel.socket.nio.NioDatagramChannel.class,
+            addressResolverGroup = new DnsAddressResolverGroup(transportFactory.getDatagramChannelClass(),
                     io.netty.resolver.dns.DnsServerAddressStreamProviders.platformDefault());
             allowCloseAddressResolverGroup = true;
         }
