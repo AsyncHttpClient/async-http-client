@@ -53,7 +53,10 @@ import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.resolver.AddressResolver;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.NameResolver;
+import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Future;
@@ -122,6 +125,8 @@ public class ChannelManager {
     private final Bootstrap httpBootstrap;
     private final Bootstrap wsBootstrap;
     private final long handshakeTimeout;
+    private final AddressResolverGroup<InetSocketAddress> addressResolverGroup;
+    private final boolean allowCloseAddressResolverGroup;
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
@@ -193,6 +198,16 @@ public class ChannelManager {
 
         httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
         wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
+
+        // Initialize the address resolver group for async DNS
+        if (config.getAddressResolverGroup() != null) {
+            addressResolverGroup = config.getAddressResolverGroup();
+            allowCloseAddressResolverGroup = false;
+        } else {
+            addressResolverGroup = new DnsAddressResolverGroup(io.netty.channel.socket.nio.NioDatagramChannel.class,
+                    io.netty.resolver.dns.DnsServerAddressStreamProviders.platformDefault());
+            allowCloseAddressResolverGroup = true;
+        }
     }
 
     private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory(AsyncHttpClientConfig config) {
@@ -409,6 +424,9 @@ public class ChannelManager {
         ChannelGroupFuture groupFuture = openChannels.close();
         channelPool.destroy();
         groupFuture.addListener(future -> sslEngineFactory.destroy());
+        if (allowCloseAddressResolverGroup) {
+            addressResolverGroup.close();
+        }
     }
 
     public void close() {
@@ -579,14 +597,17 @@ public class ChannelManager {
             Bootstrap socksBootstrap = httpBootstrap.clone();
             ChannelHandler httpBootstrapHandler = socksBootstrap.config().handler();
 
-            nameResolver.resolve(proxy.getHost()).addListener((Future<InetAddress> whenProxyAddress) -> {
+            // Use the address resolver group for async, non-blocking proxy host resolution
+            InetSocketAddress unresolvedProxyAddress = InetSocketAddress.createUnresolved(proxy.getHost(), proxy.getPort());
+            AddressResolver<InetSocketAddress> resolver = addressResolverGroup.getResolver(eventLoopGroup.next());
+            resolver.resolve(unresolvedProxyAddress).addListener((Future<InetSocketAddress> whenProxyAddress) -> {
                 if (whenProxyAddress.isSuccess()) {
                     socksBootstrap.handler(new ChannelInitializer<Channel>() {
                         @Override
                         protected void initChannel(Channel channel) throws Exception {
                             channel.pipeline().addLast(httpBootstrapHandler);
 
-                            InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
+                            InetSocketAddress proxyAddress = whenProxyAddress.get();
                             Realm realm = proxy.getRealm();
                             String username = realm != null ? realm.getPrincipal() : null;
                             String password = realm != null ? realm.getPassword() : null;
@@ -788,6 +809,15 @@ public class ChannelManager {
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
+    }
+
+    /**
+     * Return the {@link AddressResolverGroup} used for async DNS resolution.
+     * Resolvers obtained from this group share inflight coalescing for concurrent
+     * lookups to the same hostname.
+     */
+    public AddressResolverGroup<InetSocketAddress> getAddressResolverGroup() {
+        return addressResolverGroup;
     }
 
     public ClientStats getClientStats() {
