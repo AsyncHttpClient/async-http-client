@@ -45,6 +45,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class AddressResolverGroupTest extends HttpTest {
 
+    private static final String GOOGLE_URL = "https://www.google.com/";
+    private static final String EXAMPLE_URL = "https://www.example.com/";
+
     private HttpServer server;
 
     private static boolean isExternalNetworkAvailable() {
@@ -149,7 +152,7 @@ public class AddressResolverGroupTest extends HttpTest {
                 DnsServerAddressStreamProviders.platformDefault());
 
         try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
-            Response response = client.prepareGet("https://www.google.com/").execute().get(20, TimeUnit.SECONDS);
+            Response response = client.prepareGet(GOOGLE_URL).execute().get(20, TimeUnit.SECONDS);
             assertNotNull(response);
             assertTrue(response.getStatusCode() >= 200 && response.getStatusCode() < 400,
                     "Expected successful HTTP status but got " + response.getStatusCode());
@@ -165,12 +168,12 @@ public class AddressResolverGroupTest extends HttpTest {
                 DnsServerAddressStreamProviders.platformDefault());
 
         try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
-            Response response1 = client.prepareGet("https://www.google.com/").execute().get(20, TimeUnit.SECONDS);
+            Response response1 = client.prepareGet(GOOGLE_URL).execute().get(20, TimeUnit.SECONDS);
             assertNotNull(response1);
             assertTrue(response1.getStatusCode() >= 200 && response1.getStatusCode() < 400,
                     "Expected successful HTTP status for google.com but got " + response1.getStatusCode());
 
-            Response response2 = client.prepareGet("https://www.example.com/").execute().get(20, TimeUnit.SECONDS);
+            Response response2 = client.prepareGet(EXAMPLE_URL).execute().get(20, TimeUnit.SECONDS);
             assertNotNull(response2);
             assertTrue(response2.getStatusCode() >= 200 && response2.getStatusCode() < 400,
                     "Expected successful HTTP status for example.com but got " + response2.getStatusCode());
