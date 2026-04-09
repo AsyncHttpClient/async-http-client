@@ -25,20 +25,36 @@ import org.asynchttpclient.testserver.HttpTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class AddressResolverGroupTest extends HttpTest {
 
     private HttpServer server;
+
+    private static boolean isExternalNetworkAvailable() {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("www.google.com", 443), 3000);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     @BeforeEach
     public void start() throws Throwable {
@@ -117,12 +133,47 @@ public class AddressResolverGroupTest extends HttpTest {
         withClient(config().setAddressResolverGroup(resolverGroup)).run(client -> {
             try {
                 client.prepareGet("http://nonexistent.invalid/foo").execute().get(10, SECONDS);
+                fail("Request to nonexistent host should have thrown an exception");
             } catch (ExecutionException e) {
-                // DNS failures may surface as UnknownHostException or as a Netty
-                // DnsErrorCauseException (since MiscUtils.getCause unwraps the chain).
-                // Either way, the request must fail, never silently succeed.
                 assertNotNull(e.getCause(), "Should have a cause for the DNS failure");
             }
         });
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void resolveRealDomainWithDnsResolverGroup() throws Throwable {
+        assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
+
+        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
+                NioDatagramChannel.class,
+                DnsServerAddressStreamProviders.platformDefault());
+
+        try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
+            Response response = client.prepareGet("https://www.google.com/").execute().get(20, TimeUnit.SECONDS);
+            assertNotNull(response);
+            assertTrue(response.getStatusCode() >= 200 && response.getStatusCode() < 400,
+                    "Expected successful HTTP status but got " + response.getStatusCode());
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void resolveMultipleRealDomainsWithDnsResolverGroup() throws Throwable {
+        assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
+
+        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
+                NioDatagramChannel.class,
+                DnsServerAddressStreamProviders.platformDefault());
+
+        try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
+            Response response1 = client.prepareGet("https://www.google.com/").execute().get(20, TimeUnit.SECONDS);
+            assertNotNull(response1);
+            assertTrue(response1.getStatusCode() >= 200 && response1.getStatusCode() < 400,
+                    "Expected successful HTTP status for google.com but got " + response1.getStatusCode());
+
+            Response response2 = client.prepareGet("https://www.example.com/").execute().get(20, TimeUnit.SECONDS);
+            assertNotNull(response2);
+            assertTrue(response2.getStatusCode() >= 200 && response2.getStatusCode() < 400,
+                    "Expected successful HTTP status for example.com but got " + response2.getStatusCode());
+        }
     }
 }

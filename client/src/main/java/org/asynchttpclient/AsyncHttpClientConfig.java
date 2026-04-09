@@ -393,7 +393,9 @@ public interface AsyncHttpClientConfig {
      * @return the {@link AddressResolverGroup} or {@code null} to use per-request resolvers
      */
     @Nullable
-    AddressResolverGroup<InetSocketAddress> getAddressResolverGroup();
+    default AddressResolverGroup<InetSocketAddress> getAddressResolverGroup() {
+        return null;
+    }
 
     boolean isUseNativeTransport();
 

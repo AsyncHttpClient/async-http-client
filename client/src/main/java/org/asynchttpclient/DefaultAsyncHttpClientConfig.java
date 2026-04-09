@@ -1531,6 +1531,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          * <p>
          * When set, this resolver group is used instead of the per-request {@link io.netty.resolver.NameResolver}.
          * Pass {@code null} (the default) to use per-request resolvers (legacy behavior).
+         * <p>
+         * <b>Lifecycle:</b> The client takes ownership of the provided resolver group and will
+         * {@linkplain AddressResolverGroup#close() close} it when the client is shut down.
+         * Do not pass a shared resolver group that is used by other clients unless you manage
+         * its lifecycle independently.
          *
          * @param addressResolverGroup the resolver group, or {@code null} to use per-request resolvers
          * @return the same builder instance
