@@ -60,15 +60,6 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestBuilderBase.class);
     private static final Uri DEFAULT_REQUEST_URL = Uri.create("http://localhost");
-    /**
-     * @deprecated This blocking resolver is retained only as a sentinel value for backward compatibility.
-     * When a request uses this default, the client's {@link io.netty.resolver.AddressResolverGroup}
-     * (typically {@link io.netty.resolver.dns.DnsAddressResolverGroup}) is used instead, providing
-     * non-blocking DNS with inflight coalescing. To customize DNS resolution, either configure an
-     * {@link io.netty.resolver.AddressResolverGroup} on the client config or set a custom
-     * {@link NameResolver} on individual requests.
-     */
-    @Deprecated
     public static final NameResolver<InetAddress> DEFAULT_NAME_RESOLVER = new DefaultNameResolver(ImmediateEventExecutor.INSTANCE);
     // builder only fields
     protected UriEncoder uriEncoder;

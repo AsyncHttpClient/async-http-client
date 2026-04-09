@@ -47,7 +47,6 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
@@ -372,17 +371,17 @@ public final class NettyRequestSender {
         Uri uri = request.getUri();
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
-        // Use the client's AddressResolverGroup when the request does not have a custom NameResolver.
-        // This provides non-blocking async DNS with inflight coalescing.
-        boolean useGroupResolver = request.getNameResolver() == RequestBuilderBase.DEFAULT_NAME_RESOLVER;
+        // Use the client's AddressResolverGroup when configured for non-blocking async DNS.
+        AddressResolver<InetSocketAddress> groupResolver = channelManager.getAddressResolverGroup() != null
+                ? channelManager.getAddressResolverGroup().getResolver(channelManager.getEventLoopGroup().next())
+                : null;
 
         if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && proxy.getProxyType().isHttp()) {
             int port = ProxyType.HTTPS.equals(proxy.getProxyType()) || uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
             scheduleRequestTimeout(future, unresolvedRemoteAddress);
-            if (useGroupResolver) {
-                AddressResolver<InetSocketAddress> resolver = channelManager.getAddressResolverGroup().getResolver(channelManager.getEventLoopGroup().next());
-                return RequestHostnameResolver.INSTANCE.resolve(resolver, unresolvedRemoteAddress, asyncHandler);
+            if (groupResolver != null) {
+                return RequestHostnameResolver.INSTANCE.resolve(groupResolver, unresolvedRemoteAddress, asyncHandler);
             }
             return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
         } else {
@@ -395,9 +394,8 @@ public final class NettyRequestSender {
                 // bypass resolution
                 InetSocketAddress inetSocketAddress = new InetSocketAddress(request.getAddress(), port);
                 return promise.setSuccess(singletonList(inetSocketAddress));
-            } else if (useGroupResolver) {
-                AddressResolver<InetSocketAddress> resolver = channelManager.getAddressResolverGroup().getResolver(channelManager.getEventLoopGroup().next());
-                return RequestHostnameResolver.INSTANCE.resolve(resolver, unresolvedRemoteAddress, asyncHandler);
+            } else if (groupResolver != null) {
+                return RequestHostnameResolver.INSTANCE.resolve(groupResolver, unresolvedRemoteAddress, asyncHandler);
             } else {
                 return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
             }

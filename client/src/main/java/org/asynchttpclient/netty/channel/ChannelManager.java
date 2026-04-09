@@ -56,7 +56,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.NameResolver;
-import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Future;
@@ -85,6 +84,7 @@ import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,8 +125,7 @@ public class ChannelManager {
     private final Bootstrap httpBootstrap;
     private final Bootstrap wsBootstrap;
     private final long handshakeTimeout;
-    private final AddressResolverGroup<InetSocketAddress> addressResolverGroup;
-    private final boolean allowCloseAddressResolverGroup;
+    private final @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
@@ -199,15 +198,8 @@ public class ChannelManager {
         httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
         wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
 
-        // Initialize the address resolver group for async DNS
-        if (config.getAddressResolverGroup() != null) {
-            addressResolverGroup = config.getAddressResolverGroup();
-            allowCloseAddressResolverGroup = false;
-        } else {
-            addressResolverGroup = new DnsAddressResolverGroup(transportFactory.getDatagramChannelClass(),
-                    io.netty.resolver.dns.DnsServerAddressStreamProviders.platformDefault());
-            allowCloseAddressResolverGroup = true;
-        }
+        // Use the address resolver group from config if provided; otherwise null (legacy per-request resolution)
+        addressResolverGroup = config.getAddressResolverGroup();
     }
 
     private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory(AsyncHttpClientConfig config) {
@@ -424,7 +416,7 @@ public class ChannelManager {
         ChannelGroupFuture groupFuture = openChannels.close();
         channelPool.destroy();
         groupFuture.addListener(future -> sslEngineFactory.destroy());
-        if (allowCloseAddressResolverGroup) {
+        if (addressResolverGroup != null) {
             addressResolverGroup.close();
         }
     }
@@ -597,42 +589,27 @@ public class ChannelManager {
             Bootstrap socksBootstrap = httpBootstrap.clone();
             ChannelHandler httpBootstrapHandler = socksBootstrap.config().handler();
 
-            // Use the address resolver group for async, non-blocking proxy host resolution
-            InetSocketAddress unresolvedProxyAddress = InetSocketAddress.createUnresolved(proxy.getHost(), proxy.getPort());
-            AddressResolver<InetSocketAddress> resolver = addressResolverGroup.getResolver(eventLoopGroup.next());
-            resolver.resolve(unresolvedProxyAddress).addListener((Future<InetSocketAddress> whenProxyAddress) -> {
-                if (whenProxyAddress.isSuccess()) {
-                    socksBootstrap.handler(new ChannelInitializer<Channel>() {
-                        @Override
-                        protected void initChannel(Channel channel) throws Exception {
-                            channel.pipeline().addLast(httpBootstrapHandler);
-
-                            InetSocketAddress proxyAddress = whenProxyAddress.get();
-                            Realm realm = proxy.getRealm();
-                            String username = realm != null ? realm.getPrincipal() : null;
-                            String password = realm != null ? realm.getPassword() : null;
-                            ProxyHandler socksProxyHandler;
-                            switch (proxy.getProxyType()) {
-                                case SOCKS_V4:
-                                    socksProxyHandler = new Socks4ProxyHandler(proxyAddress, username);
-                                    break;
-
-                                case SOCKS_V5:
-                                    socksProxyHandler = new Socks5ProxyHandler(proxyAddress, username, password);
-                                    break;
-
-                                default:
-                                    throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
-                            }
-                            channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
-                        }
-                    });
-                    promise.setSuccess(socksBootstrap);
-
-                } else {
-                    promise.setFailure(whenProxyAddress.cause());
-                }
-            });
+            if (addressResolverGroup != null) {
+                // Use the address resolver group for async, non-blocking proxy host resolution
+                InetSocketAddress unresolvedProxyAddress = InetSocketAddress.createUnresolved(proxy.getHost(), proxy.getPort());
+                AddressResolver<InetSocketAddress> resolver = addressResolverGroup.getResolver(eventLoopGroup.next());
+                resolver.resolve(unresolvedProxyAddress).addListener((Future<InetSocketAddress> whenProxyAddress) -> {
+                    if (whenProxyAddress.isSuccess()) {
+                        configureSocksBootstrap(socksBootstrap, httpBootstrapHandler, whenProxyAddress.get(), proxy, promise);
+                    } else {
+                        promise.setFailure(whenProxyAddress.cause());
+                    }
+                });
+            } else {
+                nameResolver.resolve(proxy.getHost()).addListener((Future<InetAddress> whenProxyAddress) -> {
+                    if (whenProxyAddress.isSuccess()) {
+                        InetSocketAddress proxyAddress = new InetSocketAddress(whenProxyAddress.get(), proxy.getPort());
+                        configureSocksBootstrap(socksBootstrap, httpBootstrapHandler, proxyAddress, proxy, promise);
+                    } else {
+                        promise.setFailure(whenProxyAddress.cause());
+                    }
+                });
+            }
 
         } else if (proxy != null && ProxyType.HTTPS.equals(proxy.getProxyType())) {
             // For HTTPS proxies, use HTTP bootstrap but ensure SSL connection to proxy
@@ -643,6 +620,35 @@ public class ChannelManager {
         }
 
         return promise;
+    }
+
+    private void configureSocksBootstrap(Bootstrap socksBootstrap, ChannelHandler httpBootstrapHandler,
+                                          InetSocketAddress proxyAddress, ProxyServer proxy, Promise<Bootstrap> promise) {
+        socksBootstrap.handler(new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel channel) throws Exception {
+                channel.pipeline().addLast(httpBootstrapHandler);
+
+                Realm realm = proxy.getRealm();
+                String username = realm != null ? realm.getPrincipal() : null;
+                String password = realm != null ? realm.getPassword() : null;
+                ProxyHandler socksProxyHandler;
+                switch (proxy.getProxyType()) {
+                    case SOCKS_V4:
+                        socksProxyHandler = new Socks4ProxyHandler(proxyAddress, username);
+                        break;
+
+                    case SOCKS_V5:
+                        socksProxyHandler = new Socks5ProxyHandler(proxyAddress, username, password);
+                        break;
+
+                    default:
+                        throw new IllegalArgumentException("Only SOCKS4 and SOCKS5 supported at the moment.");
+                }
+                channel.pipeline().addFirst(SOCKS_HANDLER, socksProxyHandler);
+            }
+        });
+        promise.setSuccess(socksBootstrap);
     }
 
     /**
@@ -812,11 +818,10 @@ public class ChannelManager {
     }
 
     /**
-     * Return the {@link AddressResolverGroup} used for async DNS resolution.
-     * Resolvers obtained from this group share inflight coalescing for concurrent
-     * lookups to the same hostname.
+     * Return the {@link AddressResolverGroup} used for async DNS resolution, or {@code null}
+     * if per-request name resolvers should be used (legacy behavior).
      */
-    public AddressResolverGroup<InetSocketAddress> getAddressResolverGroup() {
+    public @Nullable AddressResolverGroup<InetSocketAddress> getAddressResolverGroup() {
         return addressResolverGroup;
     }
 
