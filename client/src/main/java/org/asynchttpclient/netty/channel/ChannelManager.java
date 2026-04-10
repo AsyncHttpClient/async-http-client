@@ -416,12 +416,14 @@ public class ChannelManager {
         ChannelGroupFuture groupFuture = openChannels.close();
         channelPool.destroy();
         groupFuture.addListener(future -> sslEngineFactory.destroy());
-        if (addressResolverGroup != null) {
-            addressResolverGroup.close();
-        }
     }
 
     public void close() {
+        // Close the resolver group first while the EventLoopGroup is still active,
+        // since Netty DNS resolvers may need a live EventLoop for clean shutdown.
+        if (addressResolverGroup != null) {
+            addressResolverGroup.close();
+        }
         if (allowReleaseEventLoopGroup) {
             final long shutdownQuietPeriod = config.getShutdownQuietPeriod().toMillis();
             final long shutdownTimeout = config.getShutdownTimeout().toMillis();
