@@ -34,6 +34,8 @@ import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
+import io.netty.resolver.AddressResolver;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.Future;
@@ -72,6 +74,7 @@ import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -374,7 +377,7 @@ public final class NettyRequestSender {
             int port = ProxyType.HTTPS.equals(proxy.getProxyType()) || uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
             scheduleRequestTimeout(future, unresolvedRemoteAddress);
-            return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
+            return resolveHostname(request, unresolvedRemoteAddress, asyncHandler);
         } else {
             int port = uri.getExplicitPort();
 
@@ -385,10 +388,18 @@ public final class NettyRequestSender {
                 // bypass resolution
                 InetSocketAddress inetSocketAddress = new InetSocketAddress(request.getAddress(), port);
                 return promise.setSuccess(singletonList(inetSocketAddress));
-            } else {
-                return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
             }
+            return resolveHostname(request, unresolvedRemoteAddress, asyncHandler);
         }
+    }
+
+    private Future<List<InetSocketAddress>> resolveHostname(Request request, InetSocketAddress unresolvedRemoteAddress, AsyncHandler<?> asyncHandler) {
+        AddressResolverGroup<InetSocketAddress> group = channelManager.getAddressResolverGroup();
+        if (group != null) {
+            AddressResolver<InetSocketAddress> resolver = group.getResolver(channelManager.getEventLoopGroup().next());
+            return RequestHostnameResolver.INSTANCE.resolve(resolver, unresolvedRemoteAddress, asyncHandler);
+        }
+        return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
     }
 
     private <T> NettyResponseFuture<T> newNettyResponseFuture(Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {

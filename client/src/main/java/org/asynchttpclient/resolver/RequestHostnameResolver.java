@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.resolver;
 
+import io.netty.resolver.AddressResolver;
 import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,6 +60,60 @@ public enum RequestHostnameResolver {
                 for (InetAddress a : value) {
                     socketAddresses.add(new InetSocketAddress(a, port));
                 }
+                try {
+                    asyncHandler.onHostnameResolutionSuccess(hostname, socketAddresses);
+                } catch (Exception e) {
+                    LOGGER.error("onHostnameResolutionSuccess crashed", e);
+                    promise.tryFailure(e);
+                    return;
+                }
+                promise.trySuccess(socketAddresses);
+            }
+
+            @Override
+            protected void onFailure(Throwable t) {
+                try {
+                    asyncHandler.onHostnameResolutionFailure(hostname, t);
+                } catch (Exception e) {
+                    LOGGER.error("onHostnameResolutionFailure crashed", e);
+                    promise.tryFailure(e);
+                    return;
+                }
+                promise.tryFailure(t);
+            }
+        });
+
+        return promise;
+    }
+
+    /**
+     * Resolve an unresolved address using an {@link AddressResolver} obtained from
+     * a {@link io.netty.resolver.AddressResolverGroup}. This path provides non-blocking
+     * DNS resolution with inflight coalescing.
+     *
+     * @param addressResolver the address resolver (from the group, bound to an event loop)
+     * @param unresolvedAddress the unresolved socket address
+     * @param asyncHandler the async handler for lifecycle callbacks
+     * @return a future that completes with the list of resolved addresses
+     */
+    public Future<List<InetSocketAddress>> resolve(AddressResolver<InetSocketAddress> addressResolver, InetSocketAddress unresolvedAddress, AsyncHandler<?> asyncHandler) {
+        final String hostname = unresolvedAddress.getHostString();
+        final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+
+        try {
+            asyncHandler.onHostnameResolutionAttempt(hostname);
+        } catch (Exception e) {
+            LOGGER.error("onHostnameResolutionAttempt crashed", e);
+            promise.tryFailure(e);
+            return promise;
+        }
+
+        final Future<List<InetSocketAddress>> whenResolved = addressResolver.resolveAll(unresolvedAddress);
+
+        whenResolved.addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+
+            @Override
+            protected void onSuccess(List<InetSocketAddress> socketAddresses) {
                 try {
                     asyncHandler.onHostnameResolutionSuccess(hostname, socketAddresses);
                 } catch (Exception e) {

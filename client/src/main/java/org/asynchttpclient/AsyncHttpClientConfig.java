@@ -21,6 +21,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
@@ -37,6 +38,7 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -374,6 +376,26 @@ public interface AsyncHttpClientConfig {
 
     @Nullable
     EventLoopGroup getEventLoopGroup();
+
+    /**
+     * Return the {@link AddressResolverGroup} used for asynchronous DNS resolution.
+     * <p>
+     * When non-null, this resolver group is used for hostname resolution instead of
+     * the per-request {@link io.netty.resolver.NameResolver}. For example,
+     * Netty's {@link io.netty.resolver.dns.DnsAddressResolverGroup} provides
+     * non-blocking DNS lookups with inflight coalescing across concurrent requests for
+     * the same hostname.
+     * <p>
+     * By default this returns {@code null}, preserving the legacy per-request name
+     * resolver behavior. Set via
+     * {@link DefaultAsyncHttpClientConfig.Builder#setAddressResolverGroup(AddressResolverGroup)}.
+     *
+     * @return the {@link AddressResolverGroup} or {@code null} to use per-request resolvers
+     */
+    @Nullable
+    default AddressResolverGroup<InetSocketAddress> getAddressResolverGroup() {
+        return null;
+    }
 
     boolean isUseNativeTransport();
 

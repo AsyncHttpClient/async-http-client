@@ -20,6 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
+import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
@@ -36,6 +37,7 @@ import org.asynchttpclient.proxy.ProxyServerSelector;
 import org.asynchttpclient.util.ProxyUtils;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -200,6 +202,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int chunkedFileChunkSize;
     private final Map<ChannelOption<Object>, Object> channelOptions;
     private final @Nullable EventLoopGroup eventLoopGroup;
+    private final @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
     private final boolean useNativeTransport;
     private final boolean useOnlyEpollNativeTransport;
     private final @Nullable ByteBufAllocator allocator;
@@ -305,6 +308,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int webSocketMaxFrameSize,
                                          Map<ChannelOption<Object>, Object> channelOptions,
                                          @Nullable EventLoopGroup eventLoopGroup,
+                                         @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup,
                                          boolean useNativeTransport,
                                          boolean useOnlyEpollNativeTransport,
                                          @Nullable ByteBufAllocator allocator,
@@ -406,6 +410,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.chunkedFileChunkSize = chunkedFileChunkSize;
         this.channelOptions = channelOptions;
         this.eventLoopGroup = eventLoopGroup;
+        this.addressResolverGroup = addressResolverGroup;
         this.useNativeTransport = useNativeTransport;
         this.useOnlyEpollNativeTransport = useOnlyEpollNativeTransport;
 
@@ -807,6 +812,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public @Nullable AddressResolverGroup<InetSocketAddress> getAddressResolverGroup() {
+        return addressResolverGroup;
+    }
+
+    @Override
     public boolean isUseNativeTransport() {
         return useNativeTransport;
     }
@@ -959,6 +969,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private @Nullable ByteBufAllocator allocator;
         private final Map<ChannelOption<Object>, Object> channelOptions = new HashMap<>();
         private @Nullable EventLoopGroup eventLoopGroup;
+        private @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
         private @Nullable Timer nettyTimer;
         private @Nullable ThreadFactory threadFactory;
         private @Nullable Consumer<Channel> httpAdditionalChannelInitializer;
@@ -1061,6 +1072,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             chunkedFileChunkSize = config.getChunkedFileChunkSize();
             channelOptions.putAll(config.getChannelOptions());
             eventLoopGroup = config.getEventLoopGroup();
+            addressResolverGroup = config.getAddressResolverGroup();
             useNativeTransport = config.isUseNativeTransport();
             useOnlyEpollNativeTransport = config.isUseOnlyEpollNativeTransport();
 
@@ -1514,6 +1526,25 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        /**
+         * Set a custom {@link AddressResolverGroup} for asynchronous DNS resolution.
+         * <p>
+         * When set, this resolver group is used instead of the per-request {@link io.netty.resolver.NameResolver}.
+         * Pass {@code null} (the default) to use per-request resolvers (legacy behavior).
+         * <p>
+         * <b>Lifecycle:</b> The client takes ownership of the provided resolver group and will
+         * {@linkplain AddressResolverGroup#close() close} it when the client is shut down.
+         * Do not pass a shared resolver group that is used by other clients unless you manage
+         * its lifecycle independently.
+         *
+         * @param addressResolverGroup the resolver group, or {@code null} to use per-request resolvers
+         * @return the same builder instance
+         */
+        public Builder setAddressResolverGroup(@Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup) {
+            this.addressResolverGroup = addressResolverGroup;
+            return this;
+        }
+
         public Builder setUseNativeTransport(boolean useNativeTransport) {
             this.useNativeTransport = useNativeTransport;
             return this;
@@ -1650,6 +1681,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     webSocketMaxFrameSize,
                     channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),
                     eventLoopGroup,
+                    addressResolverGroup,
                     useNativeTransport,
                     useOnlyEpollNativeTransport,
                     allocator,
