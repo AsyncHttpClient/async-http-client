@@ -261,7 +261,7 @@ public class AsyncHttpSingleTest {
     assertEquals(error.getExceptions(), Arrays.asList(processingException, thrownException));
   }
 
-  @Test
+  @Test(groups = "online")
   public void testAbort() throws Exception {
     final TestSubscriber<Response> subscriber = new TestSubscriber<>();
 

@@ -62,11 +62,13 @@ public class Redirect30xInterceptor {
   private final AsyncHttpClientConfig config;
   private final NettyRequestSender requestSender;
   private final MaxRedirectException maxRedirectException;
+  private final boolean stripAuthorizationOnRedirect;
 
   Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
     this.channelManager = channelManager;
     this.config = config;
     this.requestSender = requestSender;
+    this.stripAuthorizationOnRedirect = config.isStripAuthorizationOnRedirect();
     maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()), Redirect30xInterceptor.class,
             "exitAfterHandlingRedirect");
   }
@@ -92,14 +94,34 @@ public class Redirect30xInterceptor {
                 && !originalMethod.equals(OPTIONS) && !originalMethod.equals(HEAD) && (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || (statusCode == FOUND_302 && !config.isStrict302Handling()));
         boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || (statusCode == FOUND_302 && config.isStrict302Handling());
 
+        HttpHeaders responseHeaders = response.headers();
+        String location = responseHeaders.get(LOCATION);
+        Uri newUri = Uri.create(future.getUri(), location);
+        LOGGER.debug("Redirecting to {}", newUri);
+
+        boolean sameBase = request.getUri().isSameBase(newUri);
+        boolean schemeDowngrade = request.getUri().isSecured() && !newUri.isSecured();
+        boolean stripAuth = !sameBase || schemeDowngrade || stripAuthorizationOnRedirect;
+
+        if (stripAuth && (request.getRealm() != null || request.getHeaders().contains(AUTHORIZATION))) {
+          LOGGER.debug("Stripping credentials on redirect to {}", newUri);
+        }
+
         final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
                 .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
                 .setFollowRedirect(true)
                 .setLocalAddress(request.getLocalAddress())
                 .setNameResolver(request.getNameResolver())
                 .setProxyServer(request.getProxyServer())
-                .setRealm(request.getRealm())
+                .setRealm(stripAuth ? null : request.getRealm())
                 .setRequestTimeout(request.getRequestTimeout());
+
+        if (stripAuth) {
+          // Clear both realms on the future so NettyRequestFactory cannot regenerate
+          // Authorization or Proxy-Authorization headers on the redirected request.
+          future.setRealm(null);
+          future.setProxyRealm(null);
+        }
 
         if (keepBody) {
           requestBuilder.setCharset(request.getCharset());
@@ -118,17 +140,12 @@ public class Redirect30xInterceptor {
           }
         }
 
-        requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody));
+        requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody, stripAuth));
 
         // in case of a redirect from HTTP to HTTPS, future
         // attributes might change
         final boolean initialConnectionKeepAlive = future.isKeepAlive();
         final Object initialPartitionKey = future.getPartitionKey();
-
-        HttpHeaders responseHeaders = response.headers();
-        String location = responseHeaders.get(LOCATION);
-        Uri newUri = Uri.create(future.getUri(), location);
-        LOGGER.debug("Redirecting to {}", newUri);
 
         CookieStore cookieStore = config.getCookieStore();
         if (cookieStore != null) {
@@ -139,8 +156,6 @@ public class Redirect30xInterceptor {
               requestBuilder.addCookieIfUnset(cookie);
             }
         }
-
-        boolean sameBase = request.getUri().isSameBase(newUri);
 
         if (sameBase) {
           // we can only assume the virtual host is still valid if the baseUrl is the same
@@ -174,7 +189,7 @@ public class Redirect30xInterceptor {
     return false;
   }
 
-  private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody) {
+  private HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
 
     HttpHeaders headers = request.getHeaders()
             .remove(HOST)
@@ -184,7 +199,7 @@ public class Redirect30xInterceptor {
       headers.remove(CONTENT_TYPE);
     }
 
-    if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
+    if (stripAuthorization || (realm != null && realm.getScheme() == AuthScheme.NTLM)) {
       headers.remove(AUTHORIZATION)
               .remove(PROXY_AUTHORIZATION);
     }

@@ -347,6 +347,15 @@ public interface AsyncHttpClientConfig {
 
   int getIoThreadsCount();
 
+  /**
+   * Indicates whether the Authorization header should be stripped during redirects to a different domain.
+   *
+   * @return true if the Authorization header should be stripped, false otherwise.
+   */
+  default boolean isStripAuthorizationOnRedirect() {
+    return false;
+  }
+
   enum ResponseBodyPartFactory {
 
     EAGER {

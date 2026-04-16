@@ -365,6 +365,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public boolean isStripAuthorizationOnRedirect() {
+    return false;
+  }
+
+  @Override
   public boolean isAggregateWebSocketFrameFragments() {
     return getBooleanOpt(AGGREGATE_WEBSOCKET_FRAME_FRAGMENTS_CONFIG).orElse(defaultAggregateWebSocketFrameFragments());
   }

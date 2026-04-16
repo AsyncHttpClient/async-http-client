@@ -57,7 +57,7 @@ public class InputStreamTest extends AbstractBasicTest {
 
         @Override
         public int available() {
-          return 1; // Fake
+          return readAllowed < 3 ? 1 : 0;
         }
 
         @Override
