@@ -186,9 +186,7 @@ public class ChannelManager {
         } else {
             eventLoopGroup = config.getEventLoopGroup();
 
-            if (eventLoopGroup instanceof MultithreadEventLoopGroup) {
-                transportFactory = NioTransportFactory.INSTANCE;
-            } else if (eventLoopGroup instanceof MultiThreadIoEventLoopGroup) {
+            if (eventLoopGroup instanceof MultiThreadIoEventLoopGroup) {
               if (IoUringTransportFactory.isAvailable()) {
                 transportFactory = new IoUringTransportFactory();
               } else if (EpollTransportFactory.isAvailable()) {
@@ -198,6 +196,8 @@ public class ChannelManager {
               } else {
                 transportFactory = NioTransportFactory.INSTANCE;
               }
+            } else if (eventLoopGroup instanceof NioEventLoopGroup) {
+                transportFactory = NioTransportFactory.INSTANCE;
             } else if (isInstanceof(eventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
                 transportFactory = new EpollTransportFactory();
             } else if (isInstanceof(eventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
