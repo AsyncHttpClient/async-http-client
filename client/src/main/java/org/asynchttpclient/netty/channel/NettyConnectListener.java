@@ -55,9 +55,11 @@ public final class NettyConnectListener<T> {
         this.connectionSemaphore = connectionSemaphore;
     }
 
-    private boolean futureIsAlreadyCancelled(Channel channel) {
-        // If Future is cancelled then we will close the channel silently
-        if (future.isCancelled()) {
+    private boolean futureIsAlreadyCompleted(Channel channel) {
+        // Use isDone() (covers cancel + abort + done) rather than isCancelled() alone:
+        // abort() and done() set isDone but not isCancelled, so a future that has been
+        // aborted (e.g. by a request timeout) would otherwise slip past this check.
+        if (future.isDone()) {
             Channels.silentlyCloseChannel(channel);
             return true;
         }
@@ -65,7 +67,7 @@ public final class NettyConnectListener<T> {
     }
 
     private void writeRequest(Channel channel) {
-        if (futureIsAlreadyCancelled(channel)) {
+        if (futureIsAlreadyCompleted(channel)) {
             return;
         }
 
@@ -87,9 +89,21 @@ public final class NettyConnectListener<T> {
         final Object partitionKeyLock = (connectionSemaphore != null) ? future.takePartitionKeyLock() : null;
 
         Channels.setActiveToken(channel);
-        TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
 
-        if (futureIsAlreadyCancelled(channel)) {
+        if (futureIsAlreadyCompleted(channel)) {
+            releaseSemaphoreImmediately(partitionKeyLock);
+            return;
+        }
+
+        TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
+        if (timeoutsHolder == null) {
+            // The future is being terminated concurrently: cancelTimeouts() has nulled the
+            // holder but the isDone flag may not yet be visible on this thread. Per JMM,
+            // observing one volatile write does not require observing later ones, so the
+            // futureIsAlreadyCompleted check above can pass while the holder is already null.
+            // Drop this connection rather than NPE-ing on setResolvedRemoteAddress below.
+            Channels.silentlyCloseChannel(channel);
+            releaseSemaphoreImmediately(partitionKeyLock);
             return;
         }
 
