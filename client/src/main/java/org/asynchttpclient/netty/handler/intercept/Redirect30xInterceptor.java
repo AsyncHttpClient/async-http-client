@@ -103,7 +103,9 @@ public class Redirect30xInterceptor {
         boolean schemeDowngrade = request.getUri().isSecured() && !newUri.isSecured();
         boolean stripAuth = !sameBase || schemeDowngrade || stripAuthorizationOnRedirect;
 
-        if (stripAuth && (request.getRealm() != null || request.getHeaders().contains(AUTHORIZATION))) {
+        if (stripAuth && (request.getRealm() != null
+                || request.getHeaders().contains(AUTHORIZATION)
+                || request.getHeaders().contains(COOKIE))) {
           LOGGER.debug("Stripping credentials on redirect to {}", newUri);
         }
 
@@ -199,7 +201,13 @@ public class Redirect30xInterceptor {
       headers.remove(CONTENT_TYPE);
     }
 
-    if (stripAuthorization || (realm != null && realm.getScheme() == AuthScheme.NTLM)) {
+    if (stripAuthorization) {
+      // Cookie is dropped only on the security boundary; the URI-scoped CookieStore re-adds
+      // any cookies that legitimately match the new target after this method returns.
+      headers.remove(AUTHORIZATION)
+              .remove(PROXY_AUTHORIZATION)
+              .remove(COOKIE);
+    } else if (realm != null && realm.getScheme() == AuthScheme.NTLM) {
       headers.remove(AUTHORIZATION)
               .remove(PROXY_AUTHORIZATION);
     }

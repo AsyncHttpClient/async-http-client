@@ -16,6 +16,9 @@
 package org.asynchttpclient;
 
 import com.sun.net.httpserver.HttpServer;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+import org.asynchttpclient.cookie.ThreadSafeCookieStore;
+import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -29,11 +32,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.basicAuthRealm;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Tests for credential stripping on cross-domain redirects and HTTPS-to-HTTP downgrades.
- * Verifies that Authorization headers and Realm credentials are not leaked to different origins.
+ * Verifies that Authorization headers, Cookie headers, and Realm credentials are not leaked
+ * to different origins.
  */
 public class RedirectCredentialSecurityTest {
 
@@ -53,6 +59,10 @@ public class RedirectCredentialSecurityTest {
   private static final AtomicReference<String> bodyOn308Target = new AtomicReference<>();
   private static final AtomicReference<String> proxyAuthOnB = new AtomicReference<>();
   private static final AtomicReference<String> authOnHttpsDowngradeTarget = new AtomicReference<>();
+  private static final AtomicReference<String> lastCookieHeaderOnA = new AtomicReference<>();
+  private static final AtomicReference<String> lastCookieHeaderOnB = new AtomicReference<>();
+  private static final AtomicReference<String> cookieAtChainStep2 = new AtomicReference<>();
+  private static final AtomicReference<String> cookieOnBounceBack = new AtomicReference<>();
 
   @BeforeClass
   public static void startServers() throws Exception {
@@ -71,6 +81,7 @@ public class RedirectCredentialSecurityTest {
     // Server A endpoints
     serverA.createContext("/redirect-to-b", exchange -> {
       lastAuthHeaderOnA.set(exchange.getRequestHeaders().getFirst("Authorization"));
+      lastCookieHeaderOnA.set(exchange.getRequestHeaders().getFirst("Cookie"));
       exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portB + "/target");
       exchange.sendResponseHeaders(302, -1);
       exchange.close();
@@ -78,6 +89,7 @@ public class RedirectCredentialSecurityTest {
 
     serverA.createContext("/redirect-same-origin", exchange -> {
       lastAuthHeaderOnA.set(exchange.getRequestHeaders().getFirst("Authorization"));
+      lastCookieHeaderOnA.set(exchange.getRequestHeaders().getFirst("Cookie"));
       exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portA + "/final");
       exchange.sendResponseHeaders(302, -1);
       exchange.close();
@@ -85,6 +97,7 @@ public class RedirectCredentialSecurityTest {
 
     serverA.createContext("/final", exchange -> {
       lastAuthHeaderOnA.set(exchange.getRequestHeaders().getFirst("Authorization"));
+      lastCookieHeaderOnA.set(exchange.getRequestHeaders().getFirst("Cookie"));
       exchange.sendResponseHeaders(200, 0);
       exchange.getResponseBody().close();
       exchange.close();
@@ -93,6 +106,7 @@ public class RedirectCredentialSecurityTest {
     // Server B endpoints
     serverB.createContext("/target", exchange -> {
       lastAuthHeaderOnB.set(exchange.getRequestHeaders().getFirst("Authorization"));
+      lastCookieHeaderOnB.set(exchange.getRequestHeaders().getFirst("Cookie"));
       exchange.sendResponseHeaders(200, 0);
       exchange.getResponseBody().close();
       exchange.close();
@@ -107,6 +121,7 @@ public class RedirectCredentialSecurityTest {
 
     serverA.createContext("/chain-step2", exchange -> {
       authAtChainStep2.set(exchange.getRequestHeaders().getFirst("Authorization"));
+      cookieAtChainStep2.set(exchange.getRequestHeaders().getFirst("Cookie"));
       exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portB + "/target");
       exchange.sendResponseHeaders(302, -1);
       exchange.close();
@@ -127,6 +142,7 @@ public class RedirectCredentialSecurityTest {
 
     serverC.createContext("/chain-final", exchange -> {
       authOnBounceBack.set(exchange.getRequestHeaders().getFirst("Authorization"));
+      cookieOnBounceBack.set(exchange.getRequestHeaders().getFirst("Cookie"));
       exchange.sendResponseHeaders(200, 0);
       exchange.getResponseBody().close();
       exchange.close();
@@ -436,6 +452,217 @@ public class RedirectCredentialSecurityTest {
               "Authorization header must be stripped on cross-domain 308 redirect");
       assertEquals(bodyOn308Target.get(), "request-body-content",
               "Request body must be preserved on 308 redirect");
+    }
+  }
+
+  /**
+   * Cross-domain redirect (different port) must strip a user-supplied Cookie header.
+   * Regression test for GHSA-fmxf-pm6p-7xgm.
+   */
+  @Test
+  public void crossDomainRedirectStripsCookieHeader() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      lastCookieHeaderOnA.set(null);
+      lastCookieHeaderOnB.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+              .setHeader("Cookie", "session=abc123; csrf=xyz789")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      // Cookie should be present on the original request to server A
+      assertEquals(lastCookieHeaderOnA.get(), "session=abc123; csrf=xyz789",
+              "Cookie header should be present on original request");
+      // Cookie must NOT be forwarded to the cross-domain target (server B)
+      assertNull(lastCookieHeaderOnB.get(),
+              "Cookie header must be stripped on cross-domain redirect");
+    }
+  }
+
+  /**
+   * Same-origin redirect (same host and port) should preserve the Cookie header.
+   */
+  @Test
+  public void sameOriginRedirectPreservesCookieHeader() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      lastCookieHeaderOnA.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/redirect-same-origin")
+              .setHeader("Cookie", "session=abc123")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      assertEquals(lastCookieHeaderOnA.get(), "session=abc123",
+              "Cookie header should be preserved on same-origin redirect");
+    }
+  }
+
+  /**
+   * Cross-domain redirect must strip both Authorization and Cookie when both are set.
+   * Combined regression that mirrors the original PoC.
+   */
+  @Test
+  public void crossDomainRedirectStripsBothCookieAndAuthorization() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      lastAuthHeaderOnA.set(null);
+      lastAuthHeaderOnB.set(null);
+      lastCookieHeaderOnA.set(null);
+      lastCookieHeaderOnB.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+              .setHeader("Authorization", "Bearer token123")
+              .setHeader("Cookie", "session=abc123; api_key=secret")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      assertEquals(lastAuthHeaderOnA.get(), "Bearer token123",
+              "Authorization header should be present on original request");
+      assertEquals(lastCookieHeaderOnA.get(), "session=abc123; api_key=secret",
+              "Cookie header should be present on original request");
+      assertNull(lastAuthHeaderOnB.get(),
+              "Authorization header must be stripped on cross-domain redirect");
+      assertNull(lastCookieHeaderOnB.get(),
+              "Cookie header must be stripped on cross-domain redirect");
+    }
+  }
+
+  /**
+   * Multi-hop: A -> A (same-origin, Cookie preserved) -> B (cross-domain, Cookie stripped).
+   */
+  @Test
+  public void multiHopChainStripsCookieAtFirstCrossOriginHop() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      cookieAtChainStep2.set(null);
+      lastCookieHeaderOnB.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/chain-same-then-cross")
+              .setHeader("Cookie", "session=abc123")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      // Cookie should survive the same-origin intermediate hop (A -> A)
+      assertEquals(cookieAtChainStep2.get(), "session=abc123",
+              "Cookie header should be preserved on same-origin intermediate redirect");
+      // Cookie must be stripped on the cross-domain hop (A -> B)
+      assertNull(lastCookieHeaderOnB.get(),
+              "Cookie header must be stripped on cross-domain hop in redirect chain");
+    }
+  }
+
+  /**
+   * Once Cookie is stripped at a cross-domain hop, it must not reappear on subsequent hops.
+   */
+  @Test
+  public void multiHopCookieStaysStrippedAfterCrossDomain() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      cookieOnBounceBack.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/chain-cross-and-back")
+              .setHeader("Cookie", "session=abc123")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      assertNull(cookieOnBounceBack.get(),
+              "Cookie must not reappear after being stripped at a cross-domain hop");
+    }
+  }
+
+  /**
+   * setStripAuthorizationOnRedirect(true) also strips Cookie on same-origin redirects:
+   * the conditions are coupled, so users opting into strict credential stripping get cookie
+   * stripping on the same-origin path too.
+   */
+  @Test
+  public void stripAuthorizationOnRedirectFlagAlsoStripsCookie() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .setStripAuthorizationOnRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      lastCookieHeaderOnA.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/redirect-same-origin")
+              .setHeader("Cookie", "session=abc123")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      // With stripAuthorizationOnRedirect=true, even same-origin redirects strip the Cookie
+      assertNull(lastCookieHeaderOnA.get(),
+              "stripAuthorizationOnRedirect=true must also strip Cookie on same-origin redirect");
+    }
+  }
+
+  /**
+   * Regression: a cookie added to the URI-scoped CookieStore for server B is still delivered
+   * to server B after a cross-origin redirect from A -> B. Cookie stripping must not break the
+   * legitimate cookie-store flow (store cookies are added after the strip step in
+   * Redirect30xInterceptor and are URI-matched).
+   */
+  @Test
+  public void cookieStoreManagedCookiesUnaffectedByStrip() throws Exception {
+    ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+    store.add(Uri.create("http://127.0.0.1:" + portB + "/target"),
+            new DefaultCookie("store_cookie", "store_value"));
+
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .setCookieStore(store)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      lastCookieHeaderOnB.set(null);
+
+      client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      // The store cookie scoped to server B's URI should reach server B
+      assertNotNull(lastCookieHeaderOnB.get(),
+              "URI-scoped CookieStore cookies should be delivered after cross-domain redirect");
+      assertTrue(lastCookieHeaderOnB.get().contains("store_cookie=store_value"),
+              "Expected store cookie in Cookie header, got: " + lastCookieHeaderOnB.get());
+    }
+  }
+
+  /**
+   * Same host (127.0.0.1) on a different port is treated as cross-origin: both Cookie and
+   * Authorization are stripped. Locks in the port-as-part-of-origin behavior so that a future
+   * change to {@link Uri#isSameBase} cannot accidentally narrow the origin to host-only.
+   */
+  @Test
+  public void portChangeOnSameHostIsTreatedAsCrossOrigin() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      lastAuthHeaderOnB.set(null);
+      lastCookieHeaderOnB.set(null);
+
+      // /redirect-to-b: 127.0.0.1:portA -> 127.0.0.1:portB. Same host, different port.
+      client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+              .setHeader("Authorization", "Bearer same-host-token")
+              .setHeader("Cookie", "session=same-host-cookie")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
+
+      assertNull(lastAuthHeaderOnB.get(),
+              "Authorization must be stripped when only the port differs (origin includes port)");
+      assertNull(lastCookieHeaderOnB.get(),
+              "Cookie must be stripped when only the port differs (origin includes port)");
     }
   }
 }

@@ -42,6 +42,7 @@ public class HttpsDowngradeRedirectTest {
   private static int httpPort;
   private static int httpsPort;
   private static final AtomicReference<String> authOnHttpTarget = new AtomicReference<>();
+  private static final AtomicReference<String> cookieOnHttpTarget = new AtomicReference<>();
 
   @BeforeClass(alwaysRun = true)
   public static void setUp() throws Exception {
@@ -58,6 +59,7 @@ public class HttpsDowngradeRedirectTest {
           response.setHeader("Location", "http://localhost:" + httpPort + "/target");
         } else if ("/target".equals(target)) {
           authOnHttpTarget.set(request.getHeader("Authorization"));
+          cookieOnHttpTarget.set(request.getHeader("Cookie"));
           response.setStatus(200);
         }
         baseRequest.setHandled(true);
@@ -93,6 +95,28 @@ public class HttpsDowngradeRedirectTest {
       // HTTPS -> HTTP is a scheme downgrade: credentials must not leak to the plain-HTTP target.
       assertNull(authOnHttpTarget.get(),
               "Authorization header must be stripped when redirect downgrades HTTPS to HTTP");
+    }
+  }
+
+  /**
+   * HTTPS-to-HTTP downgrade also strips the Cookie header. Regression test for GHSA-fmxf-pm6p-7xgm.
+   */
+  @Test
+  public void httpsToHttpDowngradeStripsCookie() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .setUseInsecureTrustManager(true)
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      cookieOnHttpTarget.set(null);
+
+      client.prepareGet("https://localhost:" + httpsPort + "/redirect")
+              .setHeader("Cookie", "session=secret-session")
+              .execute()
+              .get(10, TimeUnit.SECONDS);
+
+      assertNull(cookieOnHttpTarget.get(),
+              "Cookie header must be stripped when redirect downgrades HTTPS to HTTP");
     }
   }
 }
