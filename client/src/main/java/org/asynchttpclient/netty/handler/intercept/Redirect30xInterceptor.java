@@ -41,6 +41,7 @@ import java.util.Set;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
@@ -113,7 +114,9 @@ public class Redirect30xInterceptor {
                 boolean schemeDowngrade = request.getUri().isSecured() && !newUri.isSecured();
                 boolean stripAuth = !sameBase || schemeDowngrade || stripAuthorizationOnRedirect;
 
-                if (stripAuth && (request.getRealm() != null || request.getHeaders().contains(AUTHORIZATION))) {
+                if (stripAuth && (request.getRealm() != null
+                        || request.getHeaders().contains(AUTHORIZATION)
+                        || request.getHeaders().contains(COOKIE))) {
                     LOGGER.debug("Stripping credentials on redirect to {}", newUri);
                 }
 
@@ -209,8 +212,14 @@ public class Redirect30xInterceptor {
             headers.remove(CONTENT_TYPE);
         }
 
-        if (stripAuthorization || (realm != null && (realm.getScheme() == AuthScheme.NTLM
-                || realm.getScheme() == AuthScheme.SCRAM_SHA_256))) {
+        if (stripAuthorization) {
+            // Cookie is dropped only on the security boundary; the URI-scoped CookieStore re-adds
+            // any cookies that legitimately match the new target after this method returns.
+            headers.remove(AUTHORIZATION)
+                    .remove(PROXY_AUTHORIZATION)
+                    .remove(COOKIE);
+        } else if (realm != null && (realm.getScheme() == AuthScheme.NTLM
+                || realm.getScheme() == AuthScheme.SCRAM_SHA_256)) {
             headers.remove(AUTHORIZATION)
                     .remove(PROXY_AUTHORIZATION);
         }
