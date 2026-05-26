@@ -56,8 +56,8 @@
 
         <!-- Versions with JDK-specific overrides in profiles below -->
         <junit-bom.version>5.14.4</junit-bom.version>
-        <errorprone.version>2.49.0</errorprone.version>
-        <nullaway.version>0.13.4</nullaway.version>
+        <errorprone.version>2.31.0</errorprone.version>
+        <nullaway.version>0.12.6</nullaway.version>
     </properties>
 
     <developers>
