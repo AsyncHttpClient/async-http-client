@@ -58,7 +58,7 @@ public class Http2HeaderConversionBenchmark {
     public void setup() {
         // Representative request header set built the way NettyRequestFactory builds it:
         // names are AsciiString constants from HttpHeaderNames.
-        headers = new DefaultHttpHeaders(false);
+        headers = new DefaultHttpHeaders();
         headers.set(HttpHeaderNames.HOST, "www.example.com");
         headers.set(HttpHeaderNames.USER_AGENT, "AHC/3.0");
         headers.set(HttpHeaderNames.ACCEPT, "*/*");
