@@ -352,4 +352,26 @@ public class UriTest {
         Uri uri = Uri.create("http://stackoverflow.com");
         assertEquals("/", uri.getNonEmptyPath(), "Incorrect path returned from getNonEmptyPath");
     }
+
+    /**
+     * The HTTP/2 writer builds the {@code :path} pseudo-header via {@link Uri#toRelativeUrl()} instead of
+     * the older {@code getNonEmptyPath() + (query != null ? "?" + query : "")} concatenation; this locks in
+     * that the two are byte-identical for representative origin-form request targets (no wire change).
+     */
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testToRelativeUrlMatchesLegacyPathConcat() {
+        for (String url : new String[]{
+                "http://example.com",                 // empty path
+                "http://example.com/",                // root path
+                "http://example.com/a/b",             // path, no query
+                "http://example.com/a/b?x=1&y=2",     // path + query
+                "http://example.com/?q=1",            // root path + query
+                "http://example.com/search?q=a%20b&n=1" // encoded query
+        }) {
+            Uri uri = Uri.create(url);
+            String legacy = uri.getNonEmptyPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : "");
+            assertEquals(legacy, uri.toRelativeUrl(),
+                    "toRelativeUrl() must equal the legacy :path concatenation for " + url);
+        }
+    }
 }

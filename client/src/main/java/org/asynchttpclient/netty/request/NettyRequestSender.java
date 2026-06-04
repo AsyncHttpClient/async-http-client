@@ -24,6 +24,7 @@ import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -36,6 +37,7 @@ import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
+import io.netty.util.AsciiString;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.Future;
@@ -81,13 +83,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static java.util.Set.of;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
@@ -420,12 +423,33 @@ public final class NettyRequestSender {
     }
 
     /**
-     * HTTP/2 connection-specific headers that must NOT be forwarded as per RFC 7540 §8.1.2.2.
-     * These are HTTP/1.1 connection-specific headers that have no meaning in HTTP/2.
+     * Whether {@code name} is a connection-specific header forbidden in HTTP/2 (RFC 7540 §8.1.2.2).
+     * Matched case-insensitively against the {@link HttpHeaderNames} {@link AsciiString} constants, so the
+     * per-request header copy needs no {@link String}/{@code toLowerCase} allocation to run this check.
      */
-    private static final Set<String> HTTP2_EXCLUDED_HEADERS = of(
-            "connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "host"
-    );
+    private static boolean isHttp2ExcludedHeader(CharSequence name) {
+        return HttpHeaderNames.CONNECTION.contentEqualsIgnoreCase(name)
+                || HttpHeaderNames.HOST.contentEqualsIgnoreCase(name)
+                || HttpHeaderNames.TRANSFER_ENCODING.contentEqualsIgnoreCase(name)
+                || HttpHeaderNames.UPGRADE.contentEqualsIgnoreCase(name)
+                || HttpHeaderNames.KEEP_ALIVE.contentEqualsIgnoreCase(name)
+                || HttpHeaderNames.PROXY_CONNECTION.contentEqualsIgnoreCase(name);
+    }
+
+    /**
+     * Lower-cases an HTTP/1.1 header name for HTTP/2, allocating nothing when it is already lowercase.
+     * Netty's validating {@link DefaultHttp2Headers} throws {@link io.netty.handler.codec.http2.Http2Exception}
+     * on a name with any uppercase ASCII letter (it does not normalise), so mixed-case user names must be
+     * lowercased before they are added. {@link AsciiString#toLowerCase()} and {@link String#toLowerCase(Locale)}
+     * both return the same instance when nothing changes, so already-lowercase names — AHC's own
+     * {@link HttpHeaderNames} constants — allocate nothing.
+     */
+    private static CharSequence toLowerCaseHeaderName(CharSequence name) {
+        if (name instanceof AsciiString) {
+            return ((AsciiString) name).toLowerCase();
+        }
+        return name.toString().toLowerCase(Locale.ROOT);
+    }
 
     public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
         // if the channel is dead because it was pooled and the remote server decided to close it,
@@ -575,21 +599,25 @@ public final class NettyRequestSender {
         Uri uri = future.getUri();
 
         try {
-            // Build HTTP/2 pseudo-headers + regular headers
+            // Build HTTP/2 pseudo-headers + regular headers. :path reuses Uri.toRelativeUrl() (pooled
+            // StringBuilder) instead of re-concatenating path + "?" + query on every request.
             Http2Headers h2Headers = new DefaultHttp2Headers()
                     .method(httpRequest.method().name())
-                    .path(uri.getNonEmptyPath() + (uri.getQuery() != null ? "?" + uri.getQuery() : ""))
+                    .path(uri.toRelativeUrl())
                     .scheme(uri.getScheme())
                     .authority(hostHeader(uri));
 
-            // Copy HTTP/1.1 headers, skipping connection-specific ones that are forbidden in HTTP/2.
-            // RFC 7540 §8.1.2 requires all header field names to be lowercase in HTTP/2.
-            httpRequest.headers().forEach(entry -> {
-                String name = entry.getKey().toLowerCase();
-                if (!HTTP2_EXCLUDED_HEADERS.contains(name)) {
-                    h2Headers.add(name, entry.getValue());
+            // Copy the HTTP/1.1 headers, dropping connection-specific names forbidden in HTTP/2 (RFC 7540
+            // §8.1.2.2). iteratorCharSequence() avoids the per-name String the String-typed iterator forces;
+            // see isHttp2ExcludedHeader and toLowerCaseHeaderName for the skip-check and lowercasing rules.
+            Iterator<Map.Entry<CharSequence, CharSequence>> it = httpRequest.headers().iteratorCharSequence();
+            while (it.hasNext()) {
+                Map.Entry<CharSequence, CharSequence> entry = it.next();
+                CharSequence name = entry.getKey();
+                if (!isHttp2ExcludedHeader(name)) {
+                    h2Headers.add(toLowerCaseHeaderName(name), entry.getValue());
                 }
-            });
+            }
 
             // Determine if we have a body to write.
             // Support both DefaultFullHttpRequest (inline content) and NettyDirectBody (byte array/buffer bodies).

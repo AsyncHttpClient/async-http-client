@@ -262,14 +262,21 @@ public class BasicHttp2Test {
                 responseHeaders.add("x-querystring", queryString);
             }
 
-            // Echo request headers as X-{name}
+            // Echo request headers as X-{name}, and also report the exact (case-preserving) set of
+            // received non-pseudo header names in a single value so wire casing / exclusion is testable.
+            StringBuilder receivedNames = new StringBuilder();
             for (Map.Entry<CharSequence, CharSequence> entry : requestHeaders) {
                 String name = entry.getKey().toString();
                 // Skip pseudo-headers
                 if (!name.startsWith(":")) {
                     responseHeaders.add("x-" + name, entry.getValue());
+                    if (receivedNames.length() > 0) {
+                        receivedNames.append(',');
+                    }
+                    receivedNames.append(name);
                 }
             }
+            responseHeaders.add("x-received-names", receivedNames.toString());
 
             // Handle OPTIONS
             if ("OPTIONS".equalsIgnoreCase(method)) {
@@ -765,6 +772,51 @@ public class BasicHttp2Test {
             for (int i = 1; i < 5; i++) {
                 assertEquals("Test" + i, response.getHeader("X-test" + i));
             }
+        }
+    }
+
+    /**
+     * Regression guard for the HTTP/2 header copy: a user-supplied mixed-case header name must be
+     * lowercased before it reaches the validating {@link DefaultHttp2Headers}, which otherwise throws
+     * {@code Http2Exception: invalid header name}. Asserts (a) the request succeeds, (b) the name is
+     * lowercase on the wire, and (c) connection-specific names are not forwarded.
+     */
+    @Test
+    public void mixedCaseHeaderIsLowercasedAndConnectionHeadersExcludedOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            Response response = client.prepareGet(httpsUrl("/echo"))
+                    .addHeader("X-Mixed-Case", "v1")
+                    .addHeader("Another-Custom-Header", "v2")
+                    .addHeader("connection", "keep-alive")
+                    .addHeader("Keep-Alive", "timeout=5")
+                    .addHeader("Upgrade", "h2c")
+                    .execute()
+                    .get(30, SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+
+            // x-received-names reports the exact, case-preserving names the server decoded off the wire.
+            String received = response.getHeader("x-received-names");
+            assertNotNull(received, "server should report received header names");
+            List<String> names = Arrays.asList(received.split(","));
+
+            // (b) mixed-case user headers arrive lowercase on the wire (case-sensitive membership check)
+            assertTrue(names.contains("x-mixed-case"),
+                    "mixed-case header should be lowercase on the wire, got: " + received);
+            assertTrue(names.contains("another-custom-header"),
+                    "mixed-case header should be lowercase on the wire, got: " + received);
+            assertFalse(names.contains("X-Mixed-Case"),
+                    "uppercase header name must not appear on the wire, got: " + received);
+
+            // (c) connection-specific names (any casing) are dropped, not forwarded as regular headers
+            for (String forbidden : new String[]{"connection", "keep-alive", "upgrade", "host"}) {
+                assertFalse(names.contains(forbidden),
+                        "connection-specific header '" + forbidden + "' must be excluded, got: " + received);
+            }
+
+            // and the values still round-trip for the forwarded headers
+            assertEquals("v1", response.getHeader("X-x-mixed-case"));
+            assertEquals("v2", response.getHeader("X-another-custom-header"));
         }
     }
 
