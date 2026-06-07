@@ -217,14 +217,20 @@ public class DefaultChannelPoolTest {
 
     @Test
     public void channelReofferedAfterExpiryIsNotReaped() throws Exception {
+        // maxIdleTime must comfortably exceed the re-offer -> cleaner-fire gap below: reset() stamps a
+        // fresh start, and the channel must read as fresh when the cleaner runs. A tiny timeout (e.g.
+        // 1ms) is shorter than millisecond clock granularity, so the re-offered channel would re-expire
+        // before fire() and be reaped — a test artifact, not a pool bug.
+        final long maxIdle = 1000;
         CapturingTimer timer = new CapturingTimer();
-        DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(1));
+        DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(maxIdle));
         Channel channel = new EmbeddedChannel();
 
         pool.offer(channel, KEY);
-        Thread.sleep(40); // channel is now idle-expired
+        Thread.sleep(maxIdle + 100); // first lifetime exceeds maxIdleTime: this channel was reapable
 
-        // Lease and re-offer it: reset() stamps a fresh start, so the next cleaner pass must spare it.
+        // Lease and re-offer it: reset() stamps a fresh start, so the cleaner (firing immediately,
+        // far inside maxIdleTime) must spare it.
         assertSame(channel, pool.poll(KEY));
         pool.offer(channel, KEY);
 
