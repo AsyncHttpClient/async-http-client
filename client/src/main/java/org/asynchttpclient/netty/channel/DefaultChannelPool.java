@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 /**
@@ -52,8 +50,12 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultChannelPool.class);
     private static final AttributeKey<ChannelCreation> CHANNEL_CREATION_ATTRIBUTE_KEY = AttributeKey.valueOf("channelCreation");
+    private static final AttributeKey<IdleState> IDLE_STATE_ATTRIBUTE_KEY = AttributeKey.valueOf("channelIdleState");
 
-    private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<IdleChannel>> partitions = new ConcurrentHashMap<>();
+    // The partition deques hold the bare Channel; per-checkout idle state (start timestamp + the
+    // owned/tombstone CAS flag) lives on the channel's IDLE_STATE_ATTRIBUTE_KEY attribute, which is
+    // allocated once per physical connection and reused across every pool cycle (no per-offer holder).
+    private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<Channel>> partitions = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final long connectionTtl;
@@ -127,11 +129,21 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private boolean offer0(Channel channel, Object partitionKey, long now) {
-        ConcurrentLinkedDeque<IdleChannel> partition = partitions.get(partitionKey);
+        ConcurrentLinkedDeque<Channel> partition = partitions.get(partitionKey);
         if (partition == null) {
             partition = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedDeque<>());
         }
-        return partition.offerFirst(new IdleChannel(channel, now));
+        // Reuse the channel's IdleState instead of allocating a holder per offer; reset() stamps the
+        // idle start and clears the owned flag (must happen-before offerFirst publishes the channel,
+        // so any thread that observes it in the deque also observes owned == 0).
+        Attribute<IdleState> idleStateAttribute = channel.attr(IDLE_STATE_ATTRIBUTE_KEY);
+        IdleState idleState = idleStateAttribute.get();
+        if (idleState == null) {
+            idleState = new IdleState();
+            idleStateAttribute.set(idleState);
+        }
+        idleState.reset(now);
+        return partition.offerFirst(channel);
     }
 
     private static void registerChannelCreation(Channel channel, Object partitionKey, long now) {
@@ -143,32 +155,47 @@ public final class DefaultChannelPool implements ChannelPool {
 
     @Override
     public Channel poll(Object partitionKey) {
-        IdleChannel idleChannel = null;
-        ConcurrentLinkedDeque<IdleChannel> partition = partitions.get(partitionKey);
-        if (partition != null) {
-            while (idleChannel == null) {
-                idleChannel = poolLeaseStrategy.lease(partition);
-
-                if (idleChannel == null)
-                // pool is empty
-                {
-                    break;
-                } else if (!Channels.isChannelActive(idleChannel.channel)) {
-                    idleChannel = null;
-                    LOGGER.trace("Channel is inactive, probably remotely closed!");
-                } else if (!idleChannel.takeOwnership()) {
-                    idleChannel = null;
-                    LOGGER.trace("Couldn't take ownership of channel, probably in the process of being expired!");
-                }
-            }
+        ConcurrentLinkedDeque<Channel> partition = partitions.get(partitionKey);
+        if (partition == null) {
+            return null;
         }
-        return idleChannel != null ? idleChannel.channel : null;
+
+        for (; ; ) {
+            Channel channel = poolLeaseStrategy.lease(partition);
+            if (channel == null) {
+                // pool is empty
+                return null;
+            }
+
+            if (!Channels.isChannelActive(channel)) {
+                LOGGER.trace("Channel is inactive, probably remotely closed!");
+                continue;
+            }
+
+            IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+            if (idleState == null || !idleState.takeOwnership()) {
+                LOGGER.trace("Couldn't take ownership of channel, probably in the process of being expired!");
+                continue;
+            }
+
+            return channel;
+        }
     }
 
     @Override
     public boolean removeAll(Channel channel) {
-        ChannelCreation creation = connectionTtlEnabled ? channel.attr(CHANNEL_CREATION_ATTRIBUTE_KEY).get() : null;
-        return !isClosed.get() && creation != null && partitions.get(creation.partitionKey).remove(new IdleChannel(channel, Long.MIN_VALUE));
+        if (isClosed.get() || !connectionTtlEnabled) {
+            return false;
+        }
+
+        // O(1) tombstone instead of an O(n) ConcurrentLinkedDeque value scan: claim the channel's
+        // IdleState. A claimed channel is skipped by poll() (its takeOwnership fails) and physically
+        // unlinked by the idle cleaner on its next tick. removeAll only acts when connectionTtlEnabled,
+        // which guarantees the cleaner is scheduled (see constructor), so a tombstone is never orphaned.
+        // Returns true only when this call transitions an idle, leasable channel to claimed — matching
+        // the old "the channel was present in the pool" contract.
+        IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+        return idleState != null && idleState.takeOwnership();
     }
 
     @Override
@@ -191,18 +218,18 @@ public final class DefaultChannelPool implements ChannelPool {
         Channels.silentlyCloseChannel(channel);
     }
 
-    private void flushPartition(Object partitionKey, ConcurrentLinkedDeque<IdleChannel> partition) {
+    private void flushPartition(Object partitionKey, ConcurrentLinkedDeque<Channel> partition) {
         if (partition != null) {
             partitions.remove(partitionKey);
-            for (IdleChannel idleChannel : partition) {
-                close(idleChannel.channel);
+            for (Channel channel : partition) {
+                close(channel);
             }
         }
     }
 
     @Override
     public void flushPartitions(Predicate<Object> predicate) {
-        for (Map.Entry<Object, ConcurrentLinkedDeque<IdleChannel>> partitionsEntry : partitions.entrySet()) {
+        for (Map.Entry<Object, ConcurrentLinkedDeque<Channel>> partitionsEntry : partitions.entrySet()) {
             Object partitionKey = partitionsEntry.getKey();
             if (predicate.test(partitionKey)) {
                 flushPartition(partitionKey, partitionsEntry.getValue());
@@ -216,11 +243,19 @@ public final class DefaultChannelPool implements ChannelPool {
                 .values()
                 .stream()
                 .flatMap(ConcurrentLinkedDeque::stream)
-                .map(idle -> idle.getChannel().remoteAddress())
+                // Skip channels that have been claimed (removeAll tombstone, or a node a concurrent
+                // poll already leased) but not yet unlinked, so the count reflects leasable channels.
+                .filter(DefaultChannelPool::isLeasable)
+                .map(Channel::remoteAddress)
                 .filter(a -> a.getClass() == InetSocketAddress.class)
                 .map(a -> (InetSocketAddress) a)
                 .map(InetSocketAddress::getHostString)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    }
+
+    private static boolean isLeasable(Channel channel) {
+        IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+        return idleState != null && !idleState.isOwned();
     }
 
     public enum PoolLeaseStrategy {
@@ -250,93 +285,57 @@ public final class DefaultChannelPool implements ChannelPool {
         }
     }
 
-    private static final class IdleChannel {
+    /**
+     * Per-channel idle bookkeeping. Allocated once and stashed on the channel's
+     * {@link #IDLE_STATE_ATTRIBUTE_KEY} attribute, then reused across every pool checkout so no holder
+     * is allocated per offer.
+     *
+     * <p>{@code owned} is a single CAS flag with two roles, both meaning "this idle entry is claimed,
+     * do not lease it": a successful {@code poll()} lease, or a {@code removeAll()} tombstone. The pool
+     * upholds the invariant that a channel sitting in a partition deque has {@code owned == 0} unless it
+     * was tombstoned, because {@link #reset(long)} clears the flag before {@code offerFirst} publishes
+     * the channel and {@code poll()} unlinks a channel from the deque before claiming it. {@code start}
+     * doubles as a generation token: it changes on every offer, letting the cleaner detect a channel
+     * that was leased and re-offered between its expiry check and its claim.
+     */
+    static final class IdleState {
 
-        private static final AtomicIntegerFieldUpdater<IdleChannel> ownedField = AtomicIntegerFieldUpdater.newUpdater(IdleChannel.class, "owned");
+        private static final AtomicIntegerFieldUpdater<IdleState> OWNED_UPDATER =
+                AtomicIntegerFieldUpdater.newUpdater(IdleState.class, "owned");
 
-        final Channel channel;
-        final long start;
+        private volatile long start;
         @SuppressWarnings("unused")
         private volatile int owned;
 
-        IdleChannel(Channel channel, long start) {
-            this.channel = requireNonNull(channel, "channel");
-            this.start = start;
+        long start() {
+            return start;
         }
 
-        public boolean takeOwnership() {
-            return ownedField.getAndSet(this, 1) == 0;
+        boolean isOwned() {
+            return owned != 0;
         }
 
-        public Channel getChannel() {
-            return channel;
+        /** Atomically claim this entry; returns true only for the caller that transitions 0 -> 1. */
+        boolean takeOwnership() {
+            return OWNED_UPDATER.getAndSet(this, 1) == 0;
         }
 
-        @Override
-        // only depends on channel
-        public boolean equals(Object o) {
-            return this == o || o instanceof IdleChannel && channel.equals(((IdleChannel) o).channel);
+        /** Undo a claim taken via {@link #takeOwnership()} (used only on the cleaner re-offer race). */
+        void releaseOwnership() {
+            owned = 0;
         }
 
-        @Override
-        public int hashCode() {
-            return channel.hashCode();
+        /** Stamp the idle start and mark the channel leasable again. Called on every offer. */
+        void reset(long now) {
+            start = now;
+            owned = 0;
         }
     }
 
     private final class IdleChannelDetector implements TimerTask {
 
-        private boolean isIdleTimeoutExpired(IdleChannel idleChannel, long now) {
-            return maxIdleTimeEnabled && now - idleChannel.start >= maxIdleTime;
-        }
-
-        private List<IdleChannel> expiredChannels(ConcurrentLinkedDeque<IdleChannel> partition, long now) {
-            // lazy create
-            List<IdleChannel> idleTimeoutChannels = null;
-            for (IdleChannel idleChannel : partition) {
-                boolean isIdleTimeoutExpired = isIdleTimeoutExpired(idleChannel, now);
-                boolean isRemotelyClosed = !Channels.isChannelActive(idleChannel.channel);
-                boolean isTtlExpired = isTtlExpired(idleChannel.channel, now);
-                if (isIdleTimeoutExpired || isRemotelyClosed || isTtlExpired) {
-
-                    LOGGER.debug("Adding Candidate expired Channel {} isIdleTimeoutExpired={} isRemotelyClosed={} isTtlExpired={}",
-                            idleChannel.channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
-
-                    if (idleTimeoutChannels == null) {
-                        idleTimeoutChannels = new ArrayList<>(1);
-                    }
-                    idleTimeoutChannels.add(idleChannel);
-                }
-            }
-
-            return idleTimeoutChannels != null ? idleTimeoutChannels : Collections.emptyList();
-        }
-
-        private List<IdleChannel> closeChannels(List<IdleChannel> candidates) {
-            // lazy create, only if we hit a non-closeable channel
-            List<IdleChannel> closedChannels = null;
-            for (int i = 0; i < candidates.size(); i++) {
-                // We call takeOwnership here to avoid closing a channel that has just been taken out
-                // of the pool, otherwise we risk closing an active connection.
-                IdleChannel idleChannel = candidates.get(i);
-                if (idleChannel.takeOwnership()) {
-                    LOGGER.debug("Closing Idle Channel {}", idleChannel.channel);
-                    close(idleChannel.channel);
-                    if (closedChannels != null) {
-                        closedChannels.add(idleChannel);
-                    }
-
-                } else if (closedChannels == null) {
-                    // first non-closeable to be skipped, copy all
-                    // previously skipped closeable channels
-                    closedChannels = new ArrayList<>(candidates.size());
-                    for (int j = 0; j < i; j++) {
-                        closedChannels.add(candidates.get(j));
-                    }
-                }
-            }
-
-            return closedChannels != null ? closedChannels : candidates;
+        private boolean isIdleTimeoutExpired(IdleState idleState, long now) {
+            return maxIdleTimeEnabled && now - idleState.start() >= maxIdleTime;
         }
 
         @Override
@@ -347,7 +346,7 @@ public final class DefaultChannelPool implements ChannelPool {
             }
 
             if (LOGGER.isDebugEnabled()) {
-                for (Map.Entry<Object, ConcurrentLinkedDeque<IdleChannel>> entry : partitions.entrySet()) {
+                for (Map.Entry<Object, ConcurrentLinkedDeque<Channel>> entry : partitions.entrySet()) {
                     int size = entry.getValue().size();
                     if (size > 0) {
                         LOGGER.debug("Entry count for : {} : {}", entry.getKey(), size);
@@ -359,7 +358,7 @@ public final class DefaultChannelPool implements ChannelPool {
             int closedCount = 0;
             int totalCount = 0;
 
-            for (ConcurrentLinkedDeque<IdleChannel> partition : partitions.values()) {
+            for (ConcurrentLinkedDeque<Channel> partition : partitions.values()) {
 
                 // store in intermediate unsynchronized lists to minimize
                 // the impact on the ConcurrentLinkedDeque
@@ -367,12 +366,7 @@ public final class DefaultChannelPool implements ChannelPool {
                     totalCount += partition.size();
                 }
 
-                List<IdleChannel> closedChannels = closeChannels(expiredChannels(partition, start));
-
-                if (!closedChannels.isEmpty()) {
-                    partition.removeAll(closedChannels);
-                    closedCount += closedChannels.size();
-                }
+                closedCount += reapPartition(partition, start);
             }
 
             if (LOGGER.isDebugEnabled()) {
@@ -383,6 +377,72 @@ public final class DefaultChannelPool implements ChannelPool {
             }
 
             scheduleNewIdleChannelDetector(timeout.task());
+        }
+
+        /**
+         * One pass over a partition. A channel is dropped from the deque when it is a removeAll
+         * tombstone, remotely closed, idle-timeout expired or TTL expired. Tombstoned/concurrently
+         * leased channels are only unlinked (their owner closes them); expired channels are closed
+         * here, but only after this cleaner exclusively claims them, so a channel that {@code poll()}
+         * is leasing concurrently is never closed. Returns the number of channels closed by this tick.
+         */
+        private int reapPartition(ConcurrentLinkedDeque<Channel> partition, long now) {
+            List<Channel> toRemove = null;
+            int closed = 0;
+
+            for (Channel channel : partition) {
+                IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+                if (idleState == null) {
+                    continue;
+                }
+
+                if (idleState.isOwned()) {
+                    // In-deque + owned ==> a removeAll() tombstone, or a node a concurrent poll() has
+                    // already leased and unlinked. Either way: unlink, never close — the owner of the
+                    // claim is responsible for closing it. removeAll() on an already-unlinked node is a
+                    // harmless no-op.
+                    toRemove = lazyAdd(toRemove, channel);
+                    continue;
+                }
+
+                boolean isIdleTimeoutExpired = isIdleTimeoutExpired(idleState, now);
+                boolean isRemotelyClosed = !Channels.isChannelActive(channel);
+                boolean isTtlExpired = isTtlExpired(channel, now);
+                if (!isIdleTimeoutExpired && !isRemotelyClosed && !isTtlExpired) {
+                    continue; // healthy idle channel, leave it for poll()
+                }
+
+                long startSnapshot = idleState.start();
+                // Claim before closing so we never close a channel poll() is leasing concurrently.
+                if (!idleState.takeOwnership()) {
+                    continue; // poll() (or removeAll) won the claim; that owner now handles the channel
+                }
+                if (idleState.start() != startSnapshot) {
+                    // The channel was leased and re-offered (fresh start) between the expiry check and
+                    // the claim, so it is leasable again — release it instead of closing it.
+                    idleState.releaseOwnership();
+                    continue;
+                }
+
+                LOGGER.debug("Closing Idle Channel {} isIdleTimeoutExpired={} isRemotelyClosed={} isTtlExpired={}",
+                        channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
+                close(channel);
+                closed++;
+                toRemove = lazyAdd(toRemove, channel);
+            }
+
+            if (toRemove != null) {
+                partition.removeAll(toRemove);
+            }
+            return closed;
+        }
+
+        private List<Channel> lazyAdd(List<Channel> list, Channel channel) {
+            if (list == null) {
+                list = new ArrayList<>(1);
+            }
+            list.add(channel);
+            return list;
         }
     }
 }
