@@ -45,7 +45,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.2.13.Final</netty.version>
+        <netty.version>4.2.15.Final</netty.version>
         <brotli4j.version>1.23.0</brotli4j.version>
         <slf4j.version>2.0.18</slf4j.version>
         <zstd-jni.version>1.5.7-8</zstd-jni.version>
