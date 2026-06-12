@@ -49,7 +49,6 @@
         <brotli4j.version>1.23.0</brotli4j.version>
         <slf4j.version>2.0.18</slf4j.version>
         <zstd-jni.version>1.5.7-8</zstd-jni.version>
-        <activation.version>2.0.1</activation.version>
         <logback.version>1.5.32</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <testcontainers.version>2.0.5</testcontainers.version>
@@ -284,11 +283,6 @@
             <version>${slf4j.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>jakarta.activation</artifactId>
-            <version>${activation.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>

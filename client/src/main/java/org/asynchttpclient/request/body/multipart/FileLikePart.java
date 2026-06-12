@@ -15,10 +15,6 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import jakarta.activation.MimetypesFileTypeMap;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import static org.asynchttpclient.util.MiscUtils.withDefault;
@@ -27,16 +23,6 @@ import static org.asynchttpclient.util.MiscUtils.withDefault;
  * This class is an adaptation of the Apache HttpClient implementation
  */
 public abstract class FileLikePart extends PartBase {
-
-    private static final MimetypesFileTypeMap MIME_TYPES_FILE_TYPE_MAP;
-
-    static {
-        try (InputStream is = FileLikePart.class.getResourceAsStream("ahc-mime.types")) {
-            MIME_TYPES_FILE_TYPE_MAP = new MimetypesFileTypeMap(is);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
 
     /**
      * Default content encoding of file attachments.
@@ -63,7 +49,7 @@ public abstract class FileLikePart extends PartBase {
     }
 
     private static String computeContentType(String contentType, String fileName) {
-        return contentType != null ? contentType : MIME_TYPES_FILE_TYPE_MAP.getContentType(withDefault(fileName, ""));
+        return contentType != null ? contentType : MimeTypes.getContentType(withDefault(fileName, ""));
     }
 
     public String getFileName() {

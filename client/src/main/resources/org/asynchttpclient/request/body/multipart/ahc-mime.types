@@ -1,6 +1,6 @@
 # This file maps Internet media types to unique file extension(s).
 # Although created for httpd, this file is used by many software systems
-# and has been placed in the public domain for unlimited redisribution.
+# and has been placed in the public domain for unlimited redistribution.
 #
 # The table below contains both registered and (common) unregistered types.
 # A type that has no unique extension can be ignored -- they are listed
@@ -94,6 +94,7 @@ application/ecmascript				ecma
 # application/edi-consent
 # application/edi-x12
 # application/edifact
+# application/efi
 # application/emergencycalldata.comment+xml
 # application/emergencycalldata.deviceinfo+xml
 # application/emergencycalldata.providerinfo+xml
@@ -111,10 +112,9 @@ application/exi					exi
 # application/fastsoap
 # application/fdt+xml
 # application/fits
-# application/font-sfnt
 application/font-tdpfr				pfr
-application/font-woff				woff
 # application/framework-attributes+xml
+# application/geo+json
 application/gml+xml				gml
 application/gpx+xml				gpx
 application/gxf					gxf
@@ -142,7 +142,7 @@ application/ipfix				ipfix
 application/java-archive			jar
 application/java-serialized-object		ser
 application/java-vm				class
-application/javascript				js
+# application/javascript
 # application/jose
 # application/jose+json
 # application/jrd+json
@@ -156,6 +156,7 @@ application/jsonml+json				jsonml
 # application/kpml-request+xml
 # application/kpml-response+xml
 # application/ld+json
+# application/lgr+xml
 # application/link-format
 # application/load-control+xml
 application/lost+xml				lostxml
@@ -358,6 +359,7 @@ application/vnd.3gpp.pic-bw-large		plb
 application/vnd.3gpp.pic-bw-small		psb
 application/vnd.3gpp.pic-bw-var			pvb
 # application/vnd.3gpp.sms
+# application/vnd.3gpp.sms+xml
 # application/vnd.3gpp.srvcc-ext+xml
 # application/vnd.3gpp.srvcc-info+xml
 # application/vnd.3gpp.state-and-event-info+xml
@@ -365,6 +367,7 @@ application/vnd.3gpp.pic-bw-var			pvb
 # application/vnd.3gpp2.bcmcsinfo+xml
 # application/vnd.3gpp2.sms
 application/vnd.3gpp2.tcap			tcap
+# application/vnd.3lightssoftware.imagescal
 application/vnd.3m.post-it-notes		pwn
 application/vnd.accpac.simply.aso		aso
 application/vnd.accpac.simply.imp		imp
@@ -383,6 +386,7 @@ application/vnd.ahead.space			ahead
 application/vnd.airzip.filesecure.azf		azf
 application/vnd.airzip.filesecure.azs		azs
 application/vnd.amazon.ebook			azw
+# application/vnd.amazon.mobi8-ebook
 application/vnd.americandynamics.acc		acc
 application/vnd.amiga.ami			ami
 # application/vnd.amundsen.maze+xml
@@ -419,6 +423,7 @@ application/vnd.businessobjects			rep
 # application/vnd.cendio.thinlinc.clientconf
 # application/vnd.century-systems.tcp_stream
 application/vnd.chemdraw+xml			cdxml
+# application/vnd.chess-pgn
 application/vnd.chipnuts.karaoke-mmd		mmd
 application/vnd.cinderella			cdy
 # application/vnd.cirpack.isdn-ext
@@ -432,9 +437,11 @@ application/vnd.cluetrust.cartomobile-config-pkg	c11amz
 # application/vnd.collection+json
 # application/vnd.collection.doc+json
 # application/vnd.collection.next+json
+# application/vnd.comicbook+zip
 # application/vnd.commerce-battelle
 application/vnd.commonspace			csp
 application/vnd.contact.cmsg			cdbcmsg
+# application/vnd.coreos.ignition+json
 application/vnd.cosmocaller			cmc
 application/vnd.crick.clicker			clkx
 application/vnd.crick.clicker.keyboard		clkk
@@ -578,6 +585,7 @@ application/vnd.genomatix.tuxedo		txd
 # application/vnd.geo+json
 # application/vnd.geocube+xml
 application/vnd.geogebra.file			ggb
+application/vnd.geogebra.slides		ggs
 application/vnd.geogebra.tool			ggt
 application/vnd.geometry-explorer		gex gre
 application/vnd.geonext				gxt
@@ -886,6 +894,8 @@ application/vnd.olpc-sugar			xo
 application/vnd.oma.dd2+xml			dd2
 # application/vnd.oma.drm.risd+xml
 # application/vnd.oma.group-usage-list+xml
+# application/vnd.oma.lwm2m+json
+# application/vnd.oma.lwm2m+tlv
 # application/vnd.oma.pal+xml
 # application/vnd.oma.poc.detailed-progress-report+xml
 # application/vnd.oma.poc.final-report+xml
@@ -899,6 +909,7 @@ application/vnd.oma.dd2+xml			dd2
 # application/vnd.omads-file+xml
 # application/vnd.omads-folder+xml
 # application/vnd.omaloc-supl-init
+# application/vnd.onepager
 # application/vnd.openblox.game+xml
 # application/vnd.openblox.game-binary
 # application/vnd.openeye.oeb
@@ -1013,6 +1024,7 @@ application/vnd.pvi.ptid1			ptid
 # application/vnd.pwg-multiplexed
 # application/vnd.pwg-xhtml-print+xml
 # application/vnd.qualcomm.brew-app-res
+# application/vnd.quarantainenet
 application/vnd.quark.quarkxpress		qxd qxt qwd qwt qxl qxb
 # application/vnd.quobject-quoxdocument
 # application/vnd.radisys.moml+xml
@@ -1032,6 +1044,7 @@ application/vnd.quark.quarkxpress		qxd qxt qwd qwt qxl qxb
 # application/vnd.radisys.msml-dialog-transform+xml
 # application/vnd.rainstor.data
 # application/vnd.rapid
+# application/vnd.rar
 application/vnd.realvnc.bed			bed
 application/vnd.recordare.musicxml		mxl
 application/vnd.recordare.musicxml+xml		musicxml
@@ -1077,6 +1090,7 @@ application/vnd.smart.teacher			teacher
 application/vnd.solent.sdkm+xml			sdkm sdkd
 application/vnd.spotfire.dxp			dxp
 application/vnd.spotfire.sfs			sfs
+application/vnd.sqlite3					sqlite sqlite3
 # application/vnd.sss-cod
 # application/vnd.sss-dtf
 # application/vnd.sss-ntf
@@ -1146,6 +1160,7 @@ application/vnd.uoml+xml			uoml
 application/vnd.vcx				vcx
 # application/vnd.vd-study
 # application/vnd.vectorworks
+# application/vnd.vel+json
 # application/vnd.verimatrix.vcas
 # application/vnd.vidsoft.vidconference
 application/vnd.visio				vsd vst vss vsw
@@ -1199,6 +1214,7 @@ application/vnd.zul				zir zirz
 application/vnd.zzazz.deck+xml			zaz
 application/voicexml+xml			vxml
 # application/vq-rtcpxr
+application/wasm				wasm
 # application/watcherinfo+xml
 # application/whoispp-query
 # application/whoispp-response
@@ -1246,12 +1262,10 @@ application/x-font-bdf				bdf
 application/x-font-ghostscript			gsf
 # application/x-font-libgrx
 application/x-font-linux-psf			psf
-application/x-font-otf				otf
 application/x-font-pcf				pcf
 application/x-font-snf				snf
 # application/x-font-speedo
 # application/x-font-sunos-news
-application/x-font-ttf				ttf ttc
 application/x-font-type1			pfa pfb pfm afm
 # application/x-font-vfont
 application/x-freearc				arc
@@ -1428,7 +1442,7 @@ audio/mp4					m4a mp4a
 audio/mpeg					mpga mp2 mp2a mp3 m2a m3a
 # audio/mpeg4-generic
 # audio/musepack
-audio/ogg					oga ogg spx
+audio/ogg					oga ogg spx opus
 # audio/opus
 # audio/parityfec
 # audio/pcma
@@ -1519,17 +1533,32 @@ chemical/x-cml					cml
 chemical/x-csml					csml
 # chemical/x-pdb
 chemical/x-xyz					xyz
+font/collection					ttc
+font/otf					otf
+# font/sfnt
+font/ttf					ttf
+font/woff					woff
+font/woff2					woff2
+image/avif					avif
 image/bmp					bmp
 image/cgm					cgm
+# image/dicom-rle
+# image/emf
 # image/example
 # image/fits
 image/g3fax					g3
 image/gif					gif
+image/heic					heic
+image/heic-sequence			heics
+image/heif					heif
+image/heif-sequence			heifs
 image/ief					ief
+# image/jls
 # image/jp2
 image/jpeg					jpeg jpg jpe
 # image/jpm
 # image/jpx
+image/jxl					jxl
 image/ktx					ktx
 # image/naplps
 image/png					png
@@ -1572,6 +1601,7 @@ image/vnd.wap.wbmp				wbmp
 image/vnd.xiff					xif
 # image/vnd.zbrush.pcx
 image/webp					webp
+# image/wmf
 image/x-3ds					3ds
 image/x-cmu-raster				ras
 image/x-cmx					cmx
@@ -1611,6 +1641,7 @@ message/rfc822					eml mime
 # message/vnd.si.simp
 # message/vnd.wfa.wsc
 # model/example
+# model/gltf+json
 model/iges					igs iges
 model/mesh					msh mesh silo
 model/vnd.collada+xml				dae
@@ -1621,7 +1652,7 @@ model/vnd.gdl					gdl
 # model/vnd.gs.gdl
 model/vnd.gtw					gtw
 # model/vnd.moml+xml
-model/vnd.mts					mts
+# model/vnd.mts
 # model/vnd.opengex
 # model/vnd.parasolid.transmit.binary
 # model/vnd.parasolid.transmit.text
@@ -1664,7 +1695,7 @@ text/csv					csv
 # text/fwdred
 # text/grammar-ref-list
 text/html					html htm
-# text/javascript
+text/javascript					js mjs
 # text/jcr-cnd
 # text/markdown
 # text/mizar
@@ -1675,6 +1706,7 @@ text/plain					txt text conf def list log in
 # text/provenance-notation
 # text/prs.fallenstein.rst
 text/prs.lines.tag				dsc
+# text/prs.prop.logic
 # text/raptorfec
 # text/red
 # text/rfc822-headers
@@ -1759,7 +1791,7 @@ video/jpm					jpm jpgm
 video/mj2					mj2 mjp2
 # video/mp1s
 # video/mp2p
-# video/mp2t
+video/mp2t					ts m2t m2ts mts
 video/mp4					mp4 mp4v mpg4
 # video/mp4v-es
 video/mpeg					mpeg mpg mpe m1v m2v
