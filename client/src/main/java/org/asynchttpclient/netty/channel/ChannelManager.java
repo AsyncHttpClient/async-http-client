@@ -90,6 +90,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -360,8 +361,17 @@ public class ChannelManager {
             state.setPartitionKey(partitionKey);
         }
         http2Connections.put(partitionKey, channel);
-        // Auto-remove from registry when the connection closes
-        channel.closeFuture().addListener(future -> removeHttp2Connection(partitionKey, channel));
+        // When the connection closes, remove it from the registry AND fail any requests still queued
+        // for a stream slot. Without the latter, requests sitting in pendingOpeners when the parent
+        // connection drops have no stream channel (so no channelInactive is ever delivered for them)
+        // and would survive only until the request timeout fires — the silent-timeout bug of #2160.
+        channel.closeFuture().addListener(future -> {
+            removeHttp2Connection(partitionKey, channel);
+            if (state != null) {
+                state.failPendingOpeners(orphan ->
+                        orphan.abort(new IOException("HTTP/2 connection closed before a stream could be opened")));
+            }
+        });
     }
 
     /**

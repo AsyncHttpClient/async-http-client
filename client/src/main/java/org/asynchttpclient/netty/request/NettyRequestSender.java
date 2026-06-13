@@ -282,8 +282,14 @@ public final class NettyRequestSender {
 
         // channelInactive might be called between isChannelValid and writeRequest
         // so if we don't store the Future now, channelInactive won't perform
-        // handleUnexpectedClosedChannel
-        Channels.setAttribute(channel, future);
+        // handleUnexpectedClosedChannel.
+        // For HTTP/2, skip this: the parent connection multiplexes many concurrent requests, so a
+        // single per-request Future on the parent channel is meaningless — each request's Future is
+        // stored on its own stream child channel in openHttp2Stream(). The parent also has no
+        // AsyncHttpClientHandler after the H2 upgrade, so nothing reads this attribute anyway.
+        if (!ChannelManager.isHttp2(channel)) {
+            Channels.setAttribute(channel, future);
+        }
 
         if (Channels.isChannelActive(channel)) {
             writeRequest(future, channel);
@@ -520,7 +526,6 @@ public final class NettyRequestSender {
      */
     private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel) {
         Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
-        Runnable openStream = () -> openHttp2Stream(future, parentChannel);
 
         if (state != null && !state.tryAcquireStream()) {
             if (state.isDraining()) {
@@ -530,13 +535,27 @@ public final class NettyRequestSender {
                 return;
             }
             // Queue for later when a stream slot opens up
-            state.addPendingOpener(openStream);
+            state.addPendingOpener(future, () -> openHttp2Stream(future, parentChannel, state));
+            // The parent connection may have closed concurrently with the enqueue above; if so its
+            // close listener already drained the queue and this future would be orphaned (it has no
+            // stream channel, so no channelInactive is ever delivered for it). Detect that race and
+            // fail it here so it never survives only to the request timeout (Issue #2160).
+            if (!parentChannel.isActive() && !future.isDone()) {
+                abort(parentChannel, future,
+                        new java.io.IOException("HTTP/2 connection closed while request was queued"));
+            }
             return;
         }
-        openStream.run();
+        openHttp2Stream(future, parentChannel, state);
     }
 
-    private <T> void openHttp2Stream(NettyResponseFuture<T> future, Channel parentChannel) {
+    private static void releaseHttp2Stream(Http2ConnectionState state) {
+        if (state != null) {
+            state.releaseStream();
+        }
+    }
+
+    private <T> void openHttp2Stream(NettyResponseFuture<T> future, Channel parentChannel, Http2ConnectionState state) {
         new Http2StreamChannelBootstrap(parentChannel)
                 .handler(new ChannelInitializer<Http2StreamChannel>() {
                     @Override
@@ -554,6 +573,7 @@ public final class NettyRequestSender {
                         Http2StreamChannel streamChannel = f.getNow();
                         channelManager.registerOpenChannel(streamChannel);
                         Channels.setAttribute(streamChannel, future);
+                        Channels.setActiveToken(streamChannel);
                         future.attachChannel(streamChannel, false);
                         try {
                             AsyncHandler<T> asyncHandler = future.getAsyncHandler();
@@ -561,6 +581,11 @@ public final class NettyRequestSender {
                                 asyncHandler.onRequestSend(future.getNettyRequest());
                             } catch (Exception e) {
                                 LOGGER.error("onRequestSend crashed", e);
+                                // The slot was acquired before open(); aborting here completes the
+                                // future, so the stream's later channelInactive won't run finishUpdate
+                                // (its !future.isDone() guard fails). Release the slot explicitly,
+                                // otherwise activeStreams leaks and eventually wedges the connection.
+                                releaseHttp2Stream(state);
                                 abort(streamChannel, future, e);
                                 return;
                             }
@@ -573,9 +598,15 @@ public final class NettyRequestSender {
                             scheduleReadTimeout(future);
                         } catch (Exception e) {
                             LOGGER.error("Can't write HTTP/2 request", e);
+                            // See above: release the slot the failed stream will never release itself.
+                            releaseHttp2Stream(state);
                             abort(streamChannel, future, e);
                         }
                     } else {
+                        // Stream channel was never opened — release the acquired stream slot
+                        if (state != null) {
+                            state.releaseStream();
+                        }
                         abort(parentChannel, future, f.cause());
                     }
                 });
