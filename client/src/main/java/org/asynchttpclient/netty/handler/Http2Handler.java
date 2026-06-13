@@ -196,7 +196,10 @@ public final class Http2Handler extends AsyncHttpClientHandler {
      */
     private void handleHttp2ResetFrame(Http2ResetFrame resetFrame, Channel channel, NettyResponseFuture<?> future) {
         long errorCode = resetFrame.errorCode();
-        readFailed(channel, future, new IOException("HTTP/2 stream reset by server, error code: " + errorCode));
+        // RFC 7540 §5.4.2/§6.4: RST_STREAM is stream-scoped and MUST NOT terminate the connection.
+        // Fail only this stream's future and close only the (single-use) stream child channel —
+        // sibling streams multiplexed on the same parent connection must be left untouched.
+        streamFailed(channel, future, new IOException("HTTP/2 stream reset by server, error code: " + errorCode));
     }
 
     /**
@@ -300,11 +303,41 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         }
     }
 
+    /**
+     * Fails a single stream's future WITHOUT closing the parent connection. Used for stream-scoped
+     * events (RST_STREAM, and the {@code channelInactive}/exception Netty delivers when one stream
+     * dies). {@link #finishUpdate} with {@code close=false} closes only the single-use stream child
+     * channel and releases its stream slot, leaving the parent connection and its sibling multiplexed
+     * streams untouched.
+     * <p>
+     * When the PARENT connection genuinely drops, Netty fires {@code channelInactive} on every child
+     * stream, so each in-flight future is still failed individually and promptly.
+     */
+    private void streamFailed(Channel channel, NettyResponseFuture<?> future, Throwable t) {
+        if (future.isDone()) {
+            return;
+        }
+        try {
+            requestSender.abort(channel, future, t);
+        } catch (Exception abortException) {
+            logger.debug("Abort failed", abortException);
+        } finally {
+            finishUpdate(future, channel, false);
+        }
+    }
+
     @Override
     public void handleException(NettyResponseFuture<?> future, Throwable error) {
+        // Stream-scoped: an exception on one stream child channel must not tear down the parent
+        // connection that sibling multiplexed streams share (see streamFailed).
+        streamFailed(future.channel(), future, error);
     }
 
     @Override
     public void handleChannelInactive(NettyResponseFuture<?> future) {
+        // Stream-scoped (see streamFailed): closing the parent here would fail unrelated sibling
+        // streams on the same connection — the RST_STREAM/single-stream-close blast-radius bug.
+        streamFailed(future.channel(), future,
+                new IOException("HTTP/2 stream channel closed unexpectedly"));
     }
 }
