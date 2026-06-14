@@ -88,6 +88,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String HTTP2_HEADER_TABLE_SIZE_CONFIG = "http2HeaderTableSize";
     public static final String HTTP2_MAX_HEADER_LIST_SIZE_CONFIG = "http2MaxHeaderListSize";
     public static final String HTTP2_MAX_CONCURRENT_STREAMS_CONFIG = "http2MaxConcurrentStreams";
+    public static final String HTTP2_MAX_DECOMPRESSED_RESPONSE_SIZE_CONFIG = "http2MaxDecompressedResponseSize";
     public static final String HTTP2_PING_INTERVAL_CONFIG = "http2PingInterval";
     public static final String HTTP2_CLEARTEXT_ENABLED_CONFIG = "http2CleartextEnabled";
 
@@ -358,6 +359,11 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static int defaultHttp2MaxConcurrentStreams() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_MAX_CONCURRENT_STREAMS_CONFIG);
+    }
+
+    public static long defaultHttp2MaxDecompressedResponseSize() {
+        // getInt suffices for the 256 MiB default; values above Integer.MAX_VALUE are set via the builder.
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_MAX_DECOMPRESSED_RESPONSE_SIZE_CONFIG);
     }
 
     public static Duration defaultHttp2PingInterval() {

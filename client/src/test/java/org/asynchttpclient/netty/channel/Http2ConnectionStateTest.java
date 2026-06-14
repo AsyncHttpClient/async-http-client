@@ -320,6 +320,63 @@ public class Http2ConnectionStateTest {
         assertEquals(0, executionCount.get(), "Pending opener should not run on a draining connection");
     }
 
+    // -------------------------------------------------------------------------
+    // Enqueue-after-close/draining must be REJECTED, not orphaned (Issue #2160 GOAWAY race)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void addPendingOpenerAcceptedAndRunsOnHealthyConnection() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream()); // fill the only slot
+
+        AtomicInteger ran = new AtomicInteger();
+        assertTrue(state.offerPendingOpener(ran::incrementAndGet),
+                "a healthy (not draining/closed) connection must accept and queue the opener");
+        assertEquals(0, ran.get(), "queued opener waits for a free slot");
+
+        state.releaseStream();
+        assertEquals(1, ran.get(), "queued opener runs when a slot frees");
+    }
+
+    @Test
+    public void addPendingOpenerRejectedAfterFailPendingOpeners() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream()); // fill the only slot
+
+        // The connection dropped: failPendingOpeners drained the (empty) queue and marked the state closed.
+        state.failPendingOpeners(f -> { });
+
+        // A request that raced the close and only now reaches addPendingOpener must be REJECTED (false), not
+        // silently enqueued where nothing would ever run it OR fail it — that is the #2160 silent-timeout
+        // orphan: a queued request with no stream channel survives only until the request timeout fires.
+        AtomicInteger ran = new AtomicInteger();
+        assertFalse(state.offerPendingOpener(ran::incrementAndGet),
+                "addPendingOpener must reject on a closed connection so the caller fails the request itself");
+
+        // It must not have been queued either: a later releaseStream must never run it.
+        state.releaseStream();
+        assertEquals(0, ran.get(), "a rejected opener must never run");
+    }
+
+    @Test
+    public void addPendingOpenerRejectedWhenDrainingAtEnqueueTime() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream()); // fill the only slot
+
+        // GOAWAY was processed (draining set) between this request's failed tryAcquireStream and its enqueue.
+        state.setDraining(1);
+
+        AtomicInteger ran = new AtomicInteger();
+        assertFalse(state.offerPendingOpener(ran::incrementAndGet),
+                "addPendingOpener must reject on a draining connection");
+
+        state.releaseStream();
+        assertEquals(0, ran.get(), "a rejected opener must never run");
+    }
+
     @Test
     public void activeStreamCountCorrectWithPendingOpeners() {
         Http2ConnectionState state = new Http2ConnectionState();
@@ -618,14 +675,11 @@ public class Http2ConnectionStateTest {
 
         assertEquals(0, executionCount.get(), "Opener should be queued when max is 0");
 
-        // Increase the limit and release to trigger
+        // Raising the cap from 0 drains the queued opener immediately — no stream completion needed.
+        // (Previously this stalled until the next releaseStream; a cap-raising SETTINGS now wakes openers.)
         state.updateMaxConcurrentStreams(1);
-        // Need a releaseStream to drain pending — but first we need to have acquired
-        // Since we can't release without acquiring, let's acquire and immediately release
-        assertTrue(state.tryAcquireStream());
-        state.releaseStream();
-
-        assertEquals(1, executionCount.get());
+        assertEquals(1, executionCount.get(), "raising the cap from 0 must run the queued opener");
+        assertEquals(1, state.getActiveStreams());
     }
 
     @Test
@@ -648,5 +702,133 @@ public class Http2ConnectionStateTest {
         assertEquals(1, state.getActiveStreams());
         state.releaseStream();
         assertEquals(0, state.getActiveStreams());
+    }
+
+    // -------------------------------------------------------------------------
+    // #8 effective max concurrent streams = min(client config, server SETTINGS)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void serverSettingsCannotRaiseAboveClientConfiguredMax() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.setClientMaxConcurrentStreams(5);
+        // Server advertises a HIGHER limit — the client's configured cap must still win (RFC 9113 §5.1.2).
+        state.updateMaxConcurrentStreams(100);
+        assertEquals(5, state.getMaxConcurrentStreams());
+
+        for (int i = 0; i < 5; i++) {
+            assertTrue(state.tryAcquireStream());
+        }
+        assertFalse(state.tryAcquireStream(), "6th stream must be refused even though server allowed 100");
+    }
+
+    @Test
+    public void serverSettingsLowerThanClientMaxAreHonored() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.setClientMaxConcurrentStreams(100);
+        state.updateMaxConcurrentStreams(2); // server is stricter
+        assertEquals(2, state.getMaxConcurrentStreams());
+
+        assertTrue(state.tryAcquireStream());
+        assertTrue(state.tryAcquireStream());
+        assertFalse(state.tryAcquireStream());
+    }
+
+    @Test
+    public void effectiveMaxIsMinRegardlessOfUpdateOrder() {
+        Http2ConnectionState serverFirst = new Http2ConnectionState();
+        serverFirst.updateMaxConcurrentStreams(100);
+        serverFirst.setClientMaxConcurrentStreams(5);
+        assertEquals(5, serverFirst.getMaxConcurrentStreams());
+
+        Http2ConnectionState clientFirst = new Http2ConnectionState();
+        clientFirst.setClientMaxConcurrentStreams(5);
+        clientFirst.updateMaxConcurrentStreams(100);
+        assertEquals(5, clientFirst.getMaxConcurrentStreams());
+    }
+
+    // -------------------------------------------------------------------------
+    // #10 redundant connection flag must NOT block its own opening request
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void redundantConnectionStillAllowsItsOwnStream() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.markRedundant();
+        assertTrue(state.isRedundant());
+        // Unlike draining, redundant must let the connection's own opening request acquire a slot.
+        assertTrue(state.tryAcquireStream());
+        assertEquals(1, state.getActiveStreams());
+    }
+
+    // -------------------------------------------------------------------------
+    // A cap-raising SETTINGS frame must drain queued openers without a stream completing (missed-wakeup fix)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void capRaisingSettingsDrainsAllQueuedOpenersWithoutStreamCompletion() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1); // server cap = 1, effective = 1
+
+        assertTrue(state.tryAcquireStream()); // fill the only slot (a long-lived in-flight stream)
+        AtomicInteger ran = new AtomicInteger(0);
+        state.offerPendingOpener(ran::incrementAndGet);
+        state.offerPendingOpener(ran::incrementAndGet);
+        state.offerPendingOpener(ran::incrementAndGet);
+        assertEquals(0, ran.get(), "queued while at the cap");
+
+        // The server raises SETTINGS_MAX_CONCURRENT_STREAMS. The newly-available slots must wake the queued
+        // openers NOW — no in-flight stream completes here (releaseStream is never called).
+        state.updateMaxConcurrentStreams(10);
+        assertEquals(3, ran.get(),
+                "a cap-raising SETTINGS must wake ALL queued openers (not one, not zero) with no completion");
+        assertEquals(4, state.getActiveStreams(), "1 in-flight + 3 newly opened");
+    }
+
+    @Test
+    public void capRaiseDrainsOnlyUpToTheNewLimit() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+
+        assertTrue(state.tryAcquireStream()); // active=1, cap=1
+        AtomicInteger ran = new AtomicInteger(0);
+        state.offerPendingOpener(ran::incrementAndGet);
+        state.offerPendingOpener(ran::incrementAndGet);
+        state.offerPendingOpener(ran::incrementAndGet);
+
+        // Raising the cap by exactly one frees exactly one slot — wake exactly one opener, never over-open.
+        state.updateMaxConcurrentStreams(2);
+        assertEquals(1, ran.get(), "raising the cap by one must wake exactly one queued opener");
+        assertEquals(2, state.getActiveStreams(), "must not exceed the new cap");
+    }
+
+    @Test
+    public void loweringSettingsDoesNotRunQueuedOpeners() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(2);
+
+        assertTrue(state.tryAcquireStream());
+        assertTrue(state.tryAcquireStream()); // active=2, cap=2
+        AtomicInteger ran = new AtomicInteger(0);
+        state.offerPendingOpener(ran::incrementAndGet); // queued (at the cap)
+
+        // A SETTINGS frame that LOWERS the cap must never open anything.
+        state.updateMaxConcurrentStreams(1);
+        assertEquals(0, ran.get(), "lowering the cap must never run a queued opener");
+    }
+
+    @Test
+    public void voidAddPendingOpenerWrapperStillQueuesAndRuns() {
+        // The void addPendingOpener overloads are retained for binary compatibility; verify they still
+        // delegate to offerPendingOpener (queue, then run on release).
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+
+        AtomicInteger ran = new AtomicInteger(0);
+        state.addPendingOpener(ran::incrementAndGet); // the retained void overload
+        assertEquals(0, ran.get());
+        state.releaseStream();
+        assertEquals(1, ran.get(), "the void addPendingOpener wrapper must delegate to offerPendingOpener");
     }
 }

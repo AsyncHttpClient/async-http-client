@@ -16,10 +16,10 @@
 package org.asynchttpclient.netty.request.body;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedStream;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -91,32 +91,64 @@ public class NettyInputStreamBody implements NettyBody {
             if (is.markSupported()) {
                 is.reset();
             } else {
-                LOGGER.warn("Stream has already been consumed and cannot be reset");
-                return;
+                // The HEADERS frame was already written with endStream=false (sendHttp2Frames), so silently
+                // returning would leave the stream half-open with no terminating DATA frame — the request
+                // would then hang until it times out (the Issue #2160 silent-timeout class). A non-resettable
+                // InputStream cannot be replayed (retry / redirect / auth), so fail the stream explicitly:
+                // the caller (openHttp2Stream / sendHttp2RequestBody) aborts this single stream on the
+                // IOException, leaving sibling multiplexed streams untouched.
+                throw new IOException("HTTP/2 request body InputStream already consumed and cannot be reset for a retry");
             }
         } else {
             future.setStreamConsumed(true);
         }
 
-        try {
-            // Read all data into chunks, then send with last frame having endStream=true
-            byte[] buffer = new byte[8192];
-            ByteBuf pending = null;
+        // Stream the InputStream one bounded chunk at a time with HTTP/2 flow control / writability
+        // backpressure, so a large upload does not buffer the whole stream in heap or read it all inline on
+        // the event loop. Cleanup (closeSilently) happens when the async pump completes — see
+        // InputStreamChunkSource.close.
+        Http2BodyWriter.start(channel, new InputStreamChunkSource(is));
+    }
+
+    /**
+     * Reads an {@link InputStream} in fixed-size chunks for {@link Http2BodyWriter}.
+     */
+    private static final class InputStreamChunkSource implements Http2BodyWriter.ChunkSource {
+
+        private static final int CHUNK_SIZE = 8192;
+
+        private final InputStream is;
+        private final byte[] buffer = new byte[CHUNK_SIZE];
+
+        InputStreamChunkSource(InputStream is) {
+            this.is = is;
+        }
+
+        @Override
+        public ByteBuf nextChunk(ByteBufAllocator alloc) throws IOException {
+            // Blocking InputStream.read returns >0 (data), or -1 (EOF). A transient 0 is possible for some
+            // streams; loop on it so we never emit an empty non-final DATA frame nor end the stream early. The
+            // read blocks until data or EOF, so this does not busy-spin.
             int read;
-            while ((read = is.read(buffer)) != -1) {
-                if (pending != null) {
-                    channel.write(new DefaultHttp2DataFrame(pending, false));
-                }
-                pending = channel.alloc().buffer(read);
-                pending.writeBytes(buffer, 0, read);
+            do {
+                read = is.read(buffer);
+            } while (read == 0);
+
+            if (read == -1) {
+                return null;
             }
-            if (pending != null) {
-                channel.write(new DefaultHttp2DataFrame(pending, true));
-            } else {
-                channel.write(new DefaultHttp2DataFrame(channel.alloc().buffer(0), true));
+            ByteBuf buf = alloc.buffer(read);
+            try {
+                buf.writeBytes(buffer, 0, read);
+                return buf;
+            } catch (RuntimeException e) {
+                buf.release();
+                throw e;
             }
-            channel.flush();
-        } finally {
+        }
+
+        @Override
+        public void close() {
             closeSilently(is);
         }
     }

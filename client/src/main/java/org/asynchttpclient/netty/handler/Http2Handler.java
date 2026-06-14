@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -25,7 +26,6 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http2.Http2DataFrame;
-import io.netty.handler.codec.http2.Http2GoAwayFrame;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
 import io.netty.handler.codec.http2.Http2ResetFrame;
@@ -37,7 +37,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
-import org.asynchttpclient.netty.channel.Http2ConnectionState;
+import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
@@ -83,19 +83,46 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                 }
             } else if (e instanceof Http2DataFrame) {
                 handleHttp2DataFrame((Http2DataFrame) e, channel, future, handler);
-            } else if (e instanceof Http2ResetFrame) {
-                handleHttp2ResetFrame((Http2ResetFrame) e, channel, future);
-            } else if (e instanceof Http2GoAwayFrame) {
-                handleHttp2GoAwayFrame((Http2GoAwayFrame) e, channel, future);
             }
+            // RST_STREAM is delivered as a user event (see userEventTriggered), never via channelRead.
+            // GOAWAY is a connection-level frame handled on the PARENT pipeline (ChannelManager's
+            // http2-goaway-listener); Http2MultiplexHandler closes any streams above lastStreamId itself,
+            // surfacing here as channelInactive. Neither is dispatched to this child handleRead.
         } catch (Exception t) {
             if (hasIOExceptionFilters && t instanceof IOException
                     && requestSender.applyIoExceptionFiltersAndReplayRequest(future, (IOException) t, channel)) {
                 return;
             }
-            readFailed(channel, future, t);
-            throw t;
+            // Stream-scoped failure (RFC 7540 §5.4.2): a processing error on ONE stream — a malformed frame,
+            // or far more commonly a user AsyncHandler callback (onStatusReceived/onHeadersReceived/
+            // onBodyPartReceived/onTrailingHeadersReceived) that throws — must fail only this stream, not
+            // close the parent TCP connection and take down every sibling multiplexed request. streamFailed
+            // routes through finishUpdate(close=false), closing only the single-use stream child channel.
+            // Do NOT re-throw: that would reach exceptionCaught and close the channel a second time.
+            streamFailed(channel, future, t);
         }
+    }
+
+    /**
+     * Netty's {@link io.netty.handler.codec.http2.Http2MultiplexHandler} delivers RST_STREAM to the
+     * stream child channel as a <em>user event</em> ({@link Http2ResetFrame} is an
+     * {@link io.netty.handler.codec.http2.Http2StreamFrame}), NOT via {@code channelRead}. Without this
+     * override {@link #handleHttp2ResetFrame} never runs and the stream is failed only later by the
+     * generic {@code channelInactive}, discarding the server's RST error code. Handle it here so the
+     * stream fails promptly carrying that code, while staying stream-scoped (RFC 7540 §6.4): the parent
+     * connection and its sibling multiplexed streams are left untouched.
+     */
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof Http2ResetFrame) {
+            Channel channel = ctx.channel();
+            Object attribute = Channels.getAttribute(channel);
+            if (attribute instanceof NettyResponseFuture) {
+                handleHttp2ResetFrame((Http2ResetFrame) evt, channel, (NettyResponseFuture<?>) attribute);
+            }
+            return;
+        }
+        super.userEventTriggered(ctx, evt);
     }
 
     /**
@@ -107,9 +134,16 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                                          NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         Http2Headers h2Headers = headersFrame.headers();
 
-        // Extract :status pseudo-header and convert to HTTP status
+        // Extract :status pseudo-header and convert to HTTP status. Netty's header validation normally
+        // rejects a malformed :status upstream, but guard the parse so a bad value fails just this stream
+        // (via handleRead's catch) instead of throwing an unwrapped NumberFormatException.
         CharSequence statusValue = h2Headers.status();
-        int statusCode = statusValue != null ? Integer.parseInt(statusValue.toString()) : 200;
+        int statusCode;
+        try {
+            statusCode = statusValue != null ? Integer.parseInt(statusValue.toString()) : 200;
+        } catch (NumberFormatException nfe) {
+            throw new IOException("Malformed HTTP/2 :status pseudo-header: " + statusValue, nfe);
+        }
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(statusCode);
 
         // Build HTTP/1.1-style headers, skipping HTTP/2 pseudo-headers (start with ':')
@@ -129,7 +163,22 @@ public final class Http2Handler extends AsyncHttpClientHandler {
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), syntheticResponse, channel);
 
+        // RFC 9110 §15.2: a 1xx is an INTERIM response, not the final one. 100-continue must still run the
+        // interceptor chain (Continue100Interceptor resumes the deferred body), but any OTHER interim — 102
+        // Processing, 103 Early Hints — must NOT touch the chain at all: running it would persist the interim's
+        // Set-Cookie into the CookieStore and execute response filters against a non-final response, then do it
+        // again on the real response. The interim HEADERS has endStream=false, so just wait for the final frame.
+        if (statusCode > 100 && statusCode < 200) {
+            return;
+        }
+
         if (!interceptors.exitAfterIntercept(channel, future, handler, syntheticResponse, status, responseHeaders)) {
+            // A 100 that the interceptor chain did not consume (no Expect/100-continue in flight) is still
+            // interim and must not be delivered to the AsyncHandler as the final status — that would fire
+            // onStatusReceived/onHeadersReceived a second time when the real response arrives.
+            if (statusCode == 100) {
+                return;
+            }
             boolean abort = handler.onStatusReceived(status) == State.ABORT;
             if (!abort) {
                 abort = handler.onHeadersReceived(responseHeaders) == State.ABORT;
@@ -203,43 +252,6 @@ public final class Http2Handler extends AsyncHttpClientHandler {
     }
 
     /**
-     * Processes an HTTP/2 GOAWAY frame, which indicates the server is shutting down the connection.
-     * The parent connection is removed from the pool to prevent new streams from being created on it.
-     * The current stream's future is failed so the request can be retried on a new connection.
-     */
-    private void handleHttp2GoAwayFrame(Http2GoAwayFrame goAwayFrame, Channel channel, NettyResponseFuture<?> future) {
-        long errorCode = goAwayFrame.errorCode();
-        int lastStreamId = goAwayFrame.lastStreamId();
-
-        // Remove the parent connection from the HTTP/2 registry so no new streams are opened on it
-        Channel parentChannel = (channel instanceof Http2StreamChannel)
-                ? ((Http2StreamChannel) channel).parent()
-                : channel;
-
-        // Mark the connection as draining and remove from registry
-        Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
-        if (state != null) {
-            state.setDraining(lastStreamId);
-            Object partitionKey = state.getPartitionKey();
-            if (partitionKey != null) {
-                channelManager.removeHttp2Connection(partitionKey, parentChannel);
-            }
-        }
-
-        // Check if this stream's ID is within the allowed range
-        if (channel instanceof Http2StreamChannel) {
-            int streamId = ((Http2StreamChannel) channel).stream().id();
-            if (streamId <= lastStreamId) {
-                // This stream is allowed to complete — don't fail it
-                return;
-            }
-        }
-
-        readFailed(channel, future, new IOException("HTTP/2 connection GOAWAY received, error code: " + errorCode
-                + ", lastStreamId: " + lastStreamId));
-    }
-
-    /**
      * Overrides the base {@link AsyncHttpClientHandler#finishUpdate} to correctly handle HTTP/2
      * connection pooling. HTTP/2 stream channels are single-use — after the stream completes,
      * it must be closed. The reusable resource is the parent TCP connection channel, which is
@@ -263,15 +275,12 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                 : null;
 
         if (parentChannel != null) {
-            Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
-            if (state != null) {
-                state.releaseStream();
-
-                // If connection is draining and no more active streams, close it
-                if (state.isDraining() && state.getActiveStreams() <= 0) {
-                    channelManager.closeChannel(parentChannel);
-                }
-            }
+            // The stream slot is released — and a fully-drained draining connection closed — by the
+            // closeFuture listener bound in NettyRequestSender.openHttp2Stream, which the
+            // streamChannel.close() above triggers. Releasing here instead would leak the slot on the
+            // paths where an exception completes the future before finishUpdate runs (e.g. a
+            // DecompressionException routed through exceptionCaught -> streamFailed, whose isDone() guard
+            // then skips finishUpdate entirely).
 
             // Fire onConnectionOffer to maintain event lifecycle contract
             try {
@@ -290,16 +299,6 @@ public final class Http2Handler extends AsyncHttpClientHandler {
             future.done();
         } catch (Exception t) {
             logger.debug(t.getMessage(), t);
-        }
-    }
-
-    private void readFailed(Channel channel, NettyResponseFuture<?> future, Throwable t) {
-        try {
-            requestSender.abort(channel, future, t);
-        } catch (Exception abortException) {
-            logger.debug("Abort failed", abortException);
-        } finally {
-            finishUpdate(future, channel, true);
         }
     }
 

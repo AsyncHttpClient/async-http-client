@@ -465,6 +465,13 @@
                                             {
                                                 "code": "java.class.nonPublicPartOfAPI",
                                                 "justification": "Internal classes exposed via public methods are intentional"
+                                            },
+                                            {
+                                                "code": "java.annotation.removed",
+                                                "old": "method void io.netty.channel.ChannelInboundHandlerAdapter::userEventTriggered(io.netty.channel.ChannelHandlerContext, java.lang.Object) throws java.lang.Exception @ org.asynchttpclient.netty.handler.Http2Handler",
+                                                "new": "method void org.asynchttpclient.netty.handler.Http2Handler::userEventTriggered(io.netty.channel.ChannelHandlerContext, java.lang.Object) throws java.lang.Exception",
+                                                "annotationType": "io.netty.channel.ChannelHandlerMask.Skip",
+                                                "justification": "Http2Handler overrides userEventTriggered to handle RST_STREAM (Http2ResetFrame); Netty's internal @ChannelHandlerMask.Skip no-op marker is correctly dropped because the method now does real work. Http2Handler is public final and internal-package, so there is no binary, source, or behavioral change for consumers. Scoped to this exact method so any real future change to it is still flagged."
                                             }
                                         ]
                                     }

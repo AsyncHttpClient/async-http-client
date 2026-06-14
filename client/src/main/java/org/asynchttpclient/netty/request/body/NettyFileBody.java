@@ -16,10 +16,10 @@
 package org.asynchttpclient.netty.request.body;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedNioFile;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -30,8 +30,9 @@ import org.asynchttpclient.netty.request.WriteProgressListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class NettyFileBody implements NettyBody {
 
@@ -78,25 +79,60 @@ public class NettyFileBody implements NettyBody {
 
     @Override
     public void writeHttp2(Http2StreamChannel channel, NettyResponseFuture<?> future) throws IOException {
-        int chunkSize = config.getChunkedFileChunkSize();
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r");
-             FileChannel fileChannel = raf.getChannel()) {
-            long remaining = length;
-            long pos = offset;
-            while (remaining > 0) {
-                int toRead = (int) Math.min(chunkSize, remaining);
-                ByteBuf buf = channel.alloc().buffer(toRead);
+        // Stream the file region one bounded chunk at a time with HTTP/2 flow control / writability
+        // backpressure, so a large file upload does not buffer in heap or read the whole file inline on the
+        // event loop. The file is opened here so an open failure still surfaces synchronously to the caller's
+        // openHttp2Stream catch; cleanup happens when the async pump completes (see FileChunkSource.close).
+        Http2BodyWriter.start(channel, new FileChunkSource(file, offset, length, config.getChunkedFileChunkSize()));
+    }
+
+    /**
+     * Reads a file region in {@code chunkSize}-bounded chunks for {@link Http2BodyWriter}.
+     */
+    private static final class FileChunkSource implements Http2BodyWriter.ChunkSource {
+
+        private final RandomAccessFile raf;
+        private final FileChannel fileChannel;
+        private final int chunkSize;
+        private long remaining;
+        private long pos;
+
+        FileChunkSource(File file, long offset, long length, int chunkSize) throws IOException {
+            this.raf = new RandomAccessFile(file, "r");
+            this.fileChannel = raf.getChannel();
+            this.chunkSize = chunkSize;
+            this.remaining = length;
+            this.pos = offset;
+        }
+
+        @Override
+        public ByteBuf nextChunk(ByteBufAllocator alloc) throws IOException {
+            if (remaining <= 0) {
+                return null;
+            }
+            int toRead = (int) Math.min(chunkSize, remaining);
+            ByteBuf buf = alloc.buffer(toRead);
+            try {
                 int read = buf.writeBytes(fileChannel, pos, toRead);
                 if (read <= 0) {
+                    // Truncated file relative to the declared length — treat as end of body.
                     buf.release();
-                    break;
+                    remaining = 0;
+                    return null;
                 }
                 remaining -= read;
                 pos += read;
-                boolean last = remaining <= 0;
-                channel.write(new DefaultHttp2DataFrame(buf, last));
+                return buf;
+            } catch (IOException | RuntimeException e) {
+                buf.release();
+                throw e;
             }
-            channel.flush();
+        }
+
+        @Override
+        public void close() {
+            closeSilently(fileChannel);
+            closeSilently(raf);
         }
     }
 }

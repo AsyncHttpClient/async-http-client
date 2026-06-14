@@ -322,6 +322,16 @@ public interface AsyncHttpClientConfig {
     }
 
     /**
+     * @return the maximum number of bytes a single HTTP/2 response body may decompress to before the stream
+     *         is failed. Guards against decompression-bomb responses — a tiny compressed body that inflates
+     *         to gigabytes and can OOM the client (the limit is enforced transparently when automatic
+     *         decompression is enabled). {@code 0} disables the limit. Defaults to 256 MiB.
+     */
+    default long getHttp2MaxDecompressedResponseSize() {
+        return 256L * 1024 * 1024;
+    }
+
+    /**
      * @return the interval between HTTP/2 PING keepalive frames, {@link Duration#ZERO} disables pinging
      */
     default Duration getHttp2PingInterval() {

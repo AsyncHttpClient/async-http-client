@@ -45,6 +45,13 @@ public class NettyByteBufBody extends NettyDirectBody {
 
     @Override
     public ByteBuf byteBuf() {
-        return bb;
+        // Hand out a retained duplicate, NOT the user's buffer itself. The returned buffer is wrapped into
+        // a DefaultFullHttpRequest that gets read and released when the request is written (or released
+        // on an HTTP/2 early-abort) — if that were the user's buffer, it would be consumed and freed, so a
+        // retry (redirect / auth replay / IOExceptionFilter) that rebuilds the request from the same
+        // user buffer would double-free it (IllegalReferenceCountException) and re-send an emptied body.
+        // The duplicate has independent reader/writer indices and shares the refcount, so each send owns
+        // its own reference and the user's original buffer (and its content) is preserved across retries.
+        return bb.retainedDuplicate();
     }
 }

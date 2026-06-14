@@ -16,10 +16,10 @@
 package org.asynchttpclient.netty.request.body;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -95,31 +95,85 @@ public class NettyBodyBody implements NettyBody {
 
     @Override
     public void writeHttp2(Http2StreamChannel channel, NettyResponseFuture<?> future) throws IOException {
-        try {
-            ByteBuf buf = channel.alloc().buffer(8192);
-            ByteBuf pending = null;
-            while (true) {
-                buf.clear();
-                BodyState state = body.transferTo(buf);
-                if (buf.isReadable()) {
-                    if (pending != null) {
-                        channel.write(new DefaultHttp2DataFrame(pending, false));
+        // Stream the body one bounded chunk at a time with HTTP/2 flow control / writability backpressure,
+        // so a large body does not buffer in heap or get drained inline on the event loop. Cleanup
+        // (closeSilently(body)) happens when the async pump completes — see BodyChunkSource.close.
+        BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
+        FeedableBodyGenerator feedable = bg instanceof FeedableBodyGenerator ? (FeedableBodyGenerator) bg : null;
+        Http2BodyWriter.start(channel, new BodyChunkSource(body, feedable));
+    }
+
+    /**
+     * Drains a {@link Body} in {@link #CHUNK_SIZE}-bounded chunks for {@link Http2BodyWriter}. A
+     * {@link FeedableBodyGenerator} that has no data yet ({@link BodyState#SUSPEND}) parks the pump; the
+     * generator's {@link FeedListener} resumes it when more content is fed — mirroring how the HTTP/1.1 path
+     * uses {@code ChunkedWriteHandler.resumeTransfer()}.
+     */
+    private static final class BodyChunkSource implements Http2BodyWriter.ChunkSource {
+
+        private static final int CHUNK_SIZE = 8192;
+
+        private final Body body;
+        private final FeedableBodyGenerator feedable;
+
+        BodyChunkSource(Body body, FeedableBodyGenerator feedable) {
+            this.body = body;
+            this.feedable = feedable;
+        }
+
+        @Override
+        public ByteBuf nextChunk(ByteBufAllocator alloc) throws IOException {
+            ByteBuf buf = alloc.buffer(CHUNK_SIZE);
+            try {
+                while (true) {
+                    buf.clear();
+                    BodyState state = body.transferTo(buf);
+                    if (buf.isReadable()) {
+                        ByteBuf chunk = buf;
+                        buf = null; // ownership transferred to caller
+                        return chunk;
                     }
-                    pending = buf;
-                    buf = channel.alloc().buffer(8192);
+                    switch (state) {
+                        case STOP:
+                            return null;
+                        case SUSPEND:
+                            return Http2BodyWriter.SUSPEND;
+                        case CONTINUE:
+                            // No data produced this turn but the body continues; retry. Finite in-memory
+                            // bodies never hit this — it only matters for generators that momentarily yield
+                            // nothing without suspending.
+                            break;
+                        default:
+                            throw new IllegalStateException("Unknown body state: " + state);
+                    }
                 }
-                if (state == BodyState.STOP) {
-                    break;
+            } finally {
+                if (buf != null) {
+                    buf.release();
                 }
             }
-            buf.release();
-            if (pending != null) {
-                channel.write(new DefaultHttp2DataFrame(pending, true));
-            } else {
-                channel.write(new DefaultHttp2DataFrame(channel.alloc().buffer(0), true));
+        }
+
+        @Override
+        public void onResume(Runnable resume) {
+            // Only feedable generators can return SUSPEND; wire their feed notification to resume the pump.
+            if (feedable != null) {
+                feedable.setListener(new FeedListener() {
+                    @Override
+                    public void onContentAdded() {
+                        resume.run();
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        // The pump's own read/write error handling closes the stream; nothing to do here.
+                    }
+                });
             }
-            channel.flush();
-        } finally {
+        }
+
+        @Override
+        public void close() {
             closeSilently(body);
         }
     }
