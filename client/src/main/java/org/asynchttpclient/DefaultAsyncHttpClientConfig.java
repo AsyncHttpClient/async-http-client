@@ -107,6 +107,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHt
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2HeaderTableSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2InitialWindowSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxConcurrentStreams;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxDecompressedResponseSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxFrameSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2MaxHeaderListSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2PingInterval;
@@ -181,6 +182,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int http2HeaderTableSize;
     private final int http2MaxHeaderListSize;
     private final int http2MaxConcurrentStreams;
+    private final long http2MaxDecompressedResponseSize;
     private final Duration http2PingInterval;
     private final boolean http2CleartextEnabled;
 
@@ -277,6 +279,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int http2HeaderTableSize,
                                          int http2MaxHeaderListSize,
                                          int http2MaxConcurrentStreams,
+                                         long http2MaxDecompressedResponseSize,
                                          Duration http2PingInterval,
                                          boolean http2CleartextEnabled,
 
@@ -381,6 +384,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.http2HeaderTableSize = http2HeaderTableSize;
         this.http2MaxHeaderListSize = http2MaxHeaderListSize;
         this.http2MaxConcurrentStreams = http2MaxConcurrentStreams;
+        this.http2MaxDecompressedResponseSize = http2MaxDecompressedResponseSize;
         this.http2PingInterval = http2PingInterval;
         this.http2CleartextEnabled = http2CleartextEnabled;
 
@@ -683,6 +687,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
+    public long getHttp2MaxDecompressedResponseSize() {
+        return http2MaxDecompressedResponseSize;
+    }
+
+    @Override
     public Duration getHttp2PingInterval() {
         return http2PingInterval;
     }
@@ -942,6 +951,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int http2HeaderTableSize = defaultHttp2HeaderTableSize();
         private int http2MaxHeaderListSize = defaultHttp2MaxHeaderListSize();
         private int http2MaxConcurrentStreams = defaultHttp2MaxConcurrentStreams();
+        private long http2MaxDecompressedResponseSize = defaultHttp2MaxDecompressedResponseSize();
         private Duration http2PingInterval = defaultHttp2PingInterval();
         private boolean http2CleartextEnabled = defaultHttp2CleartextEnabled();
 
@@ -1043,6 +1053,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             http2HeaderTableSize = config.getHttp2HeaderTableSize();
             http2MaxHeaderListSize = config.getHttp2MaxHeaderListSize();
             http2MaxConcurrentStreams = config.getHttp2MaxConcurrentStreams();
+            http2MaxDecompressedResponseSize = config.getHttp2MaxDecompressedResponseSize();
             http2PingInterval = config.getHttp2PingInterval();
             http2CleartextEnabled = config.isHttp2CleartextEnabled();
 
@@ -1391,6 +1402,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setHttp2MaxDecompressedResponseSize(long http2MaxDecompressedResponseSize) {
+            this.http2MaxDecompressedResponseSize = http2MaxDecompressedResponseSize;
+            return this;
+        }
+
         public Builder setHttp2PingInterval(Duration http2PingInterval) {
             this.http2PingInterval = http2PingInterval;
             return this;
@@ -1658,6 +1674,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     http2HeaderTableSize,
                     http2MaxHeaderListSize,
                     http2MaxConcurrentStreams,
+                    http2MaxDecompressedResponseSize,
                     http2PingInterval,
                     http2CleartextEnabled,
                     requestFilters.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(requestFilters),

@@ -360,7 +360,18 @@ public class ChannelManager {
         if (state != null) {
             state.setPartitionKey(partitionKey);
         }
-        http2Connections.put(partitionKey, channel);
+        // Coalesce connections opened concurrently for the same partition (thundering herd): keep the
+        // first live one canonical in the registry. A connection that lost the race is marked redundant,
+        // so it serves only its own opening request and then closes (its stream's closeFuture listener
+        // closes the parent once activeStreams hits 0) instead of lingering open and unregistered. A dead
+        // registered entry is replaced.
+        Channel existing = http2Connections.putIfAbsent(partitionKey, channel);
+        if (existing != null && existing != channel) {
+            boolean replacedDead = !existing.isActive() && http2Connections.replace(partitionKey, existing, channel);
+            if (!replacedDead && state != null) {
+                state.markRedundant();
+            }
+        }
         // When the connection closes, remove it from the registry AND fail any requests still queued
         // for a stream slot. Without the latter, requests sitting in pendingOpeners when the parent
         // connection drops have no stream channel (so no channelInactive is ever delivered for them)
@@ -368,10 +379,23 @@ public class ChannelManager {
         channel.closeFuture().addListener(future -> {
             removeHttp2Connection(partitionKey, channel);
             if (state != null) {
-                state.failPendingOpeners(orphan ->
-                        orphan.abort(new IOException("HTTP/2 connection closed before a stream could be opened")));
+                state.failPendingOpeners(orphan -> failOrphanedH2Opener(orphan,
+                        "HTTP/2 connection closed before a stream could be opened"));
             }
         });
+    }
+
+    /**
+     * Fails a request that was queued in {@link Http2ConnectionState} waiting for a stream slot but can
+     * never get one (the connection dropped or started draining). Releases its request body first —
+     * {@code sendHttp2Frames} never ran for it, so nothing else will — to avoid leaking the body ByteBuf.
+     * {@code NettyRequest.release()} is idempotent, so this is safe even if another path also releases.
+     */
+    private static void failOrphanedH2Opener(NettyResponseFuture<?> orphan, String message) {
+        if (orphan.getNettyRequest() != null) {
+            orphan.getNettyRequest().release();
+        }
+        orphan.abort(new IOException(message));
     }
 
     /**
@@ -466,8 +490,8 @@ public class ChannelManager {
                 config.getHttpClientCodecInitialBufferSize());
     }
 
-    private SslHandler createSslHandler(String peerHost, int peerPort) {
-        SSLEngine sslEngine = sslEngineFactory.newSslEngine(config, peerHost, peerPort);
+    private SslHandler createSslHandler(String peerHost, int peerPort, boolean http2Allowed) {
+        SSLEngine sslEngine = sslEngineFactory.newSslEngine(config, peerHost, peerPort, http2Allowed);
         SslHandler sslHandler = new SslHandler(sslEngine);
         if (handshakeTimeout > 0) {
             sslHandler.setHandshakeTimeoutMillis(handshakeTimeout);
@@ -489,7 +513,7 @@ public class ChannelManager {
                 // Remove existing SSL handler (for proxy) and replace with SSL handler for target
                 pipeline.remove(SSL_HANDLER);
             }
-            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
+            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(), !requestUri.isWebSocket());
             whenHandshaked = sslHandler.handshakeFuture();
             pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
             pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
@@ -527,9 +551,9 @@ public class ChannelManager {
             // The proxy SSL handler should remain as it provides the tunnel transport
             // We need to add target SSL handler that will negotiate with the target through the tunnel
             
-            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort());
+            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(), !requestUri.isWebSocket());
             whenHandshaked = sslHandler.handshakeFuture();
-            
+
             // For HTTPS proxy tunnel, add target SSL handler after the existing proxy SSL handler
             // This creates a nested SSL setup: Target SSL -> Proxy SSL -> Network
             if (isSslHandlerConfigured(pipeline)) {
@@ -580,7 +604,8 @@ public class ChannelManager {
             peerPort = uri.getExplicitPort();
         }
 
-        SslHandler sslHandler = createSslHandler(peerHost, peerPort);
+        // A WebSocket connection must not negotiate h2 (no RFC 8441 support), so advertise only http/1.1 in ALPN.
+        SslHandler sslHandler = createSslHandler(peerHost, peerPort, !uri.isWebSocket());
         // Check if SOCKS handler actually exists in the pipeline before trying to add after it
         if (hasSocksProxyHandler && pipeline.get(SOCKS_HANDLER) != null) {
             pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
@@ -710,7 +735,11 @@ public class ChannelManager {
                 .initialWindowSize(config.getHttp2InitialWindowSize())
                 .maxFrameSize(config.getHttp2MaxFrameSize())
                 .headerTableSize(config.getHttp2HeaderTableSize())
-                .maxHeaderListSize(config.getHttp2MaxHeaderListSize());
+                .maxHeaderListSize(config.getHttp2MaxHeaderListSize())
+                // RFC 9113 §8.4: AsyncHttpClient never consumes server push, so advertise ENABLE_PUSH=0.
+                // A conformant server then never opens push streams; without this the client relies on
+                // Netty's default and a pushing server could trip a connection-level PROTOCOL_ERROR.
+                .pushEnabled(false);
 
         Http2FrameCodec frameCodec = Http2FrameCodecBuilder.forClient()
                 .initialSettings(settings)
@@ -734,7 +763,9 @@ public class ChannelManager {
         Http2ConnectionState state = new Http2ConnectionState();
         int configMaxStreams = config.getHttp2MaxConcurrentStreams();
         if (configMaxStreams > 0) {
-            state.updateMaxConcurrentStreams(configMaxStreams);
+            // Client's own cap; the server-advertised value (applied by the http2-settings-listener below)
+            // can only lower the effective limit, never raise it above this.
+            state.setClientMaxConcurrentStreams(configMaxStreams);
         }
         pipeline.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
 
@@ -772,6 +803,13 @@ public class ChannelManager {
                         if (pk != null) {
                             removeHttp2Connection(pk, ctx.channel());
                         }
+                        // Fail requests still queued for a stream slot: a draining connection accepts no
+                        // new streams, so they can never be opened here and would otherwise wait until the
+                        // connection finally closes. Fail them now so they retry on a fresh connection (the
+                        // registry no longer offers this one). Already-open streams below lastStreamId are
+                        // untouched and complete normally. #12
+                        connState.failPendingOpeners(orphan -> failOrphanedH2Opener(orphan,
+                                "HTTP/2 connection received GOAWAY; request must retry on a new connection"));
                     }
                     LOGGER.debug("HTTP/2 GOAWAY received on {}, lastStreamId={}, errorCode={}",
                             ctx.channel(), lastStreamId, goAwayFrame.errorCode());

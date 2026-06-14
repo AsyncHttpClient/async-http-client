@@ -189,6 +189,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return false;
         }
 
+        releaseRequestIfNotHandedToChannel();
+
         final Channel ch = channel; //atomic read, so that it won't end up in TOCTOU
         if (ch != null) {
             Channels.setDiscard(ch);
@@ -256,7 +258,29 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         cancelTimeouts();
         channel = null;
         reuseChannel = false;
-        return IS_DONE_FIELD.getAndSet(this, 1) != 0 || isCancelled != 0;
+        boolean alreadyTerminated = IS_DONE_FIELD.getAndSet(this, 1) != 0 || isCancelled != 0;
+        if (!alreadyTerminated) {
+            releaseRequestIfNotHandedToChannel();
+        }
+        return alreadyTerminated;
+    }
+
+    /**
+     * Frees the request body buffer when the request was never handed to a channel encoder. On the HTTP/1.1
+     * success path Netty's encoder releases {@code httpRequest} after the write; but on an abort/cancel BEFORE
+     * the write (connect failure, onRequestSend crash, pool closed, cancellation) — or on replacement during a
+     * redirect/retry — nothing else would, leaking a {@code setBody(ByteBuf)} retained duplicate. In the
+     * HTTP/2 path {@code httpRequest} is never written to a channel, so AHC always owns its release.
+     * {@link NettyRequest#release()} is idempotent (CAS), so this never double-frees the encoder or the
+     * explicit HTTP/2 releases.
+     */
+    private void releaseRequestIfNotHandedToChannel() {
+        NettyRequest request = nettyRequest;
+        if (request != null) {
+            // release() atomically no-ops if the request was already handed to the channel encoder (which then
+            // owns the release), so there is no check-then-act race with the concurrent event-loop write.
+            request.release();
+        }
     }
 
     @Override
@@ -353,6 +377,13 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void setNettyRequest(NettyRequest nettyRequest) {
+        // On a redirect/auth/retry the request is rebuilt; release the previous one if it was never written,
+        // so its body buffer is not leaked. The replaced request is normally already written (handed to the
+        // channel) or already released, in which case this is a no-op (release() is idempotent).
+        NettyRequest previous = this.nettyRequest;
+        if (previous != null && previous != nettyRequest && !previous.isHandedToChannel()) {
+            previous.release();
+        }
         this.nettyRequest = nettyRequest;
     }
 

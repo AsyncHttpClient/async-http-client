@@ -478,6 +478,18 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    /**
+     * Sets the request body from a Netty {@link ByteBuf}.
+     * <p>
+     * <strong>Ownership:</strong> the caller retains ownership of {@code data}. AsyncHttpClient sends a
+     * retained duplicate per attempt (so redirects, auth replays and retries each get their own reference and
+     * the body survives across them) and never releases {@code data} itself. The caller is responsible for
+     * releasing {@code data} once the request has completed. (This differs from older releases, which consumed
+     * and released the buffer on the first send — and double-freed it on any retry.)
+     *
+     * @param data the request body; the caller keeps ownership and must release it after the request completes
+     * @return this builder
+     */
     public T setBody(ByteBuf data) {
         resetBody();
         byteBufData = data;

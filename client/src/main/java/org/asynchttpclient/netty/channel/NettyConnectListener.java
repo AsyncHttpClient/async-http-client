@@ -197,9 +197,20 @@ public final class NettyConnectListener<T> {
                         NettyConnectListener.this.onFailure(channel, e);
                         return;
                     }
-                    // Detect ALPN-negotiated protocol and upgrade pipeline to HTTP/2 if "h2" was selected
+                    // Detect ALPN-negotiated protocol and upgrade pipeline to HTTP/2 if "h2" was selected.
+                    // WebSocket is excluded: AsyncHttpClient does not implement RFC 8441 (WebSocket over
+                    // HTTP/2), so a wss:// request must stay on HTTP/1.1. The WebSocket SSL engine advertises
+                    // only http/1.1 (DefaultSslEngineFactory), so a conformant server will not select h2 here;
+                    // this guard is the backstop for a custom SslEngineFactory that still advertises h2.
+                    // Without it, the WebSocket handshake would be written as a plain HTTP/2 request and the
+                    // broken connection pooled in the H2 registry, mis-routing later wss:// requests. See #2160.
                     String alpnProtocol = sslHandler.applicationProtocol();
-                    if (ApplicationProtocolNames.HTTP_2.equals(alpnProtocol)) {
+                    boolean http2Negotiated = ApplicationProtocolNames.HTTP_2.equals(alpnProtocol);
+                    if (http2Negotiated && uri.isWebSocket()) {
+                        LOGGER.warn("Server negotiated HTTP/2 for WebSocket request to {}; WebSocket over HTTP/2 "
+                                + "(RFC 8441) is not supported — continuing on HTTP/1.1", uri);
+                    }
+                    if (http2Negotiated && !uri.isWebSocket()) {
                         channelManager.upgradePipelineToHttp2(channel.pipeline());
                         registerHttp2AndReleaseSemaphore(channel);
                         releaseSemaphoreImmediately(partitionKeyLock);
@@ -223,8 +234,9 @@ public final class NettyConnectListener<T> {
             });
 
         } else {
-            // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS
-            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled()) {
+            // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS. WebSocket (ws://) is
+            // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
+            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
                 channelManager.upgradePipelineToHttp2(channel.pipeline());
                 registerHttp2AndReleaseSemaphore(channel);
                 releaseSemaphoreImmediately(partitionKeyLock);

@@ -32,6 +32,26 @@ public interface SslEngineFactory {
     SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort);
 
     /**
+     * Creates a new {@link SSLEngine}, optionally permitting HTTP/2 (ALPN {@code h2}) negotiation.
+     * <p>
+     * WebSocket connections pass {@code http2Allowed = false}: AsyncHttpClient does not implement RFC 8441
+     * (WebSocket over HTTP/2), so a WebSocket connection must not negotiate {@code h2} — otherwise the
+     * handshake is written as a plain HTTP/2 request and corrupts the connection. The default implementation
+     * ignores the flag and delegates to {@link #newSslEngine(AsyncHttpClientConfig, String, int)} for
+     * backwards compatibility; {@code DefaultSslEngineFactory} overrides it to advertise only {@code http/1.1}
+     * in ALPN when {@code http2Allowed} is {@code false}.
+     *
+     * @param config       the client config
+     * @param peerHost     the peer hostname
+     * @param peerPort     the peer port
+     * @param http2Allowed whether HTTP/2 (ALPN {@code h2}) may be negotiated on this connection
+     * @return new engine
+     */
+    default SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort, boolean http2Allowed) {
+        return newSslEngine(config, peerHost, peerPort);
+    }
+
+    /**
      * Perform any necessary one-time configuration. This will be called just once before {@code newSslEngine} is called
      * for the first time.
      *

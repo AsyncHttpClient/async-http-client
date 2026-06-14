@@ -38,8 +38,8 @@ import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.AsciiString;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timer;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
@@ -457,6 +457,25 @@ public final class NettyRequestSender {
         return name.toString().toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Removes any userinfo subcomponent from an authority before it becomes the HTTP/2 {@code :authority}
+     * pseudo-header. RFC 9113 §8.3.1: ":authority MUST NOT include the deprecated userinfo subcomponent". Drops
+     * everything up to and including the last {@code '@'} (userinfo itself cannot contain a raw '@', RFC 3986
+     * §3.2.1), leaving {@code host[:port]} — an IPv6 literal such as {@code [::1]:443} contains no '@' and is
+     * untouched. Allocation-free when there is no userinfo (the common case).
+     */
+    private static CharSequence stripUserInfo(CharSequence authority) {
+        if (authority == null) {
+            return null;
+        }
+        for (int i = authority.length() - 1; i >= 0; i--) {
+            if (authority.charAt(i) == '@') {
+                return authority.subSequence(i + 1, authority.length());
+            }
+        }
+        return authority;
+    }
+
     public <T> void writeRequest(NettyResponseFuture<T> future, Channel channel) {
         // if the channel is dead because it was pooled and the remote server decided to close it,
         // we just let it go and the channelInactive do its work
@@ -486,6 +505,15 @@ public final class NettyRequestSender {
                 } catch (Exception e) {
                     LOGGER.error("onRequestSend crashed", e);
                     abort(channel, future, e);
+                    return;
+                }
+
+                // Atomically claim httpRequest for the channel write — from here Netty's HTTP/1.1 encoder owns
+                // and releases it, so a later abort must not release it again (NettyRequest.release() then
+                // no-ops). If the claim FAILS, a concurrent abort/cancel/timeout has already released the
+                // request body on another thread; writing the freed buffer would be a use-after-free, so bail
+                // (the future is already terminal). Before this point an abort releases the request body itself.
+                if (!nettyRequest.markHandedToChannel()) {
                     return;
                 }
 
@@ -530,29 +558,36 @@ public final class NettyRequestSender {
         if (state != null && !state.tryAcquireStream()) {
             if (state.isDraining()) {
                 // Connection is draining from GOAWAY — fail the future so it retries on a new connection.
-                // Don't close the parent channel since it may still have active streams.
+                // Don't close the parent channel since it may still have active streams. sendHttp2Frames
+                // never runs for this future, so release its request body here to avoid leaking it.
+                releaseHttp2Request(future);
                 future.abort(new java.io.IOException("HTTP/2 connection is draining (GOAWAY received)"));
                 return;
             }
-            // Queue for later when a stream slot opens up
-            state.addPendingOpener(future, () -> openHttp2Stream(future, parentChannel, state));
+            // Queue for later when a stream slot opens up. offerPendingOpener returns false if the
+            // connection started draining/closing (e.g. a GOAWAY processed on the event loop) between our
+            // tryAcquireStream() above and this enqueue — such an opener would never run, so fail the
+            // request now instead of leaving it to be completed only by the request timeout (Issue #2160).
+            if (!state.offerPendingOpener(future, () -> openHttp2Stream(future, parentChannel, state))) {
+                releaseHttp2Request(future);
+                // Fail ONLY this future (future.abort, not abort(parentChannel, ...)): the parent may be
+                // draining-but-still-active with healthy sibling streams, and abort(channel, ...) would close
+                // it — the multiplexed-connection blast radius. The parent closes itself once its streams drain.
+                future.abort(new java.io.IOException("HTTP/2 connection draining or closed while request was queued"));
+                return;
+            }
             // The parent connection may have closed concurrently with the enqueue above; if so its
             // close listener already drained the queue and this future would be orphaned (it has no
             // stream channel, so no channelInactive is ever delivered for it). Detect that race and
             // fail it here so it never survives only to the request timeout (Issue #2160).
             if (!parentChannel.isActive() && !future.isDone()) {
+                releaseHttp2Request(future);
                 abort(parentChannel, future,
                         new java.io.IOException("HTTP/2 connection closed while request was queued"));
             }
             return;
         }
         openHttp2Stream(future, parentChannel, state);
-    }
-
-    private static void releaseHttp2Stream(Http2ConnectionState state) {
-        if (state != null) {
-            state.releaseStream();
-        }
     }
 
     private <T> void openHttp2Stream(NettyResponseFuture<T> future, Channel parentChannel, Http2ConnectionState state) {
@@ -562,7 +597,8 @@ public final class NettyRequestSender {
                     protected void initChannel(Http2StreamChannel streamCh) {
                         if (config.isEnableAutomaticDecompression()) {
                             streamCh.pipeline().addLast("http2-decompressor",
-                                    new Http2ContentDecompressor(config.isKeepEncodingHeader()));
+                                    new Http2ContentDecompressor(config.isKeepEncodingHeader(),
+                                            config.getHttp2MaxDecompressedResponseSize()));
                         }
                         streamCh.pipeline().addLast(channelManager.getHttp2Handler());
                     }
@@ -571,6 +607,40 @@ public final class NettyRequestSender {
                 .addListener((Future<Http2StreamChannel> f) -> {
                     if (f.isSuccess()) {
                         Http2StreamChannel streamChannel = f.getNow();
+
+                        // Pin the request THIS stream is opened for so the closeFuture listener below frees
+                        // exactly that buffer — even if the future is later replayed/redirected onto a
+                        // freshly-built NettyRequest (re-reading future.getNettyRequest() at close time could
+                        // otherwise free the new request's body before it is written). release() is idempotent.
+                        final NettyRequest openedRequest = future.getNettyRequest();
+
+                        // Release the acquired stream slot exactly once, when this stream channel closes —
+                        // no matter HOW it closes: normal completion, abort, a non-IOException such as a
+                        // DecompressionException that completes the future before finishUpdate runs, or a
+                        // parent-connection drop. Binding the slot to the channel lifecycle (as
+                        // NettyConnectListener does for the HTTP/1.1 connection semaphore) is the one place
+                        // guaranteed to run exactly once per opened stream, so activeStreams cannot leak and
+                        // wedge the connection. (The open-FAILURE branch below has no channel and releases
+                        // inline.) The listener also closes a draining connection once its last stream ends.
+                        streamChannel.closeFuture().addListener(closed -> {
+                            // Safety net: free the request body when the stream ends, however it ends —
+                            // covers an Expect/100-continue request whose server answered the final response
+                            // without a 100, so the deferred body was never sent (hence never released).
+                            // Idempotent with the prompt releases on the normal/abort paths.
+                            if (openedRequest != null) {
+                                openedRequest.release();
+                            }
+                            if (state != null) {
+                                state.releaseStream();
+                                // Close the parent once it has no active streams AND it is either draining
+                                // (GOAWAY) or a redundant duplicate (#10 thundering-herd loser) — neither
+                                // will serve further requests, so it must not linger open.
+                                if ((state.isDraining() || state.isRedundant()) && state.getActiveStreams() <= 0) {
+                                    channelManager.closeChannel(parentChannel);
+                                }
+                            }
+                        });
+
                         channelManager.registerOpenChannel(streamChannel);
                         Channels.setAttribute(streamChannel, future);
                         Channels.setActiveToken(streamChannel);
@@ -581,11 +651,10 @@ public final class NettyRequestSender {
                                 asyncHandler.onRequestSend(future.getNettyRequest());
                             } catch (Exception e) {
                                 LOGGER.error("onRequestSend crashed", e);
-                                // The slot was acquired before open(); aborting here completes the
-                                // future, so the stream's later channelInactive won't run finishUpdate
-                                // (its !future.isDone() guard fails). Release the slot explicitly,
-                                // otherwise activeStreams leaks and eventually wedges the connection.
-                                releaseHttp2Stream(state);
+                                // sendHttp2Frames never ran, so it never released the request body — do it
+                                // here. The slot is released by the closeFuture listener above once the
+                                // abort closes the stream channel.
+                                releaseHttp2Request(future);
                                 abort(streamChannel, future, e);
                                 return;
                             }
@@ -598,16 +667,26 @@ public final class NettyRequestSender {
                             scheduleReadTimeout(future);
                         } catch (Exception e) {
                             LOGGER.error("Can't write HTTP/2 request", e);
-                            // See above: release the slot the failed stream will never release itself.
-                            releaseHttp2Stream(state);
+                            // If the throw happened before sendHttp2Frames released the request body,
+                            // release it now (idempotent). The slot is released via the closeFuture
+                            // listener above once the abort closes the stream channel.
+                            releaseHttp2Request(future);
                             abort(streamChannel, future, e);
                         }
                     } else {
-                        // Stream channel was never opened — release the acquired stream slot
+                        // Stream channel was never opened — no closeFuture will fire, so release the
+                        // acquired slot and the unsent request body inline.
                         if (state != null) {
                             state.releaseStream();
                         }
-                        abort(parentChannel, future, f.cause());
+                        releaseHttp2Request(future);
+                        // Fail ONLY this future (future.abort, not abort(parentChannel, ...)): opening one stream
+                        // can fail for a stream-local reason (e.g. Netty rejecting it as the outbound max-streams
+                        // bookkeeping races AHC's own cap) while the parent connection is healthy with sibling
+                        // streams. abort(channel, ...) would closeChannel(parentChannel) and take them all down —
+                        // the multiplexed-connection blast radius. Keep it stream-scoped, like the draining/queued
+                        // paths above and Http2Handler.streamFailed(close=false).
+                        future.abort(f.cause());
                     }
                 });
     }
@@ -628,15 +707,25 @@ public final class NettyRequestSender {
         NettyRequest nettyRequest = future.getNettyRequest();
         HttpRequest httpRequest = nettyRequest.getHttpRequest();
         Uri uri = future.getUri();
+        boolean releaseRequest = true;
 
         try {
             // Build HTTP/2 pseudo-headers + regular headers. :path reuses Uri.toRelativeUrl() (pooled
             // StringBuilder) instead of re-concatenating path + "?" + query on every request.
+            // :authority must carry the effective Host — RFC 9113 §8.3.1 makes :authority authoritative and
+            // it replaces the Host header (which isHttp2ExcludedHeader strips below). Reuse the Host the
+            // request factory already computed (which honours setVirtualHost(...) and any explicit Host,
+            // NettyRequestFactory) instead of re-deriving from the URI, so a virtual host is not dropped on
+            // HTTP/2 the way it would be with a bare hostHeader(uri).
+            // RFC 9113 §8.3.1: :authority MUST NOT include the deprecated userinfo subcomponent, so strip any
+            // "user@" / "user:pass@" prefix from the effective Host before it becomes :authority.
+            CharSequence hostValue = httpRequest.headers().get(HttpHeaderNames.HOST);
+            CharSequence authority = stripUserInfo(hostValue != null ? hostValue : hostHeader(uri));
             Http2Headers h2Headers = new DefaultHttp2Headers()
                     .method(httpRequest.method().name())
                     .path(uri.toRelativeUrl())
                     .scheme(uri.getScheme())
-                    .authority(hostHeader(uri));
+                    .authority(authority);
 
             // Copy the HTTP/1.1 headers, dropping connection-specific names forbidden in HTTP/2 (RFC 7540
             // §8.1.2.2). iteratorCharSequence() avoids the per-name String the String-typed iterator forces;
@@ -645,52 +734,127 @@ public final class NettyRequestSender {
             while (it.hasNext()) {
                 Map.Entry<CharSequence, CharSequence> entry = it.next();
                 CharSequence name = entry.getKey();
-                if (!isHttp2ExcludedHeader(name)) {
-                    h2Headers.add(toLowerCaseHeaderName(name), entry.getValue());
+                CharSequence value = entry.getValue();
+                if (isHttp2ExcludedHeader(name)) {
+                    continue;
                 }
+                // RFC 9113 §8.2.2: TE MUST NOT be sent over HTTP/2 with any value other than "trailers".
+                // Forwarding a user's "TE: gzip" verbatim makes a conformant server reset the stream
+                // (PROTOCOL_ERROR), so drop every TE value except the permitted "trailers".
+                if (HttpHeaderNames.TE.contentEqualsIgnoreCase(name)
+                        && !HttpHeaderValues.TRAILERS.contentEqualsIgnoreCase(value)) {
+                    continue;
+                }
+                h2Headers.add(toLowerCaseHeaderName(name), value);
             }
 
-            // Determine if we have a body to write.
-            // Support both DefaultFullHttpRequest (inline content) and NettyDirectBody (byte array/buffer bodies).
-            ByteBuf bodyBuf = null;
-            if (httpRequest instanceof DefaultFullHttpRequest) {
-                ByteBuf content = ((DefaultFullHttpRequest) httpRequest).content();
-                if (content != null && content.isReadable()) {
-                    bodyBuf = content;
-                }
-            }
-
+            // Determine the body to send: an in-memory buffer (DefaultFullHttpRequest content or a
+            // NettyDirectBody) or a streaming body written via NettyBody.writeHttp2. See http2BodyBuf.
             NettyBody nettyBody = nettyRequest.getBody();
-            if (bodyBuf == null && nettyBody != null) {
-                if (nettyBody instanceof NettyDirectBody) {
-                    ByteBuf directBuf = ((NettyDirectBody) nettyBody).byteBuf();
-                    if (directBuf != null && directBuf.isReadable()) {
-                        bodyBuf = directBuf;
-                    }
-                }
-            }
-
-            // Determine if we have a streaming body that needs writeHttp2()
+            ByteBuf bodyBuf = http2BodyBuf(httpRequest, nettyBody);
             boolean hasStreamingBody = bodyBuf == null && nettyBody != null && !(nettyBody instanceof NettyDirectBody);
             boolean hasBody = bodyBuf != null || hasStreamingBody;
 
+            if (hasBody && future.isDontWriteBodyBecauseExpectContinue()) {
+                // Expect: 100-continue (RFC 9110 §10.1.1) — send only the HEADERS frame with
+                // endStream=false and wait for the server's 100 (Continue) before sending the body. The
+                // request (and its body buffer) must survive until the resume, so don't release it here:
+                // Continue100Interceptor -> sendHttp2RequestBody() sends the body and releases. If the
+                // server answers the final response WITHOUT a 100, the stream's closeFuture safety-net in
+                // openHttp2Stream releases the never-sent body.
+                streamChannel.write(new DefaultHttp2HeadersFrame(h2Headers, false));
+                streamChannel.flush();
+                releaseRequest = false;
+                return;
+            }
+
             // Write HEADERS frame (endStream=true when there is no body)
             streamChannel.write(new DefaultHttp2HeadersFrame(h2Headers, !hasBody));
-
-            if (hasStreamingBody) {
-                streamChannel.flush();
-                nettyBody.writeHttp2(streamChannel, future);
-            } else if (bodyBuf != null) {
-                // Write DATA frame with endStream=true — body is sent as a single frame
-                streamChannel.write(new DefaultHttp2DataFrame(bodyBuf.retainedDuplicate(), true));
-                streamChannel.flush();
-            } else {
-                streamChannel.flush();
-            }
+            writeHttp2BodyFrames(future, streamChannel, bodyBuf, hasStreamingBody, nettyBody);
         } finally {
             // Release the original HTTP/1.1 request — in the HTTP/2 path it is not written to the channel,
-            // so we must release it manually to avoid leaking its content ByteBuf.
-            ReferenceCountUtil.release(httpRequest);
+            // so we must release it manually to avoid leaking its content ByteBuf. Routed through the
+            // idempotent NettyRequest.release() so the early-abort paths (writeHttp2Request /
+            // openHttp2Stream / failPendingOpeners) can release it too with no risk of a double-free here.
+            // Skipped only when an Expect/100-continue request is parked waiting for its 100 (above).
+            if (releaseRequest) {
+                nettyRequest.release();
+            }
+        }
+    }
+
+    /**
+     * Sends the body of an HTTP/2 request whose HEADERS were already written with {@code endStream=false}
+     * because it carried {@code Expect: 100-continue}. Invoked by {@code Continue100Interceptor} once the
+     * server's 100 (Continue) arrives: writes the body as DATA frame(s) with {@code endStream=true} and
+     * releases the request.
+     */
+    public void sendHttp2RequestBody(NettyResponseFuture<?> future, Http2StreamChannel streamChannel) throws IOException {
+        NettyRequest nettyRequest = future.getNettyRequest();
+        NettyBody nettyBody = nettyRequest.getBody();
+        ByteBuf bodyBuf = http2BodyBuf(nettyRequest.getHttpRequest(), nettyBody);
+        boolean hasStreamingBody = bodyBuf == null && nettyBody != null && !(nettyBody instanceof NettyDirectBody);
+        try {
+            if (bodyBuf != null || hasStreamingBody) {
+                writeHttp2BodyFrames(future, streamChannel, bodyBuf, hasStreamingBody, nettyBody);
+            } else {
+                // No body materialised (unexpected on this path) — just end the stream.
+                streamChannel.writeAndFlush(new DefaultHttp2DataFrame(streamChannel.alloc().buffer(0), true));
+            }
+        } finally {
+            nettyRequest.release();
+        }
+    }
+
+    /**
+     * Extracts the in-memory request body buffer for the HTTP/2 path: the inline content of a
+     * {@link DefaultFullHttpRequest}, or a {@link NettyDirectBody}'s buffer. Returns {@code null} when
+     * there is no in-memory body (a streaming body, if any, is written via {@link NettyBody#writeHttp2}).
+     */
+    private static ByteBuf http2BodyBuf(HttpRequest httpRequest, NettyBody nettyBody) {
+        if (httpRequest instanceof DefaultFullHttpRequest) {
+            ByteBuf content = ((DefaultFullHttpRequest) httpRequest).content();
+            if (content != null && content.isReadable()) {
+                return content;
+            }
+        }
+        if (nettyBody instanceof NettyDirectBody) {
+            ByteBuf directBuf = ((NettyDirectBody) nettyBody).byteBuf();
+            if (directBuf != null && directBuf.isReadable()) {
+                return directBuf;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Writes the request body as HTTP/2 DATA frame(s) with {@code endStream=true} (the HEADERS frame has
+     * already been written).
+     */
+    private void writeHttp2BodyFrames(NettyResponseFuture<?> future, Http2StreamChannel streamChannel,
+                                      ByteBuf bodyBuf, boolean hasStreamingBody, NettyBody nettyBody) throws IOException {
+        if (hasStreamingBody) {
+            streamChannel.flush();
+            nettyBody.writeHttp2(streamChannel, future);
+        } else if (bodyBuf != null) {
+            // Single DATA frame; retainedDuplicate so releasing the request doesn't free the bytes
+            // mid-write (Netty releases the duplicate after the write completes).
+            streamChannel.write(new DefaultHttp2DataFrame(bodyBuf.retainedDuplicate(), true));
+            streamChannel.flush();
+        } else {
+            streamChannel.flush();
+        }
+    }
+
+    /**
+     * Releases the request body buffer for an HTTP/2 request that is being aborted before
+     * {@link #sendHttp2Frames} runs (and would otherwise release it). Idempotent — safe to call on a
+     * path that may or may not have already reached {@code sendHttp2Frames}.
+     */
+    private static void releaseHttp2Request(NettyResponseFuture<?> future) {
+        NettyRequest nettyRequest = future.getNettyRequest();
+        if (nettyRequest != null) {
+            nettyRequest.release();
         }
     }
 
@@ -824,11 +988,29 @@ public final class NettyRequestSender {
      */
     private Channel waitForHttp2Connection(Request request, ProxyServer proxy) {
         Uri uri = request.getUri();
+        // WebSocket requests must never multiplex onto an HTTP/2 connection (no RFC 8441 support). See #2160.
+        if (uri.isWebSocket()) {
+            return null;
+        }
         String virtualHost = request.getVirtualHost();
-        long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
 
+        Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+        if (h2Channel != null) {
+            return h2Channel;
+        }
+
+        // NEVER block an event-loop thread here. A redirect / 401 / 407 retry re-enters sendRequest ON the
+        // event loop, and the HTTP/2 connection we would wait for is being established on that SAME loop —
+        // a Thread.sleep would freeze the loop and can self-deadlock (the connection never finishes because
+        // its loop is parked here). On the loop, do the single non-blocking poll above and give up; the
+        // caller then proceeds as if no poolable connection was found.
+        if (isOnEventLoop()) {
+            return null;
+        }
+
+        long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
         while (System.nanoTime() < deadline) {
-            Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+            h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
             if (h2Channel != null) {
                 return h2Channel;
             }
@@ -842,6 +1024,15 @@ public final class NettyRequestSender {
         return null;
     }
 
+    private boolean isOnEventLoop() {
+        for (EventExecutor executor : channelManager.getEventLoopGroup()) {
+            if (executor.inEventLoop()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
         try {
             asyncHandler.onConnectionPoolAttempt();
@@ -852,12 +1043,18 @@ public final class NettyRequestSender {
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();
 
-        // Check HTTP/2 connection registry first — these connections support multiplexing
-        // and are not removed from the registry on poll (unlike the regular pool)
-        Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
-        if (h2Channel != null) {
-            LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
-            return h2Channel;
+        // Check HTTP/2 connection registry first — these connections support multiplexing and are not
+        // removed from the registry on poll (unlike the regular pool). WebSocket requests are excluded:
+        // AsyncHttpClient does not implement RFC 8441 (WebSocket over HTTP/2), so reusing a pooled h2
+        // connection would send the WS handshake as a plain HTTP/2 request and the WebSocket handler would
+        // receive raw frames ("Invalid message ... AdaptiveByteBuf"). Fall through to an HTTP/1.1 connection.
+        // See Issue #2160.
+        if (!uri.isWebSocket()) {
+            Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+            if (h2Channel != null) {
+                LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                return h2Channel;
+            }
         }
 
         final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
@@ -884,7 +1081,19 @@ public final class NettyRequestSender {
             return;
         }
 
-        channelManager.drainChannelAndOffer(channel, future);
+        // An HTTP/2 stream child channel is single-use and never emits LastHttpContent, so the HTTP/1.1
+        // drain-and-pool path (drainChannelAndOffer installs an OnLastHttpContentCallback) would wait for it
+        // forever — leaking the stream slot (the closeFuture listener that releases the slot never fires)
+        // and orphaning the channel until the connection wedges (Issue #2160). Instead detach the future from
+        // the old stream (so the stream's imminent channelInactive does not fail the just-replayed request —
+        // the same disconnect drainChannelAndOffer performs by swapping the channel attribute) and close it,
+        // which fires the closeFuture slot release. The replay opens a fresh stream/connection below.
+        if (channel instanceof Http2StreamChannel) {
+            Channels.setDiscard(channel);
+            channelManager.closeChannel(channel);
+        } else {
+            channelManager.drainChannelAndOffer(channel, future);
+        }
         sendNextRequest(newRequest, future);
     }
 

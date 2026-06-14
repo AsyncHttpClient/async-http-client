@@ -35,8 +35,11 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
     private volatile SslContext sslContext;
+    // WebSocket connections use a context that advertises only http/1.1 in ALPN: AsyncHttpClient does not
+    // implement RFC 8441 (WebSocket over HTTP/2), so the server must not be able to negotiate h2 for them.
+    private volatile SslContext http1OnlySslContext;
 
-    private SslContext buildSslContext(AsyncHttpClientConfig config) throws SSLException {
+    private SslContext buildSslContext(AsyncHttpClientConfig config, boolean http2Allowed) throws SSLException {
         if (config.getSslContext() != null) {
             return config.getSslContext();
         }
@@ -64,12 +67,16 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
                 config.isDisableHttpsEndpointIdentificationAlgorithm() ? "" : "HTTPS");
 
         if (config.isHttp2Enabled()) {
+            // For a WebSocket connection (http2Allowed=false) advertise only http/1.1, so the server cannot
+            // select h2 (which AHC cannot speak for WebSocket — no RFC 8441). Otherwise advertise h2 then http/1.1.
+            String[] protocols = http2Allowed
+                    ? new String[]{ApplicationProtocolNames.HTTP_2, ApplicationProtocolNames.HTTP_1_1}
+                    : new String[]{ApplicationProtocolNames.HTTP_1_1};
             sslContextBuilder.applicationProtocolConfig(new ApplicationProtocolConfig(
                     ApplicationProtocolConfig.Protocol.ALPN,
                     ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
                     ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                    ApplicationProtocolNames.HTTP_2,
-                    ApplicationProtocolNames.HTTP_1_1));
+                    protocols));
         }
 
         return configureSslContextBuilder(sslContextBuilder).build();
@@ -77,21 +84,65 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
     @Override
     public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
+        return newSslEngine(config, peerHost, peerPort, true);
+    }
+
+    @Override
+    public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort, boolean http2Allowed) {
+        SslContext context = http2Allowed ? sslContext : http1OnlySslContext(config);
         SSLEngine sslEngine = config.isDisableHttpsEndpointIdentificationAlgorithm() ?
-                sslContext.newEngine(ByteBufAllocator.DEFAULT) :
-                sslContext.newEngine(ByteBufAllocator.DEFAULT, domain(peerHost), peerPort);
+                context.newEngine(ByteBufAllocator.DEFAULT) :
+                context.newEngine(ByteBufAllocator.DEFAULT, domain(peerHost), peerPort);
         configureSslEngine(sslEngine, config);
         return sslEngine;
     }
 
+    /**
+     * Returns the context for a WebSocket connection, which must advertise only http/1.1 (AsyncHttpClient does
+     * not implement RFC 8441, WebSocket over HTTP/2). Built lazily and cached on first use so a client that
+     * never opens a {@code wss://} connection never pays for a second {@link SslContext}.
+     * <p>
+     * Only a self-built, h2-enabled context advertises h2 and therefore needs a separate http/1.1-only variant;
+     * a user-supplied context or an h2-disabled one already negotiates http/1.1, so it is reused (which also
+     * avoids double-releasing it in {@link #destroy()}). <strong>Note:</strong> a user-supplied
+     * {@link AsyncHttpClientConfig#getSslContext()} is used as-is for every connection type — if it advertises
+     * h2 in ALPN, a {@code wss://} connection may still negotiate h2, which AHC cannot speak for WebSocket. A
+     * caller needing WebSocket with a custom context must supply one that negotiates http/1.1.
+     */
+    private SslContext http1OnlySslContext(AsyncHttpClientConfig config) {
+        SslContext ctx = http1OnlySslContext;
+        if (ctx == null) {
+            synchronized (this) {
+                ctx = http1OnlySslContext;
+                if (ctx == null) {
+                    if (config.getSslContext() != null || !config.isHttp2Enabled()) {
+                        ctx = sslContext;
+                    } else {
+                        try {
+                            ctx = buildSslContext(config, false);
+                        } catch (SSLException e) {
+                            throw new RuntimeException("Failed to build the http/1.1-only SslContext for WebSocket", e);
+                        }
+                    }
+                    http1OnlySslContext = ctx;
+                }
+            }
+        }
+        return ctx;
+    }
+
     @Override
     public void init(AsyncHttpClientConfig config) throws SSLException {
-        sslContext = buildSslContext(config);
+        sslContext = buildSslContext(config, true);
+        // http1OnlySslContext is built lazily on the first WebSocket connection — see http1OnlySslContext().
     }
 
     @Override
     public void destroy() {
         ReferenceCountUtil.release(sslContext);
+        if (http1OnlySslContext != null && http1OnlySslContext != sslContext) {
+            ReferenceCountUtil.release(http1OnlySslContext);
+        }
     }
 
     /**
