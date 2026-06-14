@@ -165,6 +165,11 @@ public final class ThreadSafeCookieStore implements CookieStore {
         }
     }
 
+    // rfc6265#section-5.1.3
+    private static boolean domainsMatch(String cookieDomain, String requestDomain) {
+        return requestDomain.equals(cookieDomain) || requestDomain.endsWith('.' + cookieDomain);
+    }
+
     // rfc6265#section-5.1.4
     private static boolean pathsMatch(String cookiePath, String requestPath) {
         return Objects.equals(cookiePath, requestPath) ||
@@ -175,6 +180,14 @@ public final class ThreadSafeCookieStore implements CookieStore {
         AbstractMap.SimpleEntry<String, Boolean> pair = cookieDomain(cookie.domain(), requestDomain);
         String keyDomain = pair.getKey();
         boolean hostOnly = pair.getValue();
+
+        // rfc6265#section-5.3 step 6: ignore a cookie whose Domain attribute is not
+        // domain-matched by the request host, otherwise a host can plant cookies for
+        // unrelated domains (cookie tossing).
+        if (!hostOnly && !domainsMatch(keyDomain, requestDomain)) {
+            return;
+        }
+
         String keyPath = cookiePath(cookie.path(), requestPath);
         CookieKey key = new CookieKey(cookie.name().toLowerCase(), keyPath);
 
