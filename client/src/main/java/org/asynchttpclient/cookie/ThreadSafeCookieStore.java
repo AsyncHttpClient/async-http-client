@@ -205,36 +205,38 @@ public final class ThreadSafeCookieStore implements CookieStore {
         List<Cookie> results = null;
 
         while (MiscUtils.isNonEmpty(subDomain)) {
-            final List<Cookie> storedCookies = getStoredCookies(subDomain, path, secure, exactDomainMatch);
-            subDomain = DomainUtils.getSubDomain(subDomain);
-            exactDomainMatch = false;
-            if (storedCookies.isEmpty()) {
-                continue;
-            }
+            // Lazily allocate a single result list and append matches straight into it; an imperative
+            // scan avoids the per-sub-domain-level Stream pipeline (filter/map stages, two capturing
+            // lambdas, a spliterator and the Collectors.toList intermediate list) that this ran on every
+            // cookie-enabled request. Cookie header order is re-sorted by Netty's ClientCookieEncoder,
+            // so the (preserved) entrySet iteration order is not observable on the wire.
             if (results == null) {
                 results = new ArrayList<>(4);
             }
-            results.addAll(storedCookies);
+            collectStoredCookies(subDomain, path, secure, exactDomainMatch, results);
+            subDomain = DomainUtils.getSubDomain(subDomain);
+            exactDomainMatch = false;
         }
 
-        return results == null ? Collections.emptyList() : results;
+        return results == null || results.isEmpty() ? Collections.emptyList() : results;
     }
 
-    private List<Cookie> getStoredCookies(String domain, String path, boolean secure, boolean isExactMatch) {
+    private void collectStoredCookies(String domain, String path, boolean secure, boolean isExactMatch, List<Cookie> out) {
         final Map<CookieKey, StoredCookie> innerMap = cookieJar.get(domain);
         if (innerMap == null) {
-            return Collections.emptyList();
+            return;
         }
 
-        return innerMap.entrySet().stream().filter(pair -> {
-            CookieKey key = pair.getKey();
-            StoredCookie storedCookie = pair.getValue();
-            boolean hasCookieExpired = hasCookieExpired(storedCookie.cookie, storedCookie.createdAt);
-            return !hasCookieExpired &&
-                    (isExactMatch || !storedCookie.hostOnly) &&
-                    pathsMatch(key.path, path) &&
-                    (secure || !storedCookie.cookie.isSecure());
-        }).map(v -> v.getValue().cookie).collect(Collectors.toList());
+        for (Map.Entry<CookieKey, StoredCookie> entry : innerMap.entrySet()) {
+            CookieKey key = entry.getKey();
+            StoredCookie storedCookie = entry.getValue();
+            if (!hasCookieExpired(storedCookie.cookie, storedCookie.createdAt)
+                    && (isExactMatch || !storedCookie.hostOnly)
+                    && pathsMatch(key.path, path)
+                    && (secure || !storedCookie.cookie.isSecure())) {
+                out.add(storedCookie.cookie);
+            }
+        }
     }
 
     private void removeExpired() {
