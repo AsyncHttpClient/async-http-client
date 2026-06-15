@@ -55,6 +55,7 @@ public class CookieStoreTest {
   public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
     addCookieWithEmptyPath();
     dontReturnCookieForAnotherDomain();
+    dontStoreCookieForUnrelatedDomainAttribute();
     returnCookieWhenItWasSetOnSamePath();
     returnCookieWhenItWasSetOnParentPath();
     dontReturnCookieWhenDomainMatchesButPathIsDifferent();
@@ -91,6 +92,14 @@ public class CookieStoreTest {
     Uri uri = Uri.create("http://www.foo.com");
     store.add(uri, ClientCookieDecoder.LAX.decode("ALPHA=VALUE1; path="));
     assertTrue(store.get(uri).size() > 0);
+  }
+
+  // rfc6265#section-5.3 step 6: a host must not be able to set a cookie for an unrelated domain
+  private void dontStoreCookieForUnrelatedDomainAttribute() {
+    CookieStore store = new ThreadSafeCookieStore();
+    store.add(Uri.create("http://www.evil.com/"), ClientCookieDecoder.LAX.decode("SID=attacker; Domain=victim.com"));
+    assertTrue(store.get(Uri.create("https://victim.com/account")).isEmpty());
+    assertTrue(store.getAll().isEmpty());
   }
 
   private void dontReturnCookieForAnotherDomain() {
