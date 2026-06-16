@@ -1,0 +1,51 @@
+/*
+ *    Copyright (c) 2024 AsyncHttpClient Project. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.asynchttpclient;
+
+/**
+ * Controls how requests are dispatched to a host that resolves to several IP addresses.
+ *
+ * <p>Configured globally through {@link AsyncHttpClientConfig#getRequestSendType()}.
+ */
+public enum RequestSendType {
+
+    /**
+     * Default behavior. The address list returned by DNS is used in its natural order: a new
+     * connection always targets the first address and only falls back to the next one when a TCP
+     * connection attempt fails. Combined with connection pooling (keyed by host), this means that
+     * with keep-alive enabled essentially all traffic to a host stays on the first reachable IP.
+     */
+    DEFAULT,
+
+    /**
+     * Strict per-request round-robin across the host's resolved IPs.
+     *
+     * <p>For each request, the client rotates which resolved IP is targeted first (TCP failover to
+     * the remaining IPs is preserved) and makes connection reuse IP-aware, so that pooled HTTP/1.1
+     * connections and multiplexed HTTP/2 connections are kept and reused per IP rather than per
+     * host. The net effect is that consecutive requests to a multi-IP host are spread evenly across
+     * all of its addresses, even when connections are kept alive.
+     *
+     * <p>Notes:
+     * <ul>
+     *   <li>Has no effect for hosts that resolve to a single address, literal-IP hosts, requests
+     *       with an explicit {@link Request#getAddress() address}, or requests routed through an
+     *       HTTP proxy (the proxy host is resolved, not the target).</li>
+     *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
+     * </ul>
+     */
+    ROUND_ROBIN
+}

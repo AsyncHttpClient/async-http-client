@@ -24,7 +24,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
-import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -114,6 +113,10 @@ public final class NettyConnectListener<T> {
         // timeout logging and keep useful diagnostic information
         if (remoteAddress != null) {
             timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
+            // In ROUND_ROBIN mode the connector may have failed over from the initially selected IP to a
+            // later one; re-pin the pool/HTTP-2 partition key to the IP we actually connected to so reuse
+            // stays correct. No-op in DEFAULT mode.
+            future.repinRoundRobinAddress(remoteAddress.getAddress());
         }
         ProxyServer proxyServer = future.getProxyServer();
 
@@ -272,12 +275,9 @@ public final class NettyConnectListener<T> {
      * Registers the HTTP/2 connection in the channel manager's H2 registry.
      */
     private void registerHttp2AndReleaseSemaphore(Channel channel) {
-        Request request = future.getTargetRequest();
-        Uri uri = request.getUri();
-        ProxyServer proxy = future.getProxyServer();
-        ChannelPoolPartitioning partitioning = request.getChannelPoolPartitioning();
-        Object partitionKey = partitioning.getPartitionKey(uri, request.getVirtualHost(), proxy);
-        channelManager.registerHttp2Connection(partitionKey, channel);
+        // Register under the future's partition key so the H2 connection is found by the same key the
+        // pool is polled with — including the IP-aware key used by RequestSendType.ROUND_ROBIN.
+        channelManager.registerHttp2Connection(future.getPartitionKey(), channel);
     }
 
     public void onFailure(Channel channel, Throwable cause) {

@@ -15,11 +15,13 @@
  */
 package org.asynchttpclient.config;
 
+import org.asynchttpclient.RequestSendType;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Properties;
 
 public final class AsyncHttpClientConfigDefaults {
@@ -52,6 +54,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String STRICT_302_HANDLING_CONFIG = "strict302Handling";
     public static final String KEEP_ALIVE_CONFIG = "keepAlive";
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
+    public static final String REQUEST_SEND_TYPE_CONFIG = "requestSendType";
     public static final String DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG = "disableUrlEncodingForBoundRequests";
     public static final String USE_LAX_COOKIE_ENCODER_CONFIG = "useLaxCookieEncoder";
     public static final String USE_OPEN_SSL_CONFIG = "useOpenSsl";
@@ -372,5 +375,17 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultHttp2CleartextEnabled() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_CLEARTEXT_ENABLED_CONFIG);
+    }
+
+    public static RequestSendType defaultRequestSendType() {
+        String value = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_SEND_TYPE_CONFIG);
+        if (value == null || value.trim().isEmpty()) {
+            return RequestSendType.DEFAULT;
+        }
+        try {
+            return RequestSendType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return RequestSendType.DEFAULT;
+        }
     }
 }

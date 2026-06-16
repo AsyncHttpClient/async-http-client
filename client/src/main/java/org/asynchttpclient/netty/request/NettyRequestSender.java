@@ -50,6 +50,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestSendType;
 import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
@@ -67,6 +68,8 @@ import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
+import org.asynchttpclient.netty.channel.RoundRobinAddressSelector;
+import org.asynchttpclient.netty.channel.RoundRobinPartitionKey;
 import org.asynchttpclient.netty.handler.Http2ContentDecompressor;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyDirectBody;
@@ -81,6 +84,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Iterator;
@@ -109,6 +113,7 @@ public final class NettyRequestSender {
     private final Timer nettyTimer;
     private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
+    private final RoundRobinAddressSelector rrSelector = new RoundRobinAddressSelector();
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
         this.config = config;
@@ -136,6 +141,21 @@ public final class NettyRequestSender {
         validateWebSocketRequest(request, asyncHandler);
         ProxyServer proxyServer = getProxyServer(config, request);
 
+        // Round-robin across the host's resolved IPs: resolve first, pick the next IP, then proceed.
+        // Re-evaluated when the target host changes (e.g. a cross-host redirect); same-host retries keep
+        // their pick. See RequestSendType.ROUND_ROBIN.
+        if (config.getRequestSendType() == RequestSendType.ROUND_ROBIN) {
+            boolean overrideMatchesHost = future != null && request.getUri().getHost().equals(future.getRoundRobinHost());
+            if (isRoundRobinEligible(request, proxyServer) && !overrideMatchesHost) {
+                return sendRequestRoundRobin(request, asyncHandler, future, proxyServer);
+            }
+            if (!overrideMatchesHost && future != null && future.getRoundRobinHost() != null) {
+                // a reused future carries round-robin state for a different host (cross-host redirect to a
+                // target that isn't eligible) — drop it so we don't connect to the previous host's IPs
+                future.clearRoundRobinOverrides();
+            }
+        }
+
         // WebSockets use connect tunneling to work with proxies
         if (needConnect(request, proxyServer) && !isConnectAlreadyDone(request, future)) {
             // Proxy with HTTPS or WebSocket: CONNECT for sure
@@ -149,6 +169,69 @@ public final class NettyRequestSender {
         } else {
             // no CONNECT for sure
             return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, false);
+        }
+    }
+
+    // A request is eligible for round-robin only when it opens a direct connection to the target host
+    // (the connector targets the resolved IPs). Excluded: explicit address (bypasses resolution), and
+    // HTTP-proxied hosts (the proxy host is resolved, not the target).
+    private boolean isRoundRobinEligible(Request request, ProxyServer proxyServer) {
+        if (request.getAddress() != null || needConnect(request, proxyServer)) {
+            return false;
+        }
+        Uri uri = request.getUri();
+        return proxyServer == null || proxyServer.isIgnoredForHost(uri.getHost()) || !proxyServer.getProxyType().isHttp();
+    }
+
+    /**
+     * Round-robin dispatch: resolve the host first, pick the next IP (rotating the address list so the
+     * connector targets it while keeping the others for failover), pin connection reuse to that IP via
+     * an IP-aware partition key, then run the normal reuse-or-connect logic.
+     */
+    private <T> ListenableFuture<T> sendRequestRoundRobin(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future,
+                                                          ProxyServer proxyServer) {
+        NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, false);
+        Uri uri = request.getUri();
+        String host = uri.getHost();
+
+        resolveAddresses(request, proxyServer, newFuture, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+
+            @Override
+            protected void onSuccess(List<InetSocketAddress> addresses) {
+                List<InetSocketAddress> ordered = addresses;
+                if (addresses.size() > 1) {
+                    ordered = rrSelector.rotate(host, addresses);
+                    InetAddress chosen = ordered.get(0).getAddress();
+                    Object baseKey = request.getChannelPoolPartitioning().getPartitionKey(uri, request.getVirtualHost(), proxyServer);
+                    newFuture.setPartitionKeyOverride(new RoundRobinPartitionKey(baseKey, chosen));
+                } else {
+                    // single-IP host (e.g. a redirect from a multi-IP host onto this reused future): clear
+                    // any stale IP-aware key so we don't poll/pool/lock under the previous host's IP
+                    newFuture.setPartitionKeyOverride(null);
+                }
+                // Always feed the resolved addresses back so the new-channel path doesn't resolve twice;
+                // recording the host lets sendRequest skip re-rotation on same-host retries.
+                newFuture.setRoundRobinAddresses(ordered);
+                newFuture.setRoundRobinHost(host);
+                dispatchResolved(request, proxyServer, newFuture, asyncHandler);
+            }
+
+            @Override
+            protected void onFailure(Throwable cause) {
+                abort(null, newFuture, getCause(cause));
+            }
+        });
+
+        return newFuture;
+    }
+
+    // Reuse-or-connect once the round-robin IP has been chosen and recorded on the future.
+    private <T> void dispatchResolved(Request request, ProxyServer proxyServer, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler) {
+        Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
+        if (Channels.isChannelActive(channel)) {
+            sendRequestWithOpenChannel(future, asyncHandler, channel);
+        } else {
+            sendRequestWithNewChannel(request, proxyServer, future, asyncHandler);
         }
     }
 
@@ -253,7 +336,7 @@ public final class NettyRequestSender {
         if (future != null && future.isReuseChannel() && Channels.isChannelActive(future.channel())) {
             return future.channel();
         } else {
-            return pollPooledChannel(request, proxyServer, asyncHandler);
+            return pollPooledChannel(future, request, proxyServer, asyncHandler);
         }
     }
 
@@ -337,7 +420,7 @@ public final class NettyRequestSender {
                 // If HTTP/2 is enabled, another thread may be establishing an H2 connection.
                 // Poll the H2 registry with brief retries before giving up.
                 if (config.isHttp2Enabled()) {
-                    Channel h2Channel = waitForHttp2Connection(request, proxy);
+                    Channel h2Channel = waitForHttp2Connection(request, proxy, future);
                     if (h2Channel != null) {
                         return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
                     }
@@ -350,23 +433,19 @@ public final class NettyRequestSender {
             return future;
         }
 
+        // In round-robin mode the addresses were already resolved (and rotated) before polling the pool,
+        // so reuse them directly instead of resolving a second time.
+        List<InetSocketAddress> roundRobinAddresses = future.getRoundRobinAddresses();
+        if (roundRobinAddresses != null) {
+            connectWithAddresses(request, proxy, future, asyncHandler, roundRobinAddresses);
+            return future;
+        }
+
         resolveAddresses(request, proxy, future, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
             @Override
             protected void onSuccess(List<InetSocketAddress> addresses) {
-                NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, connectionSemaphore);
-                NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState);
-                if (!future.isDone()) {
-                    // Do not throw an exception when we need an extra connection for a redirect
-                    // FIXME why? This violate the max connection per host handling, right?
-                    channelManager.getBootstrap(request.getUri(), request.getNameResolver(), proxy).addListener((Future<Bootstrap> whenBootstrap) -> {
-                        if (whenBootstrap.isSuccess()) {
-                            connector.connect(whenBootstrap.get(), connectListener);
-                        } else {
-                            abort(null, future, whenBootstrap.cause());
-                        }
-                    });
-                }
+                connectWithAddresses(request, proxy, future, asyncHandler, addresses);
             }
 
             @Override
@@ -376,6 +455,23 @@ public final class NettyRequestSender {
         });
 
         return future;
+    }
+
+    private <T> void connectWithAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
+                                          List<InetSocketAddress> addresses) {
+        NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, connectionSemaphore);
+        NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState);
+        if (!future.isDone()) {
+            // Do not throw an exception when we need an extra connection for a redirect
+            // FIXME why? This violate the max connection per host handling, right?
+            channelManager.getBootstrap(request.getUri(), request.getNameResolver(), proxy).addListener((Future<Bootstrap> whenBootstrap) -> {
+                if (whenBootstrap.isSuccess()) {
+                    connector.connect(whenBootstrap.get(), connectListener);
+                } else {
+                    abort(null, future, whenBootstrap.cause());
+                }
+            });
+        }
     }
 
     private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler) {
@@ -986,15 +1082,17 @@ public final class NettyRequestSender {
      * Used when the semaphore blocks a new connection but another thread is establishing
      * an HTTP/2 connection that this request can multiplex onto.
      */
-    private Channel waitForHttp2Connection(Request request, ProxyServer proxy) {
+    private Channel waitForHttp2Connection(Request request, ProxyServer proxy, NettyResponseFuture<?> future) {
         Uri uri = request.getUri();
         // WebSocket requests must never multiplex onto an HTTP/2 connection (no RFC 8441 support). See #2160.
         if (uri.isWebSocket()) {
             return null;
         }
         String virtualHost = request.getVirtualHost();
+        // In round-robin mode, only multiplex onto the H2 connection for the IP this request is pinned to.
+        Object override = future != null ? future.getPartitionKeyOverride() : null;
 
-        Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+        Channel h2Channel = pollHttp2(override, uri, virtualHost, proxy, request);
         if (h2Channel != null) {
             return h2Channel;
         }
@@ -1010,7 +1108,7 @@ public final class NettyRequestSender {
 
         long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
         while (System.nanoTime() < deadline) {
-            h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+            h2Channel = pollHttp2(override, uri, virtualHost, proxy, request);
             if (h2Channel != null) {
                 return h2Channel;
             }
@@ -1024,6 +1122,14 @@ public final class NettyRequestSender {
         return null;
     }
 
+    // Polls the HTTP/2 registry, using the IP-aware key in round-robin mode and the regular key otherwise.
+    private Channel pollHttp2(Object override, Uri uri, String virtualHost, ProxyServer proxy, Request request) {
+        if (override != null) {
+            return channelManager.pollHttp2Connection(override);
+        }
+        return channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+    }
+
     private boolean isOnEventLoop() {
         for (EventExecutor executor : channelManager.getEventLoopGroup()) {
             if (executor.inEventLoop()) {
@@ -1033,7 +1139,7 @@ public final class NettyRequestSender {
         return false;
     }
 
-    private Channel pollPooledChannel(Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
+    private Channel pollPooledChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
         try {
             asyncHandler.onConnectionPoolAttempt();
         } catch (Exception e) {
@@ -1042,6 +1148,24 @@ public final class NettyRequestSender {
 
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();
+
+        // Round-robin mode: poll with the IP-aware key so reuse stays pinned to the chosen IP (both the
+        // HTTP/2 registry and the HTTP/1.1 pool).
+        Object override = future != null ? future.getPartitionKeyOverride() : null;
+        if (override != null) {
+            if (!uri.isWebSocket()) {
+                Channel h2Channel = channelManager.pollHttp2Connection(override);
+                if (h2Channel != null) {
+                    LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                    return h2Channel;
+                }
+            }
+            Channel channel = channelManager.poll(override);
+            if (channel != null) {
+                LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
+            }
+            return channel;
+        }
 
         // Check HTTP/2 connection registry first — these connections support multiplexing and are not
         // removed from the registry on poll (unlike the regular pool). WebSocket requests are excluded:

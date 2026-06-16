@@ -441,6 +441,10 @@ public class ChannelManager {
         return channelPool.poll(partitionKey);
     }
 
+    public Channel poll(Object partitionKey) {
+        return channelPool.poll(partitionKey);
+    }
+
     public void removeAll(Channel connection) {
         channelPool.removeAll(connection);
     }

@@ -431,6 +431,56 @@ public class BasicHttp2Test {
     }
 
     /**
+     * With {@link RequestSendType#ROUND_ROBIN}, a host resolving to several IPs gets one HTTP/2
+     * connection per IP (the registry is keyed by the IP-aware partition key), so requests are spread
+     * across all of them instead of all multiplexing onto a single connection. SNI/cert verification
+     * still use the URL host ("localhost"), so only the connection target IP varies.
+     */
+    @Test
+    public void http2RoundRobinSpreadsConnectionsAcrossIps() throws Exception {
+        final List<java.net.InetAddress> ips = new ArrayList<>();
+        for (String ip : new String[]{"127.0.0.1", "127.0.0.2", "127.0.0.3"}) {
+            ips.add(java.net.InetAddress.getByName(ip));
+        }
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver =
+                new io.netty.resolver.InetNameResolver(io.netty.util.concurrent.ImmediateEventExecutor.INSTANCE) {
+                    @Override
+                    protected void doResolve(String inetHost, io.netty.util.concurrent.Promise<java.net.InetAddress> promise) {
+                        promise.setSuccess(ips.get(0));
+                    }
+
+                    @Override
+                    protected void doResolveAll(String inetHost, io.netty.util.concurrent.Promise<List<java.net.InetAddress>> promise) {
+                        promise.setSuccess(new ArrayList<>(ips));
+                    }
+                };
+
+        java.util.Set<String> connectedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/hello")).setNameResolver(resolver),
+                        new AsyncCompletionHandler<Response>() {
+                            @Override
+                            public void onTcpConnectSuccess(java.net.InetSocketAddress remoteAddress, Channel connection) {
+                                if (remoteAddress.getAddress() != null) {
+                                    connectedIps.add(remoteAddress.getAddress().getHostAddress());
+                                }
+                            }
+
+                            @Override
+                            public Response onCompleted(Response response) {
+                                return response;
+                            }
+                        }).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+        }
+        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), connectedIps,
+                "every resolved IP should get its own HTTP/2 connection in round-robin mode");
+    }
+
+    /**
      * Creates an AHC client with a specific request timeout.
      */
     private AsyncHttpClient http2ClientWithTimeout(int requestTimeoutMs) {
