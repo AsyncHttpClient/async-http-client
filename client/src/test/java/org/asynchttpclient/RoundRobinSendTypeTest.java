@@ -91,16 +91,30 @@ public class RoundRobinSendTypeTest {
     }
 
     private static final class ConnectRecorder extends AsyncCompletionHandler<Response> {
+        private final Set<String> attemptedIps;
         private final Set<String> connectedIps;
 
-        private ConnectRecorder(Set<String> connectedIps) {
+        private ConnectRecorder(Set<String> attemptedIps, Set<String> connectedIps) {
+            this.attemptedIps = attemptedIps;
             this.connectedIps = connectedIps;
+        }
+
+        // onTcpConnectAttempt fires for every IP the connector targets, whether or not it is reachable.
+        // We assert on this rather than onTcpConnectSuccess so the test is portable: on macOS only
+        // 127.0.0.1 is a usable loopback address, so the other IPs are targeted but fail over to it.
+        @Override
+        public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+            record(attemptedIps, remoteAddress);
         }
 
         @Override
         public void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
-            if (remoteAddress.getAddress() != null) {
-                connectedIps.add(remoteAddress.getAddress().getHostAddress());
+            record(connectedIps, remoteAddress);
+        }
+
+        private static void record(Set<String> set, InetSocketAddress address) {
+            if (address != null && address.getAddress() != null) {
+                set.add(address.getAddress().getHostAddress());
             }
         }
 
@@ -110,35 +124,38 @@ public class RoundRobinSendTypeTest {
         }
     }
 
-    private Set<String> runRequests(AsyncHttpClientConfig config) throws Exception {
+    // Returns the set of IPs the client targeted (first choice plus any failovers) across the requests.
+    private Set<String> runRequestsCapturingTargetedIps(AsyncHttpClientConfig config) throws Exception {
+        Set<String> attemptedIps = ConcurrentHashMap.newKeySet();
         Set<String> connectedIps = ConcurrentHashMap.newKeySet();
         NameResolver<InetAddress> resolver = fixedResolver(IPS);
         try (AsyncHttpClient client = asyncHttpClient(config)) {
             for (int i = 0; i < 12; i++) {
                 Response response = client.executeRequest(
                         get("http://roundrobin.test:" + port + "/").setNameResolver(resolver),
-                        new ConnectRecorder(connectedIps)).get(TIMEOUT, SECONDS);
+                        new ConnectRecorder(attemptedIps, connectedIps)).get(TIMEOUT, SECONDS);
                 assertEquals(200, response.getStatusCode());
             }
         }
-        return connectedIps;
+        return attemptedIps;
     }
 
     @Test
     public void roundRobinSpreadsConnectionsAcrossAllIps() throws Exception {
-        Set<String> connectedIps = runRequests(config().setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0).build());
-        assertEquals(Set.of(IPS), connectedIps, "every resolved IP should receive a connection in round-robin mode");
+        Set<String> targetedIps = runRequestsCapturingTargetedIps(config().setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0).build());
+        // every resolved IP gets its own pool partition, so round-robin targets a fresh connection per IP
+        assertEquals(Set.of(IPS), targetedIps, "round-robin should target every resolved IP");
     }
 
     @Test
     public void defaultModeStaysOnASingleIp() throws Exception {
-        Set<String> connectedIps = runRequests(config().setMaxRequestRetry(0).build());
-        assertEquals(1, connectedIps.size(), "default mode should keep reusing a single pooled connection");
+        Set<String> targetedIps = runRequestsCapturingTargetedIps(config().setMaxRequestRetry(0).build());
+        assertEquals(1, targetedIps.size(), "default mode should keep targeting and reusing a single connection");
     }
 
     @Test
     public void roundRobinFailsOverWhenSelectedIpIsDown() throws Exception {
-        // server bound to 127.0.0.1 only, so connecting to 127.0.0.2 is refused
+        // server bound to 127.0.0.1 only, so 127.0.0.2 has no listener (refused on Linux / unreachable on macOS)
         Server localServer = new Server();
         ServerConnector connector = addHttpConnector(localServer);
         connector.setHost("127.0.0.1");
@@ -146,17 +163,19 @@ public class RoundRobinSendTypeTest {
         localServer.start();
         int localPort = connector.getLocalPort();
         try {
+            Set<String> attemptedIps = ConcurrentHashMap.newKeySet();
             Set<String> connectedIps = ConcurrentHashMap.newKeySet();
             NameResolver<InetAddress> resolver = fixedResolver("127.0.0.2", "127.0.0.1");
             try (AsyncHttpClient client = asyncHttpClient(config().setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0).build())) {
                 for (int i = 0; i < 8; i++) {
                     Response response = client.executeRequest(
                             get("http://roundrobin.test:" + localPort + "/").setNameResolver(resolver),
-                            new ConnectRecorder(connectedIps)).get(TIMEOUT, SECONDS);
+                            new ConnectRecorder(attemptedIps, connectedIps)).get(TIMEOUT, SECONDS);
                     assertEquals(200, response.getStatusCode(), "request should succeed via failover even when 127.0.0.2 is selected");
                 }
             }
-            // every successful connection landed on the reachable IP, including the requests that selected 127.0.0.2 first
+            // the down IP was actually selected/attempted, and every successful connection landed on the reachable IP
+            assertEquals(Set.of("127.0.0.1", "127.0.0.2"), attemptedIps);
             assertEquals(Set.of("127.0.0.1"), connectedIps);
         } finally {
             localServer.stop();

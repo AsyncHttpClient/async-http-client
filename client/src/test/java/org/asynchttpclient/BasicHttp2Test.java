@@ -455,16 +455,19 @@ public class BasicHttp2Test {
                     }
                 };
 
-        java.util.Set<String> connectedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        // Assert on the targeted IP (onTcpConnectAttempt), not the connected IP: on macOS only 127.0.0.1
+        // is a usable loopback address, so the others are targeted but fail over. With an IP-aware H2
+        // registry each distinct IP still triggers its own connection attempt.
+        java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
         try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0))) {
             for (int i = 0; i < 12; i++) {
                 Response response = client.executeRequest(
                         org.asynchttpclient.Dsl.get(httpsUrl("/hello")).setNameResolver(resolver),
                         new AsyncCompletionHandler<Response>() {
                             @Override
-                            public void onTcpConnectSuccess(java.net.InetSocketAddress remoteAddress, Channel connection) {
+                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
                                 if (remoteAddress.getAddress() != null) {
-                                    connectedIps.add(remoteAddress.getAddress().getHostAddress());
+                                    attemptedIps.add(remoteAddress.getAddress().getHostAddress());
                                 }
                             }
 
@@ -476,8 +479,8 @@ public class BasicHttp2Test {
                 assertEquals(200, response.getStatusCode());
             }
         }
-        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), connectedIps,
-                "every resolved IP should get its own HTTP/2 connection in round-robin mode");
+        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
+                "round-robin should target every resolved IP over HTTP/2 (each gets its own connection)");
     }
 
     /**
