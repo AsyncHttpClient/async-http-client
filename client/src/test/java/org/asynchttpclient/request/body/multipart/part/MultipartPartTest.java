@@ -96,6 +96,23 @@ public class MultipartPartTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testVisitDispositionHeaderEscapesNameAndFileName() {
+        TestFileLikePart fileLikePart = new TestFileLikePart("na\"me\r\nX-Injected: 1", null, null, null, null, "ev\"il\r\nfilename");
+        try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
+            ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
+            try {
+                multipartPart.visitDispositionHeader(new PartVisitor.ByteBufVisitor(buffer));
+                String header = buffer.toString(UTF_8);
+                assertEquals("\r\nContent-Disposition: form-data; name=\"na%22me%0D%0AX-Injected: 1\""
+                        + "; filename=\"ev%22il%0D%0Afilename\"", header,
+                        "quote and CRLF in name and filename must be percent-escaped so they cannot break out of the quoted value");
+            } finally {
+                buffer.release();
+            }
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testVisitContentTypeHeaderWithCharset() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, "application/test", UTF_8, null, null);
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
