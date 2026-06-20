@@ -15,12 +15,24 @@
  */
 package org.asynchttpclient.uri;
 
+import io.netty.util.concurrent.FastThreadLocal;
 import org.jetbrains.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 final class UriParser {
+
+    // Reused per thread so a parse on a hot request path does not allocate a fresh parser each time.
+    // Safe because the sole caller (Uri.create) reads every field into a new Uri synchronously, right
+    // after parse() returns and before any other parse can run on the same thread — see reset() and the
+    // re-entrancy invariant note on parse(Uri, String).
+    private static final FastThreadLocal<UriParser> PARSER = new FastThreadLocal<UriParser>() {
+        @Override
+        protected UriParser initialValue() {
+            return new UriParser();
+        }
+    };
 
     public @Nullable String scheme;
     public @Nullable String host;
@@ -31,11 +43,30 @@ final class UriParser {
     public String path = "";
     public @Nullable String userInfo;
 
-    private final String originalUrl;
+    private String originalUrl = "";
     private int start, end, currentIndex;
 
-    private UriParser(final String originalUrl) {
+    private UriParser() {
+    }
+
+    /**
+     * Clear every field to its initial state and bind a new input. Must reset ALL fields — including the
+     * ones with non-null defaults ({@code port = -1}, {@code path = ""}) — so nothing bleeds from a prior
+     * parse when the per-thread instance is reused.
+     */
+    private void reset(final String originalUrl) {
         this.originalUrl = originalUrl;
+        scheme = null;
+        host = null;
+        port = -1;
+        query = null;
+        fragment = null;
+        authority = null;
+        path = "";
+        userInfo = null;
+        start = 0;
+        end = 0;
+        currentIndex = 0;
     }
 
     private void trimLeft() {
@@ -368,9 +399,21 @@ final class UriParser {
         computePath(queryOnly);
     }
 
+    /**
+     * Parse {@code originalUrl} (optionally resolved against {@code context}) and return the per-thread
+     * parser holding the result fields.
+     *
+     * <p>The returned instance is a thread-local scratch object reused across calls on the same thread, so
+     * the caller MUST read all needed fields before any other {@code parse} can run on the same thread.
+     * {@link Uri#create(Uri, String)} — the only caller — does exactly this: it copies every field into a
+     * new immutable {@link Uri} synchronously before returning, and the parse itself never re-enters
+     * {@code parse} (it only reads an already-built {@code context} Uri). Do not retain the returned
+     * instance or call {@code parse} re-entrantly within a single field-read sequence.
+     */
     public static UriParser parse(@Nullable Uri context, final String originalUrl) {
         requireNonNull(originalUrl, "originalUrl");
-        final UriParser parser = new UriParser(originalUrl);
+        final UriParser parser = PARSER.get();
+        parser.reset(originalUrl);
         parser.parse(context);
         return parser;
     }
