@@ -20,6 +20,7 @@ import org.asynchttpclient.uri.Uri;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.Utf8UrlEncoder.encodeAndAppendQuery;
@@ -143,6 +144,13 @@ public enum UriEncoder {
     public Uri encode(Uri uri, @Nullable List<Param> queryParams) {
         String newPath = encodePath(uri.getPath());
         String newQuery = encodeQuery(uri.getQuery(), queryParams);
+        // Common case (already-encoded URL, no extra query params): encoding changes nothing, so reuse the
+        // input Uri instead of allocating an identical copy. encodePath returns the same String instance
+        // when nothing needs escaping; newQuery may be a freshly built but equal String, so compare by
+        // value. Every other Uri field is copied unchanged, so equal path+query means an identical Uri.
+        if (newPath.equals(uri.getPath()) && Objects.equals(newQuery, uri.getQuery())) {
+            return uri;
+        }
         return new Uri(uri.getScheme(),
                 uri.getUserInfo(),
                 uri.getHost(),
