@@ -21,12 +21,14 @@ import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.Zstd;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
+import io.netty.util.AsciiString;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
@@ -47,6 +49,9 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
@@ -78,6 +83,66 @@ import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 public final class NettyRequestFactory {
 
     private static final Integer ZERO_CONTENT_LENGTH = 0;
+
+    /**
+     * Canonical (lowercase) header-name spelling -> the pre-built Netty {@link AsciiString} constant.
+     * Built once. When a user-supplied {@code String} name is byte-identical to a canonical spelling, the
+     * outbound header uses the shared {@code AsciiString} so {@code HttpHeadersEncoder} hits its bulk
+     * array-copy branch instead of the per-char US-ASCII encode loop on the event loop. The map is keyed
+     * case-sensitively, so a name that is not byte-identical to its canonical spelling (e.g. Train-Case
+     * {@code Content-Type}) misses and is emitted verbatim — on-wire bytes are never altered, and a custom
+     * name costs a single {@link HashMap#get} miss with zero allocation.
+     */
+    private static final Map<String, AsciiString> KNOWN_HEADER_NAMES = buildKnownHeaderNames();
+
+    private static Map<String, AsciiString> buildKnownHeaderNames() {
+        AsciiString[] names = {
+                HttpHeaderNames.ACCEPT,
+                HttpHeaderNames.ACCEPT_ENCODING,
+                HttpHeaderNames.ACCEPT_LANGUAGE,
+                HttpHeaderNames.AUTHORIZATION,
+                HttpHeaderNames.CACHE_CONTROL,
+                HttpHeaderNames.CONNECTION,
+                HttpHeaderNames.CONTENT_LENGTH,
+                HttpHeaderNames.CONTENT_TYPE,
+                HttpHeaderNames.COOKIE,
+                HttpHeaderNames.HOST,
+                HttpHeaderNames.ORIGIN,
+                HttpHeaderNames.REFERER,
+                HttpHeaderNames.TRANSFER_ENCODING,
+                HttpHeaderNames.USER_AGENT
+        };
+        Map<String, AsciiString> map = new HashMap<>((int) (names.length / 0.75f) + 1);
+        for (AsciiString name : names) {
+            // Key by the constant's own (lowercase) bytes; interning only on a byte-identical match keeps
+            // the on-wire casing exactly as the caller spelled it.
+            map.put(name.toString(), name);
+        }
+        return map;
+    }
+
+    /**
+     * Copy {@code source} request headers into the freshly created outbound {@code target}, interning
+     * recognized header names to their static {@link AsciiString} constant (see {@link #KNOWN_HEADER_NAMES})
+     * so the encode hot path bulk-copies instead of per-char encoding. Multi-value headers and ordering are
+     * preserved (one {@code add} per stored entry, in iteration order). A name already stored as an
+     * {@code AsciiString} is on the fast path already and passed through untouched.
+     */
+    // package-private for unit testing; not part of the public API.
+    static void copyInternedHeaders(HttpHeaders source, HttpHeaders target) {
+        Iterator<Map.Entry<CharSequence, CharSequence>> it = source.iteratorCharSequence();
+        while (it.hasNext()) {
+            Map.Entry<CharSequence, CharSequence> entry = it.next();
+            CharSequence name = entry.getKey();
+            if (name instanceof String) {
+                AsciiString interned = KNOWN_HEADER_NAMES.get(name);
+                if (interned != null) {
+                    name = interned;
+                }
+            }
+            target.add(name, entry.getValue());
+        }
+    }
 
     private final AsyncHttpClientConfig config;
     private final ClientCookieEncoder cookieEncoder;
@@ -170,7 +235,7 @@ public final class NettyRequestFactory {
 
         } else {
             // assign headers as configured on request
-            headers.set(request.getHeaders());
+            copyInternedHeaders(request.getHeaders(), headers);
 
             if (isNonEmpty(request.getCookies())) {
                 headers.set(COOKIE, cookieEncoder.encode(request.getCookies()));
