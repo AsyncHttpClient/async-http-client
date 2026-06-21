@@ -16,9 +16,13 @@
 package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.uring.IoUring;
 import io.netty.util.Timer;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
@@ -33,6 +37,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,6 +77,26 @@ public class DefaultAsyncHttpClientTest {
         try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
             assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
             assertInstanceOf(KQueueEventLoopGroup.class, client.channelManager().getEventLoopGroup());
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testNativeTransportFallsBackToNioWhenNativeUnavailable() throws IOException {
+        // Requesting native transport must never fail client construction: when no native transport is
+        // available (Windows, a minimal image without the native libs, or native libs forced off via
+        // -Dio.netty.transport.noNative=true) the selector degrades gracefully to NIO instead of throwing.
+        // This assertion is meaningful in the force-native-disabled soak run; on a host where native IS
+        // available it documents that native is still selected (no regression).
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+            EventLoopGroup group = client.channelManager().getEventLoopGroup();
+            boolean nativeAvailable = Epoll.isAvailable() || IoUring.isAvailable();
+            if (nativeAvailable) {
+                assertFalse(group instanceof NioEventLoopGroup, "native transport available -> expected a native event loop group");
+            } else {
+                assertInstanceOf(NioEventLoopGroup.class, group, "no native transport available -> expected graceful NIO fallback");
+            }
         }
     }
 
