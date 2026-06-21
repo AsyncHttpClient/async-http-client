@@ -20,7 +20,7 @@
 
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
-    <version>3.0.11</version>
+    <version>3.0.12-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>AHC/Project</name>
@@ -68,8 +68,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</connection>
-        <developerConnection>scm:git:git@github.com:AsyncHttpClient/async-http-client.git</developerConnection>
+        <connection>scm:git:https://github.com/AsyncHttpClient/async-http-client.git</connection>
+        <developerConnection>scm:git:https://github.com/AsyncHttpClient/async-http-client.git</developerConnection>
         <url>https://github.com/AsyncHttpClient/async-http-client/tree/main</url>
         <tag>HEAD</tag>
     </scm>
@@ -406,7 +406,32 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <tagNameFormat>async-http-client-project-@{project.version}</tagNameFormat>
+                    <preparationGoals>clean verify</preparationGoals>
+                    <signTag>false</signTag>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-api</artifactId>
+                        <version>2.2.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-provider-gitexe</artifactId>
+                        <version>2.2.1</version>
+                    </dependency>
+                </dependencies>
             </plugin>
 
             <plugin>
