@@ -7,21 +7,29 @@ on:
 
   workflow_dispatch:
     inputs:
-      snapshot:
-        description: 'Deploy SNAPSHOT'
+      release:
+        description: 'Release final version to Maven Central (strips -SNAPSHOT, tags, then bumps to the next -SNAPSHOT)'
         type: boolean
         default: false
 
 permissions:
-  contents: read
+  contents: write
+
+# Never let a push-triggered SNAPSHOT deploy race a manual release on the same branch.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
 
   deploy:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Skip the automated commits the release plugin pushes back to main.
+    if: github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, '[maven-release-plugin]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v5
         with:
@@ -31,14 +39,11 @@ jobs:
       - name: Grant Permission
         run: chmod +x ./mvnw
 
-      - name: Validate SNAPSHOT version
-        if: inputs.snapshot == true
+      - name: Configure Git User
+        if: inputs.release == true
         run: |
-          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          if [[ "$VERSION" != *-SNAPSHOT ]]; then
-            echo "::error::Version $VERSION is not a SNAPSHOT version"
-            exit 1
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Remove old Maven Settings
         run: rm -f /home/runner/.m2/settings.xml
@@ -59,8 +64,31 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Deploy
+      # Every push to main (and manual runs with the checkbox unticked) publishes a
+      # SNAPSHOT. SNAPSHOTs are mutable, so re-publishing the same version never collides.
+      - name: Deploy SNAPSHOT
+        if: inputs.release != true
         env:
-            GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
-            GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./mvnw -B -ntp deploy -DskipTests -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}
+          GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          if [[ "$VERSION" != *-SNAPSHOT ]]; then
+            echo "::error::Version $VERSION is not a SNAPSHOT. Push-triggered runs only publish SNAPSHOTs; use the manual 'Release' run to cut a final version."
+            exit 1
+          fi
+          ./mvnw -B -ntp deploy -DskipTests -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}
+
+      # Manual run with the checkbox ticked: maven-release-plugin strips -SNAPSHOT,
+      # tags the release, deploys it to Maven Central, then bumps to the next
+      # -SNAPSHOT and pushes both commits + the tag back to main.
+      - name: Release
+        if: inputs.release == true
+        env:
+          GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          ./mvnw -B -ntp release:prepare release:perform \
+            -DskipTests \
+            -DlocalCheckout=true \
+            -Darguments="-DskipTests -Dgpg.keyname=${GPG_KEY_NAME} -Dgpg.passphrase=${GPG_PASSPHRASE}"
