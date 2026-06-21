@@ -23,11 +23,12 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.compression.JdkZlibDecoder;
 import io.netty.handler.codec.compression.ZlibWrapper;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
-
-import java.util.Locale;
+import io.netty.util.AsciiString;
 
 /**
  * HTTP/2 content decompressor that transparently decompresses gzip/deflate response bodies.
@@ -59,19 +60,20 @@ public class Http2ContentDecompressor extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof Http2HeadersFrame) {
             Http2HeadersFrame headersFrame = (Http2HeadersFrame) msg;
-            CharSequence contentEncoding = headersFrame.headers().get("content-encoding");
+            CharSequence contentEncoding = headersFrame.headers().get(HttpHeaderNames.CONTENT_ENCODING);
             if (contentEncoding != null) {
-                // Locale.ROOT: a default-locale toLowerCase() would mangle "GZIP" under the Turkish locale
-                // ("gzıp", dotless i), so the contains() checks below would miss it and the body would be
-                // forwarded still-compressed. Matches the toLowerCaseHeaderName idiom on the request path.
-                String enc = contentEncoding.toString().toLowerCase(Locale.ROOT);
-                if (enc.contains("gzip") || enc.contains("deflate")) {
-                    ZlibWrapper wrapper = enc.contains("gzip") ? ZlibWrapper.GZIP : ZlibWrapper.ZLIB_OR_NONE;
+                // Case-insensitive substring match against the AsciiString header-value constants in place,
+                // instead of allocating contentEncoding.toString().toLowerCase() per response. AsciiString
+                // case-folding is ASCII-only, hence locale-independent, so it also avoids the Turkish-locale
+                // hazard where a default-locale toLowerCase() would mangle "GZIP" and miss the match.
+                boolean gzip = AsciiString.containsIgnoreCase(contentEncoding, HttpHeaderValues.GZIP);
+                if (gzip || AsciiString.containsIgnoreCase(contentEncoding, HttpHeaderValues.DEFLATE)) {
+                    ZlibWrapper wrapper = gzip ? ZlibWrapper.GZIP : ZlibWrapper.ZLIB_OR_NONE;
                     decompressor = new EmbeddedChannel(false, new JdkZlibDecoder(wrapper));
                     if (!keepEncodingHeader) {
-                        headersFrame.headers().remove("content-encoding");
+                        headersFrame.headers().remove(HttpHeaderNames.CONTENT_ENCODING);
                     }
-                    headersFrame.headers().remove("content-length");
+                    headersFrame.headers().remove(HttpHeaderNames.CONTENT_LENGTH);
                 }
             }
             ctx.fireChannelRead(msg);
