@@ -17,14 +17,19 @@ package org.asynchttpclient.config;
 
 import org.asynchttpclient.RequestSendType;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 
 public final class AsyncHttpClientConfigDefaults {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncHttpClientConfigDefaults.class);
 
     public static final String ASYNC_CLIENT_CONFIG_ROOT = "org.asynchttpclient.";
     public static final String THREAD_POOL_NAME_CONFIG = "threadPoolName";
@@ -385,6 +390,9 @@ public final class AsyncHttpClientConfigDefaults {
         try {
             return RequestSendType.valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid value '{}' for {}{}, falling back to {}. Valid values: {}",
+                    value, ASYNC_CLIENT_CONFIG_ROOT, REQUEST_SEND_TYPE_CONFIG,
+                    RequestSendType.DEFAULT, Arrays.toString(RequestSendType.values()));
             return RequestSendType.DEFAULT;
         }
     }
