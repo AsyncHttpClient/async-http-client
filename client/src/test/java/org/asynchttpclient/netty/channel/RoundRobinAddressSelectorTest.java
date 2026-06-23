@@ -42,7 +42,7 @@ class RoundRobinAddressSelectorTest {
     @Test
     void rotatesThroughAllAddressesEvenly() {
         RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
-        // intentionally unsorted input; the selector sorts for a stable rotation order
+        // the resolver order is used as-is (not re-sorted); rotation cycles through every address
         List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.3"), addr("127.0.0.1"), addr("127.0.0.2"));
 
         int rounds = 30;
@@ -62,14 +62,15 @@ class RoundRobinAddressSelectorTest {
     }
 
     @Test
-    void rotationFollowsStableSortedOrder() {
+    void rotationFollowsResolverOrder() {
         RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
+        // the address order is taken as-is from the resolver; rotation steps through it in that order
         List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.3"), addr("127.0.0.1"), addr("127.0.0.2"));
 
+        assertEquals("127.0.0.3", firstIp(selector.rotate("h", input)));
         assertEquals("127.0.0.1", firstIp(selector.rotate("h", input)));
         assertEquals("127.0.0.2", firstIp(selector.rotate("h", input)));
         assertEquals("127.0.0.3", firstIp(selector.rotate("h", input)));
-        assertEquals("127.0.0.1", firstIp(selector.rotate("h", input)));
     }
 
     @Test
@@ -90,7 +91,7 @@ class RoundRobinAddressSelectorTest {
         }
 
         // First use of "survivor" advances its counter to 1, so its next rotation must pick the
-        // second sorted IP. Adding it pushes one past the cap and triggers a single eviction; since
+        // second IP. Adding it pushes one past the cap and triggers a single eviction; since
         // it was just touched it is the most-recently-used, so the oldest cold hosts are dropped
         // instead of it.
         assertEquals("127.0.0.1", firstIp(selector.rotate("survivor", input)));
@@ -109,7 +110,7 @@ class RoundRobinAddressSelectorTest {
         RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
         List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"));
 
-        // both hosts start at index 0 of the sorted order
+        // both hosts start at index 0 of the resolver order
         assertEquals("127.0.0.1", firstIp(selector.rotate("a", input)));
         assertEquals("127.0.0.1", firstIp(selector.rotate("b", input)));
         // advancing host "a" must not affect host "b"

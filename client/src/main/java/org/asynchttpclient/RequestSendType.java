@@ -27,6 +27,10 @@ public enum RequestSendType {
      * connection always targets the first address and only falls back to the next one when a TCP
      * connection attempt fails. Combined with connection pooling (keyed by host), this means that
      * with keep-alive enabled essentially all traffic to a host stays on the first reachable IP.
+     *
+     * <p>To spread traffic across a host's IPs in this mode, configure a resolver that rotates its
+     * results, such as {@link io.netty.resolver.RoundRobinInetAddressResolver}; the client keeps
+     * targeting the first address, and the resolver is what varies which IP that is.
      */
     DEFAULT,
 
@@ -46,6 +50,14 @@ public enum RequestSendType {
      *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
      *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
      *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
+     *   <li>The address order comes straight from the configured
+     *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
+     *       rotation to map consistently across requests, use a resolver that returns the addresses
+     *       in a stable order and does not deliberately reorder them between resolutions (for
+     *       example {@link io.netty.resolver.dns.DnsNameResolver}). Do not pair this mode with a
+     *       resolver that intentionally rotates its results, such as
+     *       {@link io.netty.resolver.RoundRobinInetAddressResolver} — that one is meant for
+     *       {@link #DEFAULT} mode, where it provides the spreading instead.</li>
      *   <li>Rotation is not health-aware: it always cycles through every IP the resolver returns, so
      *       a temporarily unreachable IP keeps receiving its share of requests — each then retried
      *       via TCP failover to a healthy IP — until the resolver stops returning it. Which IPs are

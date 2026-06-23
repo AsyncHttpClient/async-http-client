@@ -29,10 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN} is enabled.
  *
  * <p>{@link #rotate(String, List)} returns the resolved addresses re-ordered so that the
- * round-robin-selected address comes first; the remaining addresses follow (in a stable order) so
- * the connector can still fail over to them. The addresses are sorted into a stable order before
- * rotation so that the per-host counter maps consistently to the same address across requests,
- * regardless of the order the resolver returns them in.
+ * round-robin-selected address comes first; the remaining addresses follow (in their original
+ * order) so the connector can still fail over to them. The order is taken as-is from the resolver
+ * and is not re-sorted, so the per-host counter maps consistently to the same address across
+ * requests only when the configured {@link io.netty.resolver.InetNameResolver} returns the
+ * addresses in a stable order (see {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN}).
  *
  * <p>Thread-safe.
  */
@@ -44,22 +45,16 @@ public final class RoundRobinAddressSelector {
     static final int MAX_TRACKED_HOSTS = 4096;
     private static final int LOW_WATER_MARK = MAX_TRACKED_HOSTS * 9 / 10;
 
-    private static final Comparator<InetSocketAddress> STABLE_ORDER = Comparator.comparing(address -> {
-        if (address.getAddress() != null) {
-            return address.getAddress().getHostAddress();
-        }
-        return address.getHostString();
-    });
-
     private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
     // Guards eviction so only one thread sweeps at a time; the rest proceed without blocking.
     private final AtomicBoolean evicting = new AtomicBoolean();
 
     /**
      * @param host     the request's target host
-     * @param resolved the resolved socket addresses (size {@code >= 1})
-     * @return the same list instance when there is nothing to rotate (size {@code <= 1}), otherwise
-     * a new list whose first element is the round-robin-selected address
+     * @param resolved the resolved socket addresses (size {@code >= 1}), in resolver order
+     * @return the same list instance when there is nothing to rotate (size {@code <= 1}) or the
+     * selected index is already first, otherwise a new list (preserving resolver order) whose first
+     * element is the round-robin-selected address
      */
     public List<InetSocketAddress> rotate(String host, List<InetSocketAddress> resolved) {
         int n = resolved.size();
@@ -67,17 +62,14 @@ public final class RoundRobinAddressSelector {
             return resolved;
         }
 
-        List<InetSocketAddress> ordered = new ArrayList<>(resolved);
-        ordered.sort(STABLE_ORDER);
-
         int index = (nextCount(host) & Integer.MAX_VALUE) % n;
         if (index == 0) {
-            return ordered;
+            return resolved;
         }
 
         List<InetSocketAddress> rotated = new ArrayList<>(n);
-        rotated.addAll(ordered.subList(index, n));
-        rotated.addAll(ordered.subList(0, index));
+        rotated.addAll(resolved.subList(index, n));
+        rotated.addAll(resolved.subList(0, index));
         return rotated;
     }
 
