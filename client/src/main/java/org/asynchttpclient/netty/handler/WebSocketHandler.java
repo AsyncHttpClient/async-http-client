@@ -73,6 +73,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
         String key = getAcceptKey(future.getNettyRequest().getHttpRequest().headers().get(SEC_WEBSOCKET_KEY));
         if (accept == null || !accept.equals(key)) {
             requestSender.abort(channel, future, new IOException("Invalid challenge. Actual: " + accept + ". Expected: " + key));
+            return;
         }
 
         // set back the future so the protocol gets notified of frames
