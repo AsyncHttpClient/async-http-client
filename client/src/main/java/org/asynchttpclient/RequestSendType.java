@@ -42,8 +42,9 @@ public enum RequestSendType {
      * <p>Notes:
      * <ul>
      *   <li>Has no effect for hosts that resolve to a single address, literal-IP hosts, requests
-     *       with an explicit {@link Request#getAddress() address}, or requests routed through an
-     *       HTTP proxy (the proxy host is resolved, not the target).</li>
+     *       with an explicit {@link Request#getAddress() address}, or requests routed through a
+     *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
+     *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
      *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
      * </ul>
      */

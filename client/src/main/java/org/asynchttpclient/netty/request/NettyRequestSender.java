@@ -174,13 +174,15 @@ public final class NettyRequestSender {
 
     // A request is eligible for round-robin only when it opens a direct connection to the target host
     // (the connector targets the resolved IPs). Excluded: explicit address (bypasses resolution), and
-    // HTTP-proxied hosts (the proxy host is resolved, not the target).
+    // any proxied host — HTTP or SOCKS — since the socket is established to the proxy rather than
+    // directly to the rotated target IPs. Round-robin still applies when the proxy is bypassed for
+    // the host (isIgnoredForHost), because that request connects directly.
     private boolean isRoundRobinEligible(Request request, ProxyServer proxyServer) {
         if (request.getAddress() != null || needConnect(request, proxyServer)) {
             return false;
         }
         Uri uri = request.getUri();
-        return proxyServer == null || proxyServer.isIgnoredForHost(uri.getHost()) || !proxyServer.getProxyType().isHttp();
+        return proxyServer == null || proxyServer.isIgnoredForHost(uri.getHost());
     }
 
     /**
