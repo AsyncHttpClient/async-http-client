@@ -196,6 +196,12 @@ public final class NettyRequestSender {
         Uri uri = request.getUri();
         String host = uri.getHost();
 
+        // Round-robin resolves up front — before the pool check and before the per-host semaphore — so
+        // every eligible request resolves first, even one that immediately reuses a pooled connection and
+        // even a single-IP host. With a caching resolver this is cheap. One side effect on a pooled hit:
+        // the request timeout is scheduled here (in resolveAddresses) and again in
+        // sendRequestWithOpenChannel; the second schedule cancels the first (see
+        // NettyResponseFuture.setTimeoutsHolder), so it's redundant work, not a leak.
         resolveAddresses(request, proxyServer, newFuture, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
             @Override
