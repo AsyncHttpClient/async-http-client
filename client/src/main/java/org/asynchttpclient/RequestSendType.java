@@ -46,6 +46,11 @@ public enum RequestSendType {
      *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
      *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
      *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
+     *   <li>Rotation is not health-aware: it always cycles through every IP the resolver returns, so
+     *       a temporarily unreachable IP keeps receiving its share of requests — each then retried
+     *       via TCP failover to a healthy IP — until the resolver stops returning it. Which IPs are
+     *       live is expected to be governed at the DNS/resolver level, as it already is in
+     *       {@link #DEFAULT} mode.</li>
      * </ul>
      */
     ROUND_ROBIN
