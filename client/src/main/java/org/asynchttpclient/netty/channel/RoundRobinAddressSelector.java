@@ -41,7 +41,7 @@ public final class RoundRobinAddressSelector {
     // Cap on the number of per-host counters retained, so a client that touches very many distinct
     // multi-IP hosts (crawler/gateway) can't grow this map without bound. When exceeded, the
     // least-recently-used hosts are evicted down to LOW_WATER_MARK.
-    private static final int MAX_TRACKED_HOSTS = 4096;
+    static final int MAX_TRACKED_HOSTS = 4096;
     private static final int LOW_WATER_MARK = MAX_TRACKED_HOSTS * 9 / 10;
 
     private static final Comparator<InetSocketAddress> STABLE_ORDER = Comparator.comparing(address -> {
@@ -79,6 +79,11 @@ public final class RoundRobinAddressSelector {
         rotated.addAll(ordered.subList(index, n));
         rotated.addAll(ordered.subList(0, index));
         return rotated;
+    }
+
+    // Visible for testing: the number of hosts currently tracked (bounded by MAX_TRACKED_HOSTS).
+    int trackedHostCount() {
+        return counters.size();
     }
 
     private int nextCount(String host) {

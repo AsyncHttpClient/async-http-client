@@ -80,6 +80,31 @@ class RoundRobinAddressSelectorTest {
     }
 
     @Test
+    void boundsTrackedHostsAndEvictsLeastRecentlyUsed() {
+        RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
+        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"));
+
+        // Fill the tracker exactly to the cap with distinct "cold" hosts (no eviction yet).
+        for (int i = 0; i < RoundRobinAddressSelector.MAX_TRACKED_HOSTS; i++) {
+            selector.rotate("cold-" + i, input);
+        }
+
+        // First use of "survivor" advances its counter to 1, so its next rotation must pick the
+        // second sorted IP. Adding it pushes one past the cap and triggers a single eviction; since
+        // it was just touched it is the most-recently-used, so the oldest cold hosts are dropped
+        // instead of it.
+        assertEquals("127.0.0.1", firstIp(selector.rotate("survivor", input)));
+
+        assertTrue(selector.trackedHostCount() <= RoundRobinAddressSelector.MAX_TRACKED_HOSTS,
+                "tracked hosts must stay bounded by the cap");
+
+        // "survivor" kept its counter (eviction dropped only stale, least-recently-used hosts), so
+        // it continues to the second IP rather than restarting at the first.
+        assertEquals("127.0.0.2", firstIp(selector.rotate("survivor", input)),
+                "recently-used host must keep its rotation state across eviction");
+    }
+
+    @Test
     void perHostCountersAreIndependent() {
         RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
         List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"));
