@@ -98,6 +98,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -119,6 +120,9 @@ public class ChannelManager {
     public static final String HTTP2_MULTIPLEX = "http2-multiplex";
     public static final String AHC_HTTP2_HANDLER = "ahc-http2";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
+    // Guards the one-time WARN emitted when a native transport was requested but is unavailable and we
+    // fall back to NIO. Logged once per JVM to avoid spamming logs when many clients are created.
+    private static final AtomicBoolean NATIVE_FALLBACK_WARNED = new AtomicBoolean();
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
@@ -212,10 +216,11 @@ public class ChannelManager {
         }
 
         // If we're not running on Windows then we're probably running on Linux.
-        // We will check if Io_Uring is available or not. If available, return IoUringIncubatorTransportFactory.
+        // We will check if Io_Uring is available or not. If available, return IoUringTransportFactory.
         // Else
         // We will check if Epoll is available or not. If available, return EpollTransportFactory.
-        // If none of the condition matches then no native transport is available, and we will throw an exception.
+        // If none of these match then no native transport is available; instead of failing client
+        // construction we degrade gracefully to NIO (which is always available) and warn once.
         if (!PlatformDependent.isWindows()) {
             if (IoUringTransportFactory.isAvailable() && !config.isUseOnlyEpollNativeTransport()) {
                 return new IoUringTransportFactory();
@@ -224,7 +229,14 @@ public class ChannelManager {
             }
         }
 
-        throw new IllegalArgumentException("No suitable native transport (Epoll, Io_Uring or KQueue) available");
+        // No suitable native transport (Epoll, Io_Uring or KQueue) on this platform. Native transport was
+        // requested but cannot be honored (e.g. Windows, a minimal image without the native libs, or the
+        // native library failed to load), so fall back to the portable NIO transport rather than throwing.
+        if (NATIVE_FALLBACK_WARNED.compareAndSet(false, true)) {
+            LOGGER.warn("Native transport requested (useNativeTransport=true) but no native transport "
+                    + "(Epoll, Io_Uring or KQueue) is available on this platform; falling back to NIO.");
+        }
+        return NioTransportFactory.INSTANCE;
     }
 
     public static boolean isSslHandlerConfigured(ChannelPipeline pipeline) {
