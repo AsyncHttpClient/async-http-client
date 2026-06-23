@@ -37,7 +37,7 @@ public abstract class FileLikeMultipartPart<T extends FileLikePart> extends Mult
         if (part.getFileName() != null) {
             visitor.withBytes(FILE_NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(part.getFileName().getBytes(part.getCharset() != null ? part.getCharset() : UTF_8));
+            visitor.withBytes(escapeQuotedString(part.getFileName()).getBytes(part.getCharset() != null ? part.getCharset() : UTF_8));
             visitor.withByte(QUOTE_BYTE);
         }
     }

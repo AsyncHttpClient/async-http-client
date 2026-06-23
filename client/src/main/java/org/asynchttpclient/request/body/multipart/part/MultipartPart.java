@@ -264,9 +264,43 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
         if (part.getName() != null) {
             visitor.withBytes(NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
-            visitor.withBytes(part.getName().getBytes(US_ASCII));
+            visitor.withBytes(escapeQuotedString(part.getName()).getBytes(US_ASCII));
             visitor.withByte(QUOTE_BYTE);
         }
+    }
+
+    /**
+     * Escape the characters that would let a name or filename break out of its
+     * quoted Content-Disposition parameter (RFC 7578 section 5.1): a double quote
+     * closes the value, CR/LF inject extra part headers.
+     */
+    protected static String escapeQuotedString(String value) {
+        StringBuilder sb = null;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            String replacement;
+            switch (c) {
+                case '"':
+                    replacement = "%22";
+                    break;
+                case '\r':
+                    replacement = "%0D";
+                    break;
+                case '\n':
+                    replacement = "%0A";
+                    break;
+                default:
+                    if (sb != null) {
+                        sb.append(c);
+                    }
+                    continue;
+            }
+            if (sb == null) {
+                sb = new StringBuilder(value.length() + 6).append(value, 0, i);
+            }
+            sb.append(replacement);
+        }
+        return sb == null ? value : sb.toString();
     }
 
     protected void visitContentTypeHeader(PartVisitor visitor) {

@@ -34,6 +34,7 @@ import java.util.zip.GZIPOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,6 +59,50 @@ public class Http2ContentDecompressorTest {
 
     private static ByteBuf gzip(String s) throws Exception {
         return Unpooled.wrappedBuffer(gzipBytes(s));
+    }
+
+    // Returns true iff the decompressor installed a decoder for the given content-encoding, detected by
+    // content-length being stripped (the code removes it only when it activates). Guards that the switch to
+    // AsciiString.containsIgnoreCase preserves the old toLowerCase().contains() activation set exactly.
+    private static boolean activatesDecompression(String contentEncoding) {
+        DefaultHttp2Headers headers = new DefaultHttp2Headers();
+        headers.status("200");
+        if (contentEncoding != null) {
+            headers.set("content-encoding", contentEncoding);
+        }
+        headers.set("content-length", "123");
+        EmbeddedChannel ch = new EmbeddedChannel(new Http2ContentDecompressor(false));
+        try {
+            ch.writeInbound(new DefaultHttp2HeadersFrame(headers, false));
+            Http2HeadersFrame out = ch.readInbound();
+            boolean clRemoved = !out.headers().contains("content-length");
+            if (clRemoved) {
+                assertNull(out.headers().get("content-encoding"),
+                        "content-encoding must be stripped when decompression activates and keepEncodingHeader=false");
+            }
+            return clRemoved;
+        } finally {
+            ch.finishAndReleaseAll();
+        }
+    }
+
+    @Test
+    public void activatesForGzipDeflateCaseInsensitivelyAndSubstrings() {
+        // Case-insensitive substring match, identical to the old contains() logic.
+        assertTrue(activatesDecompression("gzip"));
+        assertTrue(activatesDecompression("GZIP"));
+        assertTrue(activatesDecompression("x-gzip"));
+        assertTrue(activatesDecompression("deflate"));
+        assertTrue(activatesDecompression("DEFLATE"));
+        assertTrue(activatesDecompression("gzip, deflate"));
+    }
+
+    @Test
+    public void doesNotActivateForOtherOrAbsentEncodings() {
+        assertFalse(activatesDecompression(null), "no content-encoding -> no decompression");
+        assertFalse(activatesDecompression("br"), "brotli is not handled by this decompressor");
+        assertFalse(activatesDecompression("zstd"), "zstd is not handled by this decompressor");
+        assertFalse(activatesDecompression("identity"));
     }
 
     @Test
