@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: 'corretto'
-          java-version: '11'
+          java-version: '17'
       - name: Grant Permission
         run: chmod +x ./mvnw
       - name: Compile and API compatibility check
