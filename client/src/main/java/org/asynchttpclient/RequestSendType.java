@@ -50,6 +50,13 @@ public enum RequestSendType {
      *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
      *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
      *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
+     *   <li>With HTTP/2 and a finite {@code maxConnectionsPerHost} smaller than the number of resolved
+     *       IPs, a request pinned to an IP that cannot acquire a per-host connection permit will not
+     *       multiplex onto a sibling connection already open to a different IP (HTTP/2 connections are
+     *       pooled per IP in this mode); it fails with {@code TooManyConnectionsPerHostException}
+     *       instead. The default {@code maxConnectionsPerHost} is unlimited, so this only affects
+     *       clients that set a finite per-host limit below the resolved-IP count; {@link #DEFAULT} mode
+     *       would multiplex onto the shared per-host connection.</li>
      *   <li>The address order comes straight from the configured
      *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
      *       rotation to map consistently across requests, use a resolver that returns the addresses
