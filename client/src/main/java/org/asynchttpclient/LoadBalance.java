@@ -50,6 +50,11 @@ public enum LoadBalance {
      *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
      *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
      *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
+     *   <li>For HTTP/2 this mode deliberately opens more than one connection to the same host and port
+     *       — one per resolved IP — so streams can be spread across the host's backends. That is a
+     *       conscious deviation from RFC 9113 (and RFC 7540) Section 9.1, which recommends that clients
+     *       SHOULD NOT open more than one HTTP/2 connection to a given host and port pair.
+     *       {@link #DEFAULT} mode preserves the standard single-connection-per-origin behavior.</li>
      *   <li>With HTTP/2 and a finite {@code maxConnectionsPerHost} smaller than the number of resolved
      *       IPs, a request pinned to an IP that cannot acquire a per-host connection permit will not
      *       multiplex onto a sibling connection already open to a different IP (HTTP/2 connections are
