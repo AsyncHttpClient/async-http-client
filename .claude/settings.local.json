@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(gh api *)",
-      "Bash(echo \"exit=$? \\(1 = none found, good\\)\")"
-    ]
-  }
-}
