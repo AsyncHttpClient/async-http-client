@@ -17,11 +17,8 @@ package org.asynchttpclient.netty.channel;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -35,19 +32,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * requests only when the configured {@link io.netty.resolver.InetNameResolver} returns the
  * addresses in a stable order (see {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN}).
  *
+ * <p>Per-host counters are held in a bounded map (capped at {@value #MAX_TRACKED_HOSTS}); at the cap
+ * an arbitrary entry is evicted before a new one is added, so memory stays bounded even for clients
+ * that touch very many distinct hosts. Dropping a counter is harmless — that host's rotation simply
+ * restarts at the first resolved address the next time it is seen.
+ *
  * <p>Thread-safe.
  */
 public final class RoundRobinAddressSelector {
 
     // Cap on the number of per-host counters retained, so a client that touches very many distinct
-    // multi-IP hosts (crawler/gateway) can't grow this map without bound. When exceeded, the
-    // least-recently-used hosts are evicted down to LOW_WATER_MARK.
+    // multi-IP hosts (crawler/gateway) can't grow this map without bound. At the cap an arbitrary
+    // entry is evicted before a new one is inserted (same approach as util/NonceCounter).
     static final int MAX_TRACKED_HOSTS = 4096;
-    private static final int LOW_WATER_MARK = MAX_TRACKED_HOSTS * 9 / 10;
 
-    private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
-    // Guards eviction so only one thread sweeps at a time; the rest proceed without blocking.
-    private final AtomicBoolean evicting = new AtomicBoolean();
+    private final ConcurrentHashMap<String, AtomicInteger> counters = new ConcurrentHashMap<>();
 
     /**
      * @param host     the request's target host
@@ -79,43 +78,19 @@ public final class RoundRobinAddressSelector {
     }
 
     private int nextCount(String host) {
-        Counter counter = counters.computeIfAbsent(host, h -> new Counter());
-        counter.lastAccessNanos = System.nanoTime();
-        int value = counter.value.getAndIncrement();
-        if (counters.size() > MAX_TRACKED_HOSTS) {
-            evictOldest();
-        }
-        return value;
+        evictIfNeeded();
+        return counters.computeIfAbsent(host, h -> new AtomicInteger()).getAndIncrement();
     }
 
-    // Evict the least-recently-used hosts (by last-access time) down to LOW_WATER_MARK. Only one
-    // thread sweeps at a time; the rest skip and proceed, so the map may briefly exceed
-    // MAX_TRACKED_HOSTS. Dropping a host's counter is harmless: its rotation simply restarts at the
-    // first address the next time the host is seen.
-    private void evictOldest() {
-        if (!evicting.compareAndSet(false, true)) {
-            return;
-        }
-        try {
-            List<Map.Entry<String, Counter>> entries = new ArrayList<>(counters.entrySet());
-            int excess = entries.size() - LOW_WATER_MARK;
-            if (excess <= 0) {
-                return;
+    // Keep the map bounded: when it is full, drop one arbitrary entry before a new host is added.
+    // Evicting a counter only resets that host's rotation, so the choice of victim does not matter.
+    private void evictIfNeeded() {
+        if (counters.size() >= MAX_TRACKED_HOSTS) {
+            var it = counters.keySet().iterator();
+            if (it.hasNext()) {
+                it.next();
+                it.remove();
             }
-            entries.sort(Comparator.comparingLong(entry -> entry.getValue().lastAccessNanos));
-            for (int i = 0; i < excess; i++) {
-                Map.Entry<String, Counter> eldest = entries.get(i);
-                // Remove only if still mapped to the same Counter, so a host re-created after the
-                // snapshot isn't dropped along with its stale entry.
-                counters.remove(eldest.getKey(), eldest.getValue());
-            }
-        } finally {
-            evicting.set(false);
         }
-    }
-
-    private static final class Counter {
-        final AtomicInteger value = new AtomicInteger();
-        volatile long lastAccessNanos = System.nanoTime();
     }
 }
