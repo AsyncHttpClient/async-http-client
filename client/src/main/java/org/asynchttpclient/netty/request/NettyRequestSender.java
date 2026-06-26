@@ -142,16 +142,19 @@ public final class NettyRequestSender {
         ProxyServer proxyServer = getProxyServer(config, request);
 
         // Round-robin across the host's resolved IPs: resolve first, pick the next IP, then proceed.
-        // Re-evaluated when the target host changes (e.g. a cross-host redirect); same-host retries keep
-        // their pick. See RequestSendType.ROUND_ROBIN.
+        // Re-evaluated when the target base changes (e.g. a cross-host redirect, or a same-host
+        // scheme/port change such as an HTTP-to-HTTPS upgrade — the cached addresses and partition key
+        // carry the old port/scheme); same-base retries keep their pick. See RequestSendType.ROUND_ROBIN.
         if (config.getRequestSendType() == RequestSendType.ROUND_ROBIN) {
-            boolean overrideMatchesHost = future != null && request.getUri().getHost().equals(future.getRoundRobinHost());
-            if (isRoundRobinEligible(request, proxyServer) && !overrideMatchesHost) {
+            boolean overrideMatchesBase = future != null && future.getRoundRobinBaseUri() != null
+                    && request.getUri().isSameBase(future.getRoundRobinBaseUri());
+            if (isRoundRobinEligible(request, proxyServer) && !overrideMatchesBase) {
                 return sendRequestRoundRobin(request, asyncHandler, future, proxyServer);
             }
-            if (!overrideMatchesHost && future != null && future.getRoundRobinHost() != null) {
-                // a reused future carries round-robin state for a different host (cross-host redirect to a
-                // target that isn't eligible) — drop it so we don't connect to the previous host's IPs
+            if (!overrideMatchesBase && future != null && future.getRoundRobinBaseUri() != null) {
+                // a reused future carries round-robin state for a different base (cross-host redirect, or
+                // a same-host scheme/port change, to a target that isn't eligible) — drop it so we don't
+                // connect to the previous base's IPs/port
                 future.clearRoundRobinOverrides();
             }
         }
@@ -218,9 +221,10 @@ public final class NettyRequestSender {
                     newFuture.setPartitionKeyOverride(null);
                 }
                 // Always feed the resolved addresses back so the new-channel path doesn't resolve twice;
-                // recording the host lets sendRequest skip re-rotation on same-host retries.
+                // recording the base URI lets sendRequest skip re-rotation on same-base retries while
+                // re-resolving when the scheme/host/port changes (e.g. an HTTP-to-HTTPS redirect).
                 newFuture.setRoundRobinAddresses(ordered);
-                newFuture.setRoundRobinHost(host);
+                newFuture.setRoundRobinBaseUri(uri);
                 dispatchResolved(request, proxyServer, newFuture, asyncHandler);
             }
 

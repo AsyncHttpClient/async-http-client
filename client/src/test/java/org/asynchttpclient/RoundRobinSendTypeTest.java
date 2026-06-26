@@ -20,9 +20,13 @@ import io.netty.resolver.InetNameResolver;
 import io.netty.resolver.NameResolver;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.test.EchoHandler;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -179,6 +183,50 @@ public class RoundRobinSendTypeTest {
             assertEquals(Set.of("127.0.0.1"), connectedIps);
         } finally {
             localServer.stop();
+        }
+    }
+
+    @Test
+    public void roundRobinReResolvesAcrossSameHostPortChangingRedirect() throws Exception {
+        // Regression test for the same-base redirect leak: round-robin caches the resolved addresses
+        // (with the port baked in) and the IP-aware partition key. A same-host redirect that changes the
+        // port (or scheme) must re-resolve instead of reusing the stale cached state. Before the fix the
+        // host-only reuse guard kept the original-port addresses, so the redirected request dialed the
+        // redirect server again and looped until max-redirects; now the base-aware guard re-resolves.
+        Server targetServer = new Server();
+        ServerConnector targetConnector = addHttpConnector(targetServer);
+        targetServer.setHandler(new EchoHandler());
+        targetServer.start();
+        int targetPort = targetConnector.getLocalPort();
+
+        Server redirectServer = new Server();
+        ServerConnector redirectConnector = addHttpConnector(redirectServer);
+        final String location = "http://roundrobin.test:" + targetPort + "/landing";
+        redirectServer.setHandler(new AbstractHandler() {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest req, HttpServletResponse resp) {
+                resp.setStatus(HttpServletResponse.SC_FOUND); // 302, same host, different port
+                resp.setHeader("Location", location);
+                baseRequest.setHandled(true);
+            }
+        });
+        redirectServer.start();
+        int redirectPort = redirectConnector.getLocalPort();
+
+        try {
+            // Single resolved IP keeps the test deterministic across platforms; the bug affects single-IP
+            // hosts too because the resolved addresses are always cached on the future.
+            NameResolver<InetAddress> resolver = fixedResolver("127.0.0.1");
+            try (AsyncHttpClient client = asyncHttpClient(
+                    config().setRequestSendType(RequestSendType.ROUND_ROBIN).setFollowRedirect(true).setMaxRequestRetry(0).build())) {
+                Response response = client.executeRequest(
+                        get("http://roundrobin.test:" + redirectPort + "/").setNameResolver(resolver)).get(TIMEOUT, SECONDS);
+                assertEquals(200, response.getStatusCode(),
+                        "round-robin must re-resolve on a same-host port change so the redirect reaches the target port");
+            }
+        } finally {
+            redirectServer.stop();
+            targetServer.stop();
         }
     }
 }

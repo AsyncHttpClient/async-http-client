@@ -134,7 +134,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     // RequestSendType.ROUND_ROBIN overrides; all null in DEFAULT mode
     private volatile Object partitionKeyOverride;
     private volatile List<InetSocketAddress> roundRobinAddresses;
-    private volatile String roundRobinHost;
+    private volatile Uri roundRobinBaseUri;
     private volatile ScramContext scramContext;
 
     public NettyResponseFuture(Request originalRequest,
@@ -581,15 +581,16 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     /**
-     * @return the host the round-robin overrides were computed for, used to detect host changes on
-     * redirects
+     * @return the base URI (scheme, host and port) the round-robin overrides were computed for, used
+     * to detect base changes on redirects — including same-host scheme/port changes such as an
+     * HTTP-to-HTTPS upgrade, whose resolved addresses and partition key differ from the cached ones
      */
-    public String getRoundRobinHost() {
-        return roundRobinHost;
+    public Uri getRoundRobinBaseUri() {
+        return roundRobinBaseUri;
     }
 
-    public void setRoundRobinHost(String roundRobinHost) {
-        this.roundRobinHost = roundRobinHost;
+    public void setRoundRobinBaseUri(Uri roundRobinBaseUri) {
+        this.roundRobinBaseUri = roundRobinBaseUri;
     }
 
     /**
@@ -599,7 +600,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     public void clearRoundRobinOverrides() {
         partitionKeyOverride = null;
         roundRobinAddresses = null;
-        roundRobinHost = null;
+        roundRobinBaseUri = null;
     }
 
     /**
