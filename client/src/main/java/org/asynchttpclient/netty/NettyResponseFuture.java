@@ -131,7 +131,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private boolean allowConnect;
     private Realm realm;
     private Realm proxyRealm;
-    // RequestSendType.ROUND_ROBIN overrides; all null in DEFAULT mode
+    // LoadBalance.ROUND_ROBIN overrides; all null in DEFAULT mode
     private volatile Object partitionKeyOverride;
     private volatile List<InetSocketAddress> roundRobinAddresses;
     private volatile Uri roundRobinBaseUri;
@@ -557,7 +557,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     /**
-     * @return the IP-aware partition key set for {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN},
+     * @return the IP-aware partition key set for {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN},
      * or {@code null} when not in round-robin mode
      */
     public Object getPartitionKeyOverride() {

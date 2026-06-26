@@ -431,7 +431,7 @@ public class BasicHttp2Test {
     }
 
     /**
-     * With {@link RequestSendType#ROUND_ROBIN}, a host resolving to several IPs gets one HTTP/2
+     * With {@link LoadBalance#ROUND_ROBIN}, a host resolving to several IPs gets one HTTP/2
      * connection per IP (the registry is keyed by the IP-aware partition key), so requests are spread
      * across all of them instead of all multiplexing onto a single connection. SNI/cert verification
      * still use the URL host ("localhost"), so only the connection target IP varies.
@@ -459,7 +459,7 @@ public class BasicHttp2Test {
         // is a usable loopback address, so the others are targeted but fail over. With an IP-aware H2
         // registry each distinct IP still triggers its own connection attempt.
         java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
-        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0))) {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN).setMaxRequestRetry(0))) {
             for (int i = 0; i < 12; i++) {
                 Response response = client.executeRequest(
                         org.asynchttpclient.Dsl.get(httpsUrl("/hello")).setNameResolver(resolver),

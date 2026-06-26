@@ -23,14 +23,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Picks, per host and per request, which resolved IP a new connection should target first when
- * {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN} is enabled.
+ * {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} is enabled.
  *
  * <p>{@link #rotate(String, List)} returns the resolved addresses re-ordered so that the
  * round-robin-selected address comes first; the remaining addresses follow (in their original
  * order) so the connector can still fail over to them. The order is taken as-is from the resolver
  * and is not re-sorted, so the per-host counter maps consistently to the same address across
  * requests only when the configured {@link io.netty.resolver.InetNameResolver} returns the
- * addresses in a stable order (see {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN}).
+ * addresses in a stable order (see {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN}).
  *
  * <p>Per-host counters are held in a bounded map (capped at {@value #MAX_TRACKED_HOSTS}); at the cap
  * an arbitrary entry is evicted before a new one is added, so memory stays bounded even for clients

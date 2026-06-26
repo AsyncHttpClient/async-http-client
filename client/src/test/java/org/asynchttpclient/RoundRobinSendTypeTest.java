@@ -48,9 +48,9 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * End-to-end coverage for {@link RequestSendType#ROUND_ROBIN}: a single host that resolves to several
+ * End-to-end coverage for {@link LoadBalance#ROUND_ROBIN}: a single host that resolves to several
  * loopback IPs (all served by one wildcard-bound test server) should have its requests spread across
- * every IP, whereas {@link RequestSendType#DEFAULT} keeps reusing a single pooled connection.
+ * every IP, whereas {@link LoadBalance#DEFAULT} keeps reusing a single pooled connection.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RoundRobinSendTypeTest {
@@ -146,7 +146,7 @@ public class RoundRobinSendTypeTest {
 
     @Test
     public void roundRobinSpreadsConnectionsAcrossAllIps() throws Exception {
-        Set<String> targetedIps = runRequestsCapturingTargetedIps(config().setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0).build());
+        Set<String> targetedIps = runRequestsCapturingTargetedIps(config().setLoadBalance(LoadBalance.ROUND_ROBIN).setMaxRequestRetry(0).build());
         // every resolved IP gets its own pool partition, so round-robin targets a fresh connection per IP
         assertEquals(Set.of(IPS), targetedIps, "round-robin should target every resolved IP");
     }
@@ -170,7 +170,7 @@ public class RoundRobinSendTypeTest {
             Set<String> attemptedIps = ConcurrentHashMap.newKeySet();
             Set<String> connectedIps = ConcurrentHashMap.newKeySet();
             NameResolver<InetAddress> resolver = fixedResolver("127.0.0.2", "127.0.0.1");
-            try (AsyncHttpClient client = asyncHttpClient(config().setRequestSendType(RequestSendType.ROUND_ROBIN).setMaxRequestRetry(0).build())) {
+            try (AsyncHttpClient client = asyncHttpClient(config().setLoadBalance(LoadBalance.ROUND_ROBIN).setMaxRequestRetry(0).build())) {
                 for (int i = 0; i < 8; i++) {
                     Response response = client.executeRequest(
                             get("http://roundrobin.test:" + localPort + "/").setNameResolver(resolver),
@@ -218,7 +218,7 @@ public class RoundRobinSendTypeTest {
             // hosts too because the resolved addresses are always cached on the future.
             NameResolver<InetAddress> resolver = fixedResolver("127.0.0.1");
             try (AsyncHttpClient client = asyncHttpClient(
-                    config().setRequestSendType(RequestSendType.ROUND_ROBIN).setFollowRedirect(true).setMaxRequestRetry(0).build())) {
+                    config().setLoadBalance(LoadBalance.ROUND_ROBIN).setFollowRedirect(true).setMaxRequestRetry(0).build())) {
                 Response response = client.executeRequest(
                         get("http://roundrobin.test:" + redirectPort + "/").setNameResolver(resolver)).get(TIMEOUT, SECONDS);
                 assertEquals(200, response.getStatusCode(),

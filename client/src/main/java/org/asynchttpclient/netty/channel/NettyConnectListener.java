@@ -276,7 +276,7 @@ public final class NettyConnectListener<T> {
      */
     private void registerHttp2AndReleaseSemaphore(Channel channel) {
         // Register under the future's partition key so the H2 connection is found by the same key the
-        // pool is polled with — including the IP-aware key used by RequestSendType.ROUND_ROBIN.
+        // pool is polled with — including the IP-aware key used by LoadBalance.ROUND_ROBIN.
         channelManager.registerHttp2Connection(future.getPartitionKey(), channel);
     }
 

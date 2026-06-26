@@ -232,10 +232,10 @@ public interface AsyncHttpClientConfig {
 
     /**
      * @return how requests are dispatched to a host that resolves to several IP addresses; never {@code null}.
-     * @see RequestSendType
+     * @see LoadBalance
      */
-    default RequestSendType getRequestSendType() {
-        return RequestSendType.DEFAULT;
+    default LoadBalance getLoadBalance() {
+        return LoadBalance.DEFAULT;
     }
 
     /**

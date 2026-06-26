@@ -20,28 +20,28 @@ import org.junit.jupiter.api.Test;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class RequestSendTypeConfigTest {
+class LoadBalanceConfigTest {
 
     @Test
     void defaultsToDefault() {
-        assertEquals(RequestSendType.DEFAULT, config().build().getRequestSendType());
+        assertEquals(LoadBalance.DEFAULT, config().build().getLoadBalance());
     }
 
     @Test
     void builderSetsRoundRobin() {
-        AsyncHttpClientConfig config = config().setRequestSendType(RequestSendType.ROUND_ROBIN).build();
-        assertEquals(RequestSendType.ROUND_ROBIN, config.getRequestSendType());
+        AsyncHttpClientConfig config = config().setLoadBalance(LoadBalance.ROUND_ROBIN).build();
+        assertEquals(LoadBalance.ROUND_ROBIN, config.getLoadBalance());
     }
 
     @Test
     void nullResetsToDefault() {
-        assertEquals(RequestSendType.DEFAULT, config().setRequestSendType(null).build().getRequestSendType());
+        assertEquals(LoadBalance.DEFAULT, config().setLoadBalance(null).build().getLoadBalance());
     }
 
     @Test
     void copyConstructorPreservesValue() {
-        AsyncHttpClientConfig source = config().setRequestSendType(RequestSendType.ROUND_ROBIN).build();
+        AsyncHttpClientConfig source = config().setLoadBalance(LoadBalance.ROUND_ROBIN).build();
         AsyncHttpClientConfig copy = new DefaultAsyncHttpClientConfig.Builder(source).build();
-        assertEquals(RequestSendType.ROUND_ROBIN, copy.getRequestSendType());
+        assertEquals(LoadBalance.ROUND_ROBIN, copy.getLoadBalance());
     }
 }

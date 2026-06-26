@@ -50,7 +50,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestSendType;
+import org.asynchttpclient.LoadBalance;
 import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
@@ -144,8 +144,8 @@ public final class NettyRequestSender {
         // Round-robin across the host's resolved IPs: resolve first, pick the next IP, then proceed.
         // Re-evaluated when the target base changes (e.g. a cross-host redirect, or a same-host
         // scheme/port change such as an HTTP-to-HTTPS upgrade — the cached addresses and partition key
-        // carry the old port/scheme); same-base retries keep their pick. See RequestSendType.ROUND_ROBIN.
-        if (config.getRequestSendType() == RequestSendType.ROUND_ROBIN) {
+        // carry the old port/scheme); same-base retries keep their pick. See LoadBalance.ROUND_ROBIN.
+        if (config.getLoadBalance() == LoadBalance.ROUND_ROBIN) {
             boolean overrideMatchesBase = future != null && future.getRoundRobinBaseUri() != null
                     && request.getUri().isSameBase(future.getRoundRobinBaseUri());
             if (isRoundRobinEligible(request, proxyServer) && !overrideMatchesBase) {

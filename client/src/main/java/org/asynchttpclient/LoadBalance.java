@@ -18,9 +18,9 @@ package org.asynchttpclient;
 /**
  * Controls how requests are dispatched to a host that resolves to several IP addresses.
  *
- * <p>Configured globally through {@link AsyncHttpClientConfig#getRequestSendType()}.
+ * <p>Configured globally through {@link AsyncHttpClientConfig#getLoadBalance()}.
  */
-public enum RequestSendType {
+public enum LoadBalance {
 
     /**
      * Default behavior. The address list returned by DNS is used in its natural order: a new

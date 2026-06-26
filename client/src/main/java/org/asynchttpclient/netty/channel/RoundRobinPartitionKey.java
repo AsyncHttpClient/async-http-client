@@ -19,7 +19,7 @@ import java.net.InetAddress;
 import java.util.Objects;
 
 /**
- * Channel-pool partition key used by {@link org.asynchttpclient.RequestSendType#ROUND_ROBIN}.
+ * Channel-pool partition key used by {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN}.
  *
  * <p>It augments the regular partition key (produced by the configured
  * {@link org.asynchttpclient.channel.ChannelPoolPartitioning}) with the resolved IP a request is
