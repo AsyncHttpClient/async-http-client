@@ -429,19 +429,16 @@ public class AsyncStreamHandlerTest extends HttpTest {
                 }));
     }
 
-    // This test is flaky - see https://github.com/AsyncHttpClient/async-http-client/issues/1728#issuecomment-699962325
-    // For now, just run again if fails
     @RepeatedIfExceptionsTest(repeats = 5)
     public void asyncOptionsTest() throws Throwable {
         withClient().run(client ->
                 withServer(server).run(server -> {
+                    server.enqueueEcho();
 
                     final AtomicReference<HttpHeaders> responseHeaders = new AtomicReference<>();
 
-                    // Some responses contain the TRACE method, some do not - account for both
-                    final String[] expected = {"GET", "HEAD", "OPTIONS", "POST"};
-                    final String[] expectedWithTrace = {"GET", "HEAD", "OPTIONS", "POST", "TRACE"};
-                    Future<String> f = client.prepareOptions("https://www.google.com/").execute(new AsyncHandlerAdapter() {
+                    final String[] expected = {"GET", "HEAD", "OPTIONS", "POST", "TRACE"};
+                    Future<String> f = client.prepareOptions(getTargetUrl()).execute(new AsyncHandlerAdapter() {
 
                         @Override
                         public State onHeadersReceived(HttpHeaders headers) {
@@ -458,19 +455,11 @@ public class AsyncStreamHandlerTest extends HttpTest {
                     f.get(20, TimeUnit.SECONDS);
                     HttpHeaders h = responseHeaders.get();
                     assertNotNull(h);
-                    if (h.contains(ALLOW)) {
-                        String[] values = h.get(ALLOW).split(",|, ");
-                        assertNotNull(values);
-                        // Some responses contain the TRACE method, some do not - account for both
-                        assert values.length == expected.length || values.length == expectedWithTrace.length;
-                        Arrays.sort(values);
-                        // Some responses contain the TRACE method, some do not - account for both
-                        if (values.length == expected.length) {
-                            assertArrayEquals(values, expected);
-                        } else {
-                            assertArrayEquals(values, expectedWithTrace);
-                        }
-                    }
+                    assertTrue(h.contains(ALLOW));
+                    String[] values = h.get(ALLOW).split(",|, ");
+                    assertNotNull(values);
+                    Arrays.sort(values);
+                    assertArrayEquals(expected, values);
                 }));
     }
 

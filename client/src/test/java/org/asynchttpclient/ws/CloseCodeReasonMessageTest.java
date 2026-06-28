@@ -14,6 +14,9 @@ package org.asynchttpclient.ws;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.testserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
@@ -28,6 +31,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
+
+    private HttpServer plainServer;
+
+    @BeforeEach
+    public void startPlainServer() throws Exception {
+        plainServer = new HttpServer();
+        plainServer.start();
+    }
+
+    @AfterEach
+    public void stopPlainServer() throws Exception {
+        if (plainServer != null) {
+            plainServer.close();
+        }
+    }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
@@ -64,8 +82,9 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
     public void getWebSocketThrowsException() throws Throwable {
         final CountDownLatch latch = new CountDownLatch(1);
         try (AsyncHttpClient client = asyncHttpClient()) {
+            plainServer.enqueueOk();
             assertThrows(Exception.class, () -> {
-                client.prepareGet("http://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+                client.prepareGet(plainServer.getHttpUrl()).execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                     @Override
                     public void onOpen(WebSocket websocket) {
@@ -93,7 +112,8 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
-            client.prepareGet("ws://apache.org").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            plainServer.enqueueOk();
+            client.prepareGet("ws://localhost:" + plainServer.getHttpPort() + "/").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {
@@ -122,7 +142,8 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<Throwable> throwable = new AtomicReference<>();
 
-            c.prepareGet("ws://www.google.com").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
+            plainServer.enqueueOk();
+            c.prepareGet("ws://localhost:" + plainServer.getHttpPort() + "/").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketListener() {
 
                 @Override
                 public void onOpen(WebSocket websocket) {

@@ -46,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class Relative302Test extends AbstractBasicTest {
     private static final AtomicBoolean isSet = new AtomicBoolean(false);
 
+    private int redirectTargetPort = -1;
+
     private static int getPort(Uri uri) {
         int port = uri.getPort();
         if (port == -1) {
@@ -59,9 +61,11 @@ public class Relative302Test extends AbstractBasicTest {
     public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
+        ServerConnector redirectTargetConnector = addHttpConnector(server);
         server.setHandler(new Relative302Handler());
         server.start();
         port1 = connector.getLocalPort();
+        redirectTargetPort = redirectTargetConnector.getLocalPort();
         logger.info("Local HTTP server started successfully");
         port2 = findFreePort();
     }
@@ -79,12 +83,13 @@ public class Relative302Test extends AbstractBasicTest {
         isSet.getAndSet(false);
 
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", "http://www.google.com/").execute().get();
+            String redirectTarget = "http://localhost:" + redirectTargetPort + "/";
+            Response response = c.prepareGet(getTargetUrl()).setHeader("X-redirect", redirectTarget).execute().get();
             assertNotNull(response);
             assertEquals(response.getStatusCode(), 200);
 
             String baseUrl = getBaseUrl(response.getUri());
-            assertTrue(baseUrl.startsWith("http://www.google."), "response does not show redirection to a google subdomain, got " + baseUrl);
+            assertEquals("http://localhost:" + redirectTargetPort, baseUrl, "response does not show redirection to the local redirect target, got " + baseUrl);
         }
     }
 

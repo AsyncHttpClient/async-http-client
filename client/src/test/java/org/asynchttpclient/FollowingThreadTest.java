@@ -17,8 +17,14 @@ package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Timeout;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,7 +56,7 @@ public class FollowingThreadTest extends AbstractBasicTest {
                     public void run() {
                         final CountDownLatch l = new CountDownLatch(1);
                         try (AsyncHttpClient ahc = asyncHttpClient(config().setFollowRedirect(true))) {
-                            ahc.prepareGet("http://www.google.com/").execute(new AsyncHandler<Integer>() {
+                            ahc.prepareGet(getTargetUrl()).execute(new AsyncHandler<Integer>() {
 
                                 @Override
                                 public void onThrowable(Throwable t) {
@@ -94,6 +100,25 @@ public class FollowingThreadTest extends AbstractBasicTest {
             countDown.await();
         } finally {
             pool.shutdown();
+        }
+    }
+
+    @Override
+    public AbstractHandler configureHandler() {
+        return new RedirectHandler();
+    }
+
+    private static class RedirectHandler extends AbstractHandler {
+
+        @Override
+        public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            if (request.getRequestURI().endsWith("/landing")) {
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
+                response.setStatus(HttpServletResponse.SC_FOUND);
+                response.setHeader("Location", request.getRequestURI() + "/landing");
+            }
+            baseRequest.setHandled(true);
         }
     }
 }
