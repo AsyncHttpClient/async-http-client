@@ -79,7 +79,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void onFailureTest() throws Throwable {
         try (AsyncHttpClient c = asyncHttpClient()) {
-            c.prepareGet("ws://abcdefg").execute(new WebSocketUpgradeHandler.Builder().build()).get();
+            c.prepareGet("ws://abcdefg.invalid").execute(new WebSocketUpgradeHandler.Builder().build()).get();
         } catch (ExecutionException e) {
             if (!(e.getCause() instanceof UnknownHostException || e.getCause() instanceof ConnectException)) {
                 fail("Exception is not UnknownHostException or ConnectException but rather: " + e);

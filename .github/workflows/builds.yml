@@ -30,7 +30,7 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw -B -ntp test -Ddocker.tests=true
+        run: ./mvnw -B -ntp test -Ddocker.tests=true -Dexternal.tests=true
 
   RunOnMacOs:
     runs-on: macos-latest
@@ -44,7 +44,7 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw -B -ntp test
+        run: ./mvnw -B -ntp test -Dexternal.tests=true
 
   RunOnWindows:
     runs-on: windows-latest
@@ -56,4 +56,4 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw.cmd -B -ntp test
+        run: ./mvnw.cmd -B -ntp test "-Dexternal.tests=true"
