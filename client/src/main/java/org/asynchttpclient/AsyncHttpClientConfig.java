@@ -287,10 +287,10 @@ public interface AsyncHttpClientConfig {
     }
 
     /**
-     * @return the HTTP/2 initial window size in bytes, defaults to 65535
+     * @return the HTTP/2 initial window size in bytes, defaults to 16777216 (16 MiB)
      */
     default int getHttp2InitialWindowSize() {
-        return 65_535;
+        return 16_777_216;
     }
 
     /**
