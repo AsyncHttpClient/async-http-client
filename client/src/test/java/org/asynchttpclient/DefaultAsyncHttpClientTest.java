@@ -106,6 +106,21 @@ public class DefaultAsyncHttpClientTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testAutoSelectsNativeTransportByDefaultWhenAvailable() throws IOException {
+        AsyncHttpClientConfig config = config().build();
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+            EventLoopGroup group = client.channelManager().getEventLoopGroup();
+            boolean nativeAvailable = Epoll.isAvailable() || IoUring.isAvailable();
+            if (nativeAvailable) {
+                assertFalse(group instanceof NioEventLoopGroup, "default config must auto-select native transport when available");
+            } else {
+                assertInstanceOf(NioEventLoopGroup.class, group, "no native transport available -> NIO");
+            }
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testUseOnlyEpollNativeTransportButNativeTransportIsDisabled() {
         assertThrows(IllegalArgumentException.class, () -> config().setUseNativeTransport(false).setUseOnlyEpollNativeTransport(true).build());
     }
