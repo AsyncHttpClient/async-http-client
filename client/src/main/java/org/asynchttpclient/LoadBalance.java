@@ -70,11 +70,16 @@ public enum LoadBalance {
      *       resolver that intentionally rotates its results, such as
      *       {@link io.netty.resolver.RoundRobinInetAddressResolver} — that one is meant for
      *       {@link #DEFAULT} mode, where it provides the spreading instead.</li>
-     *   <li>Rotation is not health-aware: it always cycles through every IP the resolver returns, so
-     *       a temporarily unreachable IP keeps receiving its share of requests — each then retried
-     *       via TCP failover to a healthy IP — until the resolver stops returning it. Which IPs are
-     *       live is expected to be governed at the DNS/resolver level, as it already is in
-     *       {@link #DEFAULT} mode.</li>
+     *   <li>Rotation is liveness-aware only as a short-lived dampener, not a health checker. A failed
+     *       connection attempt puts that IP in a brief cooldown, during which it is deprioritized (moved
+     *       to the back of the failover order) before being re-probed once the window elapses. This bounds
+     *       the cost of an IP that silently black-holes packets (drops them with no RST): such an IP would
+     *       otherwise burn a full {@code connectTimeout} on <em>every</em> request pinned to it before TCP
+     *       failover moved on to a healthy IP; with the cooldown only the occasional re-probe pays that
+     *       cost. (An IP that actively refuses the connection fails over immediately and cheaply, with or
+     *       without the cooldown.) The cooldown never removes an address from rotation — it only re-orders
+     *       it — so authoritative liveness is still expected to be governed at the DNS/resolver level, as
+     *       it already is in {@link #DEFAULT} mode.</li>
      * </ul>
      */
     ROUND_ROBIN

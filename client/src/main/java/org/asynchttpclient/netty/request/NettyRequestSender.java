@@ -91,6 +91,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
@@ -472,7 +473,14 @@ public final class NettyRequestSender {
     private <T> void connectWithAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
                                           List<InetSocketAddress> addresses) {
         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, connectionSemaphore);
-        NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState);
+        // In round-robin mode, feed TCP connect failures back so the selector deprioritizes a dead IP for a
+        // short cooldown instead of re-pinning the next request to it (and burning another connectTimeout).
+        Consumer<InetSocketAddress> connectFailureListener = null;
+        if (future.getPartitionKeyOverride() instanceof RoundRobinPartitionKey) {
+            String host = request.getUri().getHost();
+            connectFailureListener = address -> rrSelector.markFailed(host, address);
+        }
+        NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, connectFailureListener);
         if (!future.isDone()) {
             // Do not throw an exception when we need an extra connection for a redirect
             // FIXME why? This violate the max connection per host handling, right?
