@@ -33,6 +33,22 @@ class DefaultAsyncHttpClientConfigTest {
     }
 
     @Test
+    void testHttp2InitialWindowSize_DefaultIs16MiB() {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
+        assertEquals(16 * 1024 * 1024, config.getHttp2InitialWindowSize(),
+                "Default HTTP/2 initial window size should be 16 MiB (matches the JDK HttpClient and OkHttp defaults)");
+    }
+
+    @Test
+    void testHttp2InitialWindowSize_SetCustom() {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setHttp2InitialWindowSize(65_535)
+                .build();
+        assertEquals(65_535, config.getHttp2InitialWindowSize(),
+                "Builder must plumb the configured value through");
+    }
+
+    @Test
     void testStripAuthorizationOnRedirect_DefaultIsFalse() {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
         assertFalse(config.isStripAuthorizationOnRedirect(), "Default should be false");
