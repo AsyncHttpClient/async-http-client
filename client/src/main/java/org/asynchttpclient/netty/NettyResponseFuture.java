@@ -24,6 +24,7 @@ import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.channel.ChannelState;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.ConnectionSemaphore;
+import org.asynchttpclient.netty.channel.RoundRobinPartitionKey;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -33,6 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -127,6 +131,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private boolean allowConnect;
     private Realm realm;
     private Realm proxyRealm;
+    // LoadBalance.ROUND_ROBIN overrides; all null in DEFAULT mode
+    private volatile Object partitionKeyOverride;
+    private volatile List<InetSocketAddress> roundRobinAddresses;
+    private volatile Uri roundRobinBaseUri;
     private volatile ScramContext scramContext;
 
     public NettyResponseFuture(Request originalRequest,
@@ -530,8 +538,81 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public Object getPartitionKey() {
+        Object override = partitionKeyOverride;
+        if (override != null) {
+            return override;
+        }
+        return basePartitionKey();
+    }
+
+    /**
+     * The per-host partition key, ignoring any round-robin IP-aware override. Used for the connection
+     * semaphore so {@code maxConnectionsPerHost} stays per host (not per IP): the permit is taken
+     * before the target IP is known and the connector may fail over to a different IP than the one
+     * initially selected.
+     */
+    public Object basePartitionKey() {
         return connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(),
                 proxyServer);
+    }
+
+    /**
+     * @return the IP-aware partition key set for {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN},
+     * or {@code null} when not in round-robin mode
+     */
+    public Object getPartitionKeyOverride() {
+        return partitionKeyOverride;
+    }
+
+    public void setPartitionKeyOverride(Object partitionKeyOverride) {
+        this.partitionKeyOverride = partitionKeyOverride;
+    }
+
+    /**
+     * @return the resolved addresses to connect to (round-robin-ordered), or {@code null} to resolve
+     * lazily as usual
+     */
+    public List<InetSocketAddress> getRoundRobinAddresses() {
+        return roundRobinAddresses;
+    }
+
+    public void setRoundRobinAddresses(List<InetSocketAddress> roundRobinAddresses) {
+        this.roundRobinAddresses = roundRobinAddresses;
+    }
+
+    /**
+     * @return the base URI (scheme, host and port) the round-robin overrides were computed for, used
+     * to detect base changes on redirects — including same-host scheme/port changes such as an
+     * HTTP-to-HTTPS upgrade, whose resolved addresses and partition key differ from the cached ones
+     */
+    public Uri getRoundRobinBaseUri() {
+        return roundRobinBaseUri;
+    }
+
+    public void setRoundRobinBaseUri(Uri roundRobinBaseUri) {
+        this.roundRobinBaseUri = roundRobinBaseUri;
+    }
+
+    /**
+     * Drops any round-robin overrides, e.g. when this future is reused for a cross-host redirect whose
+     * target is not eligible for round-robin.
+     */
+    public void clearRoundRobinOverrides() {
+        partitionKeyOverride = null;
+        roundRobinAddresses = null;
+        roundRobinBaseUri = null;
+    }
+
+    /**
+     * Re-pins the round-robin partition key to the IP actually connected to. The connector may have
+     * failed over from the initially selected IP to a later one; keying connection reuse by the real
+     * peer IP keeps the pool / HTTP/2 registry correct. No-op outside round-robin mode.
+     */
+    public void repinRoundRobinAddress(InetAddress actualAddress) {
+        Object override = partitionKeyOverride;
+        if (actualAddress != null && override instanceof RoundRobinPartitionKey) {
+            partitionKeyOverride = ((RoundRobinPartitionKey) override).withAddress(actualAddress);
+        }
     }
 
     public void acquirePartitionLockLazily() throws IOException {
@@ -539,7 +620,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return;
         }
 
-        Object partitionKey = getPartitionKey();
+        // Semaphore is keyed per host (base key), not the round-robin per-IP override: the permit is
+        // taken before the target IP is known and the connector may fail over to another IP.
+        Object partitionKey = basePartitionKey();
         connectionSemaphore.acquireChannelLock(partitionKey);
         Object prevKey = PARTITION_KEY_LOCK_FIELD.getAndSet(this, partitionKey);
         if (prevKey != null) {

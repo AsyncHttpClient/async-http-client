@@ -15,14 +15,21 @@
  */
 package org.asynchttpclient.config;
 
+import org.asynchttpclient.LoadBalance;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Properties;
 
 public final class AsyncHttpClientConfigDefaults {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncHttpClientConfigDefaults.class);
 
     public static final String ASYNC_CLIENT_CONFIG_ROOT = "org.asynchttpclient.";
     public static final String THREAD_POOL_NAME_CONFIG = "threadPoolName";
@@ -52,6 +59,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String STRICT_302_HANDLING_CONFIG = "strict302Handling";
     public static final String KEEP_ALIVE_CONFIG = "keepAlive";
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
+    public static final String LOAD_BALANCE_CONFIG = "loadBalance";
     public static final String DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG = "disableUrlEncodingForBoundRequests";
     public static final String USE_LAX_COOKIE_ENCODER_CONFIG = "useLaxCookieEncoder";
     public static final String USE_OPEN_SSL_CONFIG = "useOpenSsl";
@@ -372,5 +380,20 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultHttp2CleartextEnabled() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_CLEARTEXT_ENABLED_CONFIG);
+    }
+
+    public static LoadBalance defaultLoadBalance() {
+        String value = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + LOAD_BALANCE_CONFIG);
+        if (value == null || value.trim().isEmpty()) {
+            return LoadBalance.DEFAULT;
+        }
+        try {
+            return LoadBalance.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid value '{}' for {}{}, falling back to {}. Valid values: {}",
+                    value, ASYNC_CLIENT_CONFIG_ROOT, LOAD_BALANCE_CONFIG,
+                    LoadBalance.DEFAULT, Arrays.toString(LoadBalance.values()));
+            return LoadBalance.DEFAULT;
+        }
     }
 }

@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.function.Consumer;
 
 public class NettyChannelConnector {
 
@@ -40,13 +41,22 @@ public class NettyChannelConnector {
     private final InetSocketAddress localAddress;
     private final List<InetSocketAddress> remoteAddresses;
     private final AsyncHttpClientState clientState;
+    // Notified with each remote address whose TCP connect attempt fails, or null when no caller cares.
+    // Used by round-robin load balancing to put a failed IP in a short cooldown; see RoundRobinAddressSelector.
+    private final Consumer<InetSocketAddress> connectFailureListener;
     private volatile int i;
 
     public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, AsyncHttpClientState clientState) {
+        this(localAddress, remoteAddresses, asyncHandler, clientState, null);
+    }
+
+    public NettyChannelConnector(InetAddress localAddress, List<InetSocketAddress> remoteAddresses, AsyncHandler<?> asyncHandler, AsyncHttpClientState clientState,
+                                 Consumer<InetSocketAddress> connectFailureListener) {
         this.localAddress = localAddress != null ? new InetSocketAddress(localAddress, 0) : null;
         this.remoteAddresses = remoteAddresses;
         this.asyncHandler = asyncHandler;
         this.clientState = clientState;
+        this.connectFailureListener = connectFailureListener;
     }
 
     private boolean pickNextRemoteAddress() {
@@ -93,6 +103,10 @@ public class NettyChannelConnector {
 
                     @Override
                     public void onFailure(Channel channel, Throwable t) {
+                        if (connectFailureListener != null) {
+                            // Record the failed IP before failing over so round-robin can route around it briefly.
+                            connectFailureListener.accept(remoteAddress);
+                        }
                         try {
                             asyncHandler.onTcpConnectFailure(remoteAddress, t);
                         } catch (Exception e) {

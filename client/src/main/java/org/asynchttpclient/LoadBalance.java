@@ -1,0 +1,86 @@
+/*
+ *    Copyright (c) 2026 AsyncHttpClient Project. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.asynchttpclient;
+
+/**
+ * Controls how requests are dispatched to a host that resolves to several IP addresses.
+ *
+ * <p>Configured globally through {@link AsyncHttpClientConfig#getLoadBalance()}.
+ */
+public enum LoadBalance {
+
+    /**
+     * Default behavior. The address list returned by DNS is used in its natural order: a new
+     * connection always targets the first address and only falls back to the next one when a TCP
+     * connection attempt fails. Combined with connection pooling (keyed by host), this means that
+     * with keep-alive enabled essentially all traffic to a host stays on the first reachable IP.
+     *
+     * <p>To spread traffic across a host's IPs in this mode, configure a resolver that rotates its
+     * results, such as {@link io.netty.resolver.RoundRobinInetAddressResolver}; the client keeps
+     * targeting the first address, and the resolver is what varies which IP that is.
+     */
+    DEFAULT,
+
+    /**
+     * Strict per-request round-robin across the host's resolved IPs.
+     *
+     * <p>For each request, the client rotates which resolved IP is targeted first (TCP failover to
+     * the remaining IPs is preserved) and makes connection reuse IP-aware, so that pooled HTTP/1.1
+     * connections and multiplexed HTTP/2 connections are kept and reused per IP rather than per
+     * host. The net effect is that consecutive requests to a multi-IP host are spread evenly across
+     * all of its addresses, even when connections are kept alive.
+     *
+     * <p>Notes:
+     * <ul>
+     *   <li>Has no effect for hosts that resolve to a single address, literal-IP hosts, requests
+     *       with an explicit {@link Request#getAddress() address}, or requests routed through a
+     *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
+     *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
+     *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
+     *   <li>For HTTP/2 this mode deliberately opens more than one connection to the same host and port
+     *       — one per resolved IP — so streams can be spread across the host's backends. That is a
+     *       conscious deviation from RFC 9113 (and RFC 7540) Section 9.1, which recommends that clients
+     *       SHOULD NOT open more than one HTTP/2 connection to a given host and port pair.
+     *       {@link #DEFAULT} mode preserves the standard single-connection-per-origin behavior.</li>
+     *   <li>With HTTP/2 and a finite {@code maxConnectionsPerHost} smaller than the number of resolved
+     *       IPs, a request pinned to an IP that cannot acquire a per-host connection permit will not
+     *       multiplex onto a sibling connection already open to a different IP (HTTP/2 connections are
+     *       pooled per IP in this mode); it fails with {@code TooManyConnectionsPerHostException}
+     *       instead. The default {@code maxConnectionsPerHost} is unlimited, so this only affects
+     *       clients that set a finite per-host limit below the resolved-IP count; {@link #DEFAULT} mode
+     *       would multiplex onto the shared per-host connection.</li>
+     *   <li>The address order comes straight from the configured
+     *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
+     *       rotation to map consistently across requests, use a resolver that returns the addresses
+     *       in a stable order and does not deliberately reorder them between resolutions (for
+     *       example {@link io.netty.resolver.dns.DnsNameResolver}). Do not pair this mode with a
+     *       resolver that intentionally rotates its results, such as
+     *       {@link io.netty.resolver.RoundRobinInetAddressResolver} — that one is meant for
+     *       {@link #DEFAULT} mode, where it provides the spreading instead.</li>
+     *   <li>Rotation is liveness-aware only as a short-lived dampener, not a health checker. A failed
+     *       connection attempt puts that IP in a brief cooldown, during which it is deprioritized (moved
+     *       to the back of the failover order) before being re-probed once the window elapses. This bounds
+     *       the cost of an IP that silently black-holes packets (drops them with no RST): such an IP would
+     *       otherwise burn a full {@code connectTimeout} on <em>every</em> request pinned to it before TCP
+     *       failover moved on to a healthy IP; with the cooldown only the occasional re-probe pays that
+     *       cost. (An IP that actively refuses the connection fails over immediately and cheaply, with or
+     *       without the cooldown.) The cooldown never removes an address from rotation — it only re-orders
+     *       it — so authoritative liveness is still expected to be governed at the DNS/resolver level, as
+     *       it already is in {@link #DEFAULT} mode.</li>
+     * </ul>
+     */
+    ROUND_ROBIN
+}

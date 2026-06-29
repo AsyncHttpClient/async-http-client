@@ -80,6 +80,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultLoadBalance;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownTimeout;
@@ -131,6 +132,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final String userAgent;
     private final @Nullable Realm realm;
     private final int maxRequestRetry;
+    private final LoadBalance loadBalance;
     private final boolean disableUrlEncodingForBoundRequests;
     private final boolean useLaxCookieEncoder;
     private final boolean disableZeroCopy;
@@ -232,6 +234,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          String userAgent,
                                          @Nullable Realm realm,
                                          int maxRequestRetry,
+                                         LoadBalance loadBalance,
                                          boolean disableUrlEncodingForBoundRequests,
                                          boolean useLaxCookieEncoder,
                                          boolean disableZeroCopy,
@@ -333,6 +336,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.userAgent = userAgent;
         this.realm = realm;
         this.maxRequestRetry = maxRequestRetry;
+        this.loadBalance = loadBalance;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.useLaxCookieEncoder = useLaxCookieEncoder;
         this.disableZeroCopy = disableZeroCopy;
@@ -485,6 +489,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public int getMaxRequestRetry() {
         return maxRequestRetry;
+    }
+
+    @Override
+    public LoadBalance getLoadBalance() {
+        return loadBalance;
     }
 
     @Override
@@ -898,6 +907,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private String userAgent = defaultUserAgent();
         private @Nullable Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
+        private LoadBalance loadBalance = defaultLoadBalance();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
         private boolean disableZeroCopy = defaultDisableZeroCopy();
@@ -1002,6 +1012,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             userAgent = config.getUserAgent();
             realm = config.getRealm();
             maxRequestRetry = config.getMaxRequestRetry();
+            loadBalance = config.getLoadBalance();
             disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
             useLaxCookieEncoder = config.isUseLaxCookieEncoder();
             disableZeroCopy = config.isDisableZeroCopy();
@@ -1155,6 +1166,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setMaxRequestRetry(int maxRequestRetry) {
             this.maxRequestRetry = maxRequestRetry;
+            return this;
+        }
+
+        /**
+         * Sets how requests are dispatched to a host that resolves to several IP addresses.
+         *
+         * <p>With {@link LoadBalance#ROUND_ROBIN}, consecutive requests to a multi-IP host are
+         * spread evenly across all of its addresses (TCP failover is preserved, both HTTP/1.1 and
+         * HTTP/2 are supported). The {@code maxConnectionsPerHost} limit remains per host.
+         *
+         * @param loadBalance the dispatch strategy; {@code null} resets to {@link LoadBalance#DEFAULT}
+         * @return this
+         */
+        public Builder setLoadBalance(LoadBalance loadBalance) {
+            this.loadBalance = loadBalance == null ? LoadBalance.DEFAULT : loadBalance;
             return this;
         }
 
@@ -1633,6 +1659,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     userAgent,
                     realm,
                     maxRequestRetry,
+                    loadBalance,
                     disableUrlEncodingForBoundRequests,
                     useLaxCookieEncoder,
                     disableZeroCopy,

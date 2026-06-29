@@ -231,6 +231,14 @@ public interface AsyncHttpClientConfig {
     int getMaxRequestRetry();
 
     /**
+     * @return how requests are dispatched to a host that resolves to several IP addresses; never {@code null}.
+     * @see LoadBalance
+     */
+    default LoadBalance getLoadBalance() {
+        return LoadBalance.DEFAULT;
+    }
+
+    /**
      * @return the disableUrlEncodingForBoundRequests
      */
     boolean isDisableUrlEncodingForBoundRequests();
