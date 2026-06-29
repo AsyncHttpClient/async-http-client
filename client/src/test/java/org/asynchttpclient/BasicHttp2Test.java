@@ -484,6 +484,110 @@ public class BasicHttp2Test {
     }
 
     /**
+     * A fixed multi-IP resolver for a single hostname (mirrors the inline resolver used above):
+     * {@code doResolve} returns the first IP, {@code doResolveAll} returns the full list.
+     */
+    private static io.netty.resolver.NameResolver<java.net.InetAddress> multiIpResolver(String... ips) throws Exception {
+        final List<java.net.InetAddress> addresses = new ArrayList<>();
+        for (String ip : ips) {
+            addresses.add(java.net.InetAddress.getByName(ip));
+        }
+        return new io.netty.resolver.InetNameResolver(io.netty.util.concurrent.ImmediateEventExecutor.INSTANCE) {
+            @Override
+            protected void doResolve(String inetHost, io.netty.util.concurrent.Promise<java.net.InetAddress> promise) {
+                promise.setSuccess(addresses.get(0));
+            }
+
+            @Override
+            protected void doResolveAll(String inetHost, io.netty.util.concurrent.Promise<List<java.net.InetAddress>> promise) {
+                promise.setSuccess(new ArrayList<>(addresses));
+            }
+        };
+    }
+
+    /**
+     * Regression guard for the round-robin sibling-reuse fix (issue #2214): when {@code maxConnectionsPerHost}
+     * is at least the number of resolved IPs, no request is ever permit-starved, so the sibling-reuse fallback
+     * must NOT engage and round-robin must still open one connection per IP. If sibling reuse leaked onto the
+     * happy path it would collapse all requests onto a single connection and this would fail.
+     */
+    @Test
+    public void http2RoundRobinStillSpreadsWhenPermitsAbundant() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(3).setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver),
+                        new AsyncCompletionHandler<Response>() {
+                            @Override
+                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
+                                if (remoteAddress.getAddress() != null) {
+                                    attemptedIps.add(remoteAddress.getAddress().getHostAddress());
+                                }
+                            }
+
+                            @Override
+                            public Response onCompleted(Response response) {
+                                return response;
+                            }
+                        }).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+        }
+        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
+                "with enough permits the sibling fallback must not engage — round-robin still targets every IP");
+    }
+
+    /**
+     * Issue #2214: round-robin pins each request to one of the host's IPs, but the connection permit is per
+     * host. With {@code maxConnectionsPerHost=1} and a multi-IP host, a request pinned to an IP whose
+     * connection is not open and that cannot acquire the per-host permit must multiplex onto an HTTP/2
+     * connection already open to a sibling IP, instead of stalling for {@code connectTimeout} and failing
+     * with {@code TooManyConnectionsPerHostException}. We fire a burst of concurrent requests so several are
+     * permit-starved while the first connection is being established; with the fix they all complete by
+     * reusing the sibling connection. {@code connectTimeout} is kept short so a regression surfaces as a fast
+     * failure rather than a long hang.
+     */
+    @Test
+    public void http2RoundRobinPermitStarvedReusesSiblingConnection() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        int concurrentRequests = 8;
+        CountDownLatch latch = new CountDownLatch(concurrentRequests);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicReference<Throwable> firstError = new AtomicReference<>();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(1).setMaxRequestRetry(0).setConnectTimeout(Duration.ofSeconds(2)))) {
+            for (int i = 0; i < concurrentRequests; i++) {
+                client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/delay/300")).setNameResolver(resolver),
+                        new AsyncCompletionHandlerBase() {
+                            @Override
+                            public Response onCompleted(Response response) {
+                                if (response.getStatusCode() == 200) {
+                                    successCount.incrementAndGet();
+                                }
+                                latch.countDown();
+                                return response;
+                            }
+
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                firstError.compareAndSet(null, t);
+                                latch.countDown();
+                            }
+                        });
+            }
+            assertTrue(latch.await(30, SECONDS), "all round-robin requests should complete");
+            assertNull(firstError.get(),
+                    "permit-starved requests must reuse a sibling-IP HTTP/2 connection, not fail; got: " + firstError.get());
+            assertEquals(concurrentRequests, successCount.get(),
+                    "all requests should succeed via sibling-IP HTTP/2 reuse under maxConnectionsPerHost=1");
+        }
+    }
+
+    /**
      * Creates an AHC client with a specific request timeout.
      */
     private AsyncHttpClient http2ClientWithTimeout(int requestTimeoutMs) {

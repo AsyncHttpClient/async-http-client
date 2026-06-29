@@ -56,12 +56,13 @@ public enum LoadBalance {
      *       SHOULD NOT open more than one HTTP/2 connection to a given host and port pair.
      *       {@link #DEFAULT} mode preserves the standard single-connection-per-origin behavior.</li>
      *   <li>With HTTP/2 and a finite {@code maxConnectionsPerHost} smaller than the number of resolved
-     *       IPs, a request pinned to an IP that cannot acquire a per-host connection permit will not
-     *       multiplex onto a sibling connection already open to a different IP (HTTP/2 connections are
-     *       pooled per IP in this mode); it fails with {@code TooManyConnectionsPerHostException}
-     *       instead. The default {@code maxConnectionsPerHost} is unlimited, so this only affects
-     *       clients that set a finite per-host limit below the resolved-IP count; {@link #DEFAULT} mode
-     *       would multiplex onto the shared per-host connection.</li>
+     *       IPs, a request pinned to an IP that cannot acquire a per-host connection permit does not open
+     *       a new connection; instead it multiplexes onto an active HTTP/2 connection already open to a
+     *       sibling IP of the same host, if one exists (multiplexing onto an existing connection takes no
+     *       permit). Only if no such connection exists does it fail with
+     *       {@code TooManyConnectionsPerHostException}. The default {@code maxConnectionsPerHost} is
+     *       unlimited, so this only affects clients that set a finite per-host limit below the
+     *       resolved-IP count.</li>
      *   <li>The address order comes straight from the configured
      *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
      *       rotation to map consistently across requests, use a resolver that returns the addresses
