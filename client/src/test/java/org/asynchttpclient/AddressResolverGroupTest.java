@@ -24,9 +24,8 @@ import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
+import static org.asynchttpclient.test.TestUtils.isExternalNetworkAvailable;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,15 +49,6 @@ public class AddressResolverGroupTest extends HttpTest {
     private static final String EXAMPLE_URL = "https://www.example.com/";
 
     private HttpServer server;
-
-    private static boolean isExternalNetworkAvailable() {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("www.google.com", 443), 3000);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 
     @BeforeEach
     public void start() throws Throwable {
@@ -143,6 +134,7 @@ public class AddressResolverGroupTest extends HttpTest {
         });
     }
 
+    @Tag("external")
     @RepeatedIfExceptionsTest(repeats = 5)
     public void resolveRealDomainWithDnsResolverGroup() throws Throwable {
         assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
@@ -159,6 +151,7 @@ public class AddressResolverGroupTest extends HttpTest {
         }
     }
 
+    @Tag("external")
     @RepeatedIfExceptionsTest(repeats = 5)
     public void resolveMultipleRealDomainsWithDnsResolverGroup() throws Throwable {
         assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");

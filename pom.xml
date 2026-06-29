@@ -57,6 +57,10 @@
         <junit-bom.version>5.14.4</junit-bom.version>
         <errorprone.version>2.31.0</errorprone.version>
         <nullaway.version>0.12.6</nullaway.version>
+
+        <!-- JUnit tags excluded from the default build. "external" covers tests that reach real public
+             hosts/DNS; run them with -Dexternal.tests=true (see the run-external-tests profile). -->
+        <ahc.test.excludedGroups>external</ahc.test.excludedGroups>
     </properties>
 
     <developers>
@@ -349,6 +353,7 @@
                     <argLine>
                         @{argLine} --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
                     </argLine>
+                    <excludedGroups>${ahc.test.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
 
@@ -518,6 +523,21 @@
     </build>
 
     <profiles>
+        <!-- Opt-in: also run tests tagged "external" (real public hosts/DNS). Enable with
+             -Dexternal.tests=true. Off by default so the standard build stays hermetic. -->
+        <profile>
+            <id>run-external-tests</id>
+            <activation>
+                <property>
+                    <name>external.tests</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <ahc.test.excludedGroups></ahc.test.excludedGroups>
+            </properties>
+        </profile>
+
         <!-- JDK 17+: use JUnit 6 (requires JDK 17+) -->
         <profile>
             <id>jdk17+</id>

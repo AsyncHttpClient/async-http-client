@@ -54,7 +54,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -115,6 +117,20 @@ public final class TestUtils {
     public static synchronized int findFreePort() throws IOException {
         try (ServerSocket socket = ServerSocketFactory.getDefault().createServerSocket(0)) {
             return socket.getLocalPort();
+        }
+    }
+
+    /**
+     * Probes whether outbound internet (and DNS) is reachable. Tests that genuinely require a real
+     * public host should be annotated {@code @Tag("external")} (excluded from the default build) and
+     * may additionally guard with this so they skip cleanly when run on an isolated machine.
+     */
+    public static boolean isExternalNetworkAvailable() {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("www.google.com", 443), 3000);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 

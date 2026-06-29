@@ -27,6 +27,7 @@ import io.netty.util.Timer;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
+import org.asynchttpclient.testserver.HttpServer;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.test.TestUtils.createSslEngineFactory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,31 +54,34 @@ public class DefaultAsyncHttpClientTest {
     @RepeatedIfExceptionsTest(repeats = 5)
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportWithEpollOnly() throws Exception {
-        AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build();
-
-        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
-            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
-            assertInstanceOf(EpollEventLoopGroup.class, client.channelManager().getEventLoopGroup());
-        }
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true)
+                .setSslEngineFactory(createSslEngineFactory()).build();
+        assertRequestSucceedsAndEventLoopGroupIs(config, EpollEventLoopGroup.class);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportWithoutEpollOnly() throws Exception {
-        AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false).build();
-        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
-            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
-            assertInstanceOf(MultiThreadIoEventLoopGroup.class, client.channelManager().getEventLoopGroup());
-        }
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false)
+                .setSslEngineFactory(createSslEngineFactory()).build();
+        assertRequestSucceedsAndEventLoopGroupIs(config, MultiThreadIoEventLoopGroup.class);
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     @EnabledOnOs(OS.MAC)
     public void testNativeTransportKQueueOnMacOs() throws Exception {
-        AsyncHttpClientConfig config = config().setUseNativeTransport(true).build();
-        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
-            assertDoesNotThrow(() -> client.prepareGet("https://www.google.com").execute().get());
-            assertInstanceOf(KQueueEventLoopGroup.class, client.channelManager().getEventLoopGroup());
+        AsyncHttpClientConfig config = config().setUseNativeTransport(true)
+                .setSslEngineFactory(createSslEngineFactory()).build();
+        assertRequestSucceedsAndEventLoopGroupIs(config, KQueueEventLoopGroup.class);
+    }
+
+    private static void assertRequestSucceedsAndEventLoopGroupIs(AsyncHttpClientConfig config, Class<?> expectedEventLoopGroupType) throws Exception {
+        try (HttpServer server = new HttpServer();
+             DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+            server.start();
+            server.enqueueOk();
+            assertDoesNotThrow(() -> client.prepareGet(server.getHttpsUrl()).execute().get());
+            assertInstanceOf(expectedEventLoopGroupType, client.channelManager().getEventLoopGroup());
         }
     }
 

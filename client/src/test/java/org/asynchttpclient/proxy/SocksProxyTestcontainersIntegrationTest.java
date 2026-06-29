@@ -21,6 +21,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Integration tests for SOCKS proxy support using Dante SOCKS server in TestContainers.
  * This validates the fix for GitHub issue #1913.
  */
+@Tag("external")
 @Testcontainers
 public class SocksProxyTestcontainersIntegrationTest {
 
