@@ -49,20 +49,25 @@ public enum LoadBalance {
      *       with an explicit {@link Request#getAddress() address}, or requests routed through a
      *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
      *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
-     *   <li>Connection limits ({@code maxConnectionsPerHost}) remain per host, not per IP.</li>
-     *   <li>For HTTP/2 this mode deliberately opens more than one connection to the same host and port
-     *       — one per resolved IP — so streams can be spread across the host's backends. That is a
-     *       conscious deviation from RFC 9113 (and RFC 7540) Section 9.1, which recommends that clients
-     *       SHOULD NOT open more than one HTTP/2 connection to a given host and port pair.
-     *       {@link #DEFAULT} mode preserves the standard single-connection-per-origin behavior.</li>
-     *   <li>With HTTP/2 and a finite {@code maxConnectionsPerHost} smaller than the number of resolved
-     *       IPs, a request pinned to an IP that cannot acquire a per-host connection permit does not open
-     *       a new connection; instead it multiplexes onto an active HTTP/2 connection already open to a
-     *       sibling IP of the same host, if one exists (multiplexing onto an existing connection takes no
-     *       permit). Only if no such connection exists does it fail with
-     *       {@code TooManyConnectionsPerHostException}. The default {@code maxConnectionsPerHost} is
-     *       unlimited, so this only affects clients that set a finite per-host limit below the
-     *       resolved-IP count.</li>
+     *   <li>Connection limits ({@code maxConnectionsPerHost}) are enforced per host, not per IP: at most
+     *       that many HTTP/2 connections are kept open to a host at once, spread across that many of its
+     *       resolved IPs (see the cap note below).</li>
+     *   <li>For HTTP/2 this mode deliberately opens more than one connection to the same host and port —
+     *       up to one per resolved IP, bounded by {@code maxConnectionsPerHost} — so streams can be spread
+     *       across the host's backends. That is a conscious deviation from RFC 9113 (and RFC 7540)
+     *       Section 9.1, which recommends that clients SHOULD NOT open more than one HTTP/2 connection to a
+     *       given host and port pair. {@link #DEFAULT} mode preserves the standard
+     *       single-connection-per-origin behavior.</li>
+     *   <li>When {@code maxConnectionsPerHost} (call it K) is smaller than the number of resolved IPs, the
+     *       cap wins over full spreading: at most K HTTP/2 connections are opened, to the first K rotated
+     *       IPs, and a request pinned to any further IP cannot acquire a per-host permit — it multiplexes
+     *       onto one of those K sibling connections (multiplexing onto an existing connection takes no
+     *       permit) instead of opening another, failing with {@code TooManyConnectionsPerHostException}
+     *       only if none is available. Those K connections are held open (kept alive by HTTP/2 PING), so
+     *       they stay pinned to their K IPs rather than rotating across all of them; set
+     *       {@code maxConnectionsPerHost} at least as large as the resolved-IP count for full per-IP
+     *       spreading. The default is unlimited, so this bound only applies when a finite per-host limit is
+     *       configured.</li>
      *   <li>The address order comes straight from the configured
      *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
      *       rotation to map consistently across requests, use a resolver that returns the addresses

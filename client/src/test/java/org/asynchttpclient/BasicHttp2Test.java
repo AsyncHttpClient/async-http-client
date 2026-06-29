@@ -588,6 +588,33 @@ public class BasicHttp2Test {
     }
 
     /**
+     * In round-robin mode the per-host connection permit is held for the HTTP/2 connection's lifetime, so
+     * {@code maxConnectionsPerHost} actually caps the number of live connections to a host. With a host of
+     * three IPs and a cap of two, round-robin would otherwise open three connections (one per IP); the cap
+     * must hold it to at most two, with requests pinned to the third IP multiplexing onto a sibling
+     * connection (issue #2214). All requests still succeed.
+     */
+    @Test
+    public void http2RoundRobinCapsLiveConnectionsAtMaxConnectionsPerHost() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        int maxPerHost = 2;
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(maxPerHost).setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+            // serverChildChannels tracks accepted TCP (HTTP/2) connections; a DefaultChannelGroup auto-removes
+            // closed ones. Without holding the permit for the connection lifetime, round-robin opens one
+            // connection per resolved IP (3 > cap); the cap must hold live connections to at most maxPerHost.
+            assertTrue(serverChildChannels.size() <= maxPerHost,
+                    "maxConnectionsPerHost must cap live HTTP/2 connections; expected <= " + maxPerHost
+                            + ", got " + serverChildChannels.size());
+        }
+    }
+
+    /**
      * Creates an AHC client with a specific request timeout.
      */
     private AsyncHttpClient http2ClientWithTimeout(int requestTimeoutMs) {
