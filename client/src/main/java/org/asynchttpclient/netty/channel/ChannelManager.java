@@ -26,6 +26,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.MultithreadEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -173,7 +175,9 @@ public class ChannelManager {
         handshakeTimeout = config.getHandshakeTimeout();
 
         // check if external EventLoopGroup is defined
-        ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
+        ThreadFactory threadFactory = config.getThreadFactory() != null
+                                      ? config.getThreadFactory()
+                                      : new DefaultThreadFactory(config.getThreadPoolName());
         allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
         TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
 
@@ -187,7 +191,17 @@ public class ChannelManager {
         } else {
             eventLoopGroup = config.getEventLoopGroup();
 
-            if (eventLoopGroup instanceof NioEventLoopGroup) {
+            if (eventLoopGroup instanceof MultiThreadIoEventLoopGroup) {
+              if (IoUringTransportFactory.isAvailable()) {
+                transportFactory = new IoUringTransportFactory();
+              } else if (EpollTransportFactory.isAvailable()) {
+                transportFactory = new EpollTransportFactory();
+              } else if (KQueueTransportFactory.isAvailable()) {
+                transportFactory = new KQueueTransportFactory();
+              } else {
+                transportFactory = NioTransportFactory.INSTANCE;
+              }
+            } else if (eventLoopGroup instanceof NioEventLoopGroup) {
                 transportFactory = NioTransportFactory.INSTANCE;
             } else if (isInstanceof(eventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
                 transportFactory = new EpollTransportFactory();
