@@ -24,9 +24,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -282,6 +282,9 @@ public class Realm {
      * A builder for {@link Realm}
      */
     public static class Builder {
+
+        // cnonce must be unpredictable (RFC 7616 section 3.3), like the NTLM and SCRAM nonces
+        private static final SecureRandom CNONCE_RANDOM = new SecureRandom();
 
         private final @Nullable String principal;
         private final @Nullable String password;
@@ -610,7 +613,7 @@ public class Realm {
 
         private void newCnonce(MessageDigest md) {
             byte[] b = new byte[8];
-            ThreadLocalRandom.current().nextBytes(b);
+            CNONCE_RANDOM.nextBytes(b);
             byte[] full = md.digest(b);
             // trim to first 8 bytes → 16 hex chars
             byte[] small = Arrays.copyOf(full, Math.min(8, full.length));
