@@ -70,6 +70,7 @@ public class RedirectCredentialSecurityTest {
     private static final AtomicReference<String> cookieOnBounceBack = new AtomicReference<>();
     private static final AtomicReference<String> authAfterHttpsDowngrade = new AtomicReference<>();
     private static final AtomicReference<String> cookieAfterHttpsDowngrade = new AtomicReference<>();
+    private static final AtomicReference<String> authOn401Target = new AtomicReference<>();
 
     @BeforeAll
     public static void startServers() throws Exception {
@@ -191,6 +192,24 @@ public class RedirectCredentialSecurityTest {
             cookieAfterHttpsDowngrade.set(exchange.getRequestHeaders().getFirst("Cookie"));
             exchange.sendResponseHeaders(200, 0);
             exchange.getResponseBody().close();
+            exchange.close();
+        });
+
+        // Cross-domain redirect to a target that answers 401: the target must never receive
+        // credentials, even those configured client-wide via config.setRealm(...).
+        serverA.createContext("/redirect-to-b-401", exchange -> {
+            exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portB + "/target-401");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
+
+        serverB.createContext("/target-401", exchange -> {
+            String auth = exchange.getRequestHeaders().getFirst("Authorization");
+            if (auth != null) {
+                authOn401Target.set(auth);
+            }
+            exchange.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"target\"");
+            exchange.sendResponseHeaders(401, -1);
             exchange.close();
         });
 
@@ -697,6 +716,29 @@ public class RedirectCredentialSecurityTest {
                     "Authorization must be stripped when only the port differs (origin includes port)");
             assertNull(lastCookieHeaderOnB.get(),
                     "Cookie must be stripped when only the port differs (origin includes port)");
+        }
+    }
+
+    /**
+     * Client-wide credentials set via {@code config.setRealm(...)} must not be sent to a
+     * cross-domain redirect target, even when that target answers 401 to solicit them. The
+     * redirect clears the request/future realm, but the config realm must not be re-applied.
+     */
+    @Test
+    void crossDomainRedirectTo401TargetDoesNotLeakConfigRealm() throws Exception {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setFollowRedirect(true)
+                .setRealm(basicAuthRealm("user", "password").build())
+                .build();
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+            authOn401Target.set(null);
+
+            client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b-401")
+                    .execute()
+                    .get(5, TimeUnit.SECONDS);
+
+            assertNull(authOn401Target.get(),
+                    "client-wide config Realm must not be sent to a cross-domain 401 target after redirect");
         }
     }
 

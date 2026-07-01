@@ -87,7 +87,12 @@ public class Interceptors {
         ProxyServer proxyServer = future.getProxyServer();
         int statusCode = response.status().code();
         Request request = future.getCurrentRequest();
-        Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+        // Use the realm the future is carrying (seeded from the request or client config when the
+        // exchange started, and reset to null by Redirect30xInterceptor on a cross-origin or
+        // scheme-downgrade redirect). Re-deriving from config.getRealm() here re-attaches the
+        // client-wide credentials to a redirect target whose auth was just stripped, leaking them
+        // to a different origin that answers 401.
+        Realm realm = future.getRealm();
 
         // This MUST BE called before Redirect30xInterceptor because latter assumes cookie store is already updated
         CookieStore cookieStore = config.getCookieStore();
