@@ -60,6 +60,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String KEEP_ALIVE_CONFIG = "keepAlive";
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
     public static final String LOAD_BALANCE_CONFIG = "loadBalance";
+    public static final String FAILED_IP_COOLDOWN_ENABLED_CONFIG = "failedIpCooldownEnabled";
+    public static final String FAILED_IP_COOLDOWN_PERIOD_CONFIG = "failedIpCooldownPeriod";
     public static final String DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG = "disableUrlEncodingForBoundRequests";
     public static final String USE_LAX_COOKIE_ENCODER_CONFIG = "useLaxCookieEncoder";
     public static final String USE_OPEN_SSL_CONFIG = "useOpenSsl";
@@ -169,6 +171,14 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultEnableAutomaticDecompression() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + ENABLE_AUTOMATIC_DECOMPRESSION_CONFIG);
+    }
+
+    public static boolean defaultFailedIpCooldownEnabled() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + FAILED_IP_COOLDOWN_ENABLED_CONFIG);
+    }
+
+    public static Duration defaultFailedIpCooldownPeriod() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + FAILED_IP_COOLDOWN_PERIOD_CONFIG);
     }
 
     public static String defaultUserAgent() {
