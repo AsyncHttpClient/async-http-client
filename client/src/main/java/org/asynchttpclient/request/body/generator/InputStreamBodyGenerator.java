@@ -58,7 +58,6 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
         private final InputStream inputStream;
         private final long contentLength;
-        private byte[] chunk;
 
         private InputStreamBody(InputStream inputStream, long contentLength) {
             this.inputStream = inputStream;
@@ -72,23 +71,17 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
         @Override
         public BodyState transferTo(ByteBuf target) {
-
-            // To be safe.
-            chunk = new byte[target.writableBytes() - 10];
-
-            int read = -1;
-            boolean write = false;
+            // Read straight from the stream into the target buffer: no per-call staging byte[] and no extra
+            // copy (ByteBuf.writeBytes(InputStream, int) fills the buffer directly, like FileLikeMultipartPart).
+            // The "- 10" margin preserves the previous behaviour of never fully filling the writable region.
+            int read;
             try {
-                read = inputStream.read(chunk);
+                read = target.writeBytes(inputStream, target.writableBytes() - 10);
             } catch (IOException ex) {
                 LOGGER.warn("Unable to read", ex);
+                return BodyState.STOP;
             }
-
-            if (read > 0) {
-                target.writeBytes(chunk, 0, read);
-                write = true;
-            }
-            return write ? BodyState.CONTINUE : BodyState.STOP;
+            return read > 0 ? BodyState.CONTINUE : BodyState.STOP;
         }
 
         @Override
