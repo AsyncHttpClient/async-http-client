@@ -48,8 +48,8 @@
         <netty.version>4.2.15.Final</netty.version>
         <brotli4j.version>1.23.0</brotli4j.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <zstd-jni.version>1.5.7-10</zstd-jni.version>
-        <logback.version>1.5.34</logback.version>
+        <zstd-jni.version>1.5.7-11</zstd-jni.version>
+        <logback.version>1.5.37</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <testcontainers.version>2.0.5</testcontainers.version>
 
@@ -407,7 +407,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.10.0</version>
+                <version>0.11.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
