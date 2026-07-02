@@ -27,7 +27,9 @@ import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RoundRobinAddressSelectorTest {
@@ -72,6 +74,35 @@ class RoundRobinAddressSelectorTest {
         assertEquals("127.0.0.1", firstIp(selector.rotate("h", input)));
         assertEquals("127.0.0.2", firstIp(selector.rotate("h", input)));
         assertEquals("127.0.0.3", firstIp(selector.rotate("h", input)));
+    }
+
+    @Test
+    void rotatedViewMatchesFullLeftRotation() {
+        RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
+        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"),
+                addr("127.0.0.3"), addr("127.0.0.4"));
+        int n = input.size();
+        // Each successive rotation is the resolver order rotated left by one more; the returned view must
+        // reproduce the whole order element-by-element (not just the first element).
+        for (int start = 0; start < n; start++) {
+            List<InetSocketAddress> rotated = selector.rotate("h", input);
+            assertEquals(n, rotated.size());
+            for (int i = 0; i < n; i++) {
+                assertEquals(input.get((start + i) % n), rotated.get(i),
+                        "element " + i + " of the rotation starting at index " + start);
+            }
+        }
+    }
+
+    @Test
+    void rotatedResultIsAReadOnlyView() {
+        RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
+        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"), addr("127.0.0.3"));
+        selector.rotate("h", input);                          // index 0 -> returns input as-is
+        List<InetSocketAddress> rotated = selector.rotate("h", input); // index 1 -> a real rotation
+        assertNotSame(input, rotated, "a non-zero rotation returns a distinct view");
+        assertThrows(UnsupportedOperationException.class, () -> rotated.set(0, addr("127.0.0.9")),
+                "the rotated view must be read-only (all consumers only read it)");
     }
 
     @Test
