@@ -37,6 +37,12 @@ import static java.util.Objects.requireNonNull;
 
 public final class ThreadSafeCookieStore implements CookieStore {
 
+    // RFC 6265 §5.3 (step 12) lets a user agent cap the cookies it retains. Bounding cookies per domain
+    // keeps a server from growing the jar — and the per-request retrieval scan in get(Uri) — without bound.
+    // Chosen generously (well above browser per-domain limits of ~50–180) so it only trips under abuse,
+    // never for realistic usage. Package-private for tests.
+    static final int MAX_COOKIES_PER_DOMAIN = 200;
+
     private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
     private final AtomicInteger counter = new AtomicInteger();
 
@@ -196,6 +202,33 @@ public final class ThreadSafeCookieStore implements CookieStore {
         } else {
             final Map<CookieKey, StoredCookie> innerMap = cookieJar.computeIfAbsent(keyDomain, domain -> new ConcurrentHashMap<>());
             innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
+            if (innerMap.size() > MAX_COOKIES_PER_DOMAIN) {
+                evictExcessCookies(innerMap);
+            }
+        }
+    }
+
+    /**
+     * Bounds a single domain's cookie bucket at {@link #MAX_COOKIES_PER_DOMAIN} (RFC 6265 §5.3 step 12).
+     * Evicts expired entries first, then the oldest by creation time until back at the cap. Called from
+     * {@link #add} right after an insert pushes the bucket over the cap, so it normally removes a single
+     * entry. Concurrency-safe: entries are dropped with the two-arg {@code remove(key, value)} so a cookie
+     * another thread just replaced under the same key is never collaterally removed; a benign race between
+     * concurrent adders may evict one extra, which is self-correcting.
+     */
+    private static void evictExcessCookies(Map<CookieKey, StoredCookie> innerMap) {
+        innerMap.entrySet().removeIf(entry -> hasCookieExpired(entry.getValue().cookie, entry.getValue().createdAt));
+        while (innerMap.size() > MAX_COOKIES_PER_DOMAIN) {
+            Map.Entry<CookieKey, StoredCookie> oldest = null;
+            for (Map.Entry<CookieKey, StoredCookie> entry : innerMap.entrySet()) {
+                if (oldest == null || entry.getValue().createdAt < oldest.getValue().createdAt) {
+                    oldest = entry;
+                }
+            }
+            if (oldest == null) {
+                break;
+            }
+            innerMap.remove(oldest.getKey(), oldest.getValue());
         }
     }
 
