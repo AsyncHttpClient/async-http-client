@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -46,6 +48,8 @@ import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.TIMEOUT;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * End-to-end coverage for {@link LoadBalance#ROUND_ROBIN}: a single host that resolves to several
@@ -183,6 +187,44 @@ public class RoundRobinSendTypeTest {
             assertEquals(Set.of("127.0.0.1"), connectedIps);
         } finally {
             localServer.stop();
+        }
+    }
+
+    @Test
+    public void roundRobinRequestStillHitsRequestTimeout() throws Exception {
+        // Regression guard: round-robin resolves up front WITHOUT scheduling the request timeout there; the
+        // reuse-or-connect path must still schedule it exactly once. Point at a server that never responds
+        // within the request timeout and assert the request times out (i.e. the new-connection round-robin
+        // path did schedule the timeout).
+        Server slow = new Server();
+        ServerConnector connector = addHttpConnector(slow);
+        slow.setHandler(new AbstractHandler() {
+            @Override
+            public void handle(String t, Request base, HttpServletRequest req, HttpServletResponse resp) {
+                base.setHandled(true);
+                try {
+                    Thread.sleep(4000); // never responds within the 500ms request timeout below
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+        slow.start();
+        int slowPort = connector.getLocalPort();
+        try {
+            NameResolver<InetAddress> resolver = fixedResolver("127.0.0.1");
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setLoadBalance(LoadBalance.ROUND_ROBIN)
+                    .setRequestTimeout(java.time.Duration.ofMillis(500))
+                    .setMaxRequestRetry(0).build())) {
+                ExecutionException thrown = assertThrows(ExecutionException.class, () ->
+                        client.executeRequest(get("http://roundrobin.test:" + slowPort + "/").setNameResolver(resolver))
+                                .get(TIMEOUT, SECONDS));
+                assertInstanceOf(TimeoutException.class, thrown.getCause(),
+                        "round-robin request must still hit the request timeout; got " + thrown.getCause());
+            }
+        } finally {
+            slow.stop();
         }
     }
 

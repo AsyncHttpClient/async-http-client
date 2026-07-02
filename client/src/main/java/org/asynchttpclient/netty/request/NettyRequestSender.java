@@ -202,11 +202,11 @@ public final class NettyRequestSender {
 
         // Round-robin resolves up front — before the pool check and before the per-host semaphore — so
         // every eligible request resolves first, even one that immediately reuses a pooled connection and
-        // even a single-IP host. With a caching resolver this is cheap. One side effect on a pooled hit:
-        // the request timeout is scheduled here (in resolveAddresses) and again in
-        // sendRequestWithOpenChannel; the second schedule cancels the first (see
-        // NettyResponseFuture.setTimeoutsHolder), so it's redundant work, not a leak.
-        resolveAddresses(request, proxyServer, newFuture, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+        // even a single-IP host. With a caching resolver this is cheap. Pass scheduleTimeout=false: the
+        // reuse-or-connect path reached from dispatchResolved schedules the request timeout exactly once
+        // (sendRequestWithOpenChannel for a pooled hit, or the round-robin branch of sendRequestWithNewChannel
+        // for a new connection), rather than scheduling it here and then cancelling it on a pooled hit.
+        resolveAddresses(request, proxyServer, newFuture, asyncHandler, false).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
             @Override
             protected void onSuccess(List<InetSocketAddress> addresses) {
@@ -447,14 +447,17 @@ public final class NettyRequestSender {
         }
 
         // In round-robin mode the addresses were already resolved (and rotated) before polling the pool,
-        // so reuse them directly instead of resolving a second time.
+        // so reuse them directly instead of resolving a second time. The up-front resolve deliberately did
+        // NOT schedule the request timeout (see sendRequestRoundRobin), so schedule it here — once — for this
+        // new-connection path, before connecting.
         List<InetSocketAddress> roundRobinAddresses = future.getRoundRobinAddresses();
         if (roundRobinAddresses != null) {
+            scheduleRequestTimeout(future, roundRobinAddresses.get(0));
             connectWithAddresses(request, proxy, future, asyncHandler, roundRobinAddresses);
             return future;
         }
 
-        resolveAddresses(request, proxy, future, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+        resolveAddresses(request, proxy, future, asyncHandler, true).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
             @Override
             protected void onSuccess(List<InetSocketAddress> addresses) {
@@ -494,20 +497,34 @@ public final class NettyRequestSender {
         }
     }
 
-    private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler) {
+    /**
+     * Resolves the request's remote addresses. When {@code scheduleTimeout} is {@code true} the request
+     * timeout is scheduled here, before resolution — the behaviour the DEFAULT-mode new-channel path relies
+     * on so the timeout also bounds DNS. ROUND_ROBIN resolves up front for every request (it needs the IP to
+     * key the pool) and passes {@code false}: scheduling here and then again on the reuse-or-connect path
+     * would allocate a {@code TimeoutsHolder} and a timer entry only to cancel them on a pooled hit. Instead
+     * the chosen path schedules exactly once — {@link #sendRequestWithOpenChannel} for a reuse, or the
+     * round-robin branch of {@link #sendRequestWithNewChannel} for a new connection.
+     */
+    private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future,
+                                                                 AsyncHandler<T> asyncHandler, boolean scheduleTimeout) {
         Uri uri = request.getUri();
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
         if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && proxy.getProxyType().isHttp()) {
             int port = ProxyType.HTTPS.equals(proxy.getProxyType()) || uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
-            scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            if (scheduleTimeout) {
+                scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            }
             return resolveHostname(request, unresolvedRemoteAddress, asyncHandler);
         } else {
             int port = uri.getExplicitPort();
 
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
-            scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            if (scheduleTimeout) {
+                scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            }
 
             if (request.getAddress() != null) {
                 // bypass resolution
