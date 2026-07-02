@@ -113,6 +113,44 @@ public class ThreadSafeCookieStoreGetTest {
     }
 
     @Test
+    public void perDomainCookieCountIsCappedUnderFlood() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        Uri uri = Uri.create("http://www.foo.com/");
+        int flood = ThreadSafeCookieStore.MAX_COOKIES_PER_DOMAIN + 50;
+        for (int i = 0; i < flood; i++) {
+            store.add(uri, ClientCookieDecoder.LAX.decode("c" + i + "=v" + i + "; Domain=www.foo.com; Path=/"));
+        }
+        assertEquals(ThreadSafeCookieStore.MAX_COOKIES_PER_DOMAIN, store.getUnderlying().get("www.foo.com").size(),
+                "a single domain's cookies must be capped at MAX_COOKIES_PER_DOMAIN");
+    }
+
+    @Test
+    public void cookiesUnderTheCapAreAllRetained() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        Uri uri = Uri.create("http://www.foo.com/");
+        for (int i = 0; i < 20; i++) {
+            store.add(uri, ClientCookieDecoder.LAX.decode("c" + i + "=v" + i + "; Domain=www.foo.com; Path=/"));
+        }
+        assertEquals(20, store.getUnderlying().get("www.foo.com").size(), "nothing is evicted below the cap");
+        assertEquals(20, store.get(uri).size());
+    }
+
+    @Test
+    public void capIsPerDomainNotGlobal() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        Uri foo = Uri.create("http://www.foo.com/");
+        for (int i = 0; i < ThreadSafeCookieStore.MAX_COOKIES_PER_DOMAIN + 20; i++) {
+            store.add(foo, ClientCookieDecoder.LAX.decode("c" + i + "=v" + i + "; Domain=www.foo.com; Path=/"));
+        }
+        store.add(Uri.create("http://www.bar.com/"),
+                ClientCookieDecoder.LAX.decode("only=1; Domain=www.bar.com; Path=/"));
+
+        assertEquals(ThreadSafeCookieStore.MAX_COOKIES_PER_DOMAIN, store.getUnderlying().get("www.foo.com").size());
+        assertEquals(1, store.getUnderlying().get("www.bar.com").size(),
+                "flooding one domain must not evict another domain's cookies");
+    }
+
+    @Test
     public void returnsEmptyForUnknownDomain() {
         ThreadSafeCookieStore store = new ThreadSafeCookieStore();
         store.add(Uri.create("http://www.foo.com/"),
