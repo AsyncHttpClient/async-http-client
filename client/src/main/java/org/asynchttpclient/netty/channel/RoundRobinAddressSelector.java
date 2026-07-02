@@ -17,6 +17,7 @@ package org.asynchttpclient.netty.channel;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,10 +98,10 @@ public final class RoundRobinAddressSelector {
 
         // Fast path: nothing failed recently, so the order is the plain round-robin rotation.
         if (state.cooldowns.isEmpty()) {
-            return index == 0 ? resolved : rotateBy(resolved, index, n);
+            return index == 0 ? resolved : rotateBy(resolved, index);
         }
 
-        List<InetSocketAddress> rotated = index == 0 ? resolved : rotateBy(resolved, index, n);
+        List<InetSocketAddress> rotated = index == 0 ? resolved : rotateBy(resolved, index);
         return deprioritizeCooling(state, rotated);
     }
 
@@ -127,11 +128,41 @@ public final class RoundRobinAddressSelector {
         return hosts.computeIfAbsent(host, h -> new HostState());
     }
 
-    private static List<InetSocketAddress> rotateBy(List<InetSocketAddress> resolved, int index, int n) {
-        List<InetSocketAddress> rotated = new ArrayList<>(n);
-        rotated.addAll(resolved.subList(index, n));
-        rotated.addAll(resolved.subList(0, index));
-        return rotated;
+    // Returns a read-only view of {@code resolved} rotated left by {@code index} — element i is
+    // resolved.get((index + i) mod size) — instead of copying the rotation into a fresh ArrayList (plus two
+    // subList views), which the round-robin fast path did on ~(n-1)/n of multi-IP requests. All consumers
+    // only read the result (get/size/iteration — NettyChannelConnector and deprioritizeCooling), and the
+    // resolved list is not mutated after being wrapped, so the lightweight view is safe.
+    private static List<InetSocketAddress> rotateBy(List<InetSocketAddress> resolved, int index) {
+        return new RotatedView(resolved, index);
+    }
+
+    private static final class RotatedView extends AbstractList<InetSocketAddress> {
+
+        private final List<InetSocketAddress> resolved;
+        private final int index;
+        private final int size;
+
+        RotatedView(List<InetSocketAddress> resolved, int index) {
+            this.resolved = resolved;
+            this.index = index;
+            this.size = resolved.size();
+        }
+
+        @Override
+        public InetSocketAddress get(int i) {
+            if (i < 0 || i >= size) {
+                throw new IndexOutOfBoundsException("Index: " + i + ", Size: " + size);
+            }
+            // index and i are both in [0, size), so index + i < 2*size — one wrap suffices (no modulo).
+            int j = index + i;
+            return resolved.get(j < size ? j : j - size);
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
     }
 
     // Stable-partition the rotated order into not-cooling (kept first) and cooling (moved to the back),
