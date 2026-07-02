@@ -136,6 +136,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile List<InetSocketAddress> roundRobinAddresses;
     private volatile Uri roundRobinBaseUri;
     private volatile ScramContext scramContext;
+    // Memoized base (host/scheme/port) partition key; see basePartitionKey(). proxyServer is final and
+    // targetRequest is its only other input, so this is invalidated only by setTargetRequest.
+    private volatile Object basePartitionKeyCache;
 
     public NettyResponseFuture(Request originalRequest,
                                AsyncHandler<V> asyncHandler,
@@ -370,6 +373,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setTargetRequest(Request targetRequest) {
         this.targetRequest = targetRequest;
+        // Invalidate the memoized base partition key: a redirect/retry may target a different
+        // host/scheme/port, which changes the key.
+        basePartitionKeyCache = null;
     }
 
     public Request getCurrentRequest() {
@@ -552,8 +558,16 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
      * initially selected.
      */
     public Object basePartitionKey() {
-        return connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(),
-                proxyServer);
+        // Memoized: the same key is needed at several sites per request attempt (semaphore acquire, pool
+        // poll/offer, HTTP/2 registration). It depends only on targetRequest (host/scheme/port + virtualHost)
+        // and the final proxyServer, so it is recomputed only when setTargetRequest changes the target.
+        Object key = basePartitionKeyCache;
+        if (key == null) {
+            key = connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(),
+                    proxyServer);
+            basePartitionKeyCache = key;
+        }
+        return key;
     }
 
     /**
