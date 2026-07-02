@@ -43,8 +43,19 @@ public class PerHostConnectionSemaphore implements ConnectionSemaphore {
 
     @Override
     public void acquireChannelLock(Object partitionKey) throws IOException {
+        acquireChannelLock(partitionKey, false);
+    }
+
+    @Override
+    public void acquireChannelLock(Object partitionKey, boolean nonBlocking) throws IOException {
         try {
-            if (!getFreeConnectionsForHost(partitionKey).tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS)) {
+            Semaphore freeConnections = getFreeConnectionsForHost(partitionKey);
+            // nonBlocking (the caller is on the event loop): try once and fail fast rather than parking
+            // the loop for up to acquireTimeout.
+            boolean acquired = nonBlocking
+                    ? freeConnections.tryAcquire()
+                    : freeConnections.tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS);
+            if (!acquired) {
                 throw tooManyConnectionsPerHost;
             }
         } catch (InterruptedException e) {
