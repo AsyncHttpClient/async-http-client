@@ -134,7 +134,11 @@ public class ChannelManager {
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
-    private final ConcurrentHashMap<Object, Channel> http2Connections = new ConcurrentHashMap<>();
+    // HTTP/2 registry, grouped by per-host base key so a permit-starved round-robin request can find a
+    // sibling-IP connection (issue #2214). Outer key: the per-host base partition key. Inner key: the full
+    // partition key actually registered — the per-IP RoundRobinPartitionKey in LoadBalance.ROUND_ROBIN
+    // mode, or the plain base key otherwise (then the inner map holds a single entry under that key).
+    private final ConcurrentHashMap<Object, ConcurrentHashMap<Object, Channel>> http2Connections = new ConcurrentHashMap<>();
 
     private AsyncHttpClientHandler wsHandler;
     private Http2Handler http2Handler;
@@ -363,6 +367,17 @@ public class ChannelManager {
     }
 
     /**
+     * The per-host base partition key under which an HTTP/2 connection registered with {@code partitionKey}
+     * is grouped. For a {@link RoundRobinPartitionKey} that is its base (without the pinned IP); for any
+     * other key the key is already the base.
+     */
+    private static Object baseKeyOf(Object partitionKey) {
+        return partitionKey instanceof RoundRobinPartitionKey
+                ? ((RoundRobinPartitionKey) partitionKey).getBaseKey()
+                : partitionKey;
+    }
+
+    /**
      * Registers an HTTP/2 connection in the registry for the given partition key.
      * The connection stays in the registry (not the regular pool) to allow multiplexing —
      * multiple requests can share the same connection concurrently.
@@ -377,17 +392,31 @@ public class ChannelManager {
         // so it serves only its own opening request and then closes (its stream's closeFuture listener
         // closes the parent once activeStreams hits 0) instead of lingering open and unregistered. A dead
         // registered entry is replaced.
-        Channel existing = http2Connections.putIfAbsent(partitionKey, channel);
-        if (existing != null && existing != channel) {
-            boolean replacedDead = !existing.isActive() && http2Connections.replace(partitionKey, existing, channel);
-            if (!replacedDead && state != null) {
-                state.markRedundant();
+        //
+        // The whole coalescing mutation runs inside compute() on the outer base-key bucket so it is atomic
+        // against removeHttp2Connection() pruning an emptied inner map — both hold the same bucket lock,
+        // which closes the race where a prune could orphan a connection inserted into a detached inner map.
+        http2Connections.compute(baseKeyOf(partitionKey), (k, byKey) -> {
+            if (byKey == null) {
+                byKey = new ConcurrentHashMap<>();
             }
-        }
+            Channel existing = byKey.putIfAbsent(partitionKey, channel);
+            if (existing != null && existing != channel) {
+                boolean replacedDead = !existing.isActive() && byKey.replace(partitionKey, existing, channel);
+                if (!replacedDead && state != null) {
+                    state.markRedundant();
+                }
+            }
+            return byKey;
+        });
         // When the connection closes, remove it from the registry AND fail any requests still queued
         // for a stream slot. Without the latter, requests sitting in pendingOpeners when the parent
         // connection drops have no stream channel (so no channelInactive is ever delivered for them)
         // and would survive only until the request timeout fires — the silent-timeout bug of #2160.
+        //
+        // This listener MUST stay outside the compute() lambda above: a channel already closed at
+        // registration time fires it synchronously on this thread, and re-entering computeIfPresent() on
+        // the same outer bucket from within compute() would self-deadlock. Here compute() has returned.
         channel.closeFuture().addListener(future -> {
             removeHttp2Connection(partitionKey, channel);
             if (state != null) {
@@ -412,10 +441,15 @@ public class ChannelManager {
 
     /**
      * Removes an HTTP/2 connection from the registry, but only if it's the currently registered
-     * connection for that partition key (avoids removing a replacement connection).
+     * connection for that partition key (avoids removing a replacement connection). The emptied per-host
+     * inner map is pruned atomically — computeIfPresent serializes with registerHttp2Connection's
+     * compute() on the same outer bucket, so a concurrent insert cannot be lost to the prune.
      */
     public void removeHttp2Connection(Object partitionKey, Channel channel) {
-        http2Connections.remove(partitionKey, channel);
+        http2Connections.computeIfPresent(baseKeyOf(partitionKey), (k, byKey) -> {
+            byKey.remove(partitionKey, channel);
+            return byKey.isEmpty() ? null : byKey;
+        });
     }
 
     /**
@@ -424,12 +458,16 @@ public class ChannelManager {
      * concurrent multiplexed requests.
      */
     public Channel pollHttp2Connection(Object partitionKey) {
-        Channel channel = http2Connections.get(partitionKey);
+        ConcurrentHashMap<Object, Channel> byKey = http2Connections.get(baseKeyOf(partitionKey));
+        if (byKey == null) {
+            return null;
+        }
+        Channel channel = byKey.get(partitionKey);
         if (channel == null) {
             return null;
         }
         if (!channel.isActive()) {
-            http2Connections.remove(partitionKey, channel);
+            removeHttp2Connection(partitionKey, channel);
             return null;
         }
         Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
@@ -437,6 +475,32 @@ public class ChannelManager {
             return null;
         }
         return channel;
+    }
+
+    /**
+     * Round-robin permit-starved fallback (issue #2214): returns an active, non-draining HTTP/2 connection
+     * open to ANY IP of the host identified by {@code baseKey}, or {@code null} if none qualifies. Used only
+     * by {@link org.asynchttpclient.netty.request.NettyRequestSender} when a request pinned to one IP cannot
+     * acquire a per-host connection permit ({@code maxConnectionsPerHost}) and its own per-IP connection does
+     * not exist — it may then multiplex onto a sibling-IP connection instead of failing. NOT used on the
+     * happy path, which polls the exact per-IP key so load keeps spreading across IPs.
+     *
+     * <p>Iterates only the inner map for this host (bounded by the host's resolved-IP count). Per-key
+     * validation and dead-entry eviction are delegated to {@link #pollHttp2Connection}; redundant
+     * coalescing-losers are never stored, so they are never returned.
+     */
+    public Channel pollHttp2SiblingConnection(Object baseKey) {
+        ConcurrentHashMap<Object, Channel> byKey = http2Connections.get(baseKey);
+        if (byKey == null) {
+            return null;
+        }
+        for (Object key : byKey.keySet()) {
+            Channel channel = pollHttp2Connection(key);
+            if (channel != null) {
+                return channel;
+            }
+        }
+        return null;
     }
 
     /**

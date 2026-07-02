@@ -215,8 +215,7 @@ public final class NettyConnectListener<T> {
                     }
                     if (http2Negotiated && !uri.isWebSocket()) {
                         channelManager.upgradePipelineToHttp2(channel.pipeline());
-                        registerHttp2AndReleaseSemaphore(channel);
-                        releaseSemaphoreImmediately(partitionKeyLock);
+                        registerHttp2AndManageSemaphore(channel, partitionKeyLock);
                     } else {
                         attachSemaphoreToChannelClose(channel, partitionKeyLock);
                     }
@@ -241,8 +240,7 @@ public final class NettyConnectListener<T> {
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
             if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
                 channelManager.upgradePipelineToHttp2(channel.pipeline());
-                registerHttp2AndReleaseSemaphore(channel);
-                releaseSemaphoreImmediately(partitionKeyLock);
+                registerHttp2AndManageSemaphore(channel, partitionKeyLock);
             } else {
                 attachSemaphoreToChannelClose(channel, partitionKeyLock);
             }
@@ -272,12 +270,26 @@ public final class NettyConnectListener<T> {
     }
 
     /**
-     * Registers the HTTP/2 connection in the channel manager's H2 registry.
+     * Registers the HTTP/2 connection in the channel manager's H2 registry, then decides how long to hold
+     * the per-host connection permit.
+     *
+     * <p>{@link org.asynchttpclient.LoadBalance#DEFAULT} multiplexes a host onto a single connection, so the
+     * permit is released immediately — holding it would needlessly block concurrent requests that all share
+     * that one connection. {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} instead keeps one connection
+     * per resolved IP, so the per-host permit is what bounds the number of live connections: it is held for
+     * the connection's lifetime (as HTTP/1.1 does). Once {@code maxConnectionsPerHost} connections are live,
+     * a further request fails to acquire a permit and multiplexes onto a sibling-IP connection via
+     * {@link ChannelManager#pollHttp2SiblingConnection(Object)} rather than opening another (issue #2214).
      */
-    private void registerHttp2AndReleaseSemaphore(Channel channel) {
+    private void registerHttp2AndManageSemaphore(Channel channel, Object partitionKeyLock) {
         // Register under the future's partition key so the H2 connection is found by the same key the
         // pool is polled with — including the IP-aware key used by LoadBalance.ROUND_ROBIN.
         channelManager.registerHttp2Connection(future.getPartitionKey(), channel);
+        if (future.getPartitionKey() instanceof RoundRobinPartitionKey) {
+            attachSemaphoreToChannelClose(channel, partitionKeyLock);
+        } else {
+            releaseSemaphoreImmediately(partitionKeyLock);
+        }
     }
 
     public void onFailure(Channel channel, Throwable cause) {
