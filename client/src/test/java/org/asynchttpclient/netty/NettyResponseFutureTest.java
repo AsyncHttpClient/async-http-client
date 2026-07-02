@@ -17,12 +17,18 @@ package org.asynchttpclient.netty;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
+import static org.asynchttpclient.Dsl.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,5 +95,30 @@ public class NettyResponseFutureTest {
         nettyResponseFuture.abort(new RuntimeException());
         assertThrows(ExecutionException.class, () -> nettyResponseFuture.get(),
                 "An ExecutionException must have occurred by now as 'abort' was called before 'get'");
+    }
+
+    @Test
+    public void basePartitionKeyIsMemoizedAndInvalidatedOnTargetChange() {
+        AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
+        Request reqA = get("http://hosta.example/").build();
+        ChannelPoolPartitioning partitioning = reqA.getChannelPoolPartitioning();
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(reqA, asyncHandler, null, 3, partitioning, null, null);
+
+        Object k1 = future.basePartitionKey();
+        Object k2 = future.basePartitionKey();
+        // Memoized: repeat calls return the SAME instance (previously each call allocated a fresh key).
+        assertSame(k1, k2, "base partition key must be memoized (same instance on repeat calls)");
+        // ...and it equals a fresh computation for the same target, so behavior is unchanged.
+        assertEquals(partitioning.getPartitionKey(reqA.getUri(), reqA.getVirtualHost(), null), k1,
+                "memoized key must equal a fresh computation for the current target");
+
+        // Changing the target host must invalidate the memo and yield the new host's key — otherwise a
+        // redirect could reuse a pooled connection to the wrong host.
+        Request reqB = get("http://hostb.example/").build();
+        future.setTargetRequest(reqB);
+        Object k3 = future.basePartitionKey();
+        assertNotEquals(k1, k3, "changing the target host must invalidate the memo and yield a different key");
+        assertEquals(partitioning.getPartitionKey(reqB.getUri(), reqB.getVirtualHost(), null), k3,
+                "after setTargetRequest the key must match a fresh computation for the new target");
     }
 }

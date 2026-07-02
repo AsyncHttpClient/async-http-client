@@ -1205,15 +1205,18 @@ public final class NettyRequestSender {
         // connection would send the WS handshake as a plain HTTP/2 request and the WebSocket handler would
         // receive raw frames ("Invalid message ... AdaptiveByteBuf"). Fall through to an HTTP/1.1 connection.
         // See Issue #2160.
+        // Compute the base partition key once and reuse it for both the HTTP/2 registry poll and the
+        // HTTP/1.1 pool poll, instead of recomputing (and re-allocating) it inside each channelManager call.
+        Object partitionKey = request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy);
         if (!uri.isWebSocket()) {
-            Channel h2Channel = channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+            Channel h2Channel = channelManager.pollHttp2Connection(partitionKey);
             if (h2Channel != null) {
                 LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
                 return h2Channel;
             }
         }
 
-        final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+        final Channel channel = channelManager.poll(partitionKey);
 
         if (channel != null) {
             LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
