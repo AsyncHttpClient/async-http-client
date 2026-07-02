@@ -84,10 +84,15 @@ public class MultipartBodyTest {
         long transferred = 0;
         final ByteBuf buffer = Unpooled.buffer(bufferSize);
         try {
-            while (multipartBody.transferTo(buffer) != BodyState.STOP) {
+            // Count bytes written on EVERY call, including the terminal STOP: transferTo now reports STOP on
+            // the same call that writes the body's last bytes (mirroring the real consumers, which send the
+            // buffer's contents before honouring STOP).
+            BodyState state;
+            do {
+                state = multipartBody.transferTo(buffer);
                 transferred += buffer.readableBytes();
                 buffer.clear();
-            }
+            } while (state != BodyState.STOP);
             return transferred;
         } finally {
             buffer.release();
@@ -141,6 +146,25 @@ public class MultipartBodyTest {
             try (MultipartBody multipartBody = buildMultipart()) {
                 long transferred = transferZeroCopy(multipartBody, bufferLength);
                 assertEquals(multipartBody.getContentLength(), transferred);
+            }
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void finishingChunkReportsStopAndCarriesAllBytes() throws Exception {
+        try (MultipartBody multipartBody = buildMultipart()) {
+            // A buffer large enough for the whole body: the single transferTo that writes the last bytes must
+            // report STOP (previously it returned CONTINUE and forced an extra empty readChunk to reach STOP),
+            // and that STOP call must still carry every byte of the body.
+            int capacity = (int) MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 100;
+            ByteBuf buffer = Unpooled.buffer(capacity);
+            try {
+                BodyState state = multipartBody.transferTo(buffer);
+                assertEquals(BodyState.STOP, state, "the call that finishes the body must report STOP");
+                assertEquals(multipartBody.getContentLength(), buffer.readableBytes(),
+                        "the finishing STOP call must still carry all of the body's bytes");
+            } finally {
+                buffer.release();
             }
         }
     }
