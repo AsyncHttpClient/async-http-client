@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -491,5 +492,30 @@ public class AuthenticatorUtilsTest {
         String rspauth = AuthenticatorUtils.computeRspAuth(realm);
         assertNotNull(rspauth);
         assertEquals(32, rspauth.length()); // MD5 hex is 32 chars
+    }
+
+    // A server-controlled challenge value (nonce/realm/opaque) must be backslash-escaped when echoed
+    // into the quoted-string params of the outgoing Authorization header, so a bare " cannot close the
+    // value early and inject extra auth-params.
+    @Test
+    void digestChallengeValuesEscapedInAuthorizationHeader() {
+        Realm realm = new Realm.Builder("user", "pass")
+                .setScheme(Realm.AuthScheme.DIGEST)
+                .setUsePreemptiveAuth(true)
+                .setRealmName("testrealm")
+                .setNonce("abc\"x")
+                .setOpaque("op\\aque")
+                .setAlgorithm("MD5")
+                .build();
+        Request request = new RequestBuilder("GET")
+                .setUrl("http://example.com/secret")
+                .build();
+
+        String header = AuthenticatorUtils.perRequestAuthorizationHeader(request, realm);
+
+        assertNotNull(header);
+        assertTrue(header.contains("nonce=\"abc\\\"x\""), header);
+        assertTrue(header.contains("opaque=\"op\\\\aque\""), header);
+        assertFalse(header.contains("nonce=\"abc\"x\""), header);
     }
 }
