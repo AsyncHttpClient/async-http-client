@@ -306,8 +306,12 @@ public final class NettyRequestFactory {
             headers.set(HOST, virtualHost != null ? virtualHost : hostHeader(uri));
         }
 
-        // don't override authorization but append
-        addAuthorizationHeader(headers, perRequestAuthorizationHeader(request, realm));
+        // don't override authorization but append. Skip it on a CONNECT: that request is sent to the
+        // proxy in the clear to open the tunnel, so the origin Authorization would be exposed to the
+        // proxy. It is added to the tunneled request, which is built separately once the tunnel is up.
+        if (!connect) {
+            addAuthorizationHeader(headers, perRequestAuthorizationHeader(request, realm));
+        }
         // only set proxy auth on request over plain HTTP, or when performing CONNECT
         if (!uri.isSecured() || connect) {
             setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyRealm));
