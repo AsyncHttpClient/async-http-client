@@ -71,12 +71,13 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
         @Override
         public BodyState transferTo(ByteBuf target) {
-            // Read straight from the stream into the target buffer: no per-call staging byte[] and no extra
-            // copy (ByteBuf.writeBytes(InputStream, int) fills the buffer directly, like FileLikeMultipartPart).
-            // The "- 10" margin preserves the previous behaviour of never fully filling the writable region.
+            // Read straight from the stream into the target buffer instead of staging through a per-call byte[].
+            // For heap target buffers this drops both the staging array and the copy; for direct buffers Netty
+            // still stages through a temporary heap array internally (InputStream can only read into a byte[]),
+            // so there the win is smaller. Mirrors InputStreamMultipartPart, which writes the full writable region.
             int read;
             try {
-                read = target.writeBytes(inputStream, target.writableBytes() - 10);
+                read = target.writeBytes(inputStream, target.writableBytes());
             } catch (IOException ex) {
                 LOGGER.warn("Unable to read", ex);
                 return BodyState.STOP;
