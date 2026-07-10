@@ -214,6 +214,10 @@ public final class NettyRequestSender {
                 if (addresses.size() > 1) {
                     ordered = rrSelector.rotate(host, addresses);
                     InetAddress chosen = ordered.get(0).getAddress();
+                    // Derive the base key from the live request, not newFuture.basePartitionKey(): a filter
+                    // replay can reuse this future without updating its targetRequest (only redirects keep it
+                    // in sync), so the memoized base key may lag a host-rewriting replay and would mis-key the
+                    // override to the previous host.
                     Object baseKey = request.getChannelPoolPartitioning().getPartitionKey(uri, request.getVirtualHost(), proxyServer);
                     newFuture.setPartitionKeyOverride(new RoundRobinPartitionKey(baseKey, chosen));
                 } else {
@@ -1128,10 +1132,16 @@ public final class NettyRequestSender {
             return null;
         }
         String virtualHost = request.getVirtualHost();
-        // In round-robin mode, only multiplex onto the H2 connection for the IP this request is pinned to.
+        // In round-robin mode, only multiplex onto the H2 connection for the IP this request is pinned to;
+        // otherwise use the per-host base key. Derive it from the live request rather than
+        // future.basePartitionKey() so a filter replay that rewrites the host still polls the correct key
+        // (the future's targetRequest is only kept in sync on the redirect path). Computed once and reused
+        // across the poll loop below.
         Object override = future != null ? future.getPartitionKeyOverride() : null;
+        Object h2Key = override != null ? override
+                : request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy);
 
-        Channel h2Channel = pollHttp2(override, uri, virtualHost, proxy, request);
+        Channel h2Channel = channelManager.pollHttp2Connection(h2Key);
         if (h2Channel != null) {
             return h2Channel;
         }
@@ -1147,7 +1157,7 @@ public final class NettyRequestSender {
 
         long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
         while (System.nanoTime() < deadline) {
-            h2Channel = pollHttp2(override, uri, virtualHost, proxy, request);
+            h2Channel = channelManager.pollHttp2Connection(h2Key);
             if (h2Channel != null) {
                 return h2Channel;
             }
@@ -1159,14 +1169,6 @@ public final class NettyRequestSender {
             }
         }
         return null;
-    }
-
-    // Polls the HTTP/2 registry, using the IP-aware key in round-robin mode and the regular key otherwise.
-    private Channel pollHttp2(Object override, Uri uri, String virtualHost, ProxyServer proxy, Request request) {
-        if (override != null) {
-            return channelManager.pollHttp2Connection(override);
-        }
-        return channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
     }
 
     private boolean isOnEventLoop() {
@@ -1214,6 +1216,9 @@ public final class NettyRequestSender {
         // See Issue #2160.
         // Compute the base partition key once and reuse it for both the HTTP/2 registry poll and the
         // HTTP/1.1 pool poll, instead of recomputing (and re-allocating) it inside each channelManager call.
+        // Derive it from the live request rather than future.basePartitionKey(): on the filter-replay path
+        // (replayRequest) the future's targetRequest is not updated to the replayed request, so its memoized
+        // base key can lag a host-rewriting replay. Reading the current request's URI/virtualHost stays correct.
         Object partitionKey = request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy);
         if (!uri.isWebSocket()) {
             Channel h2Channel = channelManager.pollHttp2Connection(partitionKey);

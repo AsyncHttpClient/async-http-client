@@ -442,12 +442,24 @@ public class ChannelManager {
     /**
      * Polls for an HTTP/2 connection by URI/virtualHost/proxy, using the same partition key logic
      * as the regular pool. Returns the connection without removing it from the registry.
+     *
+     * @deprecated no longer used internally. Compute the partition key at the call site — from the request
+     * being dispatched, so it stays correct on the filter-replay path — and call
+     * {@link #pollHttp2Connection(Object)}. Kept for binary compatibility; slated for removal in the next
+     * major release.
      */
+    @Deprecated
     public Channel pollHttp2(Uri uri, String virtualHost, ProxyServer proxy, ChannelPoolPartitioning connectionPoolPartitioning) {
         Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
         return pollHttp2Connection(partitionKey);
     }
 
+    /**
+     * @deprecated no longer used internally. Compute the partition key at the call site — from the request
+     * being dispatched, so it stays correct on the filter-replay path — and call {@link #poll(Object)}.
+     * Kept for binary compatibility; slated for removal in the next major release.
+     */
+    @Deprecated
     public Channel poll(Uri uri, String virtualHost, ProxyServer proxy, ChannelPoolPartitioning connectionPoolPartitioning) {
         Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
         return channelPool.poll(partitionKey);
