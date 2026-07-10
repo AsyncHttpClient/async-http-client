@@ -491,11 +491,31 @@ public final class AuthenticatorUtils {
     private static void append(StringBuilder builder, String name, @Nullable String value, boolean quoted) {
         builder.append(name).append('=');
         if (quoted) {
-            builder.append('"').append(value).append('"');
+            builder.append('"');
+            appendQuotedStringContent(builder, value);
+            builder.append('"');
         } else {
             builder.append(value);
         }
         builder.append(", ");
+    }
+
+    // RFC 7616 params like realm/nonce/opaque are echoed back from the server challenge into the
+    // quoted-string values of the Authorization header. Backslash-escape " and \ (RFC 7230 quoted-string)
+    // so a server-supplied value carrying a bare quote cannot close the value early and inject extra
+    // auth-params into the credentials the client emits.
+    private static void appendQuotedStringContent(StringBuilder builder, @Nullable String value) {
+        if (value == null) {
+            builder.append((String) null);
+            return;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '"' || c == '\\') {
+                builder.append('\\');
+            }
+            builder.append(c);
+        }
     }
 
     public static @Nullable String perConnectionProxyAuthorizationHeader(Request request, @Nullable Realm proxyRealm) {
