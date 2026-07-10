@@ -24,9 +24,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
-import java.util.Arrays;
+import java.security.SecureRandom;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -282,6 +281,9 @@ public class Realm {
      * A builder for {@link Realm}
      */
     public static class Builder {
+
+        // cnonce must be unpredictable (RFC 7616 section 3.3), like the NTLM and SCRAM nonces
+        private static final ThreadLocal<SecureRandom> CNONCE_RANDOM = ThreadLocal.withInitial(SecureRandom::new);
 
         private final @Nullable String principal;
         private final @Nullable String password;
@@ -608,13 +610,10 @@ public class Realm {
             return null;
         }
 
-        private void newCnonce(MessageDigest md) {
+        private void newCnonce() {
             byte[] b = new byte[8];
-            ThreadLocalRandom.current().nextBytes(b);
-            byte[] full = md.digest(b);
-            // trim to first 8 bytes → 16 hex chars
-            byte[] small = Arrays.copyOf(full, Math.min(8, full.length));
-            cnonce = toHexString(small);
+            CNONCE_RANDOM.get().nextBytes(b);
+            cnonce = toHexString(b);
         }
 
         private static byte[] digestFromRecycledStringBuilder(StringBuilder sb, MessageDigest md, Charset enc) {
@@ -719,7 +718,7 @@ public class Realm {
                 // Defensive: if algorithm is null, default to MD5
                 String algo = (algorithm != null) ? algorithm : "MD5";
                 MessageDigest md = getDigestInstance(algo);
-                newCnonce(md);
+                newCnonce();
                 newResponse(md);
             }
 
