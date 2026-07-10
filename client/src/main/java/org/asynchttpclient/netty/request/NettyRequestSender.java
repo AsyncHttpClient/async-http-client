@@ -404,7 +404,8 @@ public final class NettyRequestSender {
 
     private <T> ListenableFuture<T> sendRequestWithNewChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler) {
         // some headers are only set when performing the first request
-        HttpHeaders headers = future.getNettyRequest().getHttpRequest().headers();
+        HttpRequest nettyRequest = future.getNettyRequest().getHttpRequest();
+        HttpHeaders headers = nettyRequest.headers();
         if (proxy != null && proxy.getCustomHeaders() != null) {
             HttpHeaders customHeaders = proxy.getCustomHeaders().apply(request);
             if (customHeaders != null) {
@@ -413,7 +414,13 @@ public final class NettyRequestSender {
         }
         Realm realm = future.getRealm();
         Realm proxyRealm = future.getProxyRealm();
-        requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
+        // On the tunnel path this is the CONNECT request, sent to the proxy in the clear before the TLS
+        // tunnel exists. Preemptive NTLM/Kerberos/SPNEGO realms attach their header here rather than in
+        // the factory, so skip it on CONNECT to keep the origin credentials off the plaintext hop. They
+        // travel on the tunneled request once the tunnel is up.
+        if (nettyRequest.method() != HttpMethod.CONNECT) {
+            requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
+        }
         requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
 
         future.setInAuth(realm != null && realm.isUsePreemptiveAuth()
