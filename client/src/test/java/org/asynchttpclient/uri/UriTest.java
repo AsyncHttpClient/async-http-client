@@ -296,6 +296,24 @@ public class UriTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void creatingUriWithBackslashInAuthorityThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> Uri.create("https://trusted.com\\@evil.com/"));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void creatingUriWithBackslashInSchemeRelativeAuthorityThrows() {
+        Uri context = Uri.create("https://trusted.com/app");
+        assertThrows(IllegalArgumentException.class, () -> Uri.create(context, "//trusted.com\\@evil.com/"));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void backslashInPathIsPreserved() {
+        Uri uri = Uri.create("https://trusted.com/a\\b");
+        assertEquals("trusted.com", uri.getHost());
+        assertEquals("/a\\b", uri.getPath());
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testGetAuthority() {
         Uri uri = Uri.create("http://stackoverflow.com/questions/17814461/jacoco-maven-testng-0-test-coverage");
         assertEquals("stackoverflow.com:80", uri.getAuthority(), "Incorrect authority returned from getAuthority");

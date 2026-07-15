@@ -334,6 +334,15 @@ final class UriParser {
             currentIndex += 2;
 
             String nonNullAuthority = computeAuthority();
+
+            // A backslash is not allowed in the authority (RFC 3986). Left as an ordinary character it
+            // slips past the '@' userinfo split below, so "https://trusted.com\@evil.com/" resolves the
+            // host to evil.com here while java.net.URI rejects it and a WHATWG parser reads trusted.com.
+            // Reject it so the host we connect to cannot disagree with a host the caller already checked.
+            if (nonNullAuthority.indexOf('\\') != -1) {
+                throw new IllegalArgumentException("Invalid authority field: " + nonNullAuthority);
+            }
+
             computeUserInfo(nonNullAuthority);
 
             if (host != null) {
