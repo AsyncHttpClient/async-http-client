@@ -40,6 +40,7 @@ import org.asynchttpclient.util.NonceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -64,11 +65,13 @@ public class Interceptors {
     private final boolean hasResponseFilters;
     private final ClientCookieDecoder cookieDecoder;
     private final NonceCounter nonceCounter;
+    private final NettyRequestSender requestSender;
 
     public Interceptors(AsyncHttpClientConfig config,
                         ChannelManager channelManager,
                         NettyRequestSender requestSender) {
         this.config = config;
+        this.requestSender = requestSender;
         nonceCounter = new NonceCounter();
         unauthorized401Interceptor = new Unauthorized401Interceptor(channelManager, requestSender, nonceCounter);
         proxyUnauthorized407Interceptor = new ProxyUnauthorized407Interceptor(channelManager, requestSender, nonceCounter);
@@ -140,11 +143,13 @@ public class Interceptors {
         }
 
         // Process SCRAM Authentication-Info (RFC 7804 §5)
-        if (realm != null && realm.getScheme() == Realm.AuthScheme.SCRAM_SHA_256) {
-            processScramAuthenticationInfo(future, responseHeaders, "Authentication-Info");
+        if (realm != null && realm.getScheme() == Realm.AuthScheme.SCRAM_SHA_256
+                && processScramAuthenticationInfo(channel, future, responseHeaders, "Authentication-Info")) {
+            return true;
         }
-        if (proxyRealm != null && proxyRealm.getScheme() == Realm.AuthScheme.SCRAM_SHA_256) {
-            processScramAuthenticationInfo(future, responseHeaders, "Proxy-Authentication-Info");
+        if (proxyRealm != null && proxyRealm.getScheme() == Realm.AuthScheme.SCRAM_SHA_256
+                && processScramAuthenticationInfo(channel, future, responseHeaders, "Proxy-Authentication-Info")) {
+            return true;
         }
 
         return false;
@@ -186,25 +191,30 @@ public class Interceptors {
         }
     }
 
-    private void processScramAuthenticationInfo(NettyResponseFuture<?> future, HttpHeaders responseHeaders,
-                                                String headerName) {
+    /**
+     * @return true if the exchange failed server verification and the request has been aborted, in which
+     * case the caller must stop delivering the response as a success.
+     */
+    private boolean processScramAuthenticationInfo(Channel channel, NettyResponseFuture<?> future, HttpHeaders responseHeaders,
+                                                   String headerName) {
         ScramContext ctx = future.getScramContext();
         if (ctx == null || ctx.getState() != ScramState.CLIENT_FINAL_SENT) {
-            return;
+            return false;
         }
 
         String authInfo = responseHeaders.get(headerName);
         if (authInfo == null) {
-            // RFC 7804 §6: may be in chunked trailers (not supported by AHC)
+            // RFC 7804 §6: may be in chunked trailers (not supported by AHC). We can't tell an honest
+            // server that used trailers from a stripped header, so leave the response untouched here.
             LOGGER.warn("SCRAM: response without {} header; "
                     + "ServerSignature cannot be verified (may be in chunked trailers)", headerName);
-            return;
+            return false;
         }
 
         String data = Realm.Builder.matchParam(authInfo, "data");
         if (data == null) {
             LOGGER.warn("SCRAM: Authentication-Info header missing data attribute");
-            return;
+            return false;
         }
 
         String serverFinalMsg;
@@ -213,15 +223,23 @@ public class Interceptors {
         } catch (IllegalArgumentException e) {
             LOGGER.warn("SCRAM: invalid base64 in {} data attribute: {}", headerName, e.getMessage());
             ctx.setState(ScramState.FAILED);
-            return;
+            return abortScram(channel, future, "SCRAM: unparseable ServerSignature in " + headerName);
         }
 
         // verifyServerFinal sets state to AUTHENTICATED or FAILED internally
         if (ctx.verifyServerFinal(serverFinalMsg)) {
             LOGGER.debug("SCRAM ServerSignature verified successfully");
-        } else {
-            LOGGER.warn("SCRAM ServerSignature verification failed — authentication unsuccessful "
-                    + "(RFC 7804 §5: MUST consider unsuccessful)");
+            return false;
         }
+        // RFC 7804 §5: a present-but-invalid ServerSignature means the peer failed to prove knowledge of
+        // the shared secret, so the client MUST consider the exchange unsuccessful rather than hand the
+        // caller a response from an unauthenticated peer.
+        return abortScram(channel, future, "SCRAM ServerSignature verification failed");
+    }
+
+    private boolean abortScram(Channel channel, NettyResponseFuture<?> future, String message) {
+        LOGGER.warn("{} — aborting request (RFC 7804 §5: MUST consider unsuccessful)", message);
+        requestSender.abort(channel, future, new IOException(message));
+        return true;
     }
 }
