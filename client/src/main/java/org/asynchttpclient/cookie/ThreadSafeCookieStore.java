@@ -181,6 +181,17 @@ public final class ThreadSafeCookieStore implements CookieStore {
         String keyDomain = pair.getKey();
         boolean hostOnly = pair.getValue();
 
+        // rfc6265#section-5.3 step 5: a Domain attribute that is a public suffix must not scope a
+        // cookie to that suffix, otherwise any host under it can plant cookies for every sibling.
+        // Approximated without a public suffix list by treating a single-label domain (a TLD such
+        // as "com") as one: accepted only when it is the request host itself, and then as host-only.
+        if (!hostOnly && DomainUtils.getSubDomain(keyDomain) == null) {
+            if (!keyDomain.equals(requestDomain)) {
+                return;
+            }
+            hostOnly = true;
+        }
+
         // rfc6265#section-5.3 step 6: ignore a cookie whose Domain attribute is not
         // domain-matched by the request host, otherwise a host can plant cookies for
         // unrelated domains (cookie tossing).

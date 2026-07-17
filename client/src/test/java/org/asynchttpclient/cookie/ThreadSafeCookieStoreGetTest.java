@@ -113,6 +113,28 @@ public class ThreadSafeCookieStoreGetTest {
     }
 
     @Test
+    public void ignoresCookieScopedToATld() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        // evil.com scopes a cookie to the whole "com" TLD.
+        store.add(Uri.create("http://evil.com/"),
+                ClientCookieDecoder.LAX.decode("SESSIONID=attacker; Domain=com; Path=/"));
+
+        assertTrue(store.get(Uri.create("http://bank.com/")).isEmpty(), "a TLD cookie must not reach a sibling host");
+        assertTrue(store.get(Uri.create("http://evil.com/")).isEmpty(), "a TLD cookie must not be stored at all");
+    }
+
+    @Test
+    public void keepsSingleLabelDomainCookieAsHostOnly() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        // Domain equal to the request host stays usable, but only for that exact host.
+        store.add(Uri.create("http://localhost/"),
+                ClientCookieDecoder.LAX.decode("ALPHA=VALUE1; Domain=localhost; Path=/"));
+
+        assertEquals(setOf("ALPHA=VALUE1"), namesValues(store.get(Uri.create("http://localhost/"))));
+        assertTrue(store.get(Uri.create("http://sub.localhost/")).isEmpty(), "host-only cookie must not reach a sub-domain");
+    }
+
+    @Test
     public void returnsEmptyForUnknownDomain() {
         ThreadSafeCookieStore store = new ThreadSafeCookieStore();
         store.add(Uri.create("http://www.foo.com/"),
