@@ -242,6 +242,103 @@ public class DefaultChannelPoolTest {
         pool.destroy();
     }
 
+    // ---- reap pass unlinks many channels in a single tick (O(n) iterator-remove) ----
+
+    @Test
+    public void cleanerReapsManyIdleExpiredChannelsInOneTick() throws Exception {
+        // Exercises the reap pass unlinking MANY channels in a single tick — the O(n) iterator-remove
+        // path that replaced the old collect-then-ConcurrentLinkedDeque.removeAll (which was O(n*m)).
+        // All channels expire together, as they would when a load spike's connections idle out as a wave.
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(1));
+
+        final int count = 50;
+        Channel[] channels = new Channel[count];
+        for (int i = 0; i < count; i++) {
+            channels[i] = new EmbeddedChannel();
+            pool.offer(channels[i], KEY);
+        }
+        assertEquals(count, partitionSize(pool, KEY));
+        Thread.sleep(40); // now - start >= 1ms for every channel
+
+        timer.fire();
+
+        assertEquals(0, partitionSize(pool, KEY), "every idle-expired channel must be unlinked in one tick");
+        for (Channel c : channels) {
+            assertFalse(c.isActive(), "each idle-expired channel must be closed");
+        }
+        assertNull(pool.poll(KEY));
+
+        pool.destroy();
+    }
+
+    @Test
+    public void cleanerReapsExpiredButKeepsHealthyInSameTick() throws Exception {
+        // A single reap pass must drop the expired channels AND keep the fresh ones leasable: the
+        // iterator has to remove some nodes while continuing past the ones it keeps.
+        final long maxIdle = 200;
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(maxIdle));
+
+        final int expiredCount = 6;
+        Channel[] expired = new Channel[expiredCount];
+        for (int i = 0; i < expiredCount; i++) {
+            expired[i] = new EmbeddedChannel();
+            pool.offer(expired[i], KEY);
+        }
+        Thread.sleep(maxIdle + 150); // these are now well past maxIdleTime
+
+        final int healthyCount = 6;
+        Channel[] healthy = new Channel[healthyCount];
+        for (int i = 0; i < healthyCount; i++) {
+            healthy[i] = new EmbeddedChannel();
+            pool.offer(healthy[i], KEY); // fresh start, comfortably inside maxIdleTime
+        }
+        assertEquals(expiredCount + healthyCount, partitionSize(pool, KEY));
+
+        timer.fire();
+
+        assertEquals(healthyCount, partitionSize(pool, KEY), "only the fresh channels must survive the tick");
+        for (Channel c : expired) {
+            assertFalse(c.isActive(), "expired channels must be closed");
+        }
+        for (Channel c : healthy) {
+            assertTrue(c.isActive(), "fresh channels must not be touched");
+        }
+        int leased = 0;
+        while (pool.poll(KEY) != null) {
+            leased++;
+        }
+        assertEquals(healthyCount, leased, "every surviving channel must remain leasable");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void cleanerUnlinksManyTombstonesInOneTick() throws Exception {
+        // Many tombstones (from removeAll(Channel)) must all be unlinked in a single pass, none closed.
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = ttlPool(timer);
+
+        final int count = 40;
+        Channel[] channels = new Channel[count];
+        for (int i = 0; i < count; i++) {
+            channels[i] = new EmbeddedChannel();
+            pool.offer(channels[i], KEY);
+            assertTrue(pool.removeAll(channels[i]));
+        }
+        assertEquals(count, partitionSize(pool, KEY), "tombstones linger until the cleaner ticks");
+
+        timer.fire();
+
+        assertEquals(0, partitionSize(pool, KEY), "every tombstone must be unlinked in one tick");
+        for (Channel c : channels) {
+            assertTrue(c.isActive(), "cleaner must not close tombstoned channels");
+        }
+
+        pool.destroy();
+    }
+
     // ---- concurrency: no leaked tombstones, never leases a claimed channel ----
 
     @Test
