@@ -108,7 +108,12 @@ public class MultipartBody implements RandomAccessBody {
             }
         }
 
-        return BodyState.CONTINUE;
+        // Signal STOP on the same call that finishes the last part (done just became true), so consumers
+        // don't need an extra empty readChunk/nextChunk cycle to discover the end. Both ByteBuf consumers
+        // send any bytes written this call before honouring STOP — BodyChunkedInput returns the buffer and
+        // sets endOfInput; the HTTP/2 pump (BodyChunkSource) returns a readable buffer before checking the
+        // state — so the terminal chunk is never dropped.
+        return done ? BodyState.STOP : BodyState.CONTINUE;
     }
 
     // RandomAccessBody API, suited for HTTP but not for HTTPS (zero-copy)
