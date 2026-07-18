@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Locale;
 
 import static org.asynchttpclient.util.Assertions.assertNotEmpty;
 import static org.asynchttpclient.util.MiscUtils.isEmpty;
@@ -43,15 +44,18 @@ public class Uri {
     private final boolean webSocket;
 
     public Uri(String scheme, @Nullable String userInfo, String host, int port, String path, @Nullable String query, @Nullable String fragment) {
-        this.scheme = assertNotEmpty(scheme, "scheme");
+        // rfc3986#section-3.1: schemes are case-insensitive, and validateSupportedScheme accepts any
+        // case. UriParser lowercases the schemes it parses; normalizing here keeps the constructor and
+        // withNewScheme consistent with it, so secured can't come out false for an "HTTPS" Uri.
+        this.scheme = assertNotEmpty(scheme, "scheme").toLowerCase(Locale.ROOT);
         this.userInfo = userInfo;
         this.host = assertNotEmpty(host, "host");
         this.port = port;
         this.path = path;
         this.query = query;
         this.fragment = fragment;
-        secured = HTTPS.equals(scheme) || WSS.equals(scheme);
-        webSocket = WS.equals(scheme) || WSS.equalsIgnoreCase(scheme);
+        secured = HTTPS.equals(this.scheme) || WSS.equals(this.scheme);
+        webSocket = WS.equals(this.scheme) || WSS.equals(this.scheme);
     }
 
     public static Uri create(String originalUrl) {

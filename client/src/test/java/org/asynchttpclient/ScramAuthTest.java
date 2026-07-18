@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +44,8 @@ import static org.asynchttpclient.test.TestUtils.USER;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ScramAuthTest extends AbstractBasicTest {
 
@@ -146,6 +149,27 @@ public class ScramAuthTest extends AbstractBasicTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testScramSha256_invalidServerSignatureIsRejected() throws Exception {
+        // Server completes the handshake but returns a ServerSignature it could not have computed without
+        // the shared secret. RFC 7804 §5 requires the client to consider the exchange unsuccessful.
+        server.stop();
+        server = new Server();
+        ServerConnector connector = addHttpConnector(server);
+        server.setHandler(new ScramAuthHandler(true, true));
+        server.start();
+        port1 = connector.getLocalPort();
+
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
+                    .setRealm(scramSha256AuthRealm(USER, ADMIN).setRealmName("ScramRealm").build())
+                    .execute();
+            ExecutionException ex = assertThrows(ExecutionException.class, () -> f.get(20, TimeUnit.SECONDS));
+            assertNotNull(ex.getCause());
+            assertTrue(ex.getCause().getMessage().contains("ServerSignature"), ex.getCause().getMessage());
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testScramSha256_quotedDataAttribute() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -196,16 +220,22 @@ public class ScramAuthTest extends AbstractBasicTest {
         private static final int ITERATIONS = 4096;
 
         private final boolean sendAuthInfo;
+        private final boolean corruptServerSignature;
 
         // Session tracking: sid → ServerSession
         private final ConcurrentHashMap<String, ServerSession> sessions = new ConcurrentHashMap<>();
 
         ScramAuthHandler() {
-            this(true);
+            this(true, false);
         }
 
         ScramAuthHandler(boolean sendAuthInfo) {
+            this(sendAuthInfo, false);
+        }
+
+        ScramAuthHandler(boolean sendAuthInfo, boolean corruptServerSignature) {
             this.sendAuthInfo = sendAuthInfo;
+            this.corruptServerSignature = corruptServerSignature;
         }
 
         static class ServerSession {
@@ -361,6 +391,9 @@ public class ScramAuthTest extends AbstractBasicTest {
 
                 // Compute ServerSignature for Authentication-Info
                 byte[] serverSignature = ScramEngine.computeServerSignature(serverKey, authMessage);
+                if (corruptServerSignature) {
+                    serverSignature[0] ^= 0xFF; // simulate a peer that can't prove knowledge of the secret
+                }
                 String serverFinal = "v=" + Base64.getEncoder().encodeToString(serverSignature);
                 String base64ServerFinal = Base64.getEncoder().encodeToString(serverFinal.getBytes(StandardCharsets.UTF_8));
 
