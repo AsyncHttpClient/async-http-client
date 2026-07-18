@@ -23,6 +23,8 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -132,5 +134,95 @@ public class ChannelManagerHttp2WaiterTest {
         } finally {
             timer.stop();
         }
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void throwingWaiterDoesNotStarveOthersOnRegistration() {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        Channel channel = new EmbeddedChannel();
+        try {
+            AtomicBoolean survivorWoken = new AtomicBoolean();
+            cm.addHttp2ConnectionWaiter(KEY, c -> {
+                throw new RuntimeException("waiter blew up");
+            });
+            cm.addHttp2ConnectionWaiter(KEY, c -> survivorWoken.set(true));
+
+            // Must not propagate the throwing waiter's exception: registerHttp2Connection runs on the
+            // establishing connection's onSuccess path, which still has to release its permit and write.
+            cm.registerHttp2Connection(KEY, channel);
+
+            assertTrue(survivorWoken.get(), "a throwing waiter must not starve the other waiters for the key");
+        } finally {
+            channel.close();
+            cm.close();
+            timer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void throwingWaiterDoesNotStarveOthersOnClose() {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        try {
+            AtomicBoolean survivorFailed = new AtomicBoolean();
+            cm.addHttp2ConnectionWaiter(KEY, c -> {
+                throw new RuntimeException("waiter blew up");
+            });
+            cm.addHttp2ConnectionWaiter(KEY, c -> survivorFailed.set(true));
+
+            cm.close(); // must isolate the throwing waiter and still fail the rest
+
+            assertTrue(survivorFailed.get(), "a throwing waiter must not starve the other waiters on close");
+        } finally {
+            timer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void waiterAddedAfterCloseFailsClosed() {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        try {
+            cm.close(); // sweeps pending waiters and latches the closed state
+
+            AtomicBoolean woken = new AtomicBoolean();
+            boolean registered = cm.addHttp2ConnectionWaiter(KEY, c -> woken.set(true));
+
+            assertFalse(registered, "adding a waiter after close must fail-closed so the caller fails its request "
+                    + "instead of arming a timeout that never fires");
+            assertFalse(woken.get(), "a fail-closed add must not itself invoke the waiter");
+        } finally {
+            timer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void removingLastWaiterPrunesEmptyEntry() throws Exception {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        try {
+            Consumer<Channel> waiter = c -> {
+            };
+            cm.addHttp2ConnectionWaiter(KEY, waiter);
+            cm.removeHttp2ConnectionWaiter(KEY, waiter);
+
+            assertTrue(waiterMap(cm).isEmpty(),
+                    "removing the last waiter for a key must prune the empty set, not retain it for the client's lifetime");
+        } finally {
+            cm.close();
+            timer.stop();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<Object, ?> waiterMap(ChannelManager cm) throws Exception {
+        Field field = ChannelManager.class.getDeclaredField("http2ConnectionWaiters");
+        field.setAccessible(true);
+        return (Map<Object, ?>) field.get(cm);
     }
 }
