@@ -89,6 +89,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -132,8 +133,11 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
-        ipCooldown = config.isFailedIpCooldownEnabled()
-                ? new FailedIpCooldownHolder(config.getFailedIpCooldownPeriod().toNanos(), System::nanoTime)
+        // Guard the period against a custom AsyncHttpClientConfig that enables the cooldown but returns a
+        // null period: leave the cooldown off rather than NPE while constructing the client.
+        Duration cooldownPeriod = config.getFailedIpCooldownPeriod();
+        ipCooldown = config.isFailedIpCooldownEnabled() && cooldownPeriod != null
+                ? new FailedIpCooldownHolder(cooldownPeriod.toNanos(), System::nanoTime)
                 : null;
     }
 
