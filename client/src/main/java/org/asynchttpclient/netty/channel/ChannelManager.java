@@ -51,6 +51,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -629,6 +630,10 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
+        return updatePipelineForHttpTunneling(pipeline, requestUri, null);
+    }
+
+    public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri, Object partitionKey) {
         Future<Channel> whenHandshaked = null;
 
         if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
@@ -646,6 +651,7 @@ public class ChannelManager {
             whenHandshaked = sslHandler.handshakeFuture();
             pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
             pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
+            upgradePipelineToHttp2AfterHandshake(whenHandshaked, sslHandler, pipeline, requestUri, partitionKey);
 
         } else {
             // For HTTP targets, remove any existing SSL handler (from HTTPS proxy) since target is not secured
@@ -668,6 +674,11 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer) {
+        return updatePipelineForHttpsTunneling(pipeline, requestUri, proxyServer, null);
+    }
+
+    public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer,
+                                                           Object partitionKey) {
         Future<Channel> whenHandshaked = null;
 
         // Remove HTTP codec as tunnel is established
@@ -694,6 +705,7 @@ public class ChannelManager {
             }
             
             pipeline.addAfter("target-ssl", HTTP_CLIENT_CODEC, newHttpClientCodec());
+            upgradePipelineToHttp2AfterHandshake(whenHandshaked, sslHandler, pipeline, requestUri, partitionKey);
 
         } else {
             // For HTTPS proxy to HTTP target, just add HTTP codec
@@ -712,6 +724,25 @@ public class ChannelManager {
         }
         
         return whenHandshaked;
+    }
+
+    private void upgradePipelineToHttp2AfterHandshake(Future<Channel> whenHandshaked,
+                                                       SslHandler sslHandler,
+                                                       ChannelPipeline pipeline,
+                                                       Uri requestUri,
+                                                       Object partitionKey) {
+        if (!config.isHttp2Enabled() || requestUri.isWebSocket()) {
+            return;
+        }
+
+        whenHandshaked.addListener(f -> {
+            if (f.isSuccess() && ApplicationProtocolNames.HTTP_2.equals(sslHandler.applicationProtocol())) {
+                upgradePipelineToHttp2(pipeline);
+                if (partitionKey != null) {
+                    registerHttp2Connection(partitionKey, pipeline.channel());
+                }
+            }
+        });
     }
 
     public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {

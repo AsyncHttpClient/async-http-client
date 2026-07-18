@@ -49,6 +49,9 @@ import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.test.EventCollectingHandler;
+import org.eclipse.jetty.proxy.ConnectHandler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,7 +83,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import static org.junit.jupiter.api.Assertions.*;
@@ -428,6 +433,27 @@ public class BasicHttp2Test {
                 .setHttp2Enabled(true);
         customizer.accept(builder);
         return asyncHttpClient(builder);
+    }
+
+    @Test
+    public void httpsRequestThroughHttpProxyNegotiatesHttp2AfterConnect() throws Exception {
+        Server proxy = new Server();
+        ServerConnector proxyConnector = addHttpConnector(proxy);
+        proxy.setHandler(new ConnectHandler());
+        proxy.start();
+
+        try (AsyncHttpClient client = http2Client()) {
+            Response response = client.prepareGet(httpsUrl("/hello"))
+                    .setProxyServer(proxyServer("127.0.0.1", proxyConnector.getLocalPort()).build())
+                    .execute()
+                    .get(30, SECONDS);
+
+            assertNotNull(response);
+            assertEquals(200, response.getStatusCode());
+            assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
+        } finally {
+            proxy.stop();
+        }
     }
 
     /**

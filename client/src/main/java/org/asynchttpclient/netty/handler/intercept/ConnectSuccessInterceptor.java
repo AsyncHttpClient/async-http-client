@@ -55,14 +55,16 @@ public class ConnectSuccessInterceptor {
         LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
         
         final Future<Channel> whenHandshaked;
+        Object partitionKey = future.getPartitionKey();
         
         // Special handling for HTTPS proxy tunneling
         if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {
             // For HTTPS proxy, we need special tunnel pipeline management
-            whenHandshaked = channelManager.updatePipelineForHttpsTunneling(channel.pipeline(), requestUri, proxyServer);
+            whenHandshaked = channelManager.updatePipelineForHttpsTunneling(channel.pipeline(), requestUri, proxyServer,
+                    partitionKey);
         } else {
             // Standard HTTP proxy or SOCKS proxy tunneling
-            whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri);
+            whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri, partitionKey);
         }
         
         future.setReuseChannel(true);
