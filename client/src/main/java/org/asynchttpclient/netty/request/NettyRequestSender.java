@@ -1231,7 +1231,14 @@ public final class NettyRequestSender {
         }
 
         void arm() {
-            channelManager.addHttp2ConnectionWaiter(waitKey, this);
+            if (!channelManager.addHttp2ConnectionWaiter(waitKey, this)) {
+                // The client is closing (the waiter sweep already ran): no connection will register and the
+                // nettyTimer that would fire our deadline is being stopped, so arming would hang the request.
+                // Fail now with the original permit exception instead — and before touching nettyTimer, whose
+                // newTimeout throws once stopped.
+                accept(null);
+                return;
+            }
             // Assign the deadline before the recheck so it exists (and is cancellable) if a wake races in.
             deadline = nettyTimer.newTimeout(t -> fireTimeout(),
                     config.getConnectTimeout().toMillis(), TimeUnit.MILLISECONDS);

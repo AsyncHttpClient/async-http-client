@@ -155,6 +155,11 @@ public class ChannelManager {
     // rather than hang (its request-timeout is not scheduled yet at this point). See NettyRequestSender's
     // HTTP/2 deferral.
     private final ConcurrentHashMap<Object, Set<Consumer<Channel>>> http2ConnectionWaiters = new ConcurrentHashMap<>();
+    // Set once, permanently, when the client closes and sweeps its waiters (failHttp2ConnectionWaiters). Read
+    // by addHttp2ConnectionWaiter to fail-closed against a request that arms a waiter in the window between the
+    // sweep and nettyTimer.stop() — such a waiter would otherwise be neither woken nor timed out, hanging its
+    // request forever. See addHttp2ConnectionWaiter and NettyRequestSender's Http2ConnectionWaiter.arm().
+    private volatile boolean waitersClosed;
 
     private AsyncHttpClientHandler wsHandler;
     private Http2Handler http2Handler;
@@ -504,35 +509,70 @@ public class ChannelManager {
      * (issue #2214) — the per-IP registration key on its own would never wake it. The waiter must be
      * idempotent — it may be invoked by a registration, by the client-close sweep, or removed and invoked by
      * its own timeout concurrently.
+     *
+     * @return {@code true} if the waiter was registered; {@code false} if the client is already closing, in
+     *         which case it is NOT registered and the caller must fail its request immediately rather than
+     *         arm a timeout (no connection will register and the timer that would fire the deadline is being
+     *         stopped). This closes the window where a request arms a waiter between the
+     *         {@link #failHttp2ConnectionWaiters()} sweep and {@code nettyTimer.stop()} and then hangs forever.
      */
-    public void addHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
+    public boolean addHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
         http2ConnectionWaiters.computeIfAbsent(baseKeyOf(partitionKey), k -> ConcurrentHashMap.newKeySet()).add(onConnection);
+        // Recheck after adding: failHttp2ConnectionWaiters sets waitersClosed BEFORE sweeping, so a waiter that
+        // is not caught by the sweep (added into a bucket the sweep already passed, or a bucket it recreated)
+        // observes the flag here and unregisters itself. Every waiter is therefore either swept or fails-closed.
+        if (waitersClosed) {
+            removeHttp2ConnectionWaiter(partitionKey, onConnection);
+            return false;
+        }
+        return true;
     }
 
     public void removeHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
-        Set<Consumer<Channel>> waiters = http2ConnectionWaiters.get(baseKeyOf(partitionKey));
-        if (waiters != null) {
+        // Prune an emptied set under the bucket lock so an origin whose deferred requests only ever time out
+        // (a saturated or unreachable host that never registers an H2 connection) does not retain one empty
+        // Set per host for the client's lifetime. computeIfPresent serializes with a concurrent
+        // addHttp2ConnectionWaiter on the same key; a racing add that recreates the set is re-covered by the
+        // waiter's own re-poll in arm(), so no wakeup is lost.
+        http2ConnectionWaiters.computeIfPresent(baseKeyOf(partitionKey), (k, waiters) -> {
             waiters.remove(onConnection);
-        }
+            return waiters.isEmpty() ? null : waiters;
+        });
     }
 
     private void wakeHttp2ConnectionWaiters(Object partitionKey, Channel channel) {
         Set<Consumer<Channel>> waiters = http2ConnectionWaiters.remove(baseKeyOf(partitionKey));
         if (waiters != null) {
             for (Consumer<Channel> waiter : waiters) {
-                waiter.accept(channel);
+                notifyHttp2ConnectionWaiter(waiter, channel);
             }
         }
     }
 
     private void failHttp2ConnectionWaiters() {
+        // Mark closed before the sweep so a waiter arming concurrently is either swept below or fails-closed in
+        // addHttp2ConnectionWaiter — it can never remain armed-but-never-notified.
+        waitersClosed = true;
         for (Object key : http2ConnectionWaiters.keySet()) {
             Set<Consumer<Channel>> waiters = http2ConnectionWaiters.remove(key);
             if (waiters != null) {
                 for (Consumer<Channel> waiter : waiters) {
-                    waiter.accept(null);
+                    notifyHttp2ConnectionWaiter(waiter, null);
                 }
             }
+        }
+    }
+
+    // Invoking a waiter drives a full request send (writeRequest). Isolate failures: one waiter throwing must
+    // not starve the remaining waiters, and — since wakeHttp2ConnectionWaiters runs inside
+    // registerHttp2Connection, on the establishing connection's onSuccess path — must not propagate out and
+    // abort that request's own semaphore release and writeRequest (which would silently leak a connection
+    // permit and hang the establishing request).
+    private static void notifyHttp2ConnectionWaiter(Consumer<Channel> waiter, Channel channel) {
+        try {
+            waiter.accept(channel);
+        } catch (Throwable t) {
+            LOGGER.warn("HTTP/2 connection waiter failed", t);
         }
     }
 
