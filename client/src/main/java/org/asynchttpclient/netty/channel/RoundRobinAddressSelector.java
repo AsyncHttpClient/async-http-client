@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.channel;
 import java.net.InetSocketAddress;
 import java.util.AbstractList;
 import java.util.List;
+import java.util.RandomAccess;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -89,7 +90,8 @@ public final class RoundRobinAddressSelector {
         return new RotatedView(resolved, index);
     }
 
-    private static final class RotatedView extends AbstractList<InetSocketAddress> {
+    // RandomAccess: get(i) is O(1), like the ArrayList this view replaces.
+    private static final class RotatedView extends AbstractList<InetSocketAddress> implements RandomAccess {
 
         private final List<InetSocketAddress> resolved;
         private final int index;
