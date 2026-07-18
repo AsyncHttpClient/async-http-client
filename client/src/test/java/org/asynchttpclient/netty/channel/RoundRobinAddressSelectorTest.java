@@ -105,6 +105,16 @@ class RoundRobinAddressSelectorTest {
     }
 
     @Test
+    void rotatedViewRejectsOutOfBoundsAccess() {
+        RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
+        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"), addr("127.0.0.3"));
+        selector.rotate("h", input);                          // index 0, returns input as-is
+        List<InetSocketAddress> rotated = selector.rotate("h", input); // index 1, a real rotation
+        assertThrows(IndexOutOfBoundsException.class, () -> rotated.get(input.size()));
+        assertThrows(IndexOutOfBoundsException.class, () -> rotated.get(-1));
+    }
+
+    @Test
     void singleAddressReturnedUnchanged() {
         RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
         List<InetSocketAddress> input = Collections.singletonList(addr("127.0.0.1"));
