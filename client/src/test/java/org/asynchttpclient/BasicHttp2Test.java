@@ -48,6 +48,8 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
@@ -86,6 +88,7 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import static org.junit.jupiter.api.Assertions.*;
@@ -436,21 +439,44 @@ public class BasicHttp2Test {
     }
 
     @Test
-    public void httpsRequestThroughHttpProxyNegotiatesHttp2AfterConnect() throws Exception {
+    public void httpsRequestsThroughHttpProxyNegotiateAndReuseHttp2AfterConnect() throws Exception {
+        assertHttpsRequestsThroughProxyNegotiateAndReuseHttp2AfterConnect(false);
+    }
+
+    @Test
+    public void httpsRequestsThroughHttpsProxyNegotiateAndReuseHttp2AfterConnect() throws Exception {
+        assertHttpsRequestsThroughProxyNegotiateAndReuseHttp2AfterConnect(true);
+    }
+
+    private void assertHttpsRequestsThroughProxyNegotiateAndReuseHttp2AfterConnect(boolean secureProxy) throws Exception {
         Server proxy = new Server();
-        ServerConnector proxyConnector = addHttpConnector(proxy);
+        ServerConnector proxyConnector = secureProxy ? addHttpsConnector(proxy) : addHttpConnector(proxy);
         proxy.setHandler(new ConnectHandler());
         proxy.start();
 
         try (AsyncHttpClient client = http2Client()) {
-            Response response = client.prepareGet(httpsUrl("/hello"))
-                    .setProxyServer(proxyServer("127.0.0.1", proxyConnector.getLocalPort()).build())
+            ProxyServer.Builder proxyBuilder = proxyServer("127.0.0.1", proxyConnector.getLocalPort());
+            if (secureProxy) {
+                proxyBuilder.setProxyType(ProxyType.HTTPS);
+            }
+            ProxyServer proxyServer = proxyBuilder.build();
+            Response firstResponse = client.prepareGet(httpsUrl("/hello"))
+                    .setProxyServer(proxyServer)
+                    .execute()
+                    .get(30, SECONDS);
+            Response secondResponse = client.prepareGet(httpsUrl("/hello"))
+                    .setProxyServer(proxyServer)
                     .execute()
                     .get(30, SECONDS);
 
-            assertNotNull(response);
-            assertEquals(200, response.getStatusCode());
-            assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
+            assertNotNull(firstResponse);
+            assertEquals(200, firstResponse.getStatusCode());
+            assertEquals(HttpProtocol.HTTP_2, firstResponse.getProtocol());
+            assertNotNull(secondResponse);
+            assertEquals(200, secondResponse.getStatusCode());
+            assertEquals(HttpProtocol.HTTP_2, secondResponse.getProtocol());
+            assertEquals(1, serverChildChannels.size(),
+                    "the HTTP/2 tunnel connection should be registered and reused");
         } finally {
             proxy.stop();
         }
