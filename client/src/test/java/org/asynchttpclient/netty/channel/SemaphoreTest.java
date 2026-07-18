@@ -19,6 +19,7 @@ import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -170,5 +171,96 @@ public class SemaphoreTest {
             tooManyCaught = true;
         }
         assertFalse(tooManyCaught);
+    }
+
+    // ---- non-blocking acquire (event-loop path): must fail fast, never wait for acquireTimeout ----
+
+    // Deliberately large: a blocking acquire on an exhausted semaphore would blow the 1s @Timeout below,
+    // so these tests fail loudly if the non-blocking path ever waits.
+    static final int NON_BLOCKING__LONG_TIMEOUT = 5000;
+
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    public void maxConnectionNonBlockingFailsFastWhenExhausted() throws IOException {
+        nonBlockingFailsFast(new MaxConnectionSemaphore(1, NON_BLOCKING__LONG_TIMEOUT));
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    public void perHostNonBlockingFailsFastWhenExhausted() throws IOException {
+        nonBlockingFailsFast(new PerHostConnectionSemaphore(1, NON_BLOCKING__LONG_TIMEOUT));
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    public void combinedNonBlockingFailsFastWhenExhausted() throws IOException {
+        nonBlockingFailsFast(new CombinedConnectionSemaphore(1, 1, NON_BLOCKING__LONG_TIMEOUT));
+    }
+
+    private void nonBlockingFailsFast(ConnectionSemaphore semaphore) throws IOException {
+        semaphore.acquireChannelLock(PK); // consume the only permit
+        boolean tooManyCaught = false;
+        long start = System.currentTimeMillis();
+        try {
+            semaphore.acquireChannelLock(PK, true);
+        } catch (TooManyConnectionsException | TooManyConnectionsPerHostException e) {
+            tooManyCaught = true;
+        }
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue(tooManyCaught, "non-blocking acquire must fail fast when no permit is free");
+        assertTrue(elapsed < 500, "non-blocking acquire must not wait for the acquire timeout, waited " + elapsed + " ms");
+
+        // A freed permit is immediately acquirable via the non-blocking path.
+        semaphore.releaseChannelLock(PK);
+        semaphore.acquireChannelLock(PK, true); // must not throw
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    public void combinedNonBlockingReleasesGlobalPermitWhenPerHostExhausted() throws IOException {
+        // global(2) > per-host(1): the non-blocking acquire takes a global permit, then fails on the
+        // per-host limit. It must release the global permit it just took (releaseGlobal); otherwise a
+        // request to a DIFFERENT host would be wrongly starved of the still-held global permit. With
+        // global == per-host (as in the fail-fast tests above) the acquire fails on the global limit first
+        // and this release branch is never exercised, so use a wider global limit to reach it.
+        CombinedConnectionSemaphore semaphore = new CombinedConnectionSemaphore(2, 1, NON_BLOCKING__LONG_TIMEOUT);
+        Object hostA = new Object();
+        Object hostB = new Object();
+
+        semaphore.acquireChannelLock(hostA); // global -> 1 free, per-host(A) -> 0
+
+        // The non-blocking acquire for hostA must be rejected by the PER-HOST limit (a global permit was
+        // still free), confirming it got past the global gate and into the releaseGlobal branch.
+        boolean perHostRejected = false;
+        try {
+            semaphore.acquireChannelLock(hostA, true);
+        } catch (TooManyConnectionsPerHostException e) {
+            perHostRejected = true;
+        }
+        assertTrue(perHostRejected, "second hostA acquire must be rejected by the per-host limit, not the global one");
+
+        // If the global permit taken during that failed attempt had leaked, 0 global permits would remain
+        // and this different-host acquire would wrongly throw. It must succeed, proving releaseGlobal ran.
+        semaphore.acquireChannelLock(hostB, true); // must not throw
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    public void defaultNonBlockingOverloadDelegatesToBlockingAcquire() throws IOException {
+        // A custom ConnectionSemaphore that implements only the required methods inherits the default
+        // two-arg overload, which must delegate to the blocking acquireChannelLock(Object).
+        boolean[] called = {false};
+        ConnectionSemaphore custom = new ConnectionSemaphore() {
+            @Override
+            public void acquireChannelLock(Object partitionKey) {
+                called[0] = true;
+            }
+
+            @Override
+            public void releaseChannelLock(Object partitionKey) {
+            }
+        };
+        custom.acquireChannelLock(PK, true);
+        assertTrue(called[0], "default overload must delegate to acquireChannelLock(Object)");
     }
 }

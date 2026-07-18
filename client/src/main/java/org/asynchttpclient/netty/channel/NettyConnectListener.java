@@ -24,7 +24,6 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.future.StackTraceInspector;
-import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -114,6 +113,10 @@ public final class NettyConnectListener<T> {
         // timeout logging and keep useful diagnostic information
         if (remoteAddress != null) {
             timeoutsHolder.setResolvedRemoteAddress(remoteAddress);
+            // In ROUND_ROBIN mode the connector may have failed over from the initially selected IP to a
+            // later one; re-pin the pool/HTTP-2 partition key to the IP we actually connected to so reuse
+            // stays correct. No-op in DEFAULT mode.
+            future.repinRoundRobinAddress(remoteAddress.getAddress());
         }
         ProxyServer proxyServer = future.getProxyServer();
 
@@ -212,8 +215,7 @@ public final class NettyConnectListener<T> {
                     }
                     if (http2Negotiated && !uri.isWebSocket()) {
                         channelManager.upgradePipelineToHttp2(channel.pipeline());
-                        registerHttp2AndReleaseSemaphore(channel);
-                        releaseSemaphoreImmediately(partitionKeyLock);
+                        registerHttp2AndManageSemaphore(channel, partitionKeyLock);
                     } else {
                         attachSemaphoreToChannelClose(channel, partitionKeyLock);
                     }
@@ -238,8 +240,7 @@ public final class NettyConnectListener<T> {
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
             if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
                 channelManager.upgradePipelineToHttp2(channel.pipeline());
-                registerHttp2AndReleaseSemaphore(channel);
-                releaseSemaphoreImmediately(partitionKeyLock);
+                registerHttp2AndManageSemaphore(channel, partitionKeyLock);
             } else {
                 attachSemaphoreToChannelClose(channel, partitionKeyLock);
             }
@@ -269,15 +270,39 @@ public final class NettyConnectListener<T> {
     }
 
     /**
-     * Registers the HTTP/2 connection in the channel manager's H2 registry.
+     * Registers the HTTP/2 connection in the channel manager's H2 registry, then decides how long to hold
+     * the per-host connection permit.
+     *
+     * <p>{@link org.asynchttpclient.LoadBalance#DEFAULT} multiplexes a host onto a single connection, so the
+     * permit is released immediately — holding it would needlessly block concurrent requests that all share
+     * that one connection. {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} instead keeps one connection
+     * per resolved IP, so the per-host permit is what bounds the number of live connections: it is held for
+     * the connection's lifetime (as HTTP/1.1 does). Once {@code maxConnectionsPerHost} connections are live,
+     * a further request fails to acquire a permit and multiplexes onto a sibling-IP connection via
+     * {@link ChannelManager#pollHttp2SiblingConnection(Object)} rather than opening another (issue #2214).
      */
-    private void registerHttp2AndReleaseSemaphore(Channel channel) {
-        Request request = future.getTargetRequest();
-        Uri uri = request.getUri();
-        ProxyServer proxy = future.getProxyServer();
-        ChannelPoolPartitioning partitioning = request.getChannelPoolPartitioning();
-        Object partitionKey = partitioning.getPartitionKey(uri, request.getVirtualHost(), proxy);
+    private void registerHttp2AndManageSemaphore(Channel channel, Object partitionKeyLock) {
+        // Register under the future's partition key so the H2 connection is found by the same key the
+        // pool is polled with, including the IP-aware key used by LoadBalance.ROUND_ROBIN. Read the key
+        // once: it is volatile (repinned on IP failover) and both uses below must agree.
+        Object partitionKey = future.getPartitionKey();
         channelManager.registerHttp2Connection(partitionKey, channel);
+        if (partitionKey instanceof RoundRobinPartitionKey) {
+            // The permit must be freed as soon as the connection stops serving new requests: on close, or
+            // at drain start after GOAWAY (issue #2214). Both paths go through releasePermitOnce(), which
+            // guarantees a single release; a double release would push the semaphore above the cap. The
+            // state attribute is always present after upgradePipelineToHttp2, the fallback is just
+            // belt and braces.
+            Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+            if (state != null && connectionSemaphore != null && partitionKeyLock != null) {
+                state.setPermitRelease(() -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
+                channel.closeFuture().addListener(f -> state.releasePermitOnce());
+            } else {
+                attachSemaphoreToChannelClose(channel, partitionKeyLock);
+            }
+        } else {
+            releaseSemaphoreImmediately(partitionKeyLock);
+        }
     }
 
     public void onFailure(Channel channel, Throwable cause) {

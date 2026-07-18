@@ -231,6 +231,35 @@ public interface AsyncHttpClientConfig {
     int getMaxRequestRetry();
 
     /**
+     * @return how requests are dispatched to a host that resolves to several IP addresses; never {@code null}.
+     * @see LoadBalance
+     */
+    default LoadBalance getLoadBalance() {
+        return LoadBalance.DEFAULT;
+    }
+
+    /**
+     * Whether a recently-failed IP is briefly deprioritized when ordering a host's resolved addresses for a
+     * new connection. When enabled, a TCP connect failure to an address moves it to the back of the failover
+     * order for {@link #getFailedIpCooldownPeriod()} (it is never dropped, only re-ordered, and is re-probed
+     * once the window elapses). This applies regardless of {@link #getLoadBalance()} mode and bounds the cost
+     * of an IP that silently black-holes packets.
+     *
+     * @return {@code true} if the failed-IP cooldown is enabled
+     */
+    default boolean isFailedIpCooldownEnabled() {
+        return true;
+    }
+
+    /**
+     * @return how long a failed IP is deprioritized before it is re-probed; only used when
+     * {@link #isFailedIpCooldownEnabled()} is {@code true}
+     */
+    default Duration getFailedIpCooldownPeriod() {
+        return Duration.ofSeconds(10);
+    }
+
+    /**
      * @return the disableUrlEncodingForBoundRequests
      */
     boolean isDisableUrlEncodingForBoundRequests();

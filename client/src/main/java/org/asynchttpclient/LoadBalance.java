@@ -1,0 +1,92 @@
+/*
+ *    Copyright (c) 2026 AsyncHttpClient Project. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.asynchttpclient;
+
+/**
+ * Controls how requests are dispatched to a host that resolves to several IP addresses.
+ *
+ * <p>Configured globally through {@link AsyncHttpClientConfig#getLoadBalance()}.
+ */
+public enum LoadBalance {
+
+    /**
+     * Default behavior. The address list returned by DNS is used in its natural order: a new
+     * connection always targets the first address and only falls back to the next one when a TCP
+     * connection attempt fails. Combined with connection pooling (keyed by host), this means that
+     * with keep-alive enabled essentially all traffic to a host stays on the first reachable IP.
+     *
+     * <p>To spread traffic across a host's IPs in this mode, configure a resolver that rotates its
+     * results, such as {@link io.netty.resolver.RoundRobinInetAddressResolver}; the client keeps
+     * targeting the first address, and the resolver is what varies which IP that is.
+     */
+    DEFAULT,
+
+    /**
+     * Strict per-request round-robin across the host's resolved IPs.
+     *
+     * <p>For each request, the client rotates which resolved IP is targeted first (TCP failover to
+     * the remaining IPs is preserved) and makes connection reuse IP-aware, so that pooled HTTP/1.1
+     * connections and multiplexed HTTP/2 connections are kept and reused per IP rather than per
+     * host. The net effect is that consecutive requests to a multi-IP host are spread evenly across
+     * all of its addresses, even when connections are kept alive.
+     *
+     * <p>Notes:
+     * <ul>
+     *   <li>Has no effect for hosts that resolve to a single address, literal-IP hosts, requests
+     *       with an explicit {@link Request#getAddress() address}, or requests routed through a
+     *       proxy (HTTP or SOCKS) — the socket is established to the proxy, not directly to the
+     *       rotated target IPs. (Round-robin still applies when the proxy is bypassed for the host.)</li>
+     *   <li>Connection limits ({@code maxConnectionsPerHost}) are enforced per host, not per IP: at most
+     *       that many HTTP/2 connections are kept open to a host at once, spread across that many of its
+     *       resolved IPs (see the cap note below).</li>
+     *   <li>For HTTP/2 this mode deliberately opens more than one connection to the same host and port —
+     *       up to one per resolved IP, bounded by {@code maxConnectionsPerHost} — so streams can be spread
+     *       across the host's backends. That is a conscious deviation from RFC 9113 (and RFC 7540)
+     *       Section 9.1, which recommends that clients SHOULD NOT open more than one HTTP/2 connection to a
+     *       given host and port pair. {@link #DEFAULT} mode preserves the standard
+     *       single-connection-per-origin behavior.</li>
+     *   <li>When {@code maxConnectionsPerHost} (call it K) is smaller than the number of resolved IPs, the
+     *       cap wins over full spreading: at most K HTTP/2 connections are opened, to the first K rotated
+     *       IPs, and a request pinned to any further IP cannot acquire a per-host permit — it multiplexes
+     *       onto one of those K sibling connections (multiplexing onto an existing connection takes no
+     *       permit) instead of opening another, failing with {@code TooManyConnectionsPerHostException}
+     *       only if none is available. Those K connections are held open (kept alive by HTTP/2 PING), so
+     *       they stay pinned to their K IPs rather than rotating across all of them; set
+     *       {@code maxConnectionsPerHost} at least as large as the resolved-IP count for full per-IP
+     *       spreading. The default is unlimited, so this bound only applies when a finite per-host limit is
+     *       configured.</li>
+     *   <li>Since the per-host permit is held for the connection's lifetime, each live round-robin HTTP/2
+     *       connection also occupies a global {@code maxConnections} slot until it closes, and pool
+     *       {@code connectionTtl}/idle reaping do not apply (these connections live in the HTTP/2 registry,
+     *       kept alive by PING, until GOAWAY or the connection drops). When a GOAWAY starts draining a
+     *       connection its permit is released immediately, so a replacement can be opened without waiting
+     *       for in-flight streams to finish.</li>
+     *   <li>The address order comes straight from the configured
+     *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
+     *       rotation to map consistently across requests, use a resolver that returns the addresses
+     *       in a stable order and does not deliberately reorder them between resolutions (for
+     *       example {@link io.netty.resolver.dns.DnsNameResolver}). Do not pair this mode with a
+     *       resolver that intentionally rotates its results, such as
+     *       {@link io.netty.resolver.RoundRobinInetAddressResolver} — that one is meant for
+     *       {@link #DEFAULT} mode, where it provides the spreading instead.</li>
+     *   <li>The rotation is applied on top of the failed-IP cooldown
+     *       ({@link AsyncHttpClientConfig#isFailedIpCooldownEnabled()}), which briefly deprioritizes a
+     *       recently-failed IP. That cooldown is a separate, mode-independent feature — it also applies in
+     *       {@link #DEFAULT} mode — so it is documented on the config getter rather than here.</li>
+     * </ul>
+     */
+    ROUND_ROBIN
+}

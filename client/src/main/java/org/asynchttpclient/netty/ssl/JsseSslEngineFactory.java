@@ -19,6 +19,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 public class JsseSslEngineFactory extends SslEngineFactoryBase {
 
@@ -31,6 +32,14 @@ public class JsseSslEngineFactory extends SslEngineFactoryBase {
     @Override
     public SSLEngine newSslEngine(AsyncHttpClientConfig config, String peerHost, int peerPort) {
         SSLEngine sslEngine = sslContext.createSSLEngine(domain(peerHost), peerPort);
+        // A JDK SSLEngine does not verify the peer hostname unless the endpoint identification algorithm
+        // is set, so without this a certificate valid for any host would be accepted. Enable it to match
+        // DefaultSslEngineFactory, honoring disableHttpsEndpointIdentificationAlgorithm.
+        if (!config.isDisableHttpsEndpointIdentificationAlgorithm()) {
+            SSLParameters params = sslEngine.getSSLParameters();
+            params.setEndpointIdentificationAlgorithm("HTTPS");
+            sslEngine.setSSLParameters(params);
+        }
         configureSslEngine(sslEngine, config);
         return sslEngine;
     }

@@ -62,6 +62,8 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEn
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledCipherSuites;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledProtocols;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownEnabled;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownPeriod;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHandshakeTimeout;
@@ -80,6 +82,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultLoadBalance;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownTimeout;
@@ -131,6 +134,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final String userAgent;
     private final @Nullable Realm realm;
     private final int maxRequestRetry;
+    private final LoadBalance loadBalance;
+    private final boolean failedIpCooldownEnabled;
+    private final Duration failedIpCooldownPeriod;
     private final boolean disableUrlEncodingForBoundRequests;
     private final boolean useLaxCookieEncoder;
     private final boolean disableZeroCopy;
@@ -232,6 +238,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          String userAgent,
                                          @Nullable Realm realm,
                                          int maxRequestRetry,
+                                         LoadBalance loadBalance,
+                                         boolean failedIpCooldownEnabled,
+                                         Duration failedIpCooldownPeriod,
                                          boolean disableUrlEncodingForBoundRequests,
                                          boolean useLaxCookieEncoder,
                                          boolean disableZeroCopy,
@@ -333,6 +342,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.userAgent = userAgent;
         this.realm = realm;
         this.maxRequestRetry = maxRequestRetry;
+        this.loadBalance = loadBalance;
+        this.failedIpCooldownEnabled = failedIpCooldownEnabled;
+        this.failedIpCooldownPeriod = failedIpCooldownPeriod;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.useLaxCookieEncoder = useLaxCookieEncoder;
         this.disableZeroCopy = disableZeroCopy;
@@ -485,6 +497,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public int getMaxRequestRetry() {
         return maxRequestRetry;
+    }
+
+    @Override
+    public LoadBalance getLoadBalance() {
+        return loadBalance;
+    }
+
+    @Override
+    public boolean isFailedIpCooldownEnabled() {
+        return failedIpCooldownEnabled;
+    }
+
+    @Override
+    public Duration getFailedIpCooldownPeriod() {
+        return failedIpCooldownPeriod;
     }
 
     @Override
@@ -898,6 +925,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private String userAgent = defaultUserAgent();
         private @Nullable Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
+        private LoadBalance loadBalance = defaultLoadBalance();
+        private boolean failedIpCooldownEnabled = defaultFailedIpCooldownEnabled();
+        private Duration failedIpCooldownPeriod = defaultFailedIpCooldownPeriod();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
         private boolean disableZeroCopy = defaultDisableZeroCopy();
@@ -1002,6 +1032,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             userAgent = config.getUserAgent();
             realm = config.getRealm();
             maxRequestRetry = config.getMaxRequestRetry();
+            loadBalance = config.getLoadBalance();
+            failedIpCooldownEnabled = config.isFailedIpCooldownEnabled();
+            failedIpCooldownPeriod = config.getFailedIpCooldownPeriod();
             disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
             useLaxCookieEncoder = config.isUseLaxCookieEncoder();
             disableZeroCopy = config.isDisableZeroCopy();
@@ -1155,6 +1188,46 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setMaxRequestRetry(int maxRequestRetry) {
             this.maxRequestRetry = maxRequestRetry;
+            return this;
+        }
+
+        /**
+         * Sets how requests are dispatched to a host that resolves to several IP addresses.
+         *
+         * <p>With {@link LoadBalance#ROUND_ROBIN}, consecutive requests to a multi-IP host are
+         * spread evenly across all of its addresses (TCP failover is preserved, both HTTP/1.1 and
+         * HTTP/2 are supported). The {@code maxConnectionsPerHost} limit remains per host.
+         *
+         * @param loadBalance the dispatch strategy; {@code null} resets to {@link LoadBalance#DEFAULT}
+         * @return this
+         */
+        public Builder setLoadBalance(LoadBalance loadBalance) {
+            this.loadBalance = loadBalance == null ? LoadBalance.DEFAULT : loadBalance;
+            return this;
+        }
+
+        /**
+         * Enables or disables briefly deprioritizing a recently-failed IP when ordering a host's resolved
+         * addresses for a new connection (applies regardless of {@link #setLoadBalance(LoadBalance) load
+         * balancing} mode).
+         *
+         * @param failedIpCooldownEnabled whether the failed-IP cooldown is enabled
+         * @return this
+         * @see AsyncHttpClientConfig#isFailedIpCooldownEnabled()
+         */
+        public Builder setFailedIpCooldownEnabled(boolean failedIpCooldownEnabled) {
+            this.failedIpCooldownEnabled = failedIpCooldownEnabled;
+            return this;
+        }
+
+        /**
+         * @param failedIpCooldownPeriod how long a failed IP is deprioritized before it is re-probed;
+         *                               {@code null} resets to the default
+         * @return this
+         * @see AsyncHttpClientConfig#getFailedIpCooldownPeriod()
+         */
+        public Builder setFailedIpCooldownPeriod(Duration failedIpCooldownPeriod) {
+            this.failedIpCooldownPeriod = failedIpCooldownPeriod == null ? defaultFailedIpCooldownPeriod() : failedIpCooldownPeriod;
             return this;
         }
 
@@ -1633,6 +1706,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     userAgent,
                     realm,
                     maxRequestRetry,
+                    loadBalance,
+                    failedIpCooldownEnabled,
+                    failedIpCooldownPeriod,
                     disableUrlEncodingForBoundRequests,
                     useLaxCookieEncoder,
                     disableZeroCopy,

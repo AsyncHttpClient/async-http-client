@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.channel;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -93,12 +94,15 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -129,12 +133,33 @@ public class ChannelManager {
     private final boolean allowReleaseEventLoopGroup;
     private final Bootstrap httpBootstrap;
     private final Bootstrap wsBootstrap;
+    // Channel options, resolved from config once at construction, applied to each channel from the channel
+    // initializer instead of via Bootstrap#option to avoid Netty's synchronized per-connect options map (issue #2218).
+    private final Map.Entry<ChannelOption<?>, Object>[] channelOptions;
     private final long handshakeTimeout;
     private final @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
-    private final ConcurrentHashMap<Object, Channel> http2Connections = new ConcurrentHashMap<>();
+    // HTTP/2 registry, grouped by per-host base key so a permit-starved round-robin request can find a
+    // sibling-IP connection (issue #2214). Outer key: the per-host base partition key. Inner key: the full
+    // partition key actually registered — the per-IP RoundRobinPartitionKey in LoadBalance.ROUND_ROBIN
+    // mode, or the plain base key otherwise (then the inner map holds a single entry under that key).
+    private final ConcurrentHashMap<Object, ConcurrentHashMap<Object, Channel>> http2Connections = new ConcurrentHashMap<>();
+    // Requests that could not acquire a connection permit and are waiting — off the event loop, WITHOUT
+    // blocking their caller thread — for a sibling HTTP/2 connection to the same origin to be registered so
+    // they can multiplex onto it. Keyed by the per-host base key ({@link #baseKeyOf} of the registration
+    // partition key), so a request pinned to one IP is woken by a connection registered for ANY IP of the
+    // host and can multiplex onto that sibling (issue #2214). Each waiter is invoked with the registered
+    // channel when one appears, or with {@code null} when the client is closing so it can fail its request
+    // rather than hang (its request-timeout is not scheduled yet at this point). See NettyRequestSender's
+    // HTTP/2 deferral.
+    private final ConcurrentHashMap<Object, Set<Consumer<Channel>>> http2ConnectionWaiters = new ConcurrentHashMap<>();
+    // Set once, permanently, when the client closes and sweeps its waiters (failHttp2ConnectionWaiters). Read
+    // by addHttp2ConnectionWaiter to fail-closed against a request that arms a waiter in the window between the
+    // sweep and nettyTimer.stop() — such a waiter would otherwise be neither woken nor timed out, hanging its
+    // request forever. See addHttp2ConnectionWaiter and NettyRequestSender's Http2ConnectionWaiter.arm().
+    private volatile boolean waitersClosed;
 
     private AsyncHttpClientHandler wsHandler;
     private Http2Handler http2Handler;
@@ -200,8 +225,9 @@ public class ChannelManager {
             }
         }
 
-        httpBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
-        wsBootstrap = newBootstrap(transportFactory, eventLoopGroup, config);
+        channelOptions = buildChannelOptions(config);
+        httpBootstrap = newBootstrap(transportFactory, eventLoopGroup);
+        wsBootstrap = newBootstrap(transportFactory, eventLoopGroup);
 
         // Use the address resolver group from config if provided; otherwise null (legacy per-request resolution)
         addressResolverGroup = config.getAddressResolverGroup();
@@ -260,37 +286,76 @@ public class ChannelManager {
         return pipeline.get(SSL_HANDLER) != null;
     }
 
-    private static Bootstrap newBootstrap(ChannelFactory<? extends Channel> channelFactory, EventLoopGroup eventLoopGroup, AsyncHttpClientConfig config) {
-        Bootstrap bootstrap = new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup)
-                .option(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT)
-                .option(ChannelOption.TCP_NODELAY, config.isTcpNoDelay())
-                .option(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress())
-                .option(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive())
-                .option(ChannelOption.AUTO_CLOSE, false);
+    private static Bootstrap newBootstrap(ChannelFactory<? extends Channel> channelFactory, EventLoopGroup eventLoopGroup) {
+        // Channel options are intentionally NOT set on the Bootstrap. Netty's AbstractBootstrap applies them
+        // per-connect by copying the shared options map under "synchronized (options)" in newOptionsArray(),
+        // which serializes every outbound connection on a single monitor (issue #2218). Instead, we apply the
+        // pre-resolved options to each Channel from the channel initializer via Channel.config(), keeping the
+        // Bootstrap options map empty and removing that global lock from the connect path.
+        return new Bootstrap().channelFactory(channelFactory).group(eventLoopGroup);
+    }
+
+    /**
+     * Resolves the configured {@link ChannelOption}s from the client config exactly once. Values and conditional
+     * options (connect timeout, SO_LINGER, buffer sizes) are computed here so the per-connection path only iterates
+     * a fixed array and never re-reads the config.
+     */
+    @SuppressWarnings("unchecked")
+    private static Map.Entry<ChannelOption<?>, Object>[] buildChannelOptions(AsyncHttpClientConfig config) {
+        Map<ChannelOption<?>, Object> options = new LinkedHashMap<>();
+        options.put(ChannelOption.ALLOCATOR, config.getAllocator() != null ? config.getAllocator() : ByteBufAllocator.DEFAULT);
+        options.put(ChannelOption.TCP_NODELAY, config.isTcpNoDelay());
+        options.put(ChannelOption.SO_REUSEADDR, config.isSoReuseAddress());
+        options.put(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive());
+        options.put(ChannelOption.AUTO_CLOSE, false);
 
         long connectTimeout = config.getConnectTimeout().toMillis();
         if (connectTimeout > 0) {
             connectTimeout = Math.min(connectTimeout, Integer.MAX_VALUE);
-            bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout);
+            options.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout);
         }
 
         if (config.getSoLinger() >= 0) {
-            bootstrap.option(ChannelOption.SO_LINGER, config.getSoLinger());
+            options.put(ChannelOption.SO_LINGER, config.getSoLinger());
         }
 
         if (config.getSoSndBuf() >= 0) {
-            bootstrap.option(ChannelOption.SO_SNDBUF, config.getSoSndBuf());
+            options.put(ChannelOption.SO_SNDBUF, config.getSoSndBuf());
         }
 
         if (config.getSoRcvBuf() >= 0) {
-            bootstrap.option(ChannelOption.SO_RCVBUF, config.getSoRcvBuf());
+            options.put(ChannelOption.SO_RCVBUF, config.getSoRcvBuf());
         }
 
-        for (Entry<ChannelOption<Object>, Object> entry : config.getChannelOptions().entrySet()) {
-            bootstrap.option(entry.getKey(), entry.getValue());
-        }
+        // User-supplied options last so they can override the defaults above, matching the previous Bootstrap order.
+        options.putAll(config.getChannelOptions());
 
-        return bootstrap;
+        return options.entrySet().toArray(new Map.Entry[0]);
+    }
+
+    /**
+     * Applies the pre-resolved channel options to a freshly created channel. Invoked from the channel initializer
+     * (once per connection, on the channel's event loop, before the channel is connected), mirroring what
+     * {@link Bootstrap#option} would otherwise do but without the shared, synchronized options map.
+     * <p>
+     * The per-option handling mirrors Netty's {@code AbstractBootstrap#setChannelOption}: an unknown option is
+     * warned about and skipped, and a failure to set an option is warned about and rethrown so the channel is
+     * closed rather than connecting with a half-applied configuration.
+     */
+    @SuppressWarnings("unchecked")
+    private void applyChannelOptions(Channel channel) {
+        ChannelConfig channelConfig = channel.config();
+        for (Map.Entry<ChannelOption<?>, Object> option : channelOptions) {
+            ChannelOption<Object> key = (ChannelOption<Object>) option.getKey();
+            try {
+                if (!channelConfig.setOption(key, option.getValue())) {
+                    LOGGER.warn("Unknown channel option '{}' for channel '{}'", key, channel);
+                }
+            } catch (Throwable t) {
+                LOGGER.warn("Failed to set channel option '{}' with value '{}' for channel '{}'", key, option.getValue(), channel, t);
+                throw t;
+            }
+        }
     }
 
     public void configureBootstraps(NettyRequestSender requestSender) {
@@ -301,6 +366,8 @@ public class ChannelManager {
         httpBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) {
+                applyChannelOptions(ch);
+
                 ChannelPipeline pipeline = ch.pipeline()
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec());
 
@@ -326,6 +393,8 @@ public class ChannelManager {
         wsBootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) {
+                applyChannelOptions(ch);
+
                 ChannelPipeline pipeline = ch.pipeline()
                         .addLast(HTTP_CLIENT_CODEC, newHttpClientCodec())
                         .addLast(AHC_WS_HANDLER, wsHandler);
@@ -380,6 +449,17 @@ public class ChannelManager {
     }
 
     /**
+     * The per-host base partition key under which an HTTP/2 connection registered with {@code partitionKey}
+     * is grouped. For a {@link RoundRobinPartitionKey} that is its base (without the pinned IP); for any
+     * other key the key is already the base.
+     */
+    private static Object baseKeyOf(Object partitionKey) {
+        return partitionKey instanceof RoundRobinPartitionKey
+                ? ((RoundRobinPartitionKey) partitionKey).getBaseKey()
+                : partitionKey;
+    }
+
+    /**
      * Registers an HTTP/2 connection in the registry for the given partition key.
      * The connection stays in the registry (not the regular pool) to allow multiplexing —
      * multiple requests can share the same connection concurrently.
@@ -394,17 +474,31 @@ public class ChannelManager {
         // so it serves only its own opening request and then closes (its stream's closeFuture listener
         // closes the parent once activeStreams hits 0) instead of lingering open and unregistered. A dead
         // registered entry is replaced.
-        Channel existing = http2Connections.putIfAbsent(partitionKey, channel);
-        if (existing != null && existing != channel) {
-            boolean replacedDead = !existing.isActive() && http2Connections.replace(partitionKey, existing, channel);
-            if (!replacedDead && state != null) {
-                state.markRedundant();
+        //
+        // The whole coalescing mutation runs inside compute() on the outer base-key bucket so it is atomic
+        // against removeHttp2Connection() pruning an emptied inner map — both hold the same bucket lock,
+        // which closes the race where a prune could orphan a connection inserted into a detached inner map.
+        http2Connections.compute(baseKeyOf(partitionKey), (k, byKey) -> {
+            if (byKey == null) {
+                byKey = new ConcurrentHashMap<>();
             }
-        }
+            Channel existing = byKey.putIfAbsent(partitionKey, channel);
+            if (existing != null && existing != channel) {
+                boolean replacedDead = !existing.isActive() && byKey.replace(partitionKey, existing, channel);
+                if (!replacedDead && state != null) {
+                    state.markRedundant();
+                }
+            }
+            return byKey;
+        });
         // When the connection closes, remove it from the registry AND fail any requests still queued
         // for a stream slot. Without the latter, requests sitting in pendingOpeners when the parent
         // connection drops have no stream channel (so no channelInactive is ever delivered for them)
         // and would survive only until the request timeout fires — the silent-timeout bug of #2160.
+        //
+        // This listener MUST stay outside the compute() lambda above: a channel already closed at
+        // registration time fires it synchronously on this thread, and re-entering computeIfPresent() on
+        // the same outer bucket from within compute() would self-deadlock. Here compute() has returned.
         channel.closeFuture().addListener(future -> {
             removeHttp2Connection(partitionKey, channel);
             if (state != null) {
@@ -412,6 +506,91 @@ public class ChannelManager {
                         "HTTP/2 connection closed before a stream could be opened"));
             }
         });
+
+        // Wake any requests parked waiting for an HTTP/2 connection to this origin (they failed to acquire a
+        // connection permit and can multiplex onto this one without one). Wake with the currently-registered
+        // canonical connection — which may be an already-registered one this call lost the race to — so a
+        // "redundant" duplicate still lets the waiters resume onto the live connection.
+        Channel registered = pollHttp2Connection(partitionKey);
+        if (registered != null) {
+            wakeHttp2ConnectionWaiters(partitionKey, registered);
+        }
+    }
+
+    /**
+     * Registers a one-shot waiter to be invoked when an HTTP/2 connection is registered for the same host
+     * (or with {@code null} on client close). See the {@link #http2ConnectionWaiters} field and
+     * NettyRequestSender's HTTP/2 deferral. Waiters are grouped by the per-host base key ({@link #baseKeyOf}),
+     * NOT the full per-IP partition key: in round-robin mode a permit-starved request pinned to one IP must
+     * be woken by a connection that registers for ANY IP of the host so it can multiplex onto that sibling
+     * (issue #2214) — the per-IP registration key on its own would never wake it. The waiter must be
+     * idempotent — it may be invoked by a registration, by the client-close sweep, or removed and invoked by
+     * its own timeout concurrently.
+     *
+     * @return {@code true} if the waiter was registered; {@code false} if the client is already closing, in
+     *         which case it is NOT registered and the caller must fail its request immediately rather than
+     *         arm a timeout (no connection will register and the timer that would fire the deadline is being
+     *         stopped). This closes the window where a request arms a waiter between the
+     *         {@link #failHttp2ConnectionWaiters()} sweep and {@code nettyTimer.stop()} and then hangs forever.
+     */
+    public boolean addHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
+        http2ConnectionWaiters.computeIfAbsent(baseKeyOf(partitionKey), k -> ConcurrentHashMap.newKeySet()).add(onConnection);
+        // Recheck after adding: failHttp2ConnectionWaiters sets waitersClosed BEFORE sweeping, so a waiter that
+        // is not caught by the sweep (added into a bucket the sweep already passed, or a bucket it recreated)
+        // observes the flag here and unregisters itself. Every waiter is therefore either swept or fails-closed.
+        if (waitersClosed) {
+            removeHttp2ConnectionWaiter(partitionKey, onConnection);
+            return false;
+        }
+        return true;
+    }
+
+    public void removeHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
+        // Prune an emptied set under the bucket lock so an origin whose deferred requests only ever time out
+        // (a saturated or unreachable host that never registers an H2 connection) does not retain one empty
+        // Set per host for the client's lifetime. computeIfPresent serializes with a concurrent
+        // addHttp2ConnectionWaiter on the same key; a racing add that recreates the set is re-covered by the
+        // waiter's own re-poll in arm(), so no wakeup is lost.
+        http2ConnectionWaiters.computeIfPresent(baseKeyOf(partitionKey), (k, waiters) -> {
+            waiters.remove(onConnection);
+            return waiters.isEmpty() ? null : waiters;
+        });
+    }
+
+    private void wakeHttp2ConnectionWaiters(Object partitionKey, Channel channel) {
+        Set<Consumer<Channel>> waiters = http2ConnectionWaiters.remove(baseKeyOf(partitionKey));
+        if (waiters != null) {
+            for (Consumer<Channel> waiter : waiters) {
+                notifyHttp2ConnectionWaiter(waiter, channel);
+            }
+        }
+    }
+
+    private void failHttp2ConnectionWaiters() {
+        // Mark closed before the sweep so a waiter arming concurrently is either swept below or fails-closed in
+        // addHttp2ConnectionWaiter — it can never remain armed-but-never-notified.
+        waitersClosed = true;
+        for (Object key : http2ConnectionWaiters.keySet()) {
+            Set<Consumer<Channel>> waiters = http2ConnectionWaiters.remove(key);
+            if (waiters != null) {
+                for (Consumer<Channel> waiter : waiters) {
+                    notifyHttp2ConnectionWaiter(waiter, null);
+                }
+            }
+        }
+    }
+
+    // Invoking a waiter drives a full request send (writeRequest). Isolate failures: one waiter throwing must
+    // not starve the remaining waiters, and — since wakeHttp2ConnectionWaiters runs inside
+    // registerHttp2Connection, on the establishing connection's onSuccess path — must not propagate out and
+    // abort that request's own semaphore release and writeRequest (which would silently leak a connection
+    // permit and hang the establishing request).
+    private static void notifyHttp2ConnectionWaiter(Consumer<Channel> waiter, Channel channel) {
+        try {
+            waiter.accept(channel);
+        } catch (Throwable t) {
+            LOGGER.warn("HTTP/2 connection waiter failed", t);
+        }
     }
 
     /**
@@ -429,10 +608,15 @@ public class ChannelManager {
 
     /**
      * Removes an HTTP/2 connection from the registry, but only if it's the currently registered
-     * connection for that partition key (avoids removing a replacement connection).
+     * connection for that partition key (avoids removing a replacement connection). The emptied per-host
+     * inner map is pruned atomically — computeIfPresent serializes with registerHttp2Connection's
+     * compute() on the same outer bucket, so a concurrent insert cannot be lost to the prune.
      */
     public void removeHttp2Connection(Object partitionKey, Channel channel) {
-        http2Connections.remove(partitionKey, channel);
+        http2Connections.computeIfPresent(baseKeyOf(partitionKey), (k, byKey) -> {
+            byKey.remove(partitionKey, channel);
+            return byKey.isEmpty() ? null : byKey;
+        });
     }
 
     /**
@@ -441,12 +625,16 @@ public class ChannelManager {
      * concurrent multiplexed requests.
      */
     public Channel pollHttp2Connection(Object partitionKey) {
-        Channel channel = http2Connections.get(partitionKey);
+        ConcurrentHashMap<Object, Channel> byKey = http2Connections.get(baseKeyOf(partitionKey));
+        if (byKey == null) {
+            return null;
+        }
+        Channel channel = byKey.get(partitionKey);
         if (channel == null) {
             return null;
         }
         if (!channel.isActive()) {
-            http2Connections.remove(partitionKey, channel);
+            removeHttp2Connection(partitionKey, channel);
             return null;
         }
         Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
@@ -454,6 +642,32 @@ public class ChannelManager {
             return null;
         }
         return channel;
+    }
+
+    /**
+     * Round-robin permit-starved fallback (issue #2214): returns an active, non-draining HTTP/2 connection
+     * open to ANY IP of the host identified by {@code baseKey}, or {@code null} if none qualifies. Used only
+     * by {@link org.asynchttpclient.netty.request.NettyRequestSender} when a request pinned to one IP cannot
+     * acquire a per-host connection permit ({@code maxConnectionsPerHost}) and its own per-IP connection does
+     * not exist — it may then multiplex onto a sibling-IP connection instead of failing. NOT used on the
+     * happy path, which polls the exact per-IP key so load keeps spreading across IPs.
+     *
+     * <p>Iterates only the inner map for this host (bounded by the host's resolved-IP count). Per-key
+     * validation and dead-entry eviction are delegated to {@link #pollHttp2Connection}; redundant
+     * coalescing-losers are never stored, so they are never returned.
+     */
+    public Channel pollHttp2SiblingConnection(Object baseKey) {
+        ConcurrentHashMap<Object, Channel> byKey = http2Connections.get(baseKey);
+        if (byKey == null) {
+            return null;
+        }
+        for (Object key : byKey.keySet()) {
+            Channel channel = pollHttp2Connection(key);
+            if (channel != null) {
+                return channel;
+            }
+        }
+        return null;
     }
 
     /**
@@ -470,6 +684,10 @@ public class ChannelManager {
         return channelPool.poll(partitionKey);
     }
 
+    public Channel poll(Object partitionKey) {
+        return channelPool.poll(partitionKey);
+    }
+
     public void removeAll(Channel connection) {
         channelPool.removeAll(connection);
     }
@@ -482,6 +700,12 @@ public class ChannelManager {
     }
 
     public void close() {
+        // Fail any requests parked waiting for a sibling HTTP/2 connection to register (see the
+        // http2ConnectionWaiters field): the client is closing, so no connection will arrive and their
+        // request-timeout backstop is not scheduled yet. Do this synchronously up front — doClose() only
+        // runs after the (possibly long) graceful EventLoopGroup shutdown, and the nettyTimer that would
+        // otherwise fire their deadline is being stopped in parallel.
+        failHttp2ConnectionWaiters();
         // Close the resolver group first while the EventLoopGroup is still active,
         // since Netty DNS resolvers may need a live EventLoop for clean shutdown.
         if (addressResolverGroup != null) {
@@ -832,6 +1056,12 @@ public class ChannelManager {
                         if (pk != null) {
                             removeHttp2Connection(pk, ctx.channel());
                         }
+                        // Free the round-robin per-host permit at drain start instead of at channel close.
+                        // A draining connection rejects new streams but can stay open while in-flight
+                        // streams finish, and holding the permit that whole time blocks a replacement
+                        // connection (issue #2214). Once-only: the closeFuture release becomes a no-op,
+                        // and in DEFAULT mode no hook is installed so this does nothing.
+                        connState.releasePermitOnce();
                         // Fail requests still queued for a stream slot: a draining connection accepts no
                         // new streams, so they can never be opened here and would otherwise wait until the
                         // connection finally closes. Fail them now so they retry on a fresh connection (the

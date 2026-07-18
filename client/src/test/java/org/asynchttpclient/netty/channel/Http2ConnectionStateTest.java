@@ -831,4 +831,70 @@ public class Http2ConnectionStateTest {
         state.releaseStream();
         assertEquals(1, ran.get(), "the void addPendingOpener wrapper must delegate to offerPendingOpener");
     }
+
+    // -------------------------------------------------------------------------
+    // Once-only permit release (round-robin GOAWAY drain permit, issue #2214)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void releasePermitOnceIsNoOpWhenNoHookInstalled() {
+        // DEFAULT mode never installs a hook; releasePermitOnce must be a safe no-op there.
+        Http2ConnectionState state = new Http2ConnectionState();
+        assertDoesNotThrow(state::releasePermitOnce);
+    }
+
+    @Test
+    public void releasePermitOnceRunsHookExactlyOnce() {
+        // The hook must fire on the first call and never again: the GOAWAY handler and the channel
+        // closeFuture both call releasePermitOnce.
+        Http2ConnectionState state = new Http2ConnectionState();
+        AtomicInteger releases = new AtomicInteger(0);
+        state.setPermitRelease(releases::incrementAndGet);
+
+        state.releasePermitOnce();
+        assertEquals(1, releases.get(), "first releasePermitOnce must run the hook");
+
+        state.releasePermitOnce();
+        state.releasePermitOnce();
+        assertEquals(1, releases.get(), "subsequent releasePermitOnce calls must be no-ops");
+    }
+
+    @Test
+    public void releasePermitOnceIsAtomicUnderConcurrency() throws InterruptedException {
+        // Many threads call releasePermitOnce at once; the hook must run exactly once total.
+        int rounds = 2000;
+        AtomicInteger totalReleases = new AtomicInteger(0);
+        int numThreads = 8;
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        try {
+            for (int r = 0; r < rounds; r++) {
+                Http2ConnectionState state = new Http2ConnectionState();
+                AtomicInteger releasesThisRound = new AtomicInteger(0);
+                state.setPermitRelease(releasesThisRound::incrementAndGet);
+
+                CyclicBarrier barrier = new CyclicBarrier(numThreads);
+                CountDownLatch done = new CountDownLatch(numThreads);
+                for (int t = 0; t < numThreads; t++) {
+                    executor.submit(() -> {
+                        try {
+                            barrier.await();
+                            state.releasePermitOnce();
+                        } catch (Exception ignored) {
+                            // barrier interruption is not expected in this test
+                        } finally {
+                            done.countDown();
+                        }
+                    });
+                }
+                assertTrue(done.await(10, TimeUnit.SECONDS));
+                assertEquals(1, releasesThisRound.get(),
+                        "releasePermitOnce must run the hook exactly once even under concurrent callers");
+                totalReleases.addAndGet(releasesThisRound.get());
+            }
+        } finally {
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+        }
+        assertEquals(rounds, totalReleases.get(), "exactly one release per round");
+    }
 }

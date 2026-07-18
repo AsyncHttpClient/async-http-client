@@ -431,6 +431,234 @@ public class BasicHttp2Test {
     }
 
     /**
+     * With {@link LoadBalance#ROUND_ROBIN}, a host resolving to several IPs gets one HTTP/2
+     * connection per IP (the registry is keyed by the IP-aware partition key), so requests are spread
+     * across all of them instead of all multiplexing onto a single connection. SNI/cert verification
+     * still use the URL host ("localhost"), so only the connection target IP varies.
+     */
+    @Test
+    public void http2RoundRobinSpreadsConnectionsAcrossIps() throws Exception {
+        final List<java.net.InetAddress> ips = new ArrayList<>();
+        for (String ip : new String[]{"127.0.0.1", "127.0.0.2", "127.0.0.3"}) {
+            ips.add(java.net.InetAddress.getByName(ip));
+        }
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver =
+                new io.netty.resolver.InetNameResolver(io.netty.util.concurrent.ImmediateEventExecutor.INSTANCE) {
+                    @Override
+                    protected void doResolve(String inetHost, io.netty.util.concurrent.Promise<java.net.InetAddress> promise) {
+                        promise.setSuccess(ips.get(0));
+                    }
+
+                    @Override
+                    protected void doResolveAll(String inetHost, io.netty.util.concurrent.Promise<List<java.net.InetAddress>> promise) {
+                        promise.setSuccess(new ArrayList<>(ips));
+                    }
+                };
+
+        // Assert on the targeted IP (onTcpConnectAttempt), not the connected IP: on macOS only 127.0.0.1
+        // is a usable loopback address, so the others are targeted but fail over. With an IP-aware H2
+        // registry each distinct IP still triggers its own connection attempt.
+        java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN).setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/hello")).setNameResolver(resolver),
+                        new AsyncCompletionHandler<Response>() {
+                            @Override
+                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
+                                if (remoteAddress.getAddress() != null) {
+                                    attemptedIps.add(remoteAddress.getAddress().getHostAddress());
+                                }
+                            }
+
+                            @Override
+                            public Response onCompleted(Response response) {
+                                return response;
+                            }
+                        }).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+        }
+        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
+                "round-robin should target every resolved IP over HTTP/2 (each gets its own connection)");
+    }
+
+    /**
+     * A fixed multi-IP resolver for a single hostname (mirrors the inline resolver used above):
+     * {@code doResolve} returns the first IP, {@code doResolveAll} returns the full list.
+     */
+    private static io.netty.resolver.NameResolver<java.net.InetAddress> multiIpResolver(String... ips) throws Exception {
+        final List<java.net.InetAddress> addresses = new ArrayList<>();
+        for (String ip : ips) {
+            addresses.add(java.net.InetAddress.getByName(ip));
+        }
+        return new io.netty.resolver.InetNameResolver(io.netty.util.concurrent.ImmediateEventExecutor.INSTANCE) {
+            @Override
+            protected void doResolve(String inetHost, io.netty.util.concurrent.Promise<java.net.InetAddress> promise) {
+                promise.setSuccess(addresses.get(0));
+            }
+
+            @Override
+            protected void doResolveAll(String inetHost, io.netty.util.concurrent.Promise<List<java.net.InetAddress>> promise) {
+                promise.setSuccess(new ArrayList<>(addresses));
+            }
+        };
+    }
+
+    /**
+     * Regression guard for the round-robin sibling-reuse fix (issue #2214): when {@code maxConnectionsPerHost}
+     * is at least the number of resolved IPs, no request is ever permit-starved, so the sibling-reuse fallback
+     * must NOT engage and round-robin must still open one connection per IP. If sibling reuse leaked onto the
+     * happy path it would collapse all requests onto a single connection and this would fail.
+     */
+    @Test
+    public void http2RoundRobinStillSpreadsWhenPermitsAbundant() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(3).setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver),
+                        new AsyncCompletionHandler<Response>() {
+                            @Override
+                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
+                                if (remoteAddress.getAddress() != null) {
+                                    attemptedIps.add(remoteAddress.getAddress().getHostAddress());
+                                }
+                            }
+
+                            @Override
+                            public Response onCompleted(Response response) {
+                                return response;
+                            }
+                        }).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+        }
+        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
+                "with enough permits the sibling fallback must not engage — round-robin still targets every IP");
+    }
+
+    /**
+     * Issue #2214: round-robin pins each request to one of the host's IPs, but the connection permit is per
+     * host. With {@code maxConnectionsPerHost=1} and a multi-IP host, a request pinned to an IP whose
+     * connection is not open and that cannot acquire the per-host permit must multiplex onto an HTTP/2
+     * connection already open to a sibling IP, instead of stalling for {@code connectTimeout} and failing
+     * with {@code TooManyConnectionsPerHostException}. We fire a burst of concurrent requests so several are
+     * permit-starved while the first connection is being established; with the fix they all complete by
+     * reusing the sibling connection. {@code connectTimeout} is kept short so a regression surfaces as a fast
+     * failure rather than a long hang.
+     */
+    @Test
+    public void http2RoundRobinPermitStarvedReusesSiblingConnection() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        int concurrentRequests = 8;
+        CountDownLatch latch = new CountDownLatch(concurrentRequests);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicReference<Throwable> firstError = new AtomicReference<>();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(1).setMaxRequestRetry(0).setConnectTimeout(Duration.ofSeconds(2)))) {
+            for (int i = 0; i < concurrentRequests; i++) {
+                client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/delay/300")).setNameResolver(resolver),
+                        new AsyncCompletionHandlerBase() {
+                            @Override
+                            public Response onCompleted(Response response) {
+                                if (response.getStatusCode() == 200) {
+                                    successCount.incrementAndGet();
+                                }
+                                latch.countDown();
+                                return response;
+                            }
+
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                firstError.compareAndSet(null, t);
+                                latch.countDown();
+                            }
+                        });
+            }
+            assertTrue(latch.await(30, SECONDS), "all round-robin requests should complete");
+            assertNull(firstError.get(),
+                    "permit-starved requests must reuse a sibling-IP HTTP/2 connection, not fail; got: " + firstError.get());
+            assertEquals(concurrentRequests, successCount.get(),
+                    "all requests should succeed via sibling-IP HTTP/2 reuse under maxConnectionsPerHost=1");
+        }
+    }
+
+    /**
+     * In round-robin mode the per-host connection permit is held for the HTTP/2 connection's lifetime, so
+     * {@code maxConnectionsPerHost} actually caps the number of live connections to a host. With a host of
+     * three IPs and a cap of two, round-robin would otherwise open three connections (one per IP); the cap
+     * must hold it to at most two, with requests pinned to the third IP multiplexing onto a sibling
+     * connection (issue #2214). All requests still succeed.
+     */
+    @Test
+    public void http2RoundRobinCapsLiveConnectionsAtMaxConnectionsPerHost() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        int maxPerHost = 2;
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(maxPerHost).setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(
+                        org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+            }
+            // serverChildChannels tracks accepted TCP (HTTP/2) connections; a DefaultChannelGroup auto-removes
+            // closed ones. Without holding the permit for the connection lifetime, round-robin opens one
+            // connection per resolved IP (3 > cap); the cap must hold live connections to at most maxPerHost.
+            assertTrue(serverChildChannels.size() <= maxPerHost,
+                    "maxConnectionsPerHost must cap live HTTP/2 connections; expected <= " + maxPerHost
+                            + ", got " + serverChildChannels.size());
+        }
+    }
+
+    /**
+     * Issue #2214 drain-permit fix: with {@code maxConnectionsPerHost=1} a single live round-robin
+     * connection saturates the per-host cap, so its permit must be released when the server's GOAWAY starts
+     * draining it, not when it finally closes. The first request is a long-running stream that keeps the
+     * connection open across the drain (the GOAWAY carries a high lastStreamId so the stream survives it,
+     * and the request is never awaited); the second request must then open a replacement connection promptly
+     * instead of failing with {@code TooManyConnectionsPerHostException} after stalling for
+     * {@code connectTimeout}.
+     */
+    @Test
+    public void http2RoundRobinGoawayReleasesPermitForReplacementConnection() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(1).setMaxRequestRetry(0)
+                .setConnectTimeout(Duration.ofSeconds(1)).setRequestTimeout(Duration.ofSeconds(60)))) {
+
+            // Long-running stream that keeps its connection (and, before the fix, the only permit) busy.
+            client.executeRequest(org.asynchttpclient.Dsl.get(httpsUrl("/delay/30000")).setNameResolver(resolver));
+
+            // Wait until the server has accepted the connection.
+            long deadline = System.currentTimeMillis() + 5000;
+            while (serverChildChannels.size() < 1 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(20);
+            }
+            assertEquals(1, serverChildChannels.size(), "exactly one HTTP/2 connection should be established");
+            Thread.sleep(300);
+
+            // GOAWAY with a high lastStreamId leaves the in-flight stream running, so the connection
+            // stays open and draining.
+            Channel parent = serverChildChannels.iterator().next();
+            parent.writeAndFlush(new io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)
+                    .setExtraStreamIds(1000)).sync();
+            Thread.sleep(300);
+
+            // Must open a replacement connection; before the fix this failed with
+            // TooManyConnectionsPerHostException because the draining connection still held the permit.
+            Response replacement = client.executeRequest(
+                    org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(10, SECONDS);
+            assertEquals(200, replacement.getStatusCode(),
+                    "a request after GOAWAY must open a replacement connection, not fail with "
+                            + "TooManyConnectionsPerHostException while the draining connection pins the permit");
+        }
+    }
+
+    /**
      * Creates an AHC client with a specific request timeout.
      */
     private AsyncHttpClient http2ClientWithTimeout(int requestTimeoutMs) {
