@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -123,6 +124,28 @@ public class RoundRobinSendTypeTest {
         private static void record(Set<String> set, InetSocketAddress address) {
             if (address != null && address.getAddress() != null) {
                 set.add(address.getAddress().getHostAddress());
+            }
+        }
+
+        @Override
+        public Response onCompleted(Response response) {
+            return response;
+        }
+    }
+
+    // Records the IPs a single request targeted, in the order the connector attempted them, so a test can
+    // assert which IP a new connection tried first (the failed-IP cooldown re-orders that first choice).
+    private static final class OrderedAttemptRecorder extends AsyncCompletionHandler<Response> {
+        private final List<String> attemptedIps;
+
+        private OrderedAttemptRecorder(List<String> attemptedIps) {
+            this.attemptedIps = attemptedIps;
+        }
+
+        @Override
+        public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+            if (remoteAddress != null && remoteAddress.getAddress() != null) {
+                attemptedIps.add(remoteAddress.getAddress().getHostAddress());
             }
         }
 
@@ -225,6 +248,47 @@ public class RoundRobinSendTypeTest {
             }
         } finally {
             slow.stop();
+        }
+    }
+
+    @Test
+    public void defaultModeDeprioritizesAFailedIpOnTheNextConnection() throws Exception {
+        // The headline behavior this PR adds: the failed-IP cooldown now applies in DEFAULT mode too, so a
+        // TCP-connect failure to an IP deprioritizes it (moves it to the back) on the next new connection.
+        // Server bound to 127.0.0.1 only, so 127.0.0.2 has no listener (refused on Linux / unreachable on macOS).
+        Server localServer = new Server();
+        ServerConnector connector = addHttpConnector(localServer);
+        connector.setHost("127.0.0.1");
+        localServer.setHandler(new EchoHandler());
+        localServer.start();
+        int localPort = connector.getLocalPort();
+        try {
+            // Resolver hands back the dead IP first. keepAlive=false forces a fresh connection per request,
+            // so every request re-orders and connects (a pooled reuse would never re-resolve). DEFAULT mode
+            // (no setLoadBalance) — this is what previously always dialed the dead IP first.
+            NameResolver<InetAddress> resolver = fixedResolver("127.0.0.2", "127.0.0.1");
+            List<String> firstAttemptPerRequest = new ArrayList<>();
+            try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(false).setMaxRequestRetry(0).build())) {
+                for (int i = 0; i < 4; i++) {
+                    List<String> attempts = new CopyOnWriteArrayList<>();
+                    Response response = client.executeRequest(
+                            get("http://cooldown.test:" + localPort + "/").setNameResolver(resolver),
+                            new OrderedAttemptRecorder(attempts)).get(TIMEOUT, SECONDS);
+                    assertEquals(200, response.getStatusCode(), "request should succeed via failover to the reachable IP");
+                    firstAttemptPerRequest.add(attempts.get(0));
+                }
+            }
+            // First request has nothing cooling yet, so it dials the dead IP first (resolver order) then fails over.
+            assertEquals("127.0.0.2", firstAttemptPerRequest.get(0),
+                    "the first connection follows resolver order because no failure has been recorded yet");
+            // Once 127.0.0.2's connect failure is recorded, the cooldown moves it to the back, so every later
+            // new connection dials the healthy 127.0.0.1 first — the point of extending the cooldown to DEFAULT mode.
+            for (int i = 1; i < firstAttemptPerRequest.size(); i++) {
+                assertEquals("127.0.0.1", firstAttemptPerRequest.get(i),
+                        "DEFAULT mode must deprioritize the recently-failed IP on later new connections (request #" + i + ")");
+            }
+        } finally {
+            localServer.stop();
         }
     }
 
