@@ -44,6 +44,21 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
         }
     }
 
+    @Override
+    public void acquireChannelLock(Object partitionKey, boolean nonBlocking) throws IOException {
+        if (!nonBlocking) {
+            acquireChannelLock(partitionKey);
+            return;
+        }
+        // nonBlocking (the caller is on the event loop): take the global permit without waiting, then the
+        // per-host permit without waiting, releasing the global one if the per-host permit is unavailable.
+        globalMaxConnectionSemaphore.acquireChannelLock(partitionKey, true);
+        if (!getFreeConnectionsForHost(partitionKey).tryAcquire()) {
+            releaseGlobal(partitionKey);
+            throw tooManyConnectionsPerHost;
+        }
+    }
+
     protected void releaseGlobal(Object partitionKey) {
         globalMaxConnectionSemaphore.releaseChannelLock(partitionKey);
     }

@@ -643,6 +643,18 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void acquirePartitionLockLazily() throws IOException {
+        acquirePartitionLockLazily(false);
+    }
+
+    /**
+     * Lazily acquires this request's per-host connection permit.
+     *
+     * @param nonBlocking when {@code true}, acquire the permit without waiting (fail fast) — required when
+     *                    called on a Netty event-loop thread, where a blocking acquire would freeze the
+     *                    loop. Off the loop (the initial {@code execute()} on the caller thread) pass
+     *                    {@code false} to keep the configured acquire-timeout wait.
+     */
+    public void acquirePartitionLockLazily(boolean nonBlocking) throws IOException {
         if (connectionSemaphore == null || partitionKeyLock != null) {
             return;
         }
@@ -650,7 +662,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         // Semaphore is keyed per host (base key), not the round-robin per-IP override: the permit is
         // taken before the target IP is known and the connector may fail over to another IP.
         Object partitionKey = basePartitionKey();
-        connectionSemaphore.acquireChannelLock(partitionKey);
+        connectionSemaphore.acquireChannelLock(partitionKey, nonBlocking);
         Object prevKey = PARTITION_KEY_LOCK_FIELD.getAndSet(this, partitionKey);
         if (prevKey != null) {
             // self-check

@@ -38,6 +38,7 @@ import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.AsciiString;
+import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
@@ -66,6 +67,7 @@ import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.ConnectionSemaphore;
 import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
+import org.asynchttpclient.netty.channel.FailedIpCooldownHolder;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.channel.RoundRobinAddressSelector;
@@ -91,6 +93,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
@@ -115,6 +119,9 @@ public final class NettyRequestSender {
     private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
     private final RoundRobinAddressSelector rrSelector = new RoundRobinAddressSelector();
+    // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
+    // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
+    private final FailedIpCooldownHolder ipCooldown;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
         this.config = config;
@@ -125,6 +132,9 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
+        ipCooldown = config.isFailedIpCooldownEnabled()
+                ? new FailedIpCooldownHolder(config.getFailedIpCooldownPeriod().toNanos(), System::nanoTime)
+                : null;
     }
 
     // needConnect returns true if the request is secure/websocket and a HTTP proxy is set
@@ -149,7 +159,7 @@ public final class NettyRequestSender {
         if (config.getLoadBalance() == LoadBalance.ROUND_ROBIN) {
             boolean overrideMatchesBase = future != null && future.getRoundRobinBaseUri() != null
                     && request.getUri().isSameBase(future.getRoundRobinBaseUri());
-            if (isRoundRobinEligible(request, proxyServer) && !overrideMatchesBase) {
+            if (isDirectConnection(request, proxyServer) && !overrideMatchesBase) {
                 return sendRequestRoundRobin(request, asyncHandler, future, proxyServer);
             }
             if (!overrideMatchesBase && future != null && future.getRoundRobinBaseUri() != null) {
@@ -176,12 +186,13 @@ public final class NettyRequestSender {
         }
     }
 
-    // A request is eligible for round-robin only when it opens a direct connection to the target host
-    // (the connector targets the resolved IPs). Excluded: explicit address (bypasses resolution), and
-    // any proxied host — HTTP or SOCKS — since the socket is established to the proxy rather than
-    // directly to the rotated target IPs. Round-robin still applies when the proxy is bypassed for
-    // the host (isIgnoredForHost), because that request connects directly.
-    private boolean isRoundRobinEligible(Request request, ProxyServer proxyServer) {
+    // Whether the request opens a direct connection to the target host, i.e. the connector targets the
+    // host's resolved IPs (keyed in DNS/cooldown state by uri.getHost()). Excluded: an explicit address
+    // (bypasses resolution), and any proxied host — HTTP or SOCKS — since the socket is established to the
+    // proxy rather than to the resolved target IPs. A bypassed proxy (isIgnoredForHost) still connects
+    // directly. Gates both round-robin rotation and the failed-IP cooldown so both stay keyed on the
+    // host whose IPs are actually being connected to.
+    private boolean isDirectConnection(Request request, ProxyServer proxyServer) {
         if (request.getAddress() != null || needConnect(request, proxyServer)) {
             return false;
         }
@@ -202,17 +213,22 @@ public final class NettyRequestSender {
 
         // Round-robin resolves up front — before the pool check and before the per-host semaphore — so
         // every eligible request resolves first, even one that immediately reuses a pooled connection and
-        // even a single-IP host. With a caching resolver this is cheap. One side effect on a pooled hit:
-        // the request timeout is scheduled here (in resolveAddresses) and again in
-        // sendRequestWithOpenChannel; the second schedule cancels the first (see
-        // NettyResponseFuture.setTimeoutsHolder), so it's redundant work, not a leak.
-        resolveAddresses(request, proxyServer, newFuture, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+        // even a single-IP host. With a caching resolver this is cheap. Pass scheduleTimeout=false: the
+        // reuse-or-connect path reached from dispatchResolved schedules the request timeout exactly once
+        // (sendRequestWithOpenChannel for a pooled hit, or the round-robin branch of sendRequestWithNewChannel
+        // for a new connection), rather than scheduling it here and then cancelling it on a pooled hit.
+        resolveAddresses(request, proxyServer, newFuture, asyncHandler, false).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
             @Override
             protected void onSuccess(List<InetSocketAddress> addresses) {
                 List<InetSocketAddress> ordered = addresses;
                 if (addresses.size() > 1) {
                     ordered = rrSelector.rotate(host, addresses);
+                    // Apply the failed-IP cooldown on top of the rotation, before pinning the IP-aware
+                    // partition key below, so the pool pin and the chosen IP avoid a recently-dead address.
+                    if (ipCooldown != null) {
+                        ordered = ipCooldown.reorder(host, ordered);
+                    }
                     InetAddress chosen = ordered.get(0).getAddress();
                     // Derive the base key from the live request, not newFuture.basePartitionKey(): a filter
                     // replay can reuse this future without updating its targetRequest (only redirects keep it
@@ -439,14 +455,21 @@ public final class NettyRequestSender {
             // Do not throw an exception when we need an extra connection for a
             // redirect.
             try {
-                future.acquirePartitionLockLazily();
+                // On the event loop (a redirect / 401 / 407 / retry replay re-enters sendRequest here),
+                // acquire the connection permit WITHOUT blocking: parking the loop for
+                // acquireFreeChannelTimeout would stall every other connection it serves (and the permit
+                // may be released only by a task queued on this same loop). Off the loop — the initial
+                // execute() on the caller thread — keep the configured blocking wait.
+                future.acquirePartitionLockLazily(isOnEventLoop());
             } catch (IOException semaphoreException) {
-                // If HTTP/2 is enabled, another thread may be establishing an H2 connection.
-                // Poll the H2 registry with brief retries before giving up.
+                // The per-host permit is exhausted, but a sibling request may be establishing an HTTP/2
+                // connection to this origin we can multiplex onto (stream reuse needs no permit). Reuse one
+                // if it exists; otherwise wait for one WITHOUT blocking the caller thread. Returns the
+                // pending future when handled; null means we should fail with the permit exception.
                 if (config.isHttp2Enabled()) {
-                    Channel h2Channel = waitForHttp2Connection(request, proxy, future);
-                    if (h2Channel != null) {
-                        return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
+                    ListenableFuture<T> handled = reuseOrDeferHttp2Connection(request, proxy, future, asyncHandler, semaphoreException);
+                    if (handled != null) {
+                        return handled;
                     }
                 }
                 throw semaphoreException;
@@ -458,18 +481,29 @@ public final class NettyRequestSender {
         }
 
         // In round-robin mode the addresses were already resolved (and rotated) before polling the pool,
-        // so reuse them directly instead of resolving a second time.
+        // so reuse them directly instead of resolving a second time. The up-front resolve deliberately did
+        // NOT schedule the request timeout (see sendRequestRoundRobin), so schedule it here — once — for this
+        // new-connection path, before connecting.
         List<InetSocketAddress> roundRobinAddresses = future.getRoundRobinAddresses();
         if (roundRobinAddresses != null) {
+            scheduleRequestTimeout(future, roundRobinAddresses.get(0));
             connectWithAddresses(request, proxy, future, asyncHandler, roundRobinAddresses);
             return future;
         }
 
-        resolveAddresses(request, proxy, future, asyncHandler).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
+        resolveAddresses(request, proxy, future, asyncHandler, true).addListener(new SimpleFutureListener<List<InetSocketAddress>>() {
 
             @Override
             protected void onSuccess(List<InetSocketAddress> addresses) {
-                connectWithAddresses(request, proxy, future, asyncHandler, addresses);
+                List<InetSocketAddress> ordered = addresses;
+                // Apply the failed-IP cooldown to direct connections regardless of LoadBalance mode, so a
+                // recently-failed IP is deprioritized on the next new connection. Skipped for the
+                // round-robin reuse branch above (those addresses are already cooldown-ordered) and for
+                // proxied/explicit-address requests (the resolved addresses aren't the target host's IPs).
+                if (ipCooldown != null && addresses.size() > 1 && isDirectConnection(request, proxy)) {
+                    ordered = ipCooldown.reorder(request.getUri().getHost(), addresses);
+                }
+                connectWithAddresses(request, proxy, future, asyncHandler, ordered);
             }
 
             @Override
@@ -484,12 +518,13 @@ public final class NettyRequestSender {
     private <T> void connectWithAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
                                           List<InetSocketAddress> addresses) {
         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, connectionSemaphore);
-        // In round-robin mode, feed TCP connect failures back so the selector deprioritizes a dead IP for a
-        // short cooldown instead of re-pinning the next request to it (and burning another connectTimeout).
+        // Feed TCP connect failures back so the cooldown deprioritizes a dead IP for a short window instead
+        // of the next new connection re-targeting it (and burning another connectTimeout). Applied to direct
+        // connections in any LoadBalance mode; the host key matches the one reorder() ordered under.
         Consumer<InetSocketAddress> connectFailureListener = null;
-        if (future.getPartitionKeyOverride() instanceof RoundRobinPartitionKey) {
+        if (ipCooldown != null && isDirectConnection(request, proxy)) {
             String host = request.getUri().getHost();
-            connectFailureListener = address -> rrSelector.markFailed(host, address);
+            connectFailureListener = address -> ipCooldown.markFailed(host, address);
         }
         NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, connectFailureListener);
         if (!future.isDone()) {
@@ -505,20 +540,34 @@ public final class NettyRequestSender {
         }
     }
 
-    private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler) {
+    /**
+     * Resolves the request's remote addresses. When {@code scheduleTimeout} is {@code true} the request
+     * timeout is scheduled here, before resolution — the behaviour the DEFAULT-mode new-channel path relies
+     * on so the timeout also bounds DNS. ROUND_ROBIN resolves up front for every request (it needs the IP to
+     * key the pool) and passes {@code false}: scheduling here and then again on the reuse-or-connect path
+     * would allocate a {@code TimeoutsHolder} and a timer entry only to cancel them on a pooled hit. Instead
+     * the chosen path schedules exactly once — {@link #sendRequestWithOpenChannel} for a reuse, or the
+     * round-robin branch of {@link #sendRequestWithNewChannel} for a new connection.
+     */
+    private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future,
+                                                                 AsyncHandler<T> asyncHandler, boolean scheduleTimeout) {
         Uri uri = request.getUri();
         final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
         if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && proxy.getProxyType().isHttp()) {
             int port = ProxyType.HTTPS.equals(proxy.getProxyType()) || uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(proxy.getHost(), port);
-            scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            if (scheduleTimeout) {
+                scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            }
             return resolveHostname(request, unresolvedRemoteAddress, asyncHandler);
         } else {
             int port = uri.getExplicitPort();
 
             InetSocketAddress unresolvedRemoteAddress = InetSocketAddress.createUnresolved(uri.getHost(), port);
-            scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            if (scheduleTimeout) {
+                scheduleRequestTimeout(future, unresolvedRemoteAddress);
+            }
 
             if (request.getAddress() != null) {
                 // bypass resolution
@@ -1109,67 +1158,160 @@ public final class NettyRequestSender {
     }
 
     /**
-     * Waits briefly for an HTTP/2 connection to appear in the registry, so a request that just failed to
-     * acquire a connection permit can still multiplex onto an HTTP/2 connection another thread is
-     * establishing to the same origin.
+     * Tries to reuse — or, failing that, wait for — an HTTP/2 connection to this origin that a sibling
+     * request is establishing, after this request failed to acquire a connection permit. HTTP/2 stream reuse
+     * multiplexes onto an existing connection and needs no permit, so this lets an over-cap request proceed.
      *
-     * <p>In {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} mode the registry is keyed per IP
-     * ({@code RoundRobinPartitionKey(base, IP)}; see {@link org.asynchttpclient.netty.channel.NettyConnectListener}).
-     * This path first polls the request's own pinned-IP key and, if that misses, falls back to ANY active,
-     * non-draining HTTP/2 connection to the same host on a sibling IP (see
-     * {@link org.asynchttpclient.netty.channel.ChannelManager#pollHttp2SiblingConnection(Object)}). That lets
-     * a request fail the per-host {@code maxConnectionsPerHost} permit yet still multiplex onto a connection
-     * already open to a different IP of the host — multiplexing onto an existing HTTP/2 connection takes no
-     * permit — instead of stalling for {@code connectTimeout} and then failing with the original permit
-     * exception (issue #2214). The sibling fallback is confined to this permit-failure path; the normal
-     * pooled-reuse path stays strictly per IP so load keeps spreading. If no sibling qualifies, the original
-     * permit failure stands. This only matters when {@code maxConnectionsPerHost} is configured below the
-     * host's resolved-IP count (the default is unlimited).
+     * <p>The immediate attempt polls the request's own partition key and, in
+     * {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} mode (registry keyed per IP —
+     * {@code RoundRobinPartitionKey(base, IP)}; see {@link org.asynchttpclient.netty.channel.NettyConnectListener}),
+     * falls back to ANY active, non-draining HTTP/2 connection already open to the same host on a sibling IP
+     * (see {@link org.asynchttpclient.netty.channel.ChannelManager#pollHttp2SiblingConnection(Object)}). That
+     * lets a request that failed the per-host {@code maxConnectionsPerHost} permit still multiplex onto an
+     * existing connection to a different IP — multiplexing takes no permit — instead of stalling (issue #2214).
+     * The sibling fallback is confined to this permit-failure path; the normal pooled-reuse path stays strictly
+     * per IP so load keeps spreading. This only matters when {@code maxConnectionsPerHost} is configured below
+     * the host's resolved-IP count (the default is unlimited).
+     *
+     * <p>If no connection is available yet, then <b>off the event loop</b> a one-shot
+     * {@link Http2ConnectionWaiter} is registered that resumes the send when a matching connection is
+     * registered ({@link ChannelManager#registerHttp2Connection}) — WITHOUT parking the caller thread — bounded
+     * by a {@code connectTimeout} deadline that fails the request. The previous implementation instead
+     * {@code Thread.sleep}-polled the registry here, blocking the caller thread (the synchronous part of
+     * {@code execute()}) for up to the full {@code connectTimeout} and burning CPU.
+     *
+     * <p><b>On the event loop</b> we can neither block nor usefully defer: a redirect / 401 / 407 retry
+     * re-enters here on the loop, and the connection we would wait for is being established on that SAME loop,
+     * so waiting could self-deadlock. There we do the single immediate poll and give up.
+     *
+     * <p>In {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} mode the waiter is registered against the
+     * per-host base key (see {@link ChannelManager#addHttp2ConnectionWaiter}), so a request pinned to
+     * {@code IP_B} is woken by a connection registered for ANY IP of the host — including a sibling
+     * {@code IP_A} that finishes connecting after this request deferred — and multiplexes onto it (#2214),
+     * rather than waiting out the deadline for its own pinned IP.
+     *
+     * @return the (pending) future when the request was reused or deferred; {@code null} if it should be
+     *         failed with {@code semaphoreException} (a WebSocket request, or on the event loop with no
+     *         connection available)
      */
-    private Channel waitForHttp2Connection(Request request, ProxyServer proxy, NettyResponseFuture<?> future) {
-        Uri uri = request.getUri();
+    private <T> ListenableFuture<T> reuseOrDeferHttp2Connection(Request request, ProxyServer proxy,
+            NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, IOException semaphoreException) {
         // WebSocket requests must never multiplex onto an HTTP/2 connection (no RFC 8441 support). See #2160.
-        if (uri.isWebSocket()) {
+        if (request.getUri().isWebSocket()) {
             return null;
         }
-        String virtualHost = request.getVirtualHost();
         // In round-robin mode, only multiplex onto the H2 connection for the IP this request is pinned to;
         // otherwise use the per-host base key. Derive it from the live request rather than
         // future.basePartitionKey() so a filter replay that rewrites the host still polls the correct key
-        // (the future's targetRequest is only kept in sync on the redirect path). Computed once and reused
-        // across the poll loop below.
-        Object override = future != null ? future.getPartitionKeyOverride() : null;
+        // (the future's targetRequest is only kept in sync on the redirect path).
+        Object override = future.getPartitionKeyOverride();
         Object h2Key = override != null ? override
-                : request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy);
-
+                : request.getChannelPoolPartitioning().getPartitionKey(request.getUri(), request.getVirtualHost(), proxy);
         Channel h2Channel = pollHttp2(h2Key);
         if (h2Channel != null) {
-            return h2Channel;
+            return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
         }
-
-        // NEVER block an event-loop thread here. A redirect / 401 / 407 retry re-enters sendRequest ON the
-        // event loop, and the HTTP/2 connection we would wait for is being established on that SAME loop —
-        // a Thread.sleep would freeze the loop and can self-deadlock (the connection never finishes because
-        // its loop is parked here). On the loop, do the single non-blocking poll above and give up; the
-        // caller then proceeds as if no poolable connection was found.
         if (isOnEventLoop()) {
             return null;
         }
+        new Http2ConnectionWaiter<>(request, proxy, future, asyncHandler, override, semaphoreException).arm();
+        return future;
+    }
 
-        long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
-        while (System.nanoTime() < deadline) {
-            h2Channel = pollHttp2(h2Key);
-            if (h2Channel != null) {
-                return h2Channel;
+    /**
+     * A one-shot, off-event-loop waiter for a sibling HTTP/2 connection to the request's origin, used when a
+     * request could not acquire a connection permit. Instead of blocking the caller thread polling the
+     * registry, it registers itself with the {@link ChannelManager} and returns; it fires exactly once —
+     * whichever of these happens first:
+     * <ul>
+     *   <li>a matching connection is registered → resume the send onto it via {@link #sendRequestWithOpenChannel};</li>
+     *   <li>the {@code connectTimeout} deadline elapses → fail the request with the original permit exception;</li>
+     *   <li>the client closes → {@link ChannelManager} invokes it with {@code null} → fail the request.</li>
+     * </ul>
+     * The {@link #claimed} CAS makes those sources mutually exclusive.
+     */
+    private final class Http2ConnectionWaiter<T> implements Consumer<Channel> {
+
+        private final Request request;
+        private final ProxyServer proxy;
+        private final NettyResponseFuture<T> future;
+        private final AsyncHandler<T> asyncHandler;
+        private final Object override;
+        private final IOException semaphoreException;
+        // This request's own partition key (future.getPartitionKey() — the per-IP key in round-robin mode).
+        // ChannelManager groups waiters by its per-host base key, so a connection registered for any IP of the
+        // host wakes this waiter and it can multiplex onto that (possibly sibling-IP) connection (#2214).
+        private final Object waitKey;
+        private final AtomicBoolean claimed = new AtomicBoolean();
+        private volatile Timeout deadline;
+
+        Http2ConnectionWaiter(Request request, ProxyServer proxy, NettyResponseFuture<T> future,
+                AsyncHandler<T> asyncHandler, Object override, IOException semaphoreException) {
+            this.request = request;
+            this.proxy = proxy;
+            this.future = future;
+            this.asyncHandler = asyncHandler;
+            this.override = override;
+            this.semaphoreException = semaphoreException;
+            this.waitKey = future.getPartitionKey();
+        }
+
+        void arm() {
+            if (!channelManager.addHttp2ConnectionWaiter(waitKey, this)) {
+                // The client is closing (the waiter sweep already ran): no connection will register and the
+                // nettyTimer that would fire our deadline is being stopped, so arming would hang the request.
+                // Fail now with the original permit exception instead — and before touching nettyTimer, whose
+                // newTimeout throws once stopped.
+                accept(null);
+                return;
             }
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
+            // Assign the deadline before the recheck so it exists (and is cancellable) if a wake races in.
+            deadline = nettyTimer.newTimeout(t -> fireTimeout(),
+                    config.getConnectTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            if (claimed.get()) {
+                // A registration woke us between addHttp2ConnectionWaiter and assigning `deadline`; cancel
+                // the now-orphaned timeout (accept() could not, as `deadline` was still null then).
+                deadline.cancel();
+                return;
+            }
+            // A connection may have registered between the caller's poll (in reuseOrDeferHttp2Connection) and
+            // addHttp2ConnectionWaiter above — a lost wakeup. Re-poll now that the waiter is registered, using
+            // the same live-request key the caller resolved.
+            Object h2Key = override != null ? override
+                    : request.getChannelPoolPartitioning().getPartitionKey(request.getUri(), request.getVirtualHost(), proxy);
+            Channel raced = pollHttp2(h2Key);
+            if (raced != null) {
+                accept(raced);
             }
         }
-        return null;
+
+        private void fireTimeout() {
+            if (claimed.compareAndSet(false, true)) {
+                channelManager.removeHttp2ConnectionWaiter(waitKey, this);
+                abort(null, future, semaphoreException);
+            }
+        }
+
+        // Invoked with the registered connection to resume onto, or with null when the client is closing.
+        @Override
+        public void accept(Channel channel) {
+            if (!claimed.compareAndSet(false, true)) {
+                return;
+            }
+            channelManager.removeHttp2ConnectionWaiter(waitKey, this);
+            Timeout d = deadline;
+            if (d != null) {
+                d.cancel();
+            }
+            if (future.isDone()) {
+                return;
+            }
+            if (channel == null) {
+                abort(null, future, semaphoreException);
+            } else {
+                sendRequestWithOpenChannel(future, asyncHandler, channel);
+            }
+        }
     }
 
     // Polls the HTTP/2 registry for the already-resolved partition key (computed once by the caller from the
