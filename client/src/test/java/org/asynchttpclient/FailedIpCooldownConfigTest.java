@@ -22,6 +22,7 @@ import java.time.Duration;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FailedIpCooldownConfigTest {
@@ -48,6 +49,18 @@ class FailedIpCooldownConfigTest {
     void nullPeriodResetsToDefault() {
         AsyncHttpClientConfig config = config().setFailedIpCooldownPeriod(null).build();
         assertEquals(Duration.ofSeconds(10), config.getFailedIpCooldownPeriod());
+    }
+
+    @Test
+    void negativePeriodIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> config().setFailedIpCooldownPeriod(Duration.ofSeconds(-1)));
+    }
+
+    @Test
+    void zeroPeriodIsAccepted() {
+        // zero is a valid (if degenerate) period — turning the cooldown off is done via setFailedIpCooldownEnabled(false)
+        AsyncHttpClientConfig config = config().setFailedIpCooldownPeriod(Duration.ZERO).build();
+        assertEquals(Duration.ZERO, config.getFailedIpCooldownPeriod());
     }
 
     @Test
