@@ -1114,8 +1114,19 @@ public final class NettyRequestSender {
      * request is establishing, after this request failed to acquire a connection permit. HTTP/2 stream reuse
      * multiplexes onto an existing connection and needs no permit, so this lets an over-cap request proceed.
      *
-     * <p>If a connection is already registered it is used immediately. Otherwise, <b>off the event loop</b>, a
-     * one-shot {@link Http2ConnectionWaiter} is registered that resumes the send when a matching connection is
+     * <p>The immediate attempt polls the request's own partition key and, in
+     * {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} mode (registry keyed per IP —
+     * {@code RoundRobinPartitionKey(base, IP)}; see {@link org.asynchttpclient.netty.channel.NettyConnectListener}),
+     * falls back to ANY active, non-draining HTTP/2 connection already open to the same host on a sibling IP
+     * (see {@link org.asynchttpclient.netty.channel.ChannelManager#pollHttp2SiblingConnection(Object)}). That
+     * lets a request that failed the per-host {@code maxConnectionsPerHost} permit still multiplex onto an
+     * existing connection to a different IP — multiplexing takes no permit — instead of stalling (issue #2214).
+     * The sibling fallback is confined to this permit-failure path; the normal pooled-reuse path stays strictly
+     * per IP so load keeps spreading. This only matters when {@code maxConnectionsPerHost} is configured below
+     * the host's resolved-IP count (the default is unlimited).
+     *
+     * <p>If no connection is available yet, then <b>off the event loop</b> a one-shot
+     * {@link Http2ConnectionWaiter} is registered that resumes the send when a matching connection is
      * registered ({@link ChannelManager#registerHttp2Connection}) — WITHOUT parking the caller thread — bounded
      * by a {@code connectTimeout} deadline that fails the request. The previous implementation instead
      * {@code Thread.sleep}-polled the registry here, blocking the caller thread (the synchronous part of
@@ -1125,10 +1136,11 @@ public final class NettyRequestSender {
      * re-enters here on the loop, and the connection we would wait for is being established on that SAME loop,
      * so waiting could self-deadlock. There we do the single immediate poll and give up.
      *
-     * <p><b>{@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} limitation (#2214).</b> The registry is keyed
-     * per-IP in round-robin mode, so a request pinned to {@code IP_B} is only woken by a connection registered
-     * for {@code IP_B}, never a sibling on {@code IP_A}; such a request waits out the deadline and then fails
-     * with the permit exception — the same outcome as before, but now without occupying the caller thread.
+     * <p><b>{@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} deferral limitation (#2214).</b> The waiter is
+     * keyed per IP, so a request pinned to {@code IP_B} is only woken by a connection registered for
+     * {@code IP_B}, never one that later appears on a sibling {@code IP_A}; such a request waits out the
+     * deadline and then fails with the permit exception. The immediate sibling fallback above still covers the
+     * case where a sibling connection is already open when the request defers.
      *
      * @return the (pending) future when the request was reused or deferred; {@code null} if it should be
      *         failed with {@code semaphoreException} (a WebSocket request, or on the event loop with no
@@ -1239,9 +1251,18 @@ public final class NettyRequestSender {
     }
 
     // Polls the HTTP/2 registry, using the IP-aware key in round-robin mode and the regular key otherwise.
+    // In round-robin mode the exact per-IP key is tried first (keeping reuse pinned to this request's IP);
+    // only if that misses do we fall back to a sibling-IP connection for the same host, so a permit-starved
+    // request can still multiplex instead of failing (issue #2214). The sibling fallback is confined to this
+    // permit-failure path — the happy path (pollPooledChannel) deliberately does not use it, so steady-state
+    // reuse keeps spreading across IPs.
     private Channel pollHttp2(Object override, Uri uri, String virtualHost, ProxyServer proxy, Request request) {
         if (override != null) {
-            return channelManager.pollHttp2Connection(override);
+            Channel h2Channel = channelManager.pollHttp2Connection(override);
+            if (h2Channel == null && override instanceof RoundRobinPartitionKey) {
+                h2Channel = channelManager.pollHttp2SiblingConnection(((RoundRobinPartitionKey) override).getBaseKey());
+            }
+            return h2Channel;
         }
         return channelManager.pollHttp2(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
     }

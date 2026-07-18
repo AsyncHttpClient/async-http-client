@@ -182,6 +182,28 @@ public class UriTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testUpperCaseSchemeIsSecured() {
+        Uri uri = new Uri("HTTPS", null, "example.com", -1, "/", null, null);
+        Uri.validateSupportedScheme(uri);
+        assertTrue(uri.isSecured(), "HTTPS must be secured");
+        assertEquals(443, uri.getSchemeDefaultPort());
+        assertEquals(443, uri.getExplicitPort());
+
+        Uri wss = new Uri("WSS", null, "example.com", -1, "/", null, null);
+        assertTrue(wss.isSecured(), "WSS must be secured");
+        assertTrue(wss.isWebSocket());
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testMixedCaseSchemeIsNormalized() {
+        Uri uri = new Uri("HtTp", "user", "example.com", 44, "/path", "query=4", null);
+        assertEquals("http", uri.getScheme());
+        assertEquals("http://user@example.com:44/path?query=4", uri.toUrl());
+        assertEquals(uri, new Uri("http", "user", "example.com", 44, "/path", "query=4", null));
+        assertTrue(uri.withNewScheme("HTTPS").isSecured());
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testWithNewQuery() {
         Uri uri = new Uri("http", "user", "example.com", 44, "/path/path2", "query=4", null);
         Uri newUri = uri.withNewQuery("query2=10&query3=20");
