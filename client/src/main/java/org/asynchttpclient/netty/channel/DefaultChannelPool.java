@@ -28,9 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -359,9 +358,6 @@ public final class DefaultChannelPool implements ChannelPool {
             int totalCount = 0;
 
             for (ConcurrentLinkedDeque<Channel> partition : partitions.values()) {
-
-                // store in intermediate unsynchronized lists to minimize
-                // the impact on the ConcurrentLinkedDeque
                 if (LOGGER.isDebugEnabled()) {
                     totalCount += partition.size();
                 }
@@ -380,28 +376,38 @@ public final class DefaultChannelPool implements ChannelPool {
         }
 
         /**
-         * One pass over a partition. A channel is dropped from the deque when it is a removeAll
-         * tombstone, remotely closed, idle-timeout expired or TTL expired. Tombstoned/concurrently
-         * leased channels are only unlinked (their owner closes them); expired channels are closed
-         * here, but only after this cleaner exclusively claims them, so a channel that {@code poll()}
-         * is leasing concurrently is never closed. Returns the number of channels closed by this tick.
+         * One pass over a partition. A channel is dropped from the deque when it is a
+         * {@code removeAll(Channel)} tombstone, remotely closed, idle-timeout expired or TTL expired.
+         * Tombstoned/concurrently leased channels are only unlinked (their owner closes them); expired
+         * channels are closed here, but only after this cleaner exclusively claims them, so a channel that
+         * {@code poll()} is leasing concurrently is never closed. Returns the number of channels closed by
+         * this tick.
+         *
+         * <p>Drop-worthy channels are unlinked in place through the iterator (O(1) amortized each) as the
+         * scan reaches them. The earlier approach collected them into a list and called
+         * {@link java.util.concurrent.ConcurrentLinkedDeque#removeAll(java.util.Collection) removeAll} after
+         * the scan, which re-walks every node doing an O(m) list {@code contains()} per node — O(n*m),
+         * degenerating toward O(n^2) when a whole partition is dropped in one tick (a load spike's
+         * connections idling out together, or a peer dropping many keep-alives at once). Unlinking via the
+         * iterator keeps the whole pass O(n).
          */
         private int reapPartition(ConcurrentLinkedDeque<Channel> partition, long now) {
-            List<Channel> toRemove = null;
             int closed = 0;
 
-            for (Channel channel : partition) {
+            Iterator<Channel> it = partition.iterator();
+            while (it.hasNext()) {
+                Channel channel = it.next();
                 IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
                 if (idleState == null) {
                     continue;
                 }
 
                 if (idleState.isOwned()) {
-                    // In-deque + owned ==> a removeAll() tombstone, or a node a concurrent poll() has
-                    // already leased and unlinked. Either way: unlink, never close — the owner of the
-                    // claim is responsible for closing it. removeAll() on an already-unlinked node is a
-                    // harmless no-op.
-                    toRemove = lazyAdd(toRemove, channel);
+                    // In-deque + owned ==> a removeAll(Channel) tombstone, or a node a concurrent poll()
+                    // has already leased and unlinked. Either way: unlink, never close — the owner of the
+                    // claim is responsible for closing it. Unlinking an already-unlinked node through the
+                    // iterator is a harmless no-op.
+                    it.remove();
                     continue;
                 }
 
@@ -415,7 +421,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 long startSnapshot = idleState.start();
                 // Claim before closing so we never close a channel poll() is leasing concurrently.
                 if (!idleState.takeOwnership()) {
-                    continue; // poll() (or removeAll) won the claim; that owner now handles the channel
+                    continue; // poll() (or removeAll(Channel)) won the claim; that owner now handles the channel
                 }
                 if (idleState.start() != startSnapshot) {
                     // The channel was leased and re-offered (fresh start) between the expiry check and
@@ -428,21 +434,10 @@ public final class DefaultChannelPool implements ChannelPool {
                         channel, isIdleTimeoutExpired, isRemotelyClosed, isTtlExpired);
                 close(channel);
                 closed++;
-                toRemove = lazyAdd(toRemove, channel);
+                it.remove();
             }
 
-            if (toRemove != null) {
-                partition.removeAll(toRemove);
-            }
             return closed;
-        }
-
-        private List<Channel> lazyAdd(List<Channel> list, Channel channel) {
-            if (list == null) {
-                list = new ArrayList<>(1);
-            }
-            list.add(channel);
-            return list;
         }
     }
 }

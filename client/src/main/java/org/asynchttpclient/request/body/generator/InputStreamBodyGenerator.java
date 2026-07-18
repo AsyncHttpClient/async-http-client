@@ -58,7 +58,6 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
         private final InputStream inputStream;
         private final long contentLength;
-        private byte[] chunk;
 
         private InputStreamBody(InputStream inputStream, long contentLength) {
             this.inputStream = inputStream;
@@ -72,23 +71,18 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
         @Override
         public BodyState transferTo(ByteBuf target) {
-
-            // To be safe.
-            chunk = new byte[target.writableBytes() - 10];
-
-            int read = -1;
-            boolean write = false;
+            // Read straight from the stream into the target buffer instead of staging through a per-call byte[].
+            // For heap target buffers this drops both the staging array and the copy; for direct buffers Netty
+            // still stages through a temporary heap array internally (InputStream can only read into a byte[]),
+            // so there the win is smaller. Mirrors InputStreamMultipartPart, which writes the full writable region.
+            int read;
             try {
-                read = inputStream.read(chunk);
+                read = target.writeBytes(inputStream, target.writableBytes());
             } catch (IOException ex) {
                 LOGGER.warn("Unable to read", ex);
+                return BodyState.STOP;
             }
-
-            if (read > 0) {
-                target.writeBytes(chunk, 0, read);
-                write = true;
-            }
-            return write ? BodyState.CONTINUE : BodyState.STOP;
+            return read > 0 ? BodyState.CONTINUE : BodyState.STOP;
         }
 
         @Override
