@@ -300,12 +300,24 @@ public class ChannelManager {
      * Applies the pre-resolved channel options to a freshly created channel. Invoked from the channel initializer
      * (once per connection, on the channel's event loop, before the channel is connected), mirroring what
      * {@link Bootstrap#option} would otherwise do but without the shared, synchronized options map.
+     * <p>
+     * The per-option handling mirrors Netty's {@code AbstractBootstrap#setChannelOption}: an unknown option is
+     * warned about and skipped, and a failure to set an option is warned about and rethrown so the channel is
+     * closed rather than connecting with a half-applied configuration.
      */
     @SuppressWarnings("unchecked")
     private void applyChannelOptions(Channel channel) {
         ChannelConfig channelConfig = channel.config();
         for (Map.Entry<ChannelOption<?>, Object> option : channelOptions) {
-            channelConfig.setOption((ChannelOption<Object>) option.getKey(), option.getValue());
+            ChannelOption<Object> key = (ChannelOption<Object>) option.getKey();
+            try {
+                if (!channelConfig.setOption(key, option.getValue())) {
+                    LOGGER.warn("Unknown channel option '{}' for channel '{}'", key, channel);
+                }
+            } catch (Throwable t) {
+                LOGGER.warn("Failed to set channel option '{}' with value '{}' for channel '{}'", key, option.getValue(), channel, t);
+                throw t;
+            }
         }
     }
 
