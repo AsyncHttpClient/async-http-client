@@ -67,6 +67,7 @@ import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.channel.ConnectionSemaphore;
 import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
+import org.asynchttpclient.netty.channel.FailedIpCooldownHolder;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.channel.RoundRobinAddressSelector;
@@ -118,6 +119,9 @@ public final class NettyRequestSender {
     private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
     private final RoundRobinAddressSelector rrSelector = new RoundRobinAddressSelector();
+    // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
+    // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
+    private final FailedIpCooldownHolder ipCooldown;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
         this.config = config;
@@ -128,6 +132,9 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
+        ipCooldown = config.isFailedIpCooldownEnabled()
+                ? new FailedIpCooldownHolder(config.getFailedIpCooldownPeriod().toNanos(), System::nanoTime)
+                : null;
     }
 
     // needConnect returns true if the request is secure/websocket and a HTTP proxy is set
@@ -152,7 +159,7 @@ public final class NettyRequestSender {
         if (config.getLoadBalance() == LoadBalance.ROUND_ROBIN) {
             boolean overrideMatchesBase = future != null && future.getRoundRobinBaseUri() != null
                     && request.getUri().isSameBase(future.getRoundRobinBaseUri());
-            if (isRoundRobinEligible(request, proxyServer) && !overrideMatchesBase) {
+            if (isDirectConnection(request, proxyServer) && !overrideMatchesBase) {
                 return sendRequestRoundRobin(request, asyncHandler, future, proxyServer);
             }
             if (!overrideMatchesBase && future != null && future.getRoundRobinBaseUri() != null) {
@@ -179,12 +186,13 @@ public final class NettyRequestSender {
         }
     }
 
-    // A request is eligible for round-robin only when it opens a direct connection to the target host
-    // (the connector targets the resolved IPs). Excluded: explicit address (bypasses resolution), and
-    // any proxied host — HTTP or SOCKS — since the socket is established to the proxy rather than
-    // directly to the rotated target IPs. Round-robin still applies when the proxy is bypassed for
-    // the host (isIgnoredForHost), because that request connects directly.
-    private boolean isRoundRobinEligible(Request request, ProxyServer proxyServer) {
+    // Whether the request opens a direct connection to the target host, i.e. the connector targets the
+    // host's resolved IPs (keyed in DNS/cooldown state by uri.getHost()). Excluded: an explicit address
+    // (bypasses resolution), and any proxied host — HTTP or SOCKS — since the socket is established to the
+    // proxy rather than to the resolved target IPs. A bypassed proxy (isIgnoredForHost) still connects
+    // directly. Gates both round-robin rotation and the failed-IP cooldown so both stay keyed on the
+    // host whose IPs are actually being connected to.
+    private boolean isDirectConnection(Request request, ProxyServer proxyServer) {
         if (request.getAddress() != null || needConnect(request, proxyServer)) {
             return false;
         }
@@ -216,6 +224,11 @@ public final class NettyRequestSender {
                 List<InetSocketAddress> ordered = addresses;
                 if (addresses.size() > 1) {
                     ordered = rrSelector.rotate(host, addresses);
+                    // Apply the failed-IP cooldown on top of the rotation, before pinning the IP-aware
+                    // partition key below, so the pool pin and the chosen IP avoid a recently-dead address.
+                    if (ipCooldown != null) {
+                        ordered = ipCooldown.reorder(host, ordered);
+                    }
                     InetAddress chosen = ordered.get(0).getAddress();
                     Object baseKey = request.getChannelPoolPartitioning().getPartitionKey(uri, request.getVirtualHost(), proxyServer);
                     newFuture.setPartitionKeyOverride(new RoundRobinPartitionKey(baseKey, chosen));
@@ -470,7 +483,15 @@ public final class NettyRequestSender {
 
             @Override
             protected void onSuccess(List<InetSocketAddress> addresses) {
-                connectWithAddresses(request, proxy, future, asyncHandler, addresses);
+                List<InetSocketAddress> ordered = addresses;
+                // Apply the failed-IP cooldown to direct connections regardless of LoadBalance mode, so a
+                // recently-failed IP is deprioritized on the next new connection. Skipped for the
+                // round-robin reuse branch above (those addresses are already cooldown-ordered) and for
+                // proxied/explicit-address requests (the resolved addresses aren't the target host's IPs).
+                if (ipCooldown != null && addresses.size() > 1 && isDirectConnection(request, proxy)) {
+                    ordered = ipCooldown.reorder(request.getUri().getHost(), addresses);
+                }
+                connectWithAddresses(request, proxy, future, asyncHandler, ordered);
             }
 
             @Override
@@ -485,12 +506,13 @@ public final class NettyRequestSender {
     private <T> void connectWithAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,
                                           List<InetSocketAddress> addresses) {
         NettyConnectListener<T> connectListener = new NettyConnectListener<>(future, NettyRequestSender.this, channelManager, connectionSemaphore);
-        // In round-robin mode, feed TCP connect failures back so the selector deprioritizes a dead IP for a
-        // short cooldown instead of re-pinning the next request to it (and burning another connectTimeout).
+        // Feed TCP connect failures back so the cooldown deprioritizes a dead IP for a short window instead
+        // of the next new connection re-targeting it (and burning another connectTimeout). Applied to direct
+        // connections in any LoadBalance mode; the host key matches the one reorder() ordered under.
         Consumer<InetSocketAddress> connectFailureListener = null;
-        if (future.getPartitionKeyOverride() instanceof RoundRobinPartitionKey) {
+        if (ipCooldown != null && isDirectConnection(request, proxy)) {
             String host = request.getUri().getHost();
-            connectFailureListener = address -> rrSelector.markFailed(host, address);
+            connectFailureListener = address -> ipCooldown.markFailed(host, address);
         }
         NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, connectFailureListener);
         if (!future.isDone()) {
