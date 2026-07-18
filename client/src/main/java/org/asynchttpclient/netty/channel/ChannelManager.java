@@ -932,6 +932,12 @@ public class ChannelManager {
                         if (pk != null) {
                             removeHttp2Connection(pk, ctx.channel());
                         }
+                        // Free the round-robin per-host permit at drain start instead of at channel close.
+                        // A draining connection rejects new streams but can stay open while in-flight
+                        // streams finish, and holding the permit that whole time blocks a replacement
+                        // connection (issue #2214). Once-only: the closeFuture release becomes a no-op,
+                        // and in DEFAULT mode no hook is installed so this does nothing.
+                        connState.releasePermitOnce();
                         // Fail requests still queued for a stream slot: a draining connection accepts no
                         // new streams, so they can never be opened here and would otherwise wait until the
                         // connection finally closes. Fail them now so they retry on a fresh connection (the

@@ -615,6 +615,50 @@ public class BasicHttp2Test {
     }
 
     /**
+     * Issue #2214 drain-permit fix: with {@code maxConnectionsPerHost=1} a single live round-robin
+     * connection saturates the per-host cap, so its permit must be released when the server's GOAWAY starts
+     * draining it, not when it finally closes. The first request is a long-running stream that keeps the
+     * connection open across the drain (the GOAWAY carries a high lastStreamId so the stream survives it,
+     * and the request is never awaited); the second request must then open a replacement connection promptly
+     * instead of failing with {@code TooManyConnectionsPerHostException} after stalling for
+     * {@code connectTimeout}.
+     */
+    @Test
+    public void http2RoundRobinGoawayReleasesPermitForReplacementConnection() throws Exception {
+        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(1).setMaxRequestRetry(0)
+                .setConnectTimeout(Duration.ofSeconds(1)).setRequestTimeout(Duration.ofSeconds(60)))) {
+
+            // Long-running stream that keeps its connection (and, before the fix, the only permit) busy.
+            client.executeRequest(org.asynchttpclient.Dsl.get(httpsUrl("/delay/30000")).setNameResolver(resolver));
+
+            // Wait until the server has accepted the connection.
+            long deadline = System.currentTimeMillis() + 5000;
+            while (serverChildChannels.size() < 1 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(20);
+            }
+            assertEquals(1, serverChildChannels.size(), "exactly one HTTP/2 connection should be established");
+            Thread.sleep(300);
+
+            // GOAWAY with a high lastStreamId leaves the in-flight stream running, so the connection
+            // stays open and draining.
+            Channel parent = serverChildChannels.iterator().next();
+            parent.writeAndFlush(new io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)
+                    .setExtraStreamIds(1000)).sync();
+            Thread.sleep(300);
+
+            // Must open a replacement connection; before the fix this failed with
+            // TooManyConnectionsPerHostException because the draining connection still held the permit.
+            Response replacement = client.executeRequest(
+                    org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(10, SECONDS);
+            assertEquals(200, replacement.getStatusCode(),
+                    "a request after GOAWAY must open a replacement connection, not fail with "
+                            + "TooManyConnectionsPerHostException while the draining connection pins the permit");
+        }
+    }
+
+    /**
      * Creates an AHC client with a specific request timeout.
      */
     private AsyncHttpClient http2ClientWithTimeout(int requestTimeoutMs) {
