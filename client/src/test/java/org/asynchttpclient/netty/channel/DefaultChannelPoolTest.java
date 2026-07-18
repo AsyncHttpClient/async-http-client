@@ -276,7 +276,10 @@ public class DefaultChannelPoolTest {
     public void cleanerReapsExpiredButKeepsHealthyInSameTick() throws Exception {
         // A single reap pass must drop the expired channels AND keep the fresh ones leasable: the
         // iterator has to remove some nodes while continuing past the ones it keeps.
-        final long maxIdle = 200;
+        // Use a generous idle window (mirrors channelReofferedAfterExpiryIsNotReaped): the fresh
+        // channels are offered right before firing, so a GC/scheduling pause shorter than maxIdle
+        // cannot age them past the timeout and get them wrongly reaped on a loaded CI box.
+        final long maxIdle = 1000;
         CapturingTimer timer = new CapturingTimer();
         DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(maxIdle));
 
@@ -310,6 +313,48 @@ public class DefaultChannelPoolTest {
             leased++;
         }
         assertEquals(healthyCount, leased, "every surviving channel must remain leasable");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void cleanerContinuesPastRemovedNodesToReachKeptNodes() throws Exception {
+        // Pins the exact iterator-remove guarantee: after unlinking a node, the scan must continue to a
+        // KEPT node that comes AFTER it in iteration order. Idle timeout is disabled (1h) so only the
+        // remote-close path trips, and channels are closed (not aged) to decide keep-vs-reap — fully
+        // deterministic, no wall-clock timing. offer() is offerFirst, so offering in reverse index order
+        // puts channels[0] at the front; the iterator then visits channels[0], channels[1], ... in order.
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = idlePool(timer, Duration.ofHours(1));
+
+        final int count = 8;
+        EmbeddedChannel[] channels = new EmbeddedChannel[count];
+        for (int i = count - 1; i >= 0; i--) {
+            channels[i] = new EmbeddedChannel();
+            pool.offer(channels[i], KEY);
+        }
+        // Close the even-indexed channels: in front->back iteration order every removed (even) node is
+        // immediately followed by a kept (odd) node, so the iterator must remove then advance to a keeper.
+        for (int i = 0; i < count; i += 2) {
+            channels[i].close().await(5, TimeUnit.SECONDS);
+            assertFalse(channels[i].isActive());
+        }
+
+        timer.fire();
+
+        assertEquals(count / 2, partitionSize(pool, KEY), "closed nodes unlinked, kept ones survive");
+        for (int i = 0; i < count; i++) {
+            if (i % 2 == 0) {
+                assertFalse(channels[i].isActive(), "closed channel must be unlinked");
+            } else {
+                assertTrue(channels[i].isActive(), "a kept node AFTER a removed node must survive the scan");
+            }
+        }
+        int leased = 0;
+        while (pool.poll(KEY) != null) {
+            leased++;
+        }
+        assertEquals(count / 2, leased, "every surviving channel must remain leasable");
 
         pool.destroy();
     }
