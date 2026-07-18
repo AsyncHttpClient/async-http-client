@@ -16,7 +16,7 @@
 package org.asynchttpclient.netty.channel;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
+import java.util.AbstractList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,7 +67,7 @@ public final class RoundRobinAddressSelector {
 
         AtomicInteger counter = counterFor(host);
         int index = (counter.getAndIncrement() & Integer.MAX_VALUE) % n;
-        return index == 0 ? resolved : rotateBy(resolved, index, n);
+        return index == 0 ? resolved : rotateBy(resolved, index);
     }
 
     // Visible for testing: the number of hosts currently tracked (bounded by MAX_TRACKED_HOSTS).
@@ -80,11 +80,41 @@ public final class RoundRobinAddressSelector {
         return counters.computeIfAbsent(host, h -> new AtomicInteger());
     }
 
-    private static List<InetSocketAddress> rotateBy(List<InetSocketAddress> resolved, int index, int n) {
-        List<InetSocketAddress> rotated = new ArrayList<>(n);
-        rotated.addAll(resolved.subList(index, n));
-        rotated.addAll(resolved.subList(0, index));
-        return rotated;
+    // Returns a read-only view of {@code resolved} rotated left by {@code index} — element i is
+    // resolved.get((index + i) mod size) — instead of copying the rotation into a fresh ArrayList (plus two
+    // subList views), which the round-robin fast path did on ~(n-1)/n of multi-IP requests. All consumers
+    // only read the result (get/size/iteration — NettyChannelConnector and FailedIpCooldownHolder#reorder),
+    // and the resolved list is not mutated after being wrapped, so the lightweight view is safe.
+    private static List<InetSocketAddress> rotateBy(List<InetSocketAddress> resolved, int index) {
+        return new RotatedView(resolved, index);
+    }
+
+    private static final class RotatedView extends AbstractList<InetSocketAddress> {
+
+        private final List<InetSocketAddress> resolved;
+        private final int index;
+        private final int size;
+
+        RotatedView(List<InetSocketAddress> resolved, int index) {
+            this.resolved = resolved;
+            this.index = index;
+            this.size = resolved.size();
+        }
+
+        @Override
+        public InetSocketAddress get(int i) {
+            if (i < 0 || i >= size) {
+                throw new IndexOutOfBoundsException("Index: " + i + ", Size: " + size);
+            }
+            // index and i are both in [0, size), so index + i < 2*size — one wrap suffices (no modulo).
+            int j = index + i;
+            return resolved.get(j < size ? j : j - size);
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
     }
 
     // Keep the map bounded: when it is full, drop one arbitrary entry before a new host is added.
