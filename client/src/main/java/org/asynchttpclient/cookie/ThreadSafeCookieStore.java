@@ -24,12 +24,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,8 +39,19 @@ import static java.util.Objects.requireNonNull;
 
 public final class ThreadSafeCookieStore implements CookieStore {
 
+    // RFC 6265 §5.5 (Implementation Limits) lets a user agent bound the cookies it retains per domain (its
+    // floor is "at least 50 per domain"). Capping this keeps a server from growing the jar — and the
+    // per-request retrieval scan in get(Uri) — without bound. Chosen generously (well above browser
+    // per-domain limits of ~50–180) so it only trips under abuse, never for realistic usage. See
+    // evictExcessCookies for the eviction order. Package-private for tests.
+    static final int MAX_COOKIES_PER_DOMAIN = 200;
+
     private final Map<String, Map<CookieKey, StoredCookie>> cookieJar = new ConcurrentHashMap<>();
     private final AtomicInteger counter = new AtomicInteger();
+    // Monotonic per-store stamp giving each stored cookie a strict, tie-free, clock-independent insertion
+    // order for eviction (see evictExcessCookies). Preferred over creation time, which is millisecond-
+    // granular (so it ties under a flood) and wall-clock based (an NTP step backward would reorder it).
+    private final AtomicLong cookieSequence = new AtomicLong();
 
     @Override
     public void add(Uri uri, Cookie cookie) {
@@ -195,7 +208,46 @@ public final class ThreadSafeCookieStore implements CookieStore {
             cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
         } else {
             final Map<CookieKey, StoredCookie> innerMap = cookieJar.computeIfAbsent(keyDomain, domain -> new ConcurrentHashMap<>());
-            innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE));
+            innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE, cookieSequence.getAndIncrement()));
+            if (innerMap.size() > MAX_COOKIES_PER_DOMAIN) {
+                evictExcessCookies(innerMap);
+            }
+        }
+    }
+
+    /**
+     * Bounds a single domain's cookie bucket at {@link #MAX_COOKIES_PER_DOMAIN}. RFC 6265 §5.5 permits a
+     * per-domain cap; §5.3's "remove excess cookies" step evicts expired cookies first, then removes more
+     * until under the limit. The RFC breaks that second tie by least-recently-accessed; we do not track
+     * access time, so we deliberately deviate and evict in insertion order via the strict, tie-free
+     * {@link StoredCookie#seq} stamp.
+     *
+     * <p>Called from {@link #add} right after an insert pushes the bucket over the cap, so it normally
+     * removes a single entry. A single pass drops expired entries and collects the survivors; only if those
+     * still exceed the cap are they ordered by {@code seq} and the oldest excess removed. Victims are dropped
+     * with the two-arg {@code remove(key, value)}, which is identity-based (StoredCookie has no
+     * {@code equals()}): a cookie another thread just re-put under the same key is never collaterally
+     * removed. Two adders evicting concurrently pick the same seq-ordered victims, so their redundant removes
+     * no-op — the bucket may still briefly sit a little below the cap until the next add, but never grows
+     * unbounded.
+     */
+    private static void evictExcessCookies(Map<CookieKey, StoredCookie> innerMap) {
+        List<Map.Entry<CookieKey, StoredCookie>> live = new ArrayList<>(innerMap.size());
+        for (Map.Entry<CookieKey, StoredCookie> entry : innerMap.entrySet()) {
+            if (hasCookieExpired(entry.getValue().cookie, entry.getValue().createdAt)) {
+                innerMap.remove(entry.getKey(), entry.getValue());
+            } else {
+                live.add(entry);
+            }
+        }
+        int excess = live.size() - MAX_COOKIES_PER_DOMAIN;
+        if (excess <= 0) {
+            return;
+        }
+        live.sort(Comparator.comparingLong(entry -> entry.getValue().seq));
+        for (int i = 0; i < excess; i++) {
+            Map.Entry<CookieKey, StoredCookie> victim = live.get(i);
+            innerMap.remove(victim.getKey(), victim.getValue());
         }
     }
 
@@ -292,11 +344,14 @@ public final class ThreadSafeCookieStore implements CookieStore {
         final boolean hostOnly;
         final boolean persistent;
         final long createdAt = System.currentTimeMillis();
+        // Strict, tie-free insertion order for eviction; see ThreadSafeCookieStore.cookieSequence.
+        final long seq;
 
-        StoredCookie(Cookie cookie, boolean hostOnly, boolean persistent) {
+        StoredCookie(Cookie cookie, boolean hostOnly, boolean persistent, long seq) {
             this.cookie = cookie;
             this.hostOnly = hostOnly;
             this.persistent = persistent;
+            this.seq = seq;
         }
 
         @Override
