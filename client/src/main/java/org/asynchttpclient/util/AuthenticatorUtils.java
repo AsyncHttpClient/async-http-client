@@ -464,6 +464,8 @@ public final class AuthenticatorUtils {
 
         try (Body body = gen.createBody()) {
             Body.BodyState state;
+            // Safe only because ByteArrayBodyGenerator returns STOP on an empty call; a body that returns
+            // STOP carrying its last bytes (e.g. MultipartBody) would be truncated here. See Body#transferTo.
             while ((state = body.transferTo(tmp)) != Body.BodyState.STOP) {
                 if (state == Body.BodyState.SUSPEND) {
                     continue;               // nothing new yet

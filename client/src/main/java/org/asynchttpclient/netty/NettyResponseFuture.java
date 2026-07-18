@@ -136,6 +136,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile List<InetSocketAddress> roundRobinAddresses;
     private volatile Uri roundRobinBaseUri;
     private volatile ScramContext scramContext;
+    // Base (host/scheme/port) partition key, computed eagerly at construction and recomputed by
+    // setTargetRequest (its only mutator: connectionPoolPartitioning/proxyServer are final and targetRequest
+    // is its only other input). Volatile: setTargetRequest runs on the redirect path while reads happen on
+    // other threads.
+    private volatile Object basePartitionKeyCache;
 
     public NettyResponseFuture(Request originalRequest,
                                AsyncHandler<V> asyncHandler,
@@ -152,6 +157,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         this.connectionSemaphore = connectionSemaphore;
         this.proxyServer = proxyServer;
         this.maxRetry = maxRetry;
+        basePartitionKeyCache = computeBasePartitionKey();
     }
 
     private void releasePartitionKeyLock() {
@@ -370,6 +376,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setTargetRequest(Request targetRequest) {
         this.targetRequest = targetRequest;
+        // Recompute the base partition key eagerly: a redirect/retry may target a different
+        // host/scheme/port, which changes the key.
+        basePartitionKeyCache = computeBasePartitionKey();
     }
 
     public Request getCurrentRequest() {
@@ -546,14 +555,32 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     /**
-     * The per-host partition key, ignoring any round-robin IP-aware override. Used for the connection
-     * semaphore so {@code maxConnectionsPerHost} stays per host (not per IP): the permit is taken
-     * before the target IP is known and the connector may fail over to a different IP than the one
-     * initially selected.
+     * The per-host base partition key, ignoring any round-robin IP-aware override. This is the key used to
+     * acquire the connection semaphore (so {@code maxConnectionsPerHost} stays per host, not per IP: the
+     * permit is taken before the target IP is known and the connector may fail over to a different IP than
+     * the one initially selected), to offer the channel back to the pool, and to register/poll the HTTP/2
+     * connection registry; in round-robin mode it is also the base that the per-IP override
+     * ({@link RoundRobinPartitionKey}) wraps.
+     * <p>
+     * Note: the pool/H2 <em>poll</em> paths ({@link org.asynchttpclient.netty.request.NettyRequestSender}
+     * pollPooledChannel/waitForHttp2Connection) intentionally derive their key from the live request rather
+     * than this value, because a filter replay can reuse a future without updating its {@code targetRequest}.
+     * <p>
+     * Computed eagerly at construction and recomputed by {@link #setTargetRequest(Request)}; this accessor
+     * is a plain read of the memoized value.
      */
     public Object basePartitionKey() {
-        return connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(),
-                proxyServer);
+        return basePartitionKeyCache;
+    }
+
+    // Depends only on targetRequest (host/scheme/port + virtualHost) and the final proxyServer, so it is
+    // recomputed only when setTargetRequest changes the target. Tolerates null inputs: some unit tests
+    // construct a future with no request/partitioning and never consult the key; production always has both.
+    private Object computeBasePartitionKey() {
+        return targetRequest != null && connectionPoolPartitioning != null
+                ? connectionPoolPartitioning.getPartitionKey(targetRequest.getUri(), targetRequest.getVirtualHost(),
+                        proxyServer)
+                : null;
     }
 
     /**
