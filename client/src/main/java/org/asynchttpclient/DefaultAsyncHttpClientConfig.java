@@ -62,6 +62,8 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEn
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledCipherSuites;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledProtocols;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownEnabled;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownPeriod;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHandshakeTimeout;
@@ -133,6 +135,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final @Nullable Realm realm;
     private final int maxRequestRetry;
     private final LoadBalance loadBalance;
+    private final boolean failedIpCooldownEnabled;
+    private final Duration failedIpCooldownPeriod;
     private final boolean disableUrlEncodingForBoundRequests;
     private final boolean useLaxCookieEncoder;
     private final boolean disableZeroCopy;
@@ -235,6 +239,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          @Nullable Realm realm,
                                          int maxRequestRetry,
                                          LoadBalance loadBalance,
+                                         boolean failedIpCooldownEnabled,
+                                         Duration failedIpCooldownPeriod,
                                          boolean disableUrlEncodingForBoundRequests,
                                          boolean useLaxCookieEncoder,
                                          boolean disableZeroCopy,
@@ -337,6 +343,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.realm = realm;
         this.maxRequestRetry = maxRequestRetry;
         this.loadBalance = loadBalance;
+        this.failedIpCooldownEnabled = failedIpCooldownEnabled;
+        this.failedIpCooldownPeriod = failedIpCooldownPeriod;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.useLaxCookieEncoder = useLaxCookieEncoder;
         this.disableZeroCopy = disableZeroCopy;
@@ -494,6 +502,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public LoadBalance getLoadBalance() {
         return loadBalance;
+    }
+
+    @Override
+    public boolean isFailedIpCooldownEnabled() {
+        return failedIpCooldownEnabled;
+    }
+
+    @Override
+    public Duration getFailedIpCooldownPeriod() {
+        return failedIpCooldownPeriod;
     }
 
     @Override
@@ -908,6 +926,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private @Nullable Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
         private LoadBalance loadBalance = defaultLoadBalance();
+        private boolean failedIpCooldownEnabled = defaultFailedIpCooldownEnabled();
+        private Duration failedIpCooldownPeriod = defaultFailedIpCooldownPeriod();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
         private boolean disableZeroCopy = defaultDisableZeroCopy();
@@ -1013,6 +1033,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             realm = config.getRealm();
             maxRequestRetry = config.getMaxRequestRetry();
             loadBalance = config.getLoadBalance();
+            failedIpCooldownEnabled = config.isFailedIpCooldownEnabled();
+            failedIpCooldownPeriod = config.getFailedIpCooldownPeriod();
             disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
             useLaxCookieEncoder = config.isUseLaxCookieEncoder();
             disableZeroCopy = config.isDisableZeroCopy();
@@ -1181,6 +1203,31 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          */
         public Builder setLoadBalance(LoadBalance loadBalance) {
             this.loadBalance = loadBalance == null ? LoadBalance.DEFAULT : loadBalance;
+            return this;
+        }
+
+        /**
+         * Enables or disables briefly deprioritizing a recently-failed IP when ordering a host's resolved
+         * addresses for a new connection (applies regardless of {@link #setLoadBalance(LoadBalance) load
+         * balancing} mode).
+         *
+         * @param failedIpCooldownEnabled whether the failed-IP cooldown is enabled
+         * @return this
+         * @see AsyncHttpClientConfig#isFailedIpCooldownEnabled()
+         */
+        public Builder setFailedIpCooldownEnabled(boolean failedIpCooldownEnabled) {
+            this.failedIpCooldownEnabled = failedIpCooldownEnabled;
+            return this;
+        }
+
+        /**
+         * @param failedIpCooldownPeriod how long a failed IP is deprioritized before it is re-probed;
+         *                               {@code null} resets to the default
+         * @return this
+         * @see AsyncHttpClientConfig#getFailedIpCooldownPeriod()
+         */
+        public Builder setFailedIpCooldownPeriod(Duration failedIpCooldownPeriod) {
+            this.failedIpCooldownPeriod = failedIpCooldownPeriod == null ? defaultFailedIpCooldownPeriod() : failedIpCooldownPeriod;
             return this;
         }
 
@@ -1660,6 +1707,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     realm,
                     maxRequestRetry,
                     loadBalance,
+                    failedIpCooldownEnabled,
+                    failedIpCooldownPeriod,
                     disableUrlEncodingForBoundRequests,
                     useLaxCookieEncoder,
                     disableZeroCopy,

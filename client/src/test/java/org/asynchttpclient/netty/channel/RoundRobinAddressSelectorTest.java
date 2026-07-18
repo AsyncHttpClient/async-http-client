@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -138,68 +137,5 @@ class RoundRobinAddressSelectorTest {
         // advancing host "a" must not affect host "b"
         assertEquals("127.0.0.2", firstIp(selector.rotate("a", input)));
         assertNotEquals(firstIp(selector.rotate("b", input)), "127.0.0.1");
-    }
-
-    @Test
-    void failedAddressIsDeprioritizedDuringCooldown() {
-        long[] now = {1_000};
-        LongSupplier clock = () -> now[0];
-        // cooldown of 100 ticks, driven by a virtual clock so the test is deterministic
-        RoundRobinAddressSelector selector = new RoundRobinAddressSelector(100, clock);
-        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"));
-
-        selector.rotate("h", input);                 // index 0 -> 127.0.0.1 first, counter now 1
-        selector.markFailed("h", addr("127.0.0.1")); // 127.0.0.1 enters cooldown until tick 1100
-
-        // index 1 -> 127.0.0.2 naturally first
-        assertEquals("127.0.0.2", firstIp(selector.rotate("h", input)));
-        // index 0 would put the cooling 127.0.0.1 first, but it is deprioritized to the back
-        List<InetSocketAddress> rotated = selector.rotate("h", input);
-        assertEquals("127.0.0.2", firstIp(rotated));
-        assertTrue(rotated.containsAll(input), "the cooling address is kept as a last-resort failover target");
-    }
-
-    @Test
-    void cooledAddressIsReprobedAfterWindowElapses() {
-        long[] now = {1_000};
-        LongSupplier clock = () -> now[0];
-        RoundRobinAddressSelector selector = new RoundRobinAddressSelector(100, clock);
-        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"));
-
-        selector.rotate("h", input);                 // counter now 1
-        selector.markFailed("h", addr("127.0.0.1")); // cooldown until tick 1100
-        now[0] = 1_201;                              // advance well past the cooldown window
-
-        // once the window has elapsed the address rejoins the plain rotation and can be selected first again
-        boolean reprobed = false;
-        for (int i = 0; i < 2 && !reprobed; i++) {
-            reprobed = "127.0.0.1".equals(firstIp(selector.rotate("h", input)));
-        }
-        assertTrue(reprobed, "a recovered IP must be re-probed after its cooldown elapses");
-    }
-
-    @Test
-    void allAddressesCoolingFallsBackToPlainRotation() {
-        long[] now = {1_000};
-        LongSupplier clock = () -> now[0];
-        RoundRobinAddressSelector selector = new RoundRobinAddressSelector(100, clock);
-        List<InetSocketAddress> input = Arrays.asList(addr("127.0.0.1"), addr("127.0.0.2"));
-
-        selector.rotate("h", input);
-        selector.markFailed("h", addr("127.0.0.1"));
-        selector.markFailed("h", addr("127.0.0.2"));
-
-        // every address is cooling — rotation must still hand back the full list, never an empty one
-        List<InetSocketAddress> rotated = selector.rotate("h", input);
-        assertEquals(2, rotated.size());
-        assertTrue(rotated.containsAll(input));
-    }
-
-    @Test
-    void markFailedForUntrackedHostIsNoOp() {
-        RoundRobinAddressSelector selector = new RoundRobinAddressSelector();
-        // a host that was never rotated must not be resurrected (or have memory allocated) by a failure
-        selector.markFailed("never-rotated", addr("127.0.0.1"));
-        assertEquals(0, selector.trackedHostCount());
     }
 }

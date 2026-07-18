@@ -16,13 +16,10 @@
 package org.asynchttpclient.netty.channel;
 
 import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.LongSupplier;
 
 /**
  * Picks, per host and per request, which resolved IP a new connection should target first when
@@ -35,20 +32,14 @@ import java.util.function.LongSupplier;
  * requests only when the configured {@link io.netty.resolver.InetNameResolver} returns the
  * addresses in a stable order (see {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN}).
  *
- * <p><b>Failed-IP cooldown.</b> When a connection attempt to an address fails, {@link
- * #markFailed(String, InetSocketAddress)} puts that address in a short cooldown. While the cooldown
- * is active {@link #rotate(String, List)} deprioritizes the address — it is moved to the back of the
- * returned list rather than dropped, so it is still available as a last-resort failover target and
- * is re-probed once the window elapses. This bounds the cost of an IP that silently black-holes
- * packets (no RST): without the cooldown every request pinned to it would burn a full
- * {@code connectTimeout} before failing over; with it, only the occasional re-probe pays that cost.
- * Liveness remains governed at the DNS/resolver level — the cooldown is only a short-lived dampener,
- * not a health checker.
+ * <p>This class is concerned only with rotation. Deprioritizing addresses whose connection attempts
+ * recently failed is handled separately and mode-independently by {@link FailedIpCooldownHolder}, applied
+ * on top of the rotation before a connection is opened.
  *
  * <p>Per-host state is held in a bounded map (capped at {@value #MAX_TRACKED_HOSTS}); at the cap an
  * arbitrary entry is evicted before a new one is added, so memory stays bounded even for clients that
  * touch very many distinct hosts. Dropping a host's state is harmless — its rotation simply restarts
- * at the first resolved address (and forgets any cooldowns) the next time it is seen.
+ * at the first resolved address the next time it is seen.
  *
  * <p>Thread-safe.
  */
@@ -59,33 +50,14 @@ public final class RoundRobinAddressSelector {
     // entry is evicted before a new one is inserted (same approach as util/NonceCounter).
     static final int MAX_TRACKED_HOSTS = 4096;
 
-    // How long a failed address is deprioritized before it is re-probed. Deliberately coarser than the
-    // default connectTimeout (PT5S) so that a single failure actually routes traffic away from a dead IP
-    // for a useful window instead of re-pinning to it on the very next request, yet short enough that a
-    // recovered IP rejoins the rotation quickly. The DNS/resolver layer remains the authority on liveness.
-    static final Duration DEFAULT_FAILED_IP_COOLDOWN = Duration.ofSeconds(10);
-
-    private final ConcurrentHashMap<String, HostState> hosts = new ConcurrentHashMap<>();
-    private final long cooldownNanos;
-    private final LongSupplier nanoClock;
-
-    public RoundRobinAddressSelector() {
-        this(DEFAULT_FAILED_IP_COOLDOWN.toNanos(), System::nanoTime);
-    }
-
-    // Visible for testing: lets tests drive a virtual clock and a custom cooldown deterministically.
-    RoundRobinAddressSelector(long cooldownNanos, LongSupplier nanoClock) {
-        this.cooldownNanos = cooldownNanos;
-        this.nanoClock = nanoClock;
-    }
+    private final ConcurrentHashMap<String, AtomicInteger> counters = new ConcurrentHashMap<>();
 
     /**
      * @param host     the request's target host
      * @param resolved the resolved socket addresses (size {@code >= 1}), in resolver order
      * @return the same list instance when there is nothing to rotate (size {@code <= 1}, or the
-     * selected index is already first and no address is in cooldown), otherwise a new list whose first
-     * element is the round-robin-selected address, with any addresses currently in cooldown moved to the
-     * back (otherwise preserving resolver order)
+     * selected index is already first), otherwise a new list whose first element is the
+     * round-robin-selected address (otherwise preserving resolver order)
      */
     public List<InetSocketAddress> rotate(String host, List<InetSocketAddress> resolved) {
         int n = resolved.size();
@@ -93,46 +65,26 @@ public final class RoundRobinAddressSelector {
             return resolved;
         }
 
-        HostState state = stateFor(host);
-        int index = (state.counter.getAndIncrement() & Integer.MAX_VALUE) % n;
-
-        // Fast path: nothing failed recently, so the order is the plain round-robin rotation.
-        if (state.cooldowns.isEmpty()) {
-            return index == 0 ? resolved : rotateBy(resolved, index);
-        }
-
-        List<InetSocketAddress> rotated = index == 0 ? resolved : rotateBy(resolved, index);
-        return deprioritizeCooling(state, rotated);
-    }
-
-    /**
-     * Records that a connection attempt to {@code address} (for {@code host}) failed, so subsequent
-     * rotations deprioritize it for {@link #DEFAULT_FAILED_IP_COOLDOWN}. No-op when the host is not (or
-     * no longer) tracked — we never resurrect an evicted entry, which keeps the failure path from
-     * growing the map for hosts that round-robin is not actively rotating.
-     */
-    public void markFailed(String host, InetSocketAddress address) {
-        HostState state = hosts.get(host);
-        if (state != null) {
-            state.cooldowns.put(address, nanoClock.getAsLong() + cooldownNanos);
-        }
+        AtomicInteger counter = counterFor(host);
+        int index = (counter.getAndIncrement() & Integer.MAX_VALUE) % n;
+        return index == 0 ? resolved : rotateBy(resolved, index);
     }
 
     // Visible for testing: the number of hosts currently tracked (bounded by MAX_TRACKED_HOSTS).
     int trackedHostCount() {
-        return hosts.size();
+        return counters.size();
     }
 
-    private HostState stateFor(String host) {
+    private AtomicInteger counterFor(String host) {
         evictIfNeeded();
-        return hosts.computeIfAbsent(host, h -> new HostState());
+        return counters.computeIfAbsent(host, h -> new AtomicInteger());
     }
 
     // Returns a read-only view of {@code resolved} rotated left by {@code index} — element i is
     // resolved.get((index + i) mod size) — instead of copying the rotation into a fresh ArrayList (plus two
     // subList views), which the round-robin fast path did on ~(n-1)/n of multi-IP requests. All consumers
-    // only read the result (get/size/iteration — NettyChannelConnector and deprioritizeCooling), and the
-    // resolved list is not mutated after being wrapped, so the lightweight view is safe.
+    // only read the result (get/size/iteration — NettyChannelConnector and FailedIpCooldownHolder#reorder),
+    // and the resolved list is not mutated after being wrapped, so the lightweight view is safe.
     private static List<InetSocketAddress> rotateBy(List<InetSocketAddress> resolved, int index) {
         return new RotatedView(resolved, index);
     }
@@ -165,54 +117,15 @@ public final class RoundRobinAddressSelector {
         }
     }
 
-    // Stable-partition the rotated order into not-cooling (kept first) and cooling (moved to the back),
-    // expiring elapsed cooldowns lazily as we go. If every address is cooling, the rotation is returned
-    // unchanged so we never hand back an empty list — failover still has somewhere to go.
-    private List<InetSocketAddress> deprioritizeCooling(HostState state, List<InetSocketAddress> rotated) {
-        long now = nanoClock.getAsLong();
-        List<InetSocketAddress> healthy = new ArrayList<>(rotated.size());
-        List<InetSocketAddress> cooling = null;
-        for (InetSocketAddress address : rotated) {
-            Long until = state.cooldowns.get(address);
-            if (until == null) {
-                healthy.add(address);
-            } else if (until - now > 0) { // nanoTime-safe comparison
-                if (cooling == null) {
-                    cooling = new ArrayList<>();
-                }
-                cooling.add(address);
-            } else {
-                state.cooldowns.remove(address, until);
-                healthy.add(address);
-            }
-        }
-        if (cooling == null) {
-            return rotated; // nothing actually cooling (all entries had expired)
-        }
-        if (healthy.isEmpty()) {
-            return rotated; // everything is cooling — keep the plain rotation rather than return nothing
-        }
-        healthy.addAll(cooling);
-        return healthy;
-    }
-
     // Keep the map bounded: when it is full, drop one arbitrary entry before a new host is added.
-    // Evicting an entry only resets that host's rotation and cooldowns, so the choice of victim does not matter.
+    // Evicting an entry only resets that host's rotation, so the choice of victim does not matter.
     private void evictIfNeeded() {
-        if (hosts.size() >= MAX_TRACKED_HOSTS) {
-            var it = hosts.keySet().iterator();
+        if (counters.size() >= MAX_TRACKED_HOSTS) {
+            var it = counters.keySet().iterator();
             if (it.hasNext()) {
                 it.next();
                 it.remove();
             }
         }
-    }
-
-    // Per-host rotation cursor plus the set of addresses currently in cooldown (address -> nanoTime the
-    // cooldown expires). The cooldown map is bounded by the host's resolved-IP count and self-prunes as
-    // entries expire during rotation.
-    private static final class HostState {
-        final AtomicInteger counter = new AtomicInteger();
-        final ConcurrentHashMap<InetSocketAddress, Long> cooldowns = new ConcurrentHashMap<>();
     }
 }
