@@ -31,6 +31,10 @@ public interface Body extends Closeable {
 
     /**
      * Reads the next chunk of bytes from the body.
+     * <p>
+     * A {@link BodyState#STOP} result may be returned by the same call that writes the body's last bytes, so
+     * {@code target} can still hold unread bytes on STOP. Consumers must drain {@code target} before honouring
+     * STOP, otherwise the final chunk is lost.
      *
      * @param target The buffer to store the chunk in, must not be {@code null}.
      * @return The state.
@@ -51,7 +55,8 @@ public interface Body extends Closeable {
         SUSPEND,
 
         /**
-         * There's nothing to read and input has to stop
+         * Input has to stop. This is the last chunk; {@code target} may still carry unread bytes that the
+         * consumer must send before stopping (see {@link Body#transferTo(ByteBuf)}).
          */
         STOP
     }
