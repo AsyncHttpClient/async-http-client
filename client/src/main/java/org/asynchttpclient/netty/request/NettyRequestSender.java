@@ -1136,11 +1136,11 @@ public final class NettyRequestSender {
      * re-enters here on the loop, and the connection we would wait for is being established on that SAME loop,
      * so waiting could self-deadlock. There we do the single immediate poll and give up.
      *
-     * <p><b>{@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} deferral limitation (#2214).</b> The waiter is
-     * keyed per IP, so a request pinned to {@code IP_B} is only woken by a connection registered for
-     * {@code IP_B}, never one that later appears on a sibling {@code IP_A}; such a request waits out the
-     * deadline and then fails with the permit exception. The immediate sibling fallback above still covers the
-     * case where a sibling connection is already open when the request defers.
+     * <p>In {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} mode the waiter is registered against the
+     * per-host base key (see {@link ChannelManager#addHttp2ConnectionWaiter}), so a request pinned to
+     * {@code IP_B} is woken by a connection registered for ANY IP of the host — including a sibling
+     * {@code IP_A} that finishes connecting after this request deferred — and multiplexes onto it (#2214),
+     * rather than waiting out the deadline for its own pinned IP.
      *
      * @return the (pending) future when the request was reused or deferred; {@code null} if it should be
      *         failed with {@code semaphoreException} (a WebSocket request, or on the event loop with no
@@ -1185,8 +1185,9 @@ public final class NettyRequestSender {
         private final AsyncHandler<T> asyncHandler;
         private final Object override;
         private final IOException semaphoreException;
-        // The key a matching connection registers under (registerHttp2Connection uses future.getPartitionKey())
-        // — the same key pollHttp2 effectively polls, so a registration wakes exactly the right waiters.
+        // This request's own partition key (future.getPartitionKey() — the per-IP key in round-robin mode).
+        // ChannelManager groups waiters by its per-host base key, so a connection registered for any IP of the
+        // host wakes this waiter and it can multiplex onto that (possibly sibling-IP) connection (#2214).
         private final Object waitKey;
         private final AtomicBoolean claimed = new AtomicBoolean();
         private volatile Timeout deadline;

@@ -148,10 +148,12 @@ public class ChannelManager {
     private final ConcurrentHashMap<Object, ConcurrentHashMap<Object, Channel>> http2Connections = new ConcurrentHashMap<>();
     // Requests that could not acquire a connection permit and are waiting — off the event loop, WITHOUT
     // blocking their caller thread — for a sibling HTTP/2 connection to the same origin to be registered so
-    // they can multiplex onto it. Keyed by the same partition key {@link #registerHttp2Connection} uses.
-    // Each waiter is invoked with the registered channel when one appears, or with {@code null} when the
-    // client is closing so it can fail its request rather than hang (its request-timeout is not scheduled
-    // yet at this point). See NettyRequestSender's HTTP/2 deferral.
+    // they can multiplex onto it. Keyed by the per-host base key ({@link #baseKeyOf} of the registration
+    // partition key), so a request pinned to one IP is woken by a connection registered for ANY IP of the
+    // host and can multiplex onto that sibling (issue #2214). Each waiter is invoked with the registered
+    // channel when one appears, or with {@code null} when the client is closing so it can fail its request
+    // rather than hang (its request-timeout is not scheduled yet at this point). See NettyRequestSender's
+    // HTTP/2 deferral.
     private final ConcurrentHashMap<Object, Set<Consumer<Channel>>> http2ConnectionWaiters = new ConcurrentHashMap<>();
 
     private AsyncHttpClientHandler wsHandler;
@@ -494,24 +496,28 @@ public class ChannelManager {
     }
 
     /**
-     * Registers a one-shot waiter to be invoked when an HTTP/2 connection is registered under
-     * {@code partitionKey} (or with {@code null} on client close). See the {@link #http2ConnectionWaiters}
-     * field and NettyRequestSender's HTTP/2 deferral. The waiter must be idempotent — it may be invoked by
-     * a registration, by the client-close sweep, or removed and invoked by its own timeout concurrently.
+     * Registers a one-shot waiter to be invoked when an HTTP/2 connection is registered for the same host
+     * (or with {@code null} on client close). See the {@link #http2ConnectionWaiters} field and
+     * NettyRequestSender's HTTP/2 deferral. Waiters are grouped by the per-host base key ({@link #baseKeyOf}),
+     * NOT the full per-IP partition key: in round-robin mode a permit-starved request pinned to one IP must
+     * be woken by a connection that registers for ANY IP of the host so it can multiplex onto that sibling
+     * (issue #2214) — the per-IP registration key on its own would never wake it. The waiter must be
+     * idempotent — it may be invoked by a registration, by the client-close sweep, or removed and invoked by
+     * its own timeout concurrently.
      */
     public void addHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
-        http2ConnectionWaiters.computeIfAbsent(partitionKey, k -> ConcurrentHashMap.newKeySet()).add(onConnection);
+        http2ConnectionWaiters.computeIfAbsent(baseKeyOf(partitionKey), k -> ConcurrentHashMap.newKeySet()).add(onConnection);
     }
 
     public void removeHttp2ConnectionWaiter(Object partitionKey, Consumer<Channel> onConnection) {
-        Set<Consumer<Channel>> waiters = http2ConnectionWaiters.get(partitionKey);
+        Set<Consumer<Channel>> waiters = http2ConnectionWaiters.get(baseKeyOf(partitionKey));
         if (waiters != null) {
             waiters.remove(onConnection);
         }
     }
 
     private void wakeHttp2ConnectionWaiters(Object partitionKey, Channel channel) {
-        Set<Consumer<Channel>> waiters = http2ConnectionWaiters.remove(partitionKey);
+        Set<Consumer<Channel>> waiters = http2ConnectionWaiters.remove(baseKeyOf(partitionKey));
         if (waiters != null) {
             for (Consumer<Channel> waiter : waiters) {
                 waiter.accept(channel);
