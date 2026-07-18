@@ -451,7 +451,12 @@ public final class NettyRequestSender {
             // Do not throw an exception when we need an extra connection for a
             // redirect.
             try {
-                future.acquirePartitionLockLazily();
+                // On the event loop (a redirect / 401 / 407 / retry replay re-enters sendRequest here),
+                // acquire the connection permit WITHOUT blocking: parking the loop for
+                // acquireFreeChannelTimeout would stall every other connection it serves (and the permit
+                // may be released only by a task queued on this same loop). Off the loop — the initial
+                // execute() on the caller thread — keep the configured blocking wait.
+                future.acquirePartitionLockLazily(isOnEventLoop());
             } catch (IOException semaphoreException) {
                 // The per-host permit is exhausted, but a sibling request may be establishing an HTTP/2
                 // connection to this origin we can multiplex onto (stream reuse needs no permit). Reuse one
