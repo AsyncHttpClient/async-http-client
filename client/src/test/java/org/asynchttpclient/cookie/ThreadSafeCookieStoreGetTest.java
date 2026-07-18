@@ -151,6 +151,35 @@ public class ThreadSafeCookieStoreGetTest {
     }
 
     @Test
+    public void evictionDropsExpiredCookiesBeforeLiveOnes() throws InterruptedException {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        Uri uri = Uri.create("http://www.foo.com/");
+        int cap = ThreadSafeCookieStore.MAX_COOKIES_PER_DOMAIN;
+        int live = cap - 5;
+
+        // Fill the bucket exactly to the cap: (cap - 5) session cookies that never expire ...
+        for (int i = 0; i < live; i++) {
+            store.add(uri, ClientCookieDecoder.LAX.decode("live" + i + "=v; Domain=www.foo.com; Path=/"));
+        }
+        // ... plus 5 short-lived cookies that will expire before the next add.
+        for (int i = 0; i < 5; i++) {
+            store.add(uri, ClientCookieDecoder.LAX.decode("exp" + i + "=v; Domain=www.foo.com; Path=/; Max-Age=1"));
+        }
+        assertEquals(cap, store.getUnderlying().get("www.foo.com").size(), "precondition: bucket filled to the cap");
+
+        // Max-Age is second-granular, so let > 1s pass for the five short-lived cookies to expire.
+        Thread.sleep(2100);
+
+        // This add pushes the bucket over the cap and triggers eviction. RFC 6265 §5.3 drops expired
+        // cookies first, so all five expired ones go and no live cookie is evicted.
+        store.add(uri, ClientCookieDecoder.LAX.decode("trigger=v; Domain=www.foo.com; Path=/"));
+
+        assertEquals(live + 1, store.getUnderlying().get("www.foo.com").size(),
+                "eviction must drop the expired cookies first, leaving every live cookie in place");
+        assertEquals(live + 1, store.get(uri).size(), "all live cookies (and only those) remain retrievable");
+    }
+
+    @Test
     public void returnsEmptyForUnknownDomain() {
         ThreadSafeCookieStore store = new ThreadSafeCookieStore();
         store.add(Uri.create("http://www.foo.com/"),
