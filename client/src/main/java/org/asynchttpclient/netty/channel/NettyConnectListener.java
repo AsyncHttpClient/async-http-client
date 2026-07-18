@@ -283,10 +283,23 @@ public final class NettyConnectListener<T> {
      */
     private void registerHttp2AndManageSemaphore(Channel channel, Object partitionKeyLock) {
         // Register under the future's partition key so the H2 connection is found by the same key the
-        // pool is polled with — including the IP-aware key used by LoadBalance.ROUND_ROBIN.
-        channelManager.registerHttp2Connection(future.getPartitionKey(), channel);
-        if (future.getPartitionKey() instanceof RoundRobinPartitionKey) {
-            attachSemaphoreToChannelClose(channel, partitionKeyLock);
+        // pool is polled with, including the IP-aware key used by LoadBalance.ROUND_ROBIN. Read the key
+        // once: it is volatile (repinned on IP failover) and both uses below must agree.
+        Object partitionKey = future.getPartitionKey();
+        channelManager.registerHttp2Connection(partitionKey, channel);
+        if (partitionKey instanceof RoundRobinPartitionKey) {
+            // The permit must be freed as soon as the connection stops serving new requests: on close, or
+            // at drain start after GOAWAY (issue #2214). Both paths go through releasePermitOnce(), which
+            // guarantees a single release; a double release would push the semaphore above the cap. The
+            // state attribute is always present after upgradePipelineToHttp2, the fallback is just
+            // belt and braces.
+            Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+            if (state != null && connectionSemaphore != null && partitionKeyLock != null) {
+                state.setPermitRelease(() -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
+                channel.closeFuture().addListener(f -> state.releasePermitOnce());
+            } else {
+                attachSemaphoreToChannelClose(channel, partitionKeyLock);
+            }
         } else {
             releaseSemaphoreImmediately(partitionKeyLock);
         }

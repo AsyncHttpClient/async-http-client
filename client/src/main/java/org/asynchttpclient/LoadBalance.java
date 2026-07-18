@@ -68,6 +68,12 @@ public enum LoadBalance {
      *       {@code maxConnectionsPerHost} at least as large as the resolved-IP count for full per-IP
      *       spreading. The default is unlimited, so this bound only applies when a finite per-host limit is
      *       configured.</li>
+     *   <li>Since the per-host permit is held for the connection's lifetime, each live round-robin HTTP/2
+     *       connection also occupies a global {@code maxConnections} slot until it closes, and pool
+     *       {@code connectionTtl}/idle reaping do not apply (these connections live in the HTTP/2 registry,
+     *       kept alive by PING, until GOAWAY or the connection drops). When a GOAWAY starts draining a
+     *       connection its permit is released immediately, so a replacement can be opened without waiting
+     *       for in-flight streams to finish.</li>
      *   <li>The address order comes straight from the configured
      *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
      *       rotation to map consistently across requests, use a resolver that returns the addresses
