@@ -21,6 +21,7 @@ import java.net.InetAddress;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class RoundRobinPartitionKeyTest {
 
@@ -54,5 +55,15 @@ class RoundRobinPartitionKeyTest {
         RoundRobinPartitionKey repinned = original.withAddress(InetAddress.getByName("127.0.0.2"));
         assertEquals(new RoundRobinPartitionKey("base", InetAddress.getByName("127.0.0.2")), repinned);
         assertNotEquals(original, repinned);
+    }
+
+    @Test
+    void getBaseKeyReturnsConstructorBase() throws Exception {
+        Object base = "base";
+        RoundRobinPartitionKey key = new RoundRobinPartitionKey(base, InetAddress.getByName("127.0.0.1"));
+        // Same reference, so the HTTP/2 registry groups sibling per-IP keys under the exact base it was built with.
+        assertSame(base, key.getBaseKey());
+        // withAddress preserves the base key (used to re-pin on failover, issue #2214).
+        assertSame(base, key.withAddress(InetAddress.getByName("127.0.0.2")).getBaseKey());
     }
 }
