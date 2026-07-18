@@ -34,6 +34,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -95,6 +96,21 @@ public class RoundRobinSendTypeTest {
             @Override
             protected void doResolveAll(String inetHost, Promise<List<InetAddress>> promise) {
                 promise.setSuccess(new ArrayList<>(addresses));
+            }
+        };
+    }
+
+    // A misbehaving resolver that reports success but yields no addresses.
+    private static NameResolver<InetAddress> emptyResolver() {
+        return new InetNameResolver(ImmediateEventExecutor.INSTANCE) {
+            @Override
+            protected void doResolve(String inetHost, Promise<InetAddress> promise) {
+                promise.setFailure(new UnknownHostException(inetHost));
+            }
+
+            @Override
+            protected void doResolveAll(String inetHost, Promise<List<InetAddress>> promise) {
+                promise.setSuccess(new ArrayList<>());
             }
         };
     }
@@ -289,6 +305,23 @@ public class RoundRobinSendTypeTest {
             }
         } finally {
             localServer.stop();
+        }
+    }
+
+    @Test
+    public void roundRobinEmptyResolutionFailsFast() throws Exception {
+        // Regression guard: a resolver that completes successfully but yields no addresses must make the
+        // round-robin request fail fast with UnknownHostException, not throw a swallowed
+        // IndexOutOfBoundsException on roundRobinAddresses.get(0) and hang with no timeout scheduled.
+        NameResolver<InetAddress> resolver = emptyResolver();
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxRequestRetry(0).build())) {
+            ExecutionException thrown = assertThrows(ExecutionException.class, () ->
+                    client.executeRequest(get("http://roundrobin.test:" + port + "/").setNameResolver(resolver))
+                            .get(TIMEOUT, SECONDS));
+            assertInstanceOf(UnknownHostException.class, thrown.getCause(),
+                    "empty round-robin resolution must fail fast with UnknownHostException; got " + thrown.getCause());
         }
     }
 
