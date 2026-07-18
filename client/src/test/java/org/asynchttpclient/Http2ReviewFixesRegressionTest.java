@@ -222,7 +222,11 @@ public class Http2ReviewFixesRegressionTest {
         ChannelManager cm = ((DefaultAsyncHttpClient) client).channelManager();
         java.lang.reflect.Field f = ChannelManager.class.getDeclaredField("http2Connections");
         f.setAccessible(true);
-        return ((java.util.Map<Object, Channel>) f.get(cm)).values();
+        // The registry is grouped by per-host base key (issue #2214): Map<baseKey, Map<fullKey, Channel>>.
+        // Flatten the inner maps to recover the flat collection of connections this test expects.
+        return ((java.util.Map<Object, ? extends java.util.Map<Object, Channel>>) f.get(cm)).values().stream()
+                .flatMap(inner -> inner.values().stream())
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private static Channel singleHttp2Connection(AsyncHttpClient client) throws Exception {

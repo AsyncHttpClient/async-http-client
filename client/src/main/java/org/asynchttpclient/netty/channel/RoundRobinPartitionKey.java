@@ -37,6 +37,14 @@ public final class RoundRobinPartitionKey {
     }
 
     /**
+     * @return the per-host base partition key (without the pinned IP). Lets the HTTP/2 registry group
+     * sibling per-IP connections for the same host so a permit-starved request can reuse one (issue #2214).
+     */
+    public Object getBaseKey() {
+        return baseKey;
+    }
+
+    /**
      * @return a key with the same base but a different IP, used to re-pin to the IP actually connected
      * to when the connector fails over from the initially selected IP
      */
