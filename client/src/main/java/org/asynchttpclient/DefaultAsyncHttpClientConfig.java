@@ -1222,12 +1222,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         /**
          * @param failedIpCooldownPeriod how long a failed IP is deprioritized before it is re-probed;
-         *                               {@code null} resets to the default
+         *                               {@code null} resets to the default. Must not be negative; use
+         *                               {@link #setFailedIpCooldownEnabled(boolean)} with {@code false}
+         *                               to turn the cooldown off instead.
          * @return this
+         * @throws IllegalArgumentException if {@code failedIpCooldownPeriod} is negative
          * @see AsyncHttpClientConfig#getFailedIpCooldownPeriod()
          */
         public Builder setFailedIpCooldownPeriod(Duration failedIpCooldownPeriod) {
-            this.failedIpCooldownPeriod = failedIpCooldownPeriod == null ? defaultFailedIpCooldownPeriod() : failedIpCooldownPeriod;
+            if (failedIpCooldownPeriod == null) {
+                this.failedIpCooldownPeriod = defaultFailedIpCooldownPeriod();
+            } else if (failedIpCooldownPeriod.isNegative()) {
+                throw new IllegalArgumentException("failedIpCooldownPeriod must not be negative: " + failedIpCooldownPeriod);
+            } else {
+                this.failedIpCooldownPeriod = failedIpCooldownPeriod;
+            }
             return this;
         }
 
