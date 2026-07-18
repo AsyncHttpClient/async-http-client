@@ -89,6 +89,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
@@ -490,6 +491,13 @@ public final class NettyRequestSender {
         // new-connection path, before connecting.
         List<InetSocketAddress> roundRobinAddresses = future.getRoundRobinAddresses();
         if (roundRobinAddresses != null) {
+            // A misbehaving custom NameResolver can complete resolution successfully with an empty list; fail
+            // fast with a clear cause instead of throwing IndexOutOfBoundsException on get(0) below, which the
+            // resolve listener would swallow and leave the request hanging with no timeout scheduled.
+            if (roundRobinAddresses.isEmpty()) {
+                abort(null, future, new UnknownHostException("No addresses resolved for " + request.getUri().getHost()));
+                return future;
+            }
             scheduleRequestTimeout(future, roundRobinAddresses.get(0));
             connectWithAddresses(request, proxy, future, asyncHandler, roundRobinAddresses);
             return future;
