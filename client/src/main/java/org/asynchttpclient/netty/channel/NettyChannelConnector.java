@@ -42,7 +42,7 @@ public class NettyChannelConnector {
     private final List<InetSocketAddress> remoteAddresses;
     private final AsyncHttpClientState clientState;
     // Notified with each remote address whose TCP connect attempt fails, or null when no caller cares.
-    // Used by round-robin load balancing to put a failed IP in a short cooldown; see RoundRobinAddressSelector.
+    // Used to put a failed IP in a short cooldown so new connections route around it; see FailedIpCooldownHolder.
     private final Consumer<InetSocketAddress> connectFailureListener;
     private volatile int i;
 
@@ -104,7 +104,7 @@ public class NettyChannelConnector {
                     @Override
                     public void onFailure(Channel channel, Throwable t) {
                         if (connectFailureListener != null) {
-                            // Record the failed IP before failing over so round-robin can route around it briefly.
+                            // Record the failed IP before failing over so the cooldown can route around it briefly.
                             connectFailureListener.accept(remoteAddress);
                         }
                         try {
