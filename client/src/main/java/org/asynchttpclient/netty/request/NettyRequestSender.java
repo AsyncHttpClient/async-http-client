@@ -1113,17 +1113,18 @@ public final class NettyRequestSender {
      * acquire a connection permit can still multiplex onto an HTTP/2 connection another thread is
      * establishing to the same origin.
      *
-     * <p><b>{@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} limitation.</b> The HTTP/2 registry is an
-     * exact-key map, and in round-robin mode each connection is registered under its per-IP key
+     * <p>In {@link org.asynchttpclient.LoadBalance#ROUND_ROBIN} mode the registry is keyed per IP
      * ({@code RoundRobinPartitionKey(base, IP)}; see {@link org.asynchttpclient.netty.channel.NettyConnectListener}).
-     * A request pinned to {@code IP_B} therefore polls only {@code (base, IP_B)} and never discovers a
-     * sibling HTTP/2 connection already open on {@code IP_A}. The connection permit, however, is per host
-     * ({@code maxConnectionsPerHost}), so once the host is at its cap such a request can neither open a new
-     * connection nor reuse the sibling one: off the event loop it spins here for the full
-     * {@code connectTimeout} and then fails with the original permit exception. This only bites when
-     * {@code maxConnectionsPerHost} is configured (the default is unlimited). Note that falling back to a
-     * poll on the per-host base key would be a no-op — nothing is ever registered under it — so reusing a
-     * sibling-IP connection requires indexing the registry by base key (tracked in issue #2214).
+     * This path first polls the request's own pinned-IP key and, if that misses, falls back to ANY active,
+     * non-draining HTTP/2 connection to the same host on a sibling IP (see
+     * {@link org.asynchttpclient.netty.channel.ChannelManager#pollHttp2SiblingConnection(Object)}). That lets
+     * a request fail the per-host {@code maxConnectionsPerHost} permit yet still multiplex onto a connection
+     * already open to a different IP of the host — multiplexing onto an existing HTTP/2 connection takes no
+     * permit — instead of stalling for {@code connectTimeout} and then failing with the original permit
+     * exception (issue #2214). The sibling fallback is confined to this permit-failure path; the normal
+     * pooled-reuse path stays strictly per IP so load keeps spreading. If no sibling qualifies, the original
+     * permit failure stands. This only matters when {@code maxConnectionsPerHost} is configured below the
+     * host's resolved-IP count (the default is unlimited).
      */
     private Channel waitForHttp2Connection(Request request, ProxyServer proxy, NettyResponseFuture<?> future) {
         Uri uri = request.getUri();
@@ -1141,7 +1142,7 @@ public final class NettyRequestSender {
         Object h2Key = override != null ? override
                 : request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy);
 
-        Channel h2Channel = channelManager.pollHttp2Connection(h2Key);
+        Channel h2Channel = pollHttp2(h2Key);
         if (h2Channel != null) {
             return h2Channel;
         }
@@ -1157,7 +1158,7 @@ public final class NettyRequestSender {
 
         long deadline = System.nanoTime() + config.getConnectTimeout().toNanos();
         while (System.nanoTime() < deadline) {
-            h2Channel = channelManager.pollHttp2Connection(h2Key);
+            h2Channel = pollHttp2(h2Key);
             if (h2Channel != null) {
                 return h2Channel;
             }
@@ -1169,6 +1170,21 @@ public final class NettyRequestSender {
             }
         }
         return null;
+    }
+
+    // Polls the HTTP/2 registry for the already-resolved partition key (computed once by the caller from the
+    // live request). In round-robin mode the key is the per-IP RoundRobinPartitionKey: the exact per-IP
+    // connection is tried first (keeping reuse pinned to this request's IP), and only if that misses do we
+    // fall back to a sibling-IP connection for the same host, so a permit-starved request can still multiplex
+    // instead of failing (issue #2214). Otherwise the key is the plain per-host base key and no sibling
+    // fallback applies. The fallback is confined to this permit-failure path — the happy path
+    // (pollPooledChannel) deliberately does not use it, so steady-state reuse keeps spreading across IPs.
+    private Channel pollHttp2(Object h2Key) {
+        Channel h2Channel = channelManager.pollHttp2Connection(h2Key);
+        if (h2Channel == null && h2Key instanceof RoundRobinPartitionKey) {
+            h2Channel = channelManager.pollHttp2SiblingConnection(((RoundRobinPartitionKey) h2Key).getBaseKey());
+        }
+        return h2Channel;
     }
 
     private boolean isOnEventLoop() {

@@ -596,14 +596,11 @@ public final class AuthenticatorUtils {
                     break;
                 case KERBEROS:
                 case SPNEGO:
-                    String host;
-                    if (proxyServer != null) {
-                        host = proxyServer.getHost();
-                    } else if (request.getVirtualHost() != null) {
-                        host = request.getVirtualHost();
-                    } else {
-                        host = request.getUri().getHost();
-                    }
+                    // The origin realm's Negotiate token must target the origin service even when a proxy
+                    // is configured. Minting it against the proxy host produced a service ticket for the
+                    // proxy's SPN: a confused deputy where the origin credential is delivered to, and only
+                    // usable by, the proxy, while origin authentication fails.
+                    String host = request.getVirtualHost() != null ? request.getVirtualHost() : request.getUri().getHost();
 
                     try {
                         authorizationHeader = NEGOTIATE + ' ' + SpnegoEngine.instance(

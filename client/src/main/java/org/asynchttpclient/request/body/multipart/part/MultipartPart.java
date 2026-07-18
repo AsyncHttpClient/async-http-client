@@ -260,7 +260,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
     protected void visitDispositionHeader(PartVisitor visitor) {
         visitor.withBytes(CRLF_BYTES);
         visitor.withBytes(CONTENT_DISPOSITION_BYTES);
-        visitor.withBytes(part.getDispositionType() != null ? part.getDispositionType().getBytes(US_ASCII) : FORM_DATA_DISPOSITION_TYPE_BYTES);
+        visitor.withBytes(part.getDispositionType() != null ? asciiHeaderBytes(part.getDispositionType()) : FORM_DATA_DISPOSITION_TYPE_BYTES);
         if (part.getName() != null) {
             visitor.withBytes(NAME_BYTES);
             visitor.withByte(QUOTE_BYTE);
@@ -303,12 +303,28 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
         return sb == null ? value : sb.toString();
     }
 
+    /**
+     * Reject CR or LF in a raw part-header field (RFC 7578). Unlike the quoted-string name and filename
+     * params, which are percent-escaped, these fields are written straight into the header, so a CR or LF
+     * would inject extra part headers or split the body. A legitimate value never contains them, so fail
+     * closed rather than corrupt the request.
+     */
+    protected static byte[] asciiHeaderBytes(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '\r' || c == '\n') {
+                throw new IllegalArgumentException("Illegal CR/LF in multipart part header: " + value);
+            }
+        }
+        return value.getBytes(US_ASCII);
+    }
+
     protected void visitContentTypeHeader(PartVisitor visitor) {
         String contentType = part.getContentType();
         if (contentType != null) {
             visitor.withBytes(CRLF_BYTES);
             visitor.withBytes(CONTENT_TYPE_BYTES);
-            visitor.withBytes(contentType.getBytes(US_ASCII));
+            visitor.withBytes(asciiHeaderBytes(contentType));
             Charset charSet = part.getCharset();
             if (charSet != null) {
                 visitor.withBytes(CHARSET_BYTES);
@@ -322,7 +338,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
         if (transferEncoding != null) {
             visitor.withBytes(CRLF_BYTES);
             visitor.withBytes(CONTENT_TRANSFER_ENCODING_BYTES);
-            visitor.withBytes(transferEncoding.getBytes(US_ASCII));
+            visitor.withBytes(asciiHeaderBytes(transferEncoding));
         }
     }
 
@@ -331,7 +347,7 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
         if (contentId != null) {
             visitor.withBytes(CRLF_BYTES);
             visitor.withBytes(CONTENT_ID_BYTES);
-            visitor.withBytes(contentId.getBytes(US_ASCII));
+            visitor.withBytes(asciiHeaderBytes(contentId));
         }
     }
 
@@ -339,9 +355,9 @@ public abstract class MultipartPart<T extends PartBase> implements Closeable {
         if (isNonEmpty(part.getCustomHeaders())) {
             for (Param param : part.getCustomHeaders()) {
                 visitor.withBytes(CRLF_BYTES);
-                visitor.withBytes(param.getName().getBytes(US_ASCII));
+                visitor.withBytes(asciiHeaderBytes(param.getName()));
                 visitor.withBytes(HEADER_NAME_VALUE_SEPARATOR_BYTES);
-                visitor.withBytes(param.getValue().getBytes(US_ASCII));
+                visitor.withBytes(asciiHeaderBytes(param.getValue()));
             }
         }
     }

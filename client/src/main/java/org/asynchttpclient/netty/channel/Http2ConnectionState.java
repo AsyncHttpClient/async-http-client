@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -75,6 +76,11 @@ public class Http2ConnectionState {
     // opening request from acquiring a slot.
     private final AtomicBoolean redundant = new AtomicBoolean(false);
     private volatile Object partitionKey;
+    // Releases the per-host permit this connection holds in ROUND_ROBIN mode (installed by
+    // NettyConnectListener, absent in DEFAULT mode). The GOAWAY handler and the channel closeFuture race
+    // to fire it; getAndSet(null) makes it run at most once, since a double release would push the
+    // semaphore above maxConnectionsPerHost.
+    private final AtomicReference<Runnable> permitRelease = new AtomicReference<>();
 
     public boolean tryAcquireStream() {
         if (draining.get() || closed.get()) {
@@ -263,5 +269,25 @@ public class Http2ConnectionState {
 
     public Object getPartitionKey() {
         return partitionKey;
+    }
+
+    /**
+     * Installs the action that releases this connection's per-host permit (round-robin mode only).
+     * {@link #releasePermitOnce()} runs it at most once.
+     */
+    public void setPermitRelease(Runnable release) {
+        permitRelease.set(release);
+    }
+
+    /**
+     * Runs the installed permit-release action the first time it is called; later calls do nothing, as do
+     * calls when no action was installed (DEFAULT mode). Fired at drain start (GOAWAY) and on channel
+     * close, whichever comes first.
+     */
+    public void releasePermitOnce() {
+        Runnable release = permitRelease.getAndSet(null);
+        if (release != null) {
+            release.run();
+        }
     }
 }
