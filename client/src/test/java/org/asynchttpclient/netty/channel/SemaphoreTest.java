@@ -217,6 +217,35 @@ public class SemaphoreTest {
 
     @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    public void combinedNonBlockingReleasesGlobalPermitWhenPerHostExhausted() throws IOException {
+        // global(2) > per-host(1): the non-blocking acquire takes a global permit, then fails on the
+        // per-host limit. It must release the global permit it just took (releaseGlobal); otherwise a
+        // request to a DIFFERENT host would be wrongly starved of the still-held global permit. With
+        // global == per-host (as in the fail-fast tests above) the acquire fails on the global limit first
+        // and this release branch is never exercised, so use a wider global limit to reach it.
+        CombinedConnectionSemaphore semaphore = new CombinedConnectionSemaphore(2, 1, NON_BLOCKING__LONG_TIMEOUT);
+        Object hostA = new Object();
+        Object hostB = new Object();
+
+        semaphore.acquireChannelLock(hostA); // global -> 1 free, per-host(A) -> 0
+
+        // The non-blocking acquire for hostA must be rejected by the PER-HOST limit (a global permit was
+        // still free), confirming it got past the global gate and into the releaseGlobal branch.
+        boolean perHostRejected = false;
+        try {
+            semaphore.acquireChannelLock(hostA, true);
+        } catch (TooManyConnectionsPerHostException e) {
+            perHostRejected = true;
+        }
+        assertTrue(perHostRejected, "second hostA acquire must be rejected by the per-host limit, not the global one");
+
+        // If the global permit taken during that failed attempt had leaked, 0 global permits would remain
+        // and this different-host acquire would wrongly throw. It must succeed, proving releaseGlobal ran.
+        semaphore.acquireChannelLock(hostB, true); // must not throw
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
     public void defaultNonBlockingOverloadDelegatesToBlockingAcquire() throws IOException {
         // A custom ConnectionSemaphore that implements only the required methods inherits the default
         // two-arg overload, which must delegate to the blocking acquireChannelLock(Object).
