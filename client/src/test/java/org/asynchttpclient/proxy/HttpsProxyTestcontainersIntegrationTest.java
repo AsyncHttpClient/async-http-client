@@ -146,8 +146,6 @@ public class HttpsProxyTestcontainersIntegrationTest {
                         .setProxyType(ProxyType.HTTP)
                         .build())
                 .setUseInsecureTrustManager(true)
-                // HTTP/2 ALPN upgrade after proxy CONNECT tunnel is not yet supported
-                .setHttp2Enabled(false)
                 .setConnectTimeout(Duration.ofMillis(10000))
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
@@ -169,8 +167,6 @@ public class HttpsProxyTestcontainersIntegrationTest {
                         .setProxyType(ProxyType.HTTPS)
                         .build())
                 .setUseInsecureTrustManager(true)
-                // HTTP/2 ALPN upgrade after proxy CONNECT tunnel is not yet supported
-                .setHttp2Enabled(false)
                 .setConnectTimeout(Duration.ofMillis(10000))
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();

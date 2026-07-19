@@ -122,6 +122,7 @@ public class ChannelManager {
     public static final String HTTP2_FRAME_CODEC = "http2-frame-codec";
     public static final String HTTP2_MULTIPLEX = "http2-multiplex";
     public static final String AHC_HTTP2_HANDLER = "ahc-http2";
+    private static final String TARGET_SSL_HANDLER = "target-ssl";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
     // Guards the one-time WARN emitted when a native transport was requested but is unavailable and we
     // fall back to NIO. Logged once per JVM to avoid spamming logs when many clients are created.
@@ -630,10 +631,6 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
-        return updatePipelineForHttpTunneling(pipeline, requestUri, null);
-    }
-
-    public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri, Object partitionKey) {
         Future<Channel> whenHandshaked = null;
 
         if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
@@ -651,7 +648,6 @@ public class ChannelManager {
             whenHandshaked = sslHandler.handshakeFuture();
             pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
             pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
-            upgradePipelineToHttp2AfterHandshake(whenHandshaked, sslHandler, pipeline, requestUri, partitionKey);
 
         } else {
             // For HTTP targets, remove any existing SSL handler (from HTTPS proxy) since target is not secured
@@ -674,11 +670,6 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer) {
-        return updatePipelineForHttpsTunneling(pipeline, requestUri, proxyServer, null);
-    }
-
-    public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer,
-                                                           Object partitionKey) {
         Future<Channel> whenHandshaked = null;
 
         // Remove HTTP codec as tunnel is established
@@ -698,14 +689,13 @@ public class ChannelManager {
             // This creates a nested SSL setup: Target SSL -> Proxy SSL -> Network
             if (isSslHandlerConfigured(pipeline)) {
                 // Insert target SSL handler after the proxy SSL handler
-                pipeline.addAfter(SSL_HANDLER, "target-ssl", sslHandler);
+                pipeline.addAfter(SSL_HANDLER, TARGET_SSL_HANDLER, sslHandler);
             } else {
                 // This shouldn't happen for HTTPS proxy, but fallback
                 pipeline.addBefore(INFLATER_HANDLER, SSL_HANDLER, sslHandler);
             }
             
-            pipeline.addAfter("target-ssl", HTTP_CLIENT_CODEC, newHttpClientCodec());
-            upgradePipelineToHttp2AfterHandshake(whenHandshaked, sslHandler, pipeline, requestUri, partitionKey);
+            pipeline.addAfter(TARGET_SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
 
         } else {
             // For HTTPS proxy to HTTP target, just add HTTP codec
@@ -724,25 +714,6 @@ public class ChannelManager {
         }
         
         return whenHandshaked;
-    }
-
-    private void upgradePipelineToHttp2AfterHandshake(Future<Channel> whenHandshaked,
-                                                       SslHandler sslHandler,
-                                                       ChannelPipeline pipeline,
-                                                       Uri requestUri,
-                                                       Object partitionKey) {
-        if (!config.isHttp2Enabled() || requestUri.isWebSocket()) {
-            return;
-        }
-
-        whenHandshaked.addListener(f -> {
-            if (f.isSuccess() && ApplicationProtocolNames.HTTP_2.equals(sslHandler.applicationProtocol())) {
-                upgradePipelineToHttp2(pipeline);
-                if (partitionKey != null) {
-                    registerHttp2Connection(partitionKey, pipeline.channel());
-                }
-            }
-        });
     }
 
     public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {
@@ -993,6 +964,23 @@ public class ChannelManager {
         if (pingIntervalMs > 0) {
             pipeline.addLast("http2-idle-state", new IdleStateHandler(0, 0, pingIntervalMs, TimeUnit.MILLISECONDS));
             pipeline.addLast("http2-ping", new Http2PingHandler());
+        }
+    }
+
+    /**
+     * Upgrades and registers a proxy tunnel when the target TLS handshake negotiated HTTP/2.
+     * The caller controls when this runs so the upgrade can happen immediately before the
+     * tunneled request is sent.
+     */
+    public void upgradePipelineToHttp2AfterProxyConnect(ChannelPipeline pipeline, Object partitionKey) {
+        SslHandler targetSslHandler = (SslHandler) pipeline.get(TARGET_SSL_HANDLER);
+        if (targetSslHandler == null) {
+            targetSslHandler = (SslHandler) pipeline.get(SSL_HANDLER);
+        }
+        if (targetSslHandler != null
+                && ApplicationProtocolNames.HTTP_2.equals(targetSslHandler.applicationProtocol())) {
+            upgradePipelineToHttp2(pipeline);
+            registerHttp2Connection(partitionKey, pipeline.channel());
         }
     }
 

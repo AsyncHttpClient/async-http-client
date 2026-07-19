@@ -452,31 +452,33 @@ public class BasicHttp2Test {
         Server proxy = new Server();
         ServerConnector proxyConnector = secureProxy ? addHttpsConnector(proxy) : addHttpConnector(proxy);
         proxy.setHandler(new ConnectHandler());
-        proxy.start();
 
-        try (AsyncHttpClient client = http2Client()) {
-            ProxyServer.Builder proxyBuilder = proxyServer("127.0.0.1", proxyConnector.getLocalPort());
-            if (secureProxy) {
-                proxyBuilder.setProxyType(ProxyType.HTTPS);
+        try {
+            proxy.start();
+            try (AsyncHttpClient client = http2Client()) {
+                ProxyServer.Builder proxyBuilder = proxyServer("127.0.0.1", proxyConnector.getLocalPort());
+                if (secureProxy) {
+                    proxyBuilder.setProxyType(ProxyType.HTTPS);
+                }
+                ProxyServer proxyServer = proxyBuilder.build();
+                Response firstResponse = client.prepareGet(httpsUrl("/hello"))
+                        .setProxyServer(proxyServer)
+                        .execute()
+                        .get(30, SECONDS);
+                Response secondResponse = client.prepareGet(httpsUrl("/hello"))
+                        .setProxyServer(proxyServer)
+                        .execute()
+                        .get(30, SECONDS);
+
+                assertNotNull(firstResponse);
+                assertEquals(200, firstResponse.getStatusCode());
+                assertEquals(HttpProtocol.HTTP_2, firstResponse.getProtocol());
+                assertNotNull(secondResponse);
+                assertEquals(200, secondResponse.getStatusCode());
+                assertEquals(HttpProtocol.HTTP_2, secondResponse.getProtocol());
+                assertEquals(1, serverChildChannels.size(),
+                        "the HTTP/2 tunnel connection should be registered and reused");
             }
-            ProxyServer proxyServer = proxyBuilder.build();
-            Response firstResponse = client.prepareGet(httpsUrl("/hello"))
-                    .setProxyServer(proxyServer)
-                    .execute()
-                    .get(30, SECONDS);
-            Response secondResponse = client.prepareGet(httpsUrl("/hello"))
-                    .setProxyServer(proxyServer)
-                    .execute()
-                    .get(30, SECONDS);
-
-            assertNotNull(firstResponse);
-            assertEquals(200, firstResponse.getStatusCode());
-            assertEquals(HttpProtocol.HTTP_2, firstResponse.getProtocol());
-            assertNotNull(secondResponse);
-            assertEquals(200, secondResponse.getStatusCode());
-            assertEquals(HttpProtocol.HTTP_2, secondResponse.getProtocol());
-            assertEquals(1, serverChildChannels.size(),
-                    "the HTTP/2 tunnel connection should be registered and reused");
         } finally {
             proxy.stop();
         }
