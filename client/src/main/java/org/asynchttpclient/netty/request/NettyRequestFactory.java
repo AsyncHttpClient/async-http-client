@@ -336,8 +336,9 @@ public final class NettyRequestFactory {
             return uri.getAuthority();
 
         } else if (proxyServer != null && !uri.isSecured() && proxyServer.getProxyType().isHttp()) {
-            // proxy over HTTP, need full url
-            return uri.toUrl();
+            // proxy over HTTP, need full url, minus the userinfo: this request line is sent to the proxy in
+            // the clear and RFC 9110 §4.2.4 forbids userinfo in a generated request target
+            return uri.toUrlWithoutUserInfo();
 
         } else {
             // direct connection to target host or tunnel already connected: only path and query
