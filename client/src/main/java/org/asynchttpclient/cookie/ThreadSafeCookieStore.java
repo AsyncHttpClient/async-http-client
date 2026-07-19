@@ -63,6 +63,10 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
     @Override
     public List<Cookie> get(Uri uri) {
+        requireNonNull(uri, "uri");
+        if (cookieJar.isEmpty()) {
+            return Collections.emptyList();
+        }
         return get(requestDomain(uri), requestPath(uri), uri.isSecured());
     }
 

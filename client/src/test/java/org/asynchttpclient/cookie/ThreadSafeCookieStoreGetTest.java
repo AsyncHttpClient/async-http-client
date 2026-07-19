@@ -113,6 +113,13 @@ public class ThreadSafeCookieStoreGetTest {
     }
 
     @Test
+    public void returnsEmptyForEmptyStore() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+
+        assertTrue(store.get(Uri.create("http://www.foo.com/")).isEmpty());
+    }
+
+    @Test
     public void perDomainCookieCountIsCappedUnderFlood() {
         ThreadSafeCookieStore store = new ThreadSafeCookieStore();
         Uri uri = Uri.create("http://www.foo.com/");
