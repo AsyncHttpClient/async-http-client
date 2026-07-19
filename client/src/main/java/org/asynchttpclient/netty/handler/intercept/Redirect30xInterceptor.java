@@ -35,9 +35,6 @@ import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
@@ -59,16 +56,7 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 public class Redirect30xInterceptor {
 
-    public static final Set<Integer> REDIRECT_STATUSES = new HashSet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Redirect30xInterceptor.class);
-
-    static {
-        REDIRECT_STATUSES.add(MOVED_PERMANENTLY_301);
-        REDIRECT_STATUSES.add(FOUND_302);
-        REDIRECT_STATUSES.add(SEE_OTHER_303);
-        REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
-        REDIRECT_STATUSES.add(PERMANENT_REDIRECT_308);
-    }
 
     private final ChannelManager channelManager;
     private final AsyncHttpClientConfig config;
@@ -201,6 +189,14 @@ public class Redirect30xInterceptor {
             }
         }
         return false;
+    }
+
+    static boolean isRedirectStatus(int statusCode) {
+        return statusCode == MOVED_PERMANENTLY_301 ||
+                statusCode == FOUND_302 ||
+                statusCode == SEE_OTHER_303 ||
+                statusCode == TEMPORARY_REDIRECT_307 ||
+                statusCode == PERMANENT_REDIRECT_308;
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {

@@ -125,7 +125,7 @@ public class Interceptors {
             return continue100Interceptor.exitAfterHandling100(channel, future);
         }
 
-        if (Redirect30xInterceptor.REDIRECT_STATUSES.contains(statusCode)) {
+        if (Redirect30xInterceptor.isRedirectStatus(statusCode)) {
             return redirect30xInterceptor.exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
         }
 
