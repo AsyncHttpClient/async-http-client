@@ -35,6 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,6 +64,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
+    private final ExecutorService nameResolverExecutor;
     private final boolean allowStopNettyTimer;
     private final Timer nettyTimer;
 
@@ -105,8 +108,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             nettyTimer = configTimer;
         }
 
-        channelManager = new ChannelManager(config, nettyTimer);
-        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
+        nameResolverExecutor = newNameResolverExecutor(config);
+        channelManager = new ChannelManager(config, nettyTimer, nameResolverExecutor);
+        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed),
+                nameResolverExecutor);
         channelManager.configureBootstraps(requestSender);
 
         CookieStore cookieStore = config.getCookieStore();
@@ -134,6 +139,13 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         return timer;
     }
 
+    private static ExecutorService newNameResolverExecutor(AsyncHttpClientConfig config) {
+        ThreadFactory threadFactory = config.getThreadFactory() != null
+                ? config.getThreadFactory()
+                : new DefaultThreadFactory(config.getThreadPoolName() + "-resolver");
+        return Executors.newFixedThreadPool(Math.max(1, config.getIoThreadsCount()), threadFactory);
+    }
+
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
@@ -142,6 +154,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             } catch (Throwable t) {
                 LOGGER.warn("Unexpected error on ChannelManager close", t);
             }
+            nameResolverExecutor.shutdownNow();
             CookieStore cookieStore = config.getCookieStore();
             if (cookieStore != null) {
                 cookieStore.decrementAndGet();

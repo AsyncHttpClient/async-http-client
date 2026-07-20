@@ -16,19 +16,33 @@
 package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.resolver.InetNameResolver;
 import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsServerAddressStreamProviders;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+import io.netty.util.concurrent.Promise;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
+import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 
+import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -37,6 +51,7 @@ import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.isExternalNetworkAvailable;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,6 +62,9 @@ public class AddressResolverGroupTest extends HttpTest {
 
     private static final String GOOGLE_URL = "https://www.google.com/";
     private static final String EXAMPLE_URL = "https://www.example.com/";
+    private static final String INITIAL_HOST = "initial.test";
+    private static final String REDIRECT_HOST = "redirect.test";
+    private static final String SOCKS_HOST = "socks.test";
 
     private HttpServer server;
 
@@ -119,6 +137,57 @@ public class AddressResolverGroupTest extends HttpTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void fallbackNameResolverOnRedirectRunsOffEventLoop() throws Throwable {
+        server.enqueueRedirect(302, "http://" + REDIRECT_HOST + ':' + server.getHttpPort() + "/target");
+        server.enqueueOk();
+
+        EventLoopProbeNameResolver resolver = new EventLoopProbeNameResolver();
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config().setFollowRedirect(true).build())) {
+            resolver.setEventLoopGroup(client.channelManager().getEventLoopGroup());
+
+            Response response = client.executeRequest(get("http://" + INITIAL_HOST + ':' + server.getHttpPort() + "/start")
+                            .setNameResolver(resolver)
+                            .build())
+                    .get(5, SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+        }
+
+        assertTrue(resolver.redirectResolutionAttempted.get(), "redirect host should have been resolved");
+        assertFalse(resolver.redirectResolutionOnEventLoop.get(), "redirect DNS must not run on an event-loop thread");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void fallbackSocksProxyResolutionRunsOffEventLoop() throws Throwable {
+        EventLoopProbeNameResolver resolver = new EventLoopProbeNameResolver();
+        ProxyServer proxy = new ProxyServer.Builder(SOCKS_HOST, 1080)
+                .setProxyType(ProxyType.SOCKS_V5)
+                .build();
+
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config().build())) {
+            EventLoopGroup eventLoopGroup = client.channelManager().getEventLoopGroup();
+            resolver.setEventLoopGroup(eventLoopGroup);
+
+            CountDownLatch complete = new CountDownLatch(1);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            eventLoopGroup.next().execute(() -> client.channelManager()
+                    .getBootstrap(Uri.create("http://target.test/"), resolver, proxy)
+                    .addListener(bootstrap -> {
+                        if (!bootstrap.isSuccess()) {
+                            failure.set(bootstrap.cause());
+                        }
+                        complete.countDown();
+                    }));
+
+            assertTrue(complete.await(5, SECONDS), "SOCKS bootstrap resolution should complete");
+            assertNull(failure.get(), "SOCKS bootstrap should resolve the proxy host");
+        }
+
+        assertTrue(resolver.socksResolutionAttempted.get(), "SOCKS proxy host should have been resolved");
+        assertFalse(resolver.socksResolutionOnEventLoop.get(), "SOCKS DNS must not run on an event-loop thread");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void unknownHostWithDnsResolverGroupFails() throws Throwable {
         DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
                 NioDatagramChannel.class,
@@ -170,6 +239,59 @@ public class AddressResolverGroupTest extends HttpTest {
             assertNotNull(response2);
             assertTrue(response2.getStatusCode() >= 200 && response2.getStatusCode() < 400,
                     "Expected successful HTTP status for example.com but got " + response2.getStatusCode());
+        }
+    }
+
+    private static final class EventLoopProbeNameResolver extends InetNameResolver {
+        private final AtomicReference<EventLoopGroup> eventLoopGroup = new AtomicReference<>();
+        private final AtomicBoolean redirectResolutionAttempted = new AtomicBoolean();
+        private final AtomicBoolean redirectResolutionOnEventLoop = new AtomicBoolean();
+        private final AtomicBoolean socksResolutionAttempted = new AtomicBoolean();
+        private final AtomicBoolean socksResolutionOnEventLoop = new AtomicBoolean();
+
+        EventLoopProbeNameResolver() {
+            super(ImmediateEventExecutor.INSTANCE);
+        }
+
+        void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+            this.eventLoopGroup.set(eventLoopGroup);
+        }
+
+        @Override
+        protected void doResolve(String inetHost, Promise<InetAddress> promise) {
+            recordResolution(inetHost);
+            promise.setSuccess(InetAddress.getLoopbackAddress());
+        }
+
+        @Override
+        protected void doResolveAll(String inetHost, Promise<List<InetAddress>> promise) {
+            recordResolution(inetHost);
+            promise.setSuccess(Collections.singletonList(InetAddress.getLoopbackAddress()));
+        }
+
+        private void recordResolution(String inetHost) {
+            boolean onEventLoop = isOnEventLoop();
+            if (REDIRECT_HOST.equals(inetHost)) {
+                redirectResolutionAttempted.set(true);
+                redirectResolutionOnEventLoop.set(onEventLoop);
+            } else if (SOCKS_HOST.equals(inetHost)) {
+                socksResolutionAttempted.set(true);
+                socksResolutionOnEventLoop.set(onEventLoop);
+            }
+        }
+
+        private boolean isOnEventLoop() {
+            EventLoopGroup group = eventLoopGroup.get();
+            if (group == null) {
+                return false;
+            }
+            Thread currentThread = Thread.currentThread();
+            for (EventExecutor executor : group) {
+                if (executor.inEventLoop(currentThread)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

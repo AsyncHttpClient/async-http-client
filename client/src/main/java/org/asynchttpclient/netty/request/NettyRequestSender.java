@@ -37,6 +37,7 @@ import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
+import io.netty.resolver.NameResolver;
 import io.netty.util.AsciiString;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
@@ -82,6 +83,7 @@ import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,10 +93,13 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -121,11 +126,19 @@ public final class NettyRequestSender {
     private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
     private final RoundRobinAddressSelector rrSelector = new RoundRobinAddressSelector();
+    private final Executor nameResolverExecutor;
     // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
     // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
     private final FailedIpCooldownHolder ipCooldown;
 
-    public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
+    public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer,
+                              AsyncHttpClientState clientState) {
+        this(config, channelManager, nettyTimer, clientState, Runnable::run);
+    }
+
+    public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer,
+                              AsyncHttpClientState clientState,
+                              Executor nameResolverExecutor) {
         this.config = config;
         this.channelManager = channelManager;
         connectionSemaphore = config.getConnectionSemaphoreFactory() == null
@@ -133,6 +146,7 @@ public final class NettyRequestSender {
                 : config.getConnectionSemaphoreFactory().newConnectionSemaphore(config);
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
+        this.nameResolverExecutor = requireNonNull(nameResolverExecutor, "nameResolverExecutor");
         requestFactory = new NettyRequestFactory(config);
         // Guard the period against a custom AsyncHttpClientConfig that enables the cooldown but returns a
         // null period: leave the cooldown off rather than NPE while constructing the client.
@@ -596,7 +610,95 @@ public final class NettyRequestSender {
             AddressResolver<InetSocketAddress> resolver = group.getResolver(channelManager.getEventLoopGroup().next());
             return RequestHostnameResolver.INSTANCE.resolve(resolver, unresolvedRemoteAddress, asyncHandler);
         }
-        return RequestHostnameResolver.INSTANCE.resolve(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
+        return resolveWithRequestNameResolver(request.getNameResolver(), unresolvedRemoteAddress, asyncHandler);
+    }
+
+    private Future<List<InetSocketAddress>> resolveWithRequestNameResolver(NameResolver<InetAddress> nameResolver,
+                                                                           InetSocketAddress unresolvedRemoteAddress,
+                                                                           AsyncHandler<?> asyncHandler) {
+        EventExecutor eventLoop = currentEventLoop();
+        if (eventLoop == null) {
+            return RequestHostnameResolver.INSTANCE.resolve(nameResolver, unresolvedRemoteAddress, asyncHandler);
+        }
+
+        String hostname = unresolvedRemoteAddress.getHostString();
+        int port = unresolvedRemoteAddress.getPort();
+        Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+        try {
+            asyncHandler.onHostnameResolutionAttempt(hostname);
+        } catch (Exception e) {
+            LOGGER.error("onHostnameResolutionAttempt crashed", e);
+            promise.tryFailure(e);
+            return promise;
+        }
+
+        try {
+            nameResolverExecutor.execute(() -> {
+                try {
+                    nameResolver.resolveAll(hostname).addListener((Future<List<InetAddress>> whenResolved) -> {
+                        if (whenResolved.isSuccess()) {
+                            completeResolutionSuccessOnEventLoop(eventLoop, promise, hostname, port, asyncHandler,
+                                    whenResolved.getNow());
+                        } else {
+                            completeResolutionFailureOnEventLoop(eventLoop, promise, hostname, asyncHandler,
+                                    whenResolved.cause());
+                        }
+                    });
+                } catch (Throwable t) {
+                    completeResolutionFailureOnEventLoop(eventLoop, promise, hostname, asyncHandler, t);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            promise.tryFailure(e);
+        }
+        return promise;
+    }
+
+    private static void completeResolutionSuccessOnEventLoop(EventExecutor eventLoop,
+                                                             Promise<List<InetSocketAddress>> promise,
+                                                             String hostname,
+                                                             int port,
+                                                             AsyncHandler<?> asyncHandler,
+                                                             List<InetAddress> addresses) {
+        try {
+            eventLoop.execute(() -> {
+                ArrayList<InetSocketAddress> socketAddresses = new ArrayList<>(addresses.size());
+                for (InetAddress address : addresses) {
+                    socketAddresses.add(new InetSocketAddress(address, port));
+                }
+                try {
+                    asyncHandler.onHostnameResolutionSuccess(hostname, socketAddresses);
+                } catch (Exception e) {
+                    LOGGER.error("onHostnameResolutionSuccess crashed", e);
+                    promise.tryFailure(e);
+                    return;
+                }
+                promise.trySuccess(socketAddresses);
+            });
+        } catch (RejectedExecutionException e) {
+            promise.tryFailure(e);
+        }
+    }
+
+    private static void completeResolutionFailureOnEventLoop(EventExecutor eventLoop,
+                                                             Promise<?> promise,
+                                                             String hostname,
+                                                             AsyncHandler<?> asyncHandler,
+                                                             Throwable cause) {
+        try {
+            eventLoop.execute(() -> {
+                try {
+                    asyncHandler.onHostnameResolutionFailure(hostname, cause);
+                } catch (Exception e) {
+                    LOGGER.error("onHostnameResolutionFailure crashed", e);
+                    promise.tryFailure(e);
+                    return;
+                }
+                promise.tryFailure(cause);
+            });
+        } catch (RejectedExecutionException e) {
+            promise.tryFailure(e);
+        }
     }
 
     private <T> NettyResponseFuture<T> newNettyResponseFuture(Request request, AsyncHandler<T> asyncHandler, NettyRequest nettyRequest, ProxyServer proxyServer) {
@@ -1342,12 +1444,16 @@ public final class NettyRequestSender {
     }
 
     private boolean isOnEventLoop() {
+        return currentEventLoop() != null;
+    }
+
+    private @Nullable EventExecutor currentEventLoop() {
         for (EventExecutor executor : channelManager.getEventLoopGroup()) {
             if (executor.inEventLoop()) {
-                return true;
+                return executor;
             }
         }
-        return false;
+        return null;
     }
 
     private Channel pollPooledChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxy, AsyncHandler<?> asyncHandler) {
