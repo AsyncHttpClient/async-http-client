@@ -170,6 +170,7 @@ public interface AsyncHttpClientConfig {
      * Netty event-loop threads.
      *
      * @return {@code true} if fallback name resolution should be offloaded
+     * @since 3.0.12
      */
     default boolean isFallbackNameResolverOffloadEnabled() {
         return true;
@@ -180,16 +181,18 @@ public interface AsyncHttpClientConfig {
      *
      * @return the configured fallback resolver thread count. Values less than or equal to {@code 0} use
      * {@link #getIoThreadsCount()}.
+     * @since 3.0.12
      */
     default int getFallbackNameResolverOffloadThreadsCount() {
         return -1;
     }
 
     /**
-     * Returns the maximum number of pending fallback name resolutions.
+     * Returns the fallback name resolver worker queue capacity.
      *
      * @return the configured fallback resolver queue size. Values less than or equal to {@code 0} use the
      * default queue size.
+     * @since 3.0.12
      */
     default int getFallbackNameResolverOffloadQueueSize() {
         return 0;
