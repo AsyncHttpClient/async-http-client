@@ -19,9 +19,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeadersFactory;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
@@ -56,6 +57,8 @@ import java.io.IOException;
 public final class Http2Handler extends AsyncHttpClientHandler {
 
     private static final HttpVersion HTTP_2 = new HttpVersion("HTTP", 2, 0, true);
+    private static final HttpHeadersFactory RESPONSE_HEADERS_FACTORY =
+            DefaultHttpHeadersFactory.headersFactory().withNameValidation(false);
 
     public Http2Handler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
@@ -146,14 +149,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         }
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(statusCode);
 
-        // Build HTTP/1.1-style headers, skipping HTTP/2 pseudo-headers (start with ':')
-        HttpHeaders responseHeaders = new DefaultHttpHeaders();
-        h2Headers.forEach(entry -> {
-            CharSequence name = entry.getKey();
-            if (name.length() > 0 && name.charAt(0) != ':') {
-                responseHeaders.add(name, entry.getValue());
-            }
-        });
+        HttpHeaders responseHeaders = copyHttp2Headers(h2Headers);
 
         // Build a synthetic HttpResponse so the existing interceptor chain can be reused unchanged
         HttpResponse syntheticResponse = new DefaultHttpResponse(HTTP_2, nettyStatus, responseHeaders);
@@ -222,13 +218,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                                                   NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         Http2Headers h2Headers = headersFrame.headers();
 
-        HttpHeaders trailingHeaders = new DefaultHttpHeaders();
-        h2Headers.forEach(entry -> {
-            CharSequence name = entry.getKey();
-            if (name.length() > 0 && name.charAt(0) != ':') {
-                trailingHeaders.add(name, entry.getValue());
-            }
-        });
+        HttpHeaders trailingHeaders = copyHttp2Headers(h2Headers);
 
         boolean abort = false;
         if (!trailingHeaders.isEmpty()) {
@@ -238,6 +228,19 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         if (abort || headersFrame.isEndStream()) {
             finishUpdate(future, channel, false);
         }
+    }
+
+    static HttpHeaders copyHttp2Headers(Http2Headers h2Headers) {
+        // The HTTP/2 decoder validates names but not values by default. Avoid repeating the name scan while
+        // retaining the HTTP/1 value validator that rejects CR/LF and other prohibited characters.
+        HttpHeaders headers = RESPONSE_HEADERS_FACTORY.newHeaders();
+        h2Headers.forEach(entry -> {
+            CharSequence name = entry.getKey();
+            if (name.length() > 0 && name.charAt(0) != ':') {
+                headers.add(name, entry.getValue());
+            }
+        });
+        return headers;
     }
 
     /**
