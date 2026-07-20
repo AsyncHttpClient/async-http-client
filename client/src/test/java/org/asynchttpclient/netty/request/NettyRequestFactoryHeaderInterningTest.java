@@ -31,10 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link NettyRequestFactory#copyInternedHeaders(HttpHeaders, HttpHeaders)}: standard header names
- * supplied in canonical (lowercase) spelling must be interned to the shared {@link AsciiString} constant
- * (so the encoder bulk-copies), while names that are not byte-identical to the canonical spelling, and
- * custom names, must be emitted verbatim so on-wire bytes are never altered. Order, values and multi-value
- * headers must be preserved.
+ * supplied in known lowercase or Train-Case spelling must be interned to a shared {@link AsciiString} with
+ * the same bytes (so the encoder bulk-copies), while odd casing and custom names must be emitted verbatim so
+ * on-wire bytes are never altered. Order, values and multi-value headers must be preserved.
  */
 public class NettyRequestFactoryHeaderInterningTest {
 
@@ -53,9 +52,8 @@ public class NettyRequestFactoryHeaderInterningTest {
     }
 
     @Test
-    public void leavesNonCanonicalCasingUntouched() {
+    public void internsTrainCaseKnownNameToAsciiStringPreservingCasing() {
         HttpHeaders source = new DefaultHttpHeaders();
-        // Train-Case is NOT byte-identical to the lowercase constant, so it must be emitted verbatim.
         source.add("Content-Type", "application/json");
 
         HttpHeaders target = new DefaultHttpHeaders();
@@ -63,7 +61,20 @@ public class NettyRequestFactoryHeaderInterningTest {
 
         CharSequence name = firstNameCharSequence(target);
         assertEquals("Content-Type", name.toString(), "wire casing must be preserved exactly");
-        assertTrue(name instanceof String, "non-canonical name must remain the original String, not be interned");
+        assertTrue(name instanceof AsciiString, "known Train-Case name must be interned for fast encoding");
+    }
+
+    @Test
+    public void leavesOddCasingUntouched() {
+        HttpHeaders source = new DefaultHttpHeaders();
+        source.add("CONTENT-TYPE", "application/json");
+
+        HttpHeaders target = new DefaultHttpHeaders();
+        NettyRequestFactory.copyInternedHeaders(source, target);
+
+        CharSequence name = firstNameCharSequence(target);
+        assertEquals("CONTENT-TYPE", name.toString(), "wire casing must be preserved exactly");
+        assertTrue(name instanceof String, "unknown casing must remain the original String, not be interned");
     }
 
     @Test

@@ -85,18 +85,16 @@ public final class NettyRequestFactory {
     private static final Integer ZERO_CONTENT_LENGTH = 0;
 
     /**
-     * Canonical (lowercase) header-name spelling -> the pre-built Netty {@link AsciiString} constant.
-     * Built once. When a user-supplied {@code String} name is byte-identical to a canonical spelling, the
-     * outbound header uses the shared {@code AsciiString} so {@code HttpHeadersEncoder} hits its bulk
-     * array-copy branch instead of the per-char US-ASCII encode loop on the event loop. The map is keyed
-     * case-sensitively, so a name that is not byte-identical to its canonical spelling (e.g. Train-Case
-     * {@code Content-Type}) misses and is emitted verbatim — on-wire bytes are never altered, and a custom
-     * name costs a single {@link HashMap#get} miss with zero allocation.
+     * Known header-name spelling -> a pre-built {@link AsciiString} with the same bytes. Built once. When a
+     * user-supplied {@code String} name is byte-identical to a known lowercase or Train-Case spelling, the
+     * outbound header uses a shared {@code AsciiString} so {@code HttpHeadersEncoder} hits its bulk array-copy
+     * branch instead of the per-char US-ASCII encode loop on the event loop. The map is keyed case-sensitively:
+     * custom names and odd casing miss and are emitted verbatim, so on-wire bytes are never altered.
      */
     private static final Map<String, AsciiString> KNOWN_HEADER_NAMES = buildKnownHeaderNames();
 
     private static Map<String, AsciiString> buildKnownHeaderNames() {
-        AsciiString[] names = {
+        AsciiString[] lowerCaseNames = {
                 HttpHeaderNames.ACCEPT,
                 HttpHeaderNames.ACCEPT_ENCODING,
                 HttpHeaderNames.ACCEPT_LANGUAGE,
@@ -112,21 +110,43 @@ public final class NettyRequestFactory {
                 HttpHeaderNames.TRANSFER_ENCODING,
                 HttpHeaderNames.USER_AGENT
         };
-        Map<String, AsciiString> map = new HashMap<>((int) (names.length / 0.75f) + 1);
-        for (AsciiString name : names) {
-            // Key by the constant's own (lowercase) bytes; interning only on a byte-identical match keeps
-            // the on-wire casing exactly as the caller spelled it.
-            map.put(name.toString(), name);
+        AsciiString[] trainCaseNames = {
+                new AsciiString("Accept"),
+                new AsciiString("Accept-Encoding"),
+                new AsciiString("Accept-Language"),
+                new AsciiString("Authorization"),
+                new AsciiString("Cache-Control"),
+                new AsciiString("Connection"),
+                new AsciiString("Content-Length"),
+                new AsciiString("Content-Type"),
+                new AsciiString("Cookie"),
+                new AsciiString("Host"),
+                new AsciiString("Origin"),
+                new AsciiString("Referer"),
+                new AsciiString("Transfer-Encoding"),
+                new AsciiString("User-Agent")
+        };
+        Map<String, AsciiString> map = new HashMap<>(
+                (int) ((lowerCaseNames.length + trainCaseNames.length) / 0.75f) + 1);
+        for (AsciiString name : lowerCaseNames) {
+            putKnownHeaderName(map, name);
+        }
+        for (AsciiString name : trainCaseNames) {
+            putKnownHeaderName(map, name);
         }
         return map;
     }
 
+    private static void putKnownHeaderName(Map<String, AsciiString> map, AsciiString name) {
+        map.put(name.toString(), name);
+    }
+
     /**
      * Copy {@code source} request headers into the freshly created outbound {@code target}, interning
-     * recognized header names to their static {@link AsciiString} constant (see {@link #KNOWN_HEADER_NAMES})
-     * so the encode hot path bulk-copies instead of per-char encoding. Multi-value headers and ordering are
-     * preserved (one {@code add} per stored entry, in iteration order). A name already stored as an
-     * {@code AsciiString} is on the fast path already and passed through untouched.
+     * recognized header names to their shared {@link AsciiString} (see {@link #KNOWN_HEADER_NAMES}) so the
+     * encode hot path bulk-copies instead of per-char encoding. Multi-value headers and ordering are preserved
+     * (one {@code add} per stored entry, in iteration order). A name already stored as an {@code AsciiString}
+     * is on the fast path already and passed through untouched.
      */
     // package-private for unit testing; not part of the public API.
     static void copyInternedHeaders(HttpHeaders source, HttpHeaders target) {
