@@ -146,9 +146,10 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultFallbackNameResolverOffloadEnabled() {
-        assertTrue(AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadEnabled());
+        assertFalse(AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadEnabled());
         testBooleanSystemProperty("fallbackNameResolverOffloadEnabled",
-                "defaultFallbackNameResolverOffloadEnabled", "false");
+                "defaultFallbackNameResolverOffloadEnabled", "true");
+        AsyncHttpClientConfigHelper.reloadProperties();
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)

@@ -167,13 +167,13 @@ public interface AsyncHttpClientConfig {
 
     /**
      * Returns whether fallback resolution with the default blocking name resolver should be offloaded from
-     * Netty event-loop threads.
+     * Netty event-loop threads. Disabled by default.
      *
      * @return {@code true} if fallback name resolution should be offloaded
      * @since 3.0.12
      */
     default boolean isFallbackNameResolverOffloadEnabled() {
-        return true;
+        return false;
     }
 
     /**

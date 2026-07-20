@@ -49,6 +49,7 @@ class NameResolverOffloadTest {
     void offloadsDefaultResolverToConfiguredWorker() throws Exception {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setThreadPoolName("ahc-resolver-unit")
+                .setFallbackNameResolverOffloadEnabled(true)
                 .setFallbackNameResolverOffloadThreadsCount(1)
                 .setFallbackNameResolverOffloadQueueSize(1)
                 .build();
@@ -70,10 +71,8 @@ class NameResolverOffloadTest {
     }
 
     @Test
-    void disabledOffloadDoesNotSelectDefaultResolver() {
-        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
-                .setFallbackNameResolverOffloadEnabled(false)
-                .build();
+    void defaultOffloadDoesNotSelectDefaultResolver() {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
 
         try (NameResolverOffload offload = new NameResolverOffload(config)) {
             assertFalse(offload.shouldOffload(DEFAULT_NAME_RESOLVER));
@@ -83,6 +82,7 @@ class NameResolverOffloadTest {
     @Test
     void boundedQueueRejectsOverflowAndCloseFailsPendingWork() throws Exception {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setFallbackNameResolverOffloadEnabled(true)
                 .setFallbackNameResolverOffloadThreadsCount(1)
                 .setFallbackNameResolverOffloadQueueSize(1)
                 .build();

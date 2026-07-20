@@ -195,7 +195,8 @@ public class AddressResolverGroupTest extends HttpTest {
         String poolName = "ahc-fallback-resolver-enabled";
         try (AsyncHttpClient client = asyncHttpClient(config()
                 .setFollowRedirect(true)
-                .setThreadPoolName(poolName))) {
+                .setThreadPoolName(poolName)
+                .setFallbackNameResolverOffloadEnabled(true))) {
             Response response = client.prepareGet("http://127.0.0.1:" + server.getHttpPort() + "/start")
                     .execute()
                     .get(5, SECONDS);
@@ -207,15 +208,14 @@ public class AddressResolverGroupTest extends HttpTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void defaultNameResolverOnRedirectCanKeepInlineBehavior() throws Throwable {
+    public void defaultNameResolverOnRedirectKeepsInlineBehavior() throws Throwable {
         server.enqueueRedirect(302, "http://localhost:" + server.getHttpPort() + "/target");
         server.enqueueOk();
 
         String poolName = "ahc-fallback-resolver-disabled";
         try (AsyncHttpClient client = asyncHttpClient(config()
                 .setFollowRedirect(true)
-                .setThreadPoolName(poolName)
-                .setFallbackNameResolverOffloadEnabled(false))) {
+                .setThreadPoolName(poolName))) {
             Response response = client.prepareGet("http://127.0.0.1:" + server.getHttpPort() + "/start")
                     .execute()
                     .get(5, SECONDS);
