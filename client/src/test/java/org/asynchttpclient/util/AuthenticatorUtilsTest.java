@@ -494,6 +494,52 @@ public class AuthenticatorUtilsTest {
         assertEquals(32, rspauth.length()); // MD5 hex is 32 chars
     }
 
+    @Test
+    void preemptiveDigestAuthIntUsesRequestBody() throws Exception {
+        assertPreemptiveDigestAuthIntUsesRequestBody(false);
+    }
+
+    @Test
+    void preemptiveProxyDigestAuthIntUsesRequestBody() throws Exception {
+        assertPreemptiveDigestAuthIntUsesRequestBody(true);
+    }
+
+    private static void assertPreemptiveDigestAuthIntUsesRequestBody(boolean proxy) throws Exception {
+        String principal = "user";
+        String password = "pass";
+        String realmName = "testrealm";
+        String nonce = "testnonce";
+        String body = "request body";
+        Realm realm = new Realm.Builder(principal, password)
+                .setScheme(Realm.AuthScheme.DIGEST)
+                .setUsePreemptiveAuth(true)
+                .setRealmName(realmName)
+                .setNonce(nonce)
+                .setAlgorithm("MD5")
+                .setQop("auth-int")
+                .build();
+        Request request = new RequestBuilder("POST")
+                .setUrl("http://example.com/dir/index.html")
+                .setBody(body)
+                .build();
+
+        String header = proxy
+                ? AuthenticatorUtils.perRequestProxyAuthorizationHeader(request, realm)
+                : AuthenticatorUtils.perRequestAuthorizationHeader(request, realm);
+
+        assertNotNull(header);
+        String nc = Realm.Builder.matchParam(header, "nc");
+        String cnonce = Realm.Builder.matchParam(header, "cnonce");
+        String response = Realm.Builder.matchParam(header, "response");
+        assertNotNull(nc);
+        assertNotNull(cnonce);
+        assertNotNull(response);
+        String ha1 = md5(principal + ':' + realmName + ':' + password);
+        String bodyHash = md5(body);
+        String ha2 = md5("POST:/dir/index.html:" + bodyHash);
+        assertEquals(md5(ha1 + ':' + nonce + ':' + nc + ':' + cnonce + ":auth-int:" + ha2), response);
+    }
+
     // A server-controlled challenge value (nonce/realm/opaque) must be backslash-escaped when echoed
     // into the quoted-string params of the outgoing Authorization header, so a bare " cannot close the
     // value early and inject extra auth-params.
@@ -517,5 +563,10 @@ public class AuthenticatorUtilsTest {
         assertTrue(header.contains("nonce=\"abc\\\"x\""), header);
         assertTrue(header.contains("opaque=\"op\\\\aque\""), header);
         assertFalse(header.contains("nonce=\"abc\"x\""), header);
+    }
+
+    private static String md5(String value) throws Exception {
+        return MessageDigestUtils.bytesToHex(
+                MessageDigest.getInstance("MD5").digest(value.getBytes(StandardCharsets.ISO_8859_1)));
     }
 }

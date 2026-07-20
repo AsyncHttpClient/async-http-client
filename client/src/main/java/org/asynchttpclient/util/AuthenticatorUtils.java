@@ -208,66 +208,6 @@ public final class AuthenticatorUtils {
     }
 
     /**
-     * Calculates the digest response value for HTTP Digest Authentication.
-     * This method computes HA1 and HA2 (including entity-body hash for auth-int).
-     *
-     * @param realm   The authentication realm containing credentials and challenge info
-     * @param request The HTTP request (needed for method, uri, and body)
-     * @return The computed response hex string
-     * @throws UnsupportedOperationException if qop=auth-int but body cannot be hashed
-     */
-    static String computeDigestResponse(Realm realm, Request request) {
-        String algorithm = realm.getAlgorithm() != null ? realm.getAlgorithm() : "MD5";
-        String qop = realm.getQop() != null ? realm.getQop() : "auth";
-
-        String hashAlgorithm = algorithm.replace("-sess", "");
-        Charset wireCharset = realm.getCharset() != null ?
-                realm.getCharset() : StandardCharsets.ISO_8859_1;
-
-        // Calculate HA1
-        String ha1 = calculateHA1(realm, algorithm);
-
-        // Get request URI
-        Uri uri = request.getUri();
-        String requestUri = uri.getPath() +
-                (uri.getQuery() != null ? "?" + uri.getQuery() : "");
-
-        // Calculate HA2
-        String ha2;
-        if ("auth-int".equals(qop)) {
-            String bodyHash = computeBodyHash(request, realm);
-            ha2 = calculateHA2AuthInt(request, requestUri, bodyHash, hashAlgorithm, wireCharset);
-        } else {
-            // Regular auth: HA2 = H(method:uri)
-            String a2Plain = request.getMethod() + ":" + requestUri;
-            MessageDigest md = MessageDigestUtils.pooledMessageDigest(hashAlgorithm);
-            try {
-                md.update(a2Plain.getBytes(wireCharset));
-                ha2 = MessageDigestUtils.bytesToHex(md.digest());
-            } finally {
-                md.reset();
-            }
-        }
-
-        // Build final response
-        String nc = realm.getNc() != null ? realm.getNc() : "00000001";
-        String cnonce = realm.getCnonce();
-        String nonce = realm.getNonce();
-
-        // response = H(HA1:nonce:nc:cnonce:qop:HA2)
-        String responseInput = ha1 + ":" + nonce + ":" + nc + ":" +
-                cnonce + ":" + qop + ":" + ha2;
-
-        MessageDigest md = MessageDigestUtils.pooledMessageDigest(hashAlgorithm);
-        try {
-            md.update(responseInput.getBytes(StandardCharsets.ISO_8859_1));
-            return MessageDigestUtils.bytesToHex(md.digest());
-        } finally {
-            md.reset();
-        }
-    }
-
-    /**
      * Calculates the HA1 value for HTTP Digest Authentication.
      * This method handles both regular and session-based HA1 calculations.
      *
@@ -297,28 +237,6 @@ public final class AuthenticatorUtils {
             return ha1;
         } finally {
             md.reset();
-        }
-    }
-
-    /**
-     * Calculates the HA2 value for HTTP Digest Authentication.
-     * This method handles both auth and auth-int cases.
-     *
-     * @param request       The HTTP request (needed for method, uri, and body)
-     * @param requestUri    The request URI
-     * @param bodyHash      The entity-body hash (for auth-int, can be empty for auth)
-     * @param hashAlgorithm The digest algorithm (e.g., "MD5")
-     * @param wireCs        The charset used for wire encoding
-     * @return The computed HA2 hex string
-     */
-    private static String calculateHA2AuthInt(Request request, String requestUri, String bodyHash, String hashAlgorithm, Charset wireCs) {
-        String a2Plain = request.getMethod() + ':' + requestUri + ':' + bodyHash;
-        MessageDigest md = MessageDigestUtils.pooledMessageDigest(hashAlgorithm);
-        try {
-            md.update(a2Plain.getBytes(wireCs));
-            return MessageDigestUtils.bytesToHex(md.digest());
-        } finally {
-            md.reset();   // return clean to pool
         }
     }
 
@@ -561,8 +479,7 @@ public final class AuthenticatorUtils {
                                 .setMethodName(request.getMethod());
 
                         if ("auth-int".equals(proxyRealm.getQop())) {
-                            String response = computeDigestResponse(proxyRealm, request);
-                            realmBuilder.setResponse(response);
+                            realmBuilder.setEntityBodyHash(computeBodyHash(request, proxyRealm));
                         }
 
                         proxyRealm = realmBuilder.build();
@@ -644,8 +561,7 @@ public final class AuthenticatorUtils {
                                 .setUri(uri)
                                 .setMethodName(request.getMethod());
                         if ("auth-int".equals(realm.getQop())) {
-                            String response = computeDigestResponse(realmBuilder.build(), request);
-                            realmBuilder.setResponse(response);
+                            realmBuilder.setEntityBodyHash(computeBodyHash(request, realm));
                         }
 
                         realm = realmBuilder.build();
