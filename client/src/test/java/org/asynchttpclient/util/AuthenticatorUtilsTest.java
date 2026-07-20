@@ -59,9 +59,11 @@ public class AuthenticatorUtilsTest {
 
         String first = AuthenticatorUtils.perRequestAuthorizationHeader(request, realm);
         String second = AuthenticatorUtils.perRequestAuthorizationHeader(request, realm);
+        String proxy = AuthenticatorUtils.perRequestProxyAuthorizationHeader(request, realm);
 
         assertEquals("Basic dXNlcjpwYXNz", first);
         assertSame(first, second);
+        assertSame(first, proxy);
     }
 
     @Test

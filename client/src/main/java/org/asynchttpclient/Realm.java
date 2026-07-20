@@ -248,9 +248,11 @@ public class Realm {
     }
 
     /**
-     * Returns the HTTP Basic authorization header for this immutable realm.
+     * Returns the lazily computed and cached HTTP Basic authorization header for this immutable realm.
+     * Concurrent first calls may compute the same value more than once.
      *
      * @return the Basic authorization header
+     * @since 3.0.12
      */
     public String getBasicAuthHeader() {
         String header = basicAuthHeader;
