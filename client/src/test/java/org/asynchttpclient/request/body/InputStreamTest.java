@@ -34,6 +34,7 @@ import java.io.InputStream;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -47,7 +48,8 @@ public class InputStreamTest extends AbstractBasicTest {
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testInvalidInputStream() throws Exception {
 
-        try (AsyncHttpClient client = asyncHttpClient()) {
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setRequestBodyStreamReadOffloadEnabled(true))) {
             HttpHeaders httpHeaders = new DefaultHttpHeaders().add(CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED);
 
             InputStream inputStream = new InputStream() {
