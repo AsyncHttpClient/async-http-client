@@ -41,8 +41,8 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>On a fresh encoder (first request of a connection) the static-table value matches as a single
  * indexed byte; the non-matching spelling is literal-encoded and inserted into the dynamic table.
- * This bench reports {@code gc.alloc.rate.norm} and the encoded byte count via the returned buffer's
- * readableBytes (consumed by the blackhole through the return value size).
+ * This bench reports encoding time and, when run with {@code -prof gc}, allocation. The returned encoded
+ * byte count prevents dead-code elimination; {@code AcceptEncodingHpackTest} verifies the wire sizes.
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
