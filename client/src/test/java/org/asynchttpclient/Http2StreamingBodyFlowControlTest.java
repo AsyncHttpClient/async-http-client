@@ -302,6 +302,7 @@ public class Http2StreamingBodyFlowControlTest {
                 .setUseInsecureTrustManager(true)
                 .setHttp2Enabled(true)
                 .setMaxConnectionsPerHost(1)
+                .setRequestBodyStreamReadOffloadEnabled(true)
                 .setRequestTimeout(Duration.ofSeconds(60)));
     }
 

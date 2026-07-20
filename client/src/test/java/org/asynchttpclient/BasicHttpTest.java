@@ -1052,6 +1052,7 @@ public class BasicHttpTest extends HttpTest {
 
             try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
                     .setThreadPoolName("ahc-body-read-test")
+                    .setRequestBodyStreamReadOffloadEnabled(true)
                     .setRequestBodyStreamReadThreadsCount(1)
                     .setRequestBodyStreamReadQueueSize(1)
                     .build())) {
@@ -1076,15 +1077,13 @@ public class BasicHttpTest extends HttpTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void postInputStreamBodyGeneratorCanReadOnEventLoopWhenOffloadDisabled() throws Throwable {
+    public void postInputStreamBodyGeneratorReadsOnEventLoopByDefault() throws Throwable {
         withServer(server).run(server -> {
             server.enqueueEcho();
             byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
             EventLoopProbeInputStream bodyStream = new EventLoopProbeInputStream(bodyBytes);
 
-            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
-                    .setRequestBodyStreamReadOffloadEnabled(false)
-                    .build())) {
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config().build())) {
                 bodyStream.setEventLoopGroup(client.channelManager().getEventLoopGroup());
 
                 Response response = client.preparePost(getTargetUrl())
@@ -1097,7 +1096,7 @@ public class BasicHttpTest extends HttpTest {
             }
 
             assertTrue(bodyStream.readAttempted.get(), "InputStream should have been read");
-            assertTrue(bodyStream.readOnEventLoop.get(), "disabled offload should preserve inline event-loop reads");
+            assertTrue(bodyStream.readOnEventLoop.get(), "default configuration should preserve inline event-loop reads");
         });
     }
 
@@ -1117,7 +1116,9 @@ public class BasicHttpTest extends HttpTest {
                 }
             };
 
-            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient()) {
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
+                    .setRequestBodyStreamReadOffloadEnabled(true)
+                    .build())) {
                 ExecutionException failure = assertThrows(ExecutionException.class, () -> client.preparePost(getTargetUrl())
                         .setBody(new InputStreamBodyGenerator(bodyStream, 1))
                         .execute()

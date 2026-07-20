@@ -158,8 +158,9 @@ public class AsyncHttpClientDefaultsTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultRequestBodyStreamReadOffloadEnabled() {
-        assertTrue(AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadOffloadEnabled());
-        testBooleanSystemProperty("requestBodyStreamReadOffloadEnabled", "defaultRequestBodyStreamReadOffloadEnabled", "false");
+        assertFalse(AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadOffloadEnabled());
+        testBooleanSystemProperty("requestBodyStreamReadOffloadEnabled", "defaultRequestBodyStreamReadOffloadEnabled", "true");
+        AsyncHttpClientConfigHelper.reloadProperties();
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)

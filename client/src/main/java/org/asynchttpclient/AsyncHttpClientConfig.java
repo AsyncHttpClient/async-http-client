@@ -167,12 +167,13 @@ public interface AsyncHttpClientConfig {
 
     /**
      * Returns whether blocking reads from request body {@link java.io.InputStream} instances should be
-     * offloaded from Netty event-loop threads.
+     * offloaded from Netty event-loop threads. Disabled by default.
      *
      * @return {@code true} if blocking request body stream reads should be offloaded
+     * @since 3.0.12
      */
     default boolean isRequestBodyStreamReadOffloadEnabled() {
-        return true;
+        return false;
     }
 
     /**
@@ -180,6 +181,7 @@ public interface AsyncHttpClientConfig {
      *
      * @return the configured request body stream read thread count. Values less than or equal to {@code 0}
      * use {@link #getIoThreadsCount()}.
+     * @since 3.0.12
      */
     default int getRequestBodyStreamReadThreadsCount() {
         return -1;
@@ -190,6 +192,7 @@ public interface AsyncHttpClientConfig {
      *
      * @return the configured request body stream read queue size. Values less than or equal to {@code 0} use
      * the default queue size.
+     * @since 3.0.12
      */
     default int getRequestBodyStreamReadQueueSize() {
         return 0;
