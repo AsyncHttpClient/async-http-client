@@ -123,6 +123,11 @@ final class Http2BodyWriter {
     private ByteBuf pending;
     private boolean done;
 
+    // flush() can synchronously fire channelWritabilityChanged. Prevent that callback from re-entering the
+    // pump, and prevent later callbacks from writing a second endStream frame before the first one completes.
+    private boolean pumping;
+    private boolean terminalWritePending;
+
     // Transient handler that resumes the pump when the channel becomes writable again. Added lazily the
     // first time the pump parks, removed by finish().
     private WritabilityResumeHandler resumeHandler;
@@ -180,9 +185,10 @@ final class Http2BodyWriter {
      * {@code channelWritabilityChanged}) or the body is exhausted. Always runs on the event loop.
      */
     private void pump() {
-        if (done) {
+        if (done || pumping || terminalWritePending) {
             return;
         }
+        pumping = true;
         try {
             while (true) {
                 if (done) {
@@ -209,6 +215,7 @@ final class Http2BodyWriter {
                     ByteBuf terminal = last != null ? last
                             // Empty body — preserve existing behaviour: a single empty DATA frame ends the stream.
                             : channel.alloc().buffer(0);
+                    terminalWritePending = true;
                     writeLastFrame(terminal);
                     channel.flush();
                     return;
@@ -233,6 +240,8 @@ final class Http2BodyWriter {
             }
         } catch (Throwable t) {
             finish(t);
+        } finally {
+            pumping = false;
         }
     }
 
@@ -307,7 +316,7 @@ final class Http2BodyWriter {
     private final class WritabilityResumeHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void channelWritabilityChanged(ChannelHandlerContext ctx) {
-            if (!done && ctx.channel().isWritable()) {
+            if (!done && !terminalWritePending && ctx.channel().isWritable()) {
                 pump();
             }
             ctx.fireChannelWritabilityChanged();
