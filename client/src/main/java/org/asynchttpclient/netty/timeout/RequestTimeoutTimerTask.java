@@ -36,7 +36,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask {
 
     @Override
     public void run(Timeout timeout) {
-        if (done.getAndSet(true) || requestSender.isClosed()) {
+        if (!markDone() || requestSender.isClosed()) {
             return;
         }
 

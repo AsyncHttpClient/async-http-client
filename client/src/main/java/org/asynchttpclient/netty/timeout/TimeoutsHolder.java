@@ -25,14 +25,18 @@ import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 public class TimeoutsHolder {
 
+    private static final AtomicIntegerFieldUpdater<TimeoutsHolder> CANCELLED_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(TimeoutsHolder.class, "cancelled");
+
     private final Timeout requestTimeout;
-    private final AtomicBoolean cancelled = new AtomicBoolean();
+    @SuppressWarnings("unused")
+    private volatile int cancelled;
     private final Timer nettyTimer;
     private final NettyRequestSender requestSender;
     private final long requestTimeoutMillisTime;
@@ -97,7 +101,7 @@ public class TimeoutsHolder {
     }
 
     public void cancel() {
-        if (cancelled.compareAndSet(false, true)) {
+        if (CANCELLED_UPDATER.compareAndSet(this, 0, 1)) {
             if (requestTimeout != null) {
                 requestTimeout.cancel();
                 ((TimeoutTimerTask) requestTimeout.task()).clean();

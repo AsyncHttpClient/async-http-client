@@ -23,13 +23,16 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class TimeoutTimerTask implements TimerTask {
 
+    private static final AtomicIntegerFieldUpdater<TimeoutTimerTask> DONE_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(TimeoutTimerTask.class, "done");
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
 
-    protected final AtomicBoolean done = new AtomicBoolean();
+    @SuppressWarnings("unused")
+    private volatile int done;
     protected final NettyRequestSender requestSender;
     final TimeoutsHolder timeoutsHolder;
     volatile NettyResponseFuture<?> nettyResponseFuture;
@@ -45,12 +48,20 @@ public abstract class TimeoutTimerTask implements TimerTask {
         requestSender.abort(nettyResponseFuture.channel(), nettyResponseFuture, new TimeoutException(message));
     }
 
+    boolean markDone() {
+        return DONE_UPDATER.getAndSet(this, 1) == 0;
+    }
+
+    void markPending() {
+        done = 0;
+    }
+
     /**
      * When the timeout is cancelled, it could still be referenced for quite some time in the Timer. Holding a reference to the future might mean holding a reference to the
      * channel, and heavy objects such as SslEngines
      */
     public void clean() {
-        if (done.compareAndSet(false, true)) {
+        if (DONE_UPDATER.compareAndSet(this, 0, 1)) {
             nettyResponseFuture = null;
         }
     }

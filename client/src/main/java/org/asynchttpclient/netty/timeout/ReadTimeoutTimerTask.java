@@ -33,7 +33,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
 
     @Override
     public void run(Timeout timeout) {
-        if (done.getAndSet(true) || requestSender.isClosed()) {
+        if (!markDone() || requestSender.isClosed()) {
             return;
         }
 
@@ -58,7 +58,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask {
             timeoutsHolder.cancel();
 
         } else {
-            done.set(false);
+            markPending();
             timeoutsHolder.startReadTimeout(this);
         }
     }

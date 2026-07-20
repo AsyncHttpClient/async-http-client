@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TimeoutTimerTaskTest {
@@ -83,5 +84,31 @@ public class TimeoutTimerTaskTest {
         StringBuilder sb = new StringBuilder();
         task.appendRemoteAddress(sb);
         assertTrue(sb.toString().contains(":8080"), sb.toString());
+    }
+
+    @Test
+    public void cleanShouldClearFutureOnlyOnce() {
+        Request request = new RequestBuilder().setUrl("http://example.com:12345").build();
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
+            @Override
+            public Object onCompleted(org.asynchttpclient.Response response) throws Exception {
+                return null;
+            }
+        }, null,
+                0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
+
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(null, future, null, new DefaultAsyncHttpClientConfig.Builder().build(), null);
+
+        TimeoutTimerTask task = new TimeoutTimerTask(future, null, timeoutsHolder) {
+            @Override
+            public void run(io.netty.util.Timeout timeout) {
+                // no-op
+            }
+        };
+
+        task.clean();
+        task.clean();
+
+        assertNull(task.nettyResponseFuture);
     }
 }
