@@ -55,6 +55,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,6 +67,9 @@ import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.asynchttpclient.OffloadedBodyReadTestSupport.BlockingInputStream;
+import static org.asynchttpclient.OffloadedBodyReadTestSupport.CloseProbeInputStream;
+import static org.asynchttpclient.OffloadedBodyReadTestSupport.awaitExecutorState;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.head;
@@ -1130,6 +1134,48 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void cancelledQueuedInputStreamIsNotReadOverHttp1() throws Throwable {
+        withServer(server).run(server -> {
+            server.enqueueEcho();
+            server.enqueueEcho();
+            byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
+            BlockingInputStream blockingStream = new BlockingInputStream(bodyBytes);
+            CloseProbeInputStream queuedStream = new CloseProbeInputStream();
+
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
+                    .setRequestBodyStreamReadOffloadEnabled(true)
+                    .setRequestBodyStreamReadThreadsCount(1)
+                    .setRequestBodyStreamReadQueueSize(1)
+                    .build())) {
+                ThreadPoolExecutor executor = assertInstanceOf(ThreadPoolExecutor.class,
+                        client.blockingBodyReadExecutor());
+                ListenableFuture<Response> blockingUpload = client.preparePost(getTargetUrl())
+                        .setBody(new InputStreamBodyGenerator(blockingStream, bodyBytes.length))
+                        .execute();
+                assertTrue(blockingStream.readStarted.await(5, SECONDS),
+                        "first body read should occupy the worker");
+
+                ListenableFuture<Response> queuedUpload = client.preparePost(getTargetUrl())
+                        .setBody(new InputStreamBodyGenerator(queuedStream, 1))
+                        .execute();
+                awaitExecutorState(executor, 1, 1);
+
+                assertTrue(queuedUpload.cancel(true), "queued request should be cancelled");
+                assertTrue(queuedStream.closed.await(5, SECONDS),
+                        "cancellation should close the queued stream");
+
+                blockingStream.releaseRead.countDown();
+                assertEquals(200, blockingUpload.get(TIMEOUT, SECONDS).getStatusCode());
+                awaitExecutorState(executor, 0, 0);
+                assertFalse(queuedStream.readAttempted.get(),
+                        "a queued read must not start after cancellation closed its stream");
+            } finally {
+                blockingStream.releaseRead.countDown();
+            }
+        });
+    }
+
     private static final class EventLoopProbeInputStream extends InputStream {
         private final byte[] data;
         private final AtomicBoolean readAttempted = new AtomicBoolean();
@@ -1186,4 +1232,5 @@ public class BasicHttpTest extends HttpTest {
             }
         }
     }
+
 }

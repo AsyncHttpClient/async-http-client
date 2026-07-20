@@ -134,6 +134,11 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         return channelManager;
     }
 
+    // Visible for testing
+    @Nullable ExecutorService blockingBodyReadExecutor() {
+        return blockingBodyReadExecutor;
+    }
+
     private static Timer newNettyTimer(AsyncHttpClientConfig config) {
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName() + "-timer");
         HashedWheelTimer timer = new HashedWheelTimer(threadFactory, config.getHashedWheelTimerTickDuration(), TimeUnit.MILLISECONDS, config.getHashedWheelTimerSize());

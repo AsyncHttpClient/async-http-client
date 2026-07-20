@@ -55,10 +55,29 @@ public class NettyInputStreamBody implements NettyBody {
         this(inputStream, contentLength, Runnable::run, false);
     }
 
+    /**
+     * Creates a request body whose stream reads are dispatched through the supplied executor.
+     * This overload supports internal client wiring; applications should enable offloading through
+     * {@link org.asynchttpclient.AsyncHttpClientConfig}.
+     *
+     * @param inputStream request body stream
+     * @param blockingBodyReadExecutor executor for blocking reads
+     * @since 3.0.12
+     */
     public NettyInputStreamBody(InputStream inputStream, Executor blockingBodyReadExecutor) {
         this(inputStream, -1L, blockingBodyReadExecutor);
     }
 
+    /**
+     * Creates a request body whose stream reads are dispatched through the supplied executor.
+     * This overload supports internal client wiring; applications should enable offloading through
+     * {@link org.asynchttpclient.AsyncHttpClientConfig}.
+     *
+     * @param inputStream request body stream
+     * @param contentLength request body length, or {@code -1} when unknown
+     * @param blockingBodyReadExecutor executor for blocking reads
+     * @since 3.0.12
+     */
     public NettyInputStreamBody(InputStream inputStream, long contentLength, Executor blockingBodyReadExecutor) {
         this(inputStream, contentLength, blockingBodyReadExecutor, true);
     }
@@ -263,6 +282,9 @@ public class NettyInputStreamBody implements NettyBody {
         }
 
         private void readOffEventLoop() {
+            if (closed) {
+                return;
+            }
             int read = -1;
             IOException thrown = null;
             try {
@@ -400,6 +422,9 @@ public class NettyInputStreamBody implements NettyBody {
         }
 
         private void readOffEventLoop() {
+            if (closed) {
+                return;
+            }
             int read = -1;
             IOException thrown = null;
             try {

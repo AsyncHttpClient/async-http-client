@@ -61,6 +61,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -71,6 +72,9 @@ import java.util.zip.CRC32;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.OffloadedBodyReadTestSupport.BlockingInputStream;
+import static org.asynchttpclient.OffloadedBodyReadTestSupport.CloseProbeInputStream;
+import static org.asynchttpclient.OffloadedBodyReadTestSupport.awaitExecutorState;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -363,6 +367,74 @@ public class Http2StreamingBodyFlowControlTest {
     }
 
     @Test
+    public void blockedInputStreamDoesNotStallSiblingStreamOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        BlockingInputStream bodyStream = new BlockingInputStream(payload);
+
+        try (AsyncHttpClient client = http2Client()) {
+            ListenableFuture<Response> blockedUpload = client.preparePost(httpsUrl("/blocked"))
+                    .setBody(new InputStreamBodyGenerator(bodyStream, payload.length))
+                    .execute();
+            assertTrue(bodyStream.readStarted.await(5, SECONDS), "blocking body read should start");
+
+            Response sibling = client.prepareGet(httpsUrl("/sibling"))
+                    .execute()
+                    .get(5, SECONDS);
+            assertEquals(200, sibling.getStatusCode(),
+                    "a sibling stream should complete while the upload read is blocked");
+
+            bodyStream.releaseRead.countDown();
+            assertEchoed(blockedUpload.get(30, SECONDS), payload);
+        } finally {
+            bodyStream.releaseRead.countDown();
+        }
+    }
+
+    @Test
+    public void cancelledQueuedInputStreamIsNotReadOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        BlockingInputStream blockingStream = new BlockingInputStream(payload);
+        CloseProbeInputStream queuedStream = new CloseProbeInputStream();
+
+        DefaultAsyncHttpClientConfig clientConfig = config()
+                .setUseInsecureTrustManager(true)
+                .setHttp2Enabled(true)
+                .setMaxConnectionsPerHost(1)
+                .setRequestBodyStreamReadOffloadEnabled(true)
+                .setRequestBodyStreamReadThreadsCount(1)
+                .setRequestBodyStreamReadQueueSize(1)
+                .setRequestTimeout(Duration.ofSeconds(30))
+                .build();
+
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(clientConfig)) {
+            ThreadPoolExecutor executor = assertInstanceOf(ThreadPoolExecutor.class,
+                    client.blockingBodyReadExecutor());
+            ListenableFuture<Response> blockingUpload = client.preparePost(httpsUrl("/blocking"))
+                    .setBody(new InputStreamBodyGenerator(blockingStream, payload.length))
+                    .execute();
+            assertTrue(blockingStream.readStarted.await(5, SECONDS), "first body read should occupy the worker");
+
+            ListenableFuture<Response> queuedUpload = client.preparePost(httpsUrl("/queued"))
+                    .setBody(new InputStreamBodyGenerator(queuedStream, 1))
+                    .execute();
+            awaitExecutorState(executor, 1, 1);
+
+            assertTrue(queuedUpload.cancel(true), "queued request should be cancelled");
+            assertTrue(queuedStream.closed.await(5, SECONDS), "cancellation should close the queued stream");
+
+            blockingStream.releaseRead.countDown();
+            assertEchoed(blockingUpload.get(30, SECONDS), payload);
+            awaitExecutorState(executor, 0, 0);
+            assertFalse(queuedStream.readAttempted.get(),
+                    "a queued read must not start after cancellation closed its stream");
+        } finally {
+            blockingStream.releaseRead.countDown();
+        }
+    }
+
+    @Test
     public void inputStreamRuntimeFailureFailsRequestOverHttp2() throws Exception {
         startServer(-1);
         InputStream is = new InputStream() {
@@ -586,6 +658,7 @@ public class Http2StreamingBodyFlowControlTest {
             }
         }
     }
+
 
     // Lifecycle (finding #2 from the cold audit): when the stream is closed while the body pump is parked on
     // SUSPEND (a streaming/feedable body with no data yet), no in-flight write's failure would run cleanup —

@@ -130,6 +130,18 @@ public final class NettyRequestSender {
         this(config, channelManager, nettyTimer, clientState, Runnable::run);
     }
 
+    /**
+     * Creates the request sender with the client-owned executor used for blocking request body reads.
+     * This overload is public only for cross-package client wiring; applications should configure the
+     * executor through {@link AsyncHttpClientConfig}.
+     *
+     * @param config client configuration
+     * @param channelManager channel manager
+     * @param nettyTimer request timer
+     * @param clientState client lifecycle state
+     * @param blockingBodyReadExecutor executor for blocking request body reads
+     * @since 3.0.12
+     */
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer,
                               AsyncHttpClientState clientState, Executor blockingBodyReadExecutor) {
         this.config = config;
