@@ -221,6 +221,9 @@ public class Realm {
         return servicePrincipalName;
     }
 
+    /**
+     * Returns whether SPNEGO/Kerberos authentication canonicalizes the target hostname through the JVM resolver.
+     */
     public boolean isUseCanonicalHostname() {
         return useCanonicalHostname;
     }
@@ -421,6 +424,11 @@ public class Realm {
             return this;
         }
 
+        /**
+         * Enables JVM canonical-hostname resolution when deriving the SPNEGO/Kerberos service principal name.
+         * Resolution is blocking and can run on a Netty event-loop thread during authentication retries. Prefer
+         * {@link #setServicePrincipalName(String)} when the service principal name is known.
+         */
         public Builder setUseCanonicalHostname(boolean useCanonicalHostname) {
             this.useCanonicalHostname = useCanonicalHostname;
             return this;
