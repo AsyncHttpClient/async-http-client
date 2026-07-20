@@ -21,7 +21,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2StreamChannel;
-import io.netty.handler.stream.ChunkedStream;
+import io.netty.handler.stream.ChunkedInput;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.concurrent.EventExecutor;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 import org.slf4j.Logger;
@@ -29,7 +31,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class NettyInputStreamBody implements NettyBody {
@@ -38,14 +43,24 @@ public class NettyInputStreamBody implements NettyBody {
 
     private final InputStream inputStream;
     private final long contentLength;
+    private final Executor blockingBodyReadExecutor;
 
     public NettyInputStreamBody(InputStream inputStream) {
         this(inputStream, -1L);
     }
 
     public NettyInputStreamBody(InputStream inputStream, long contentLength) {
+        this(inputStream, contentLength, Runnable::run);
+    }
+
+    public NettyInputStreamBody(InputStream inputStream, Executor blockingBodyReadExecutor) {
+        this(inputStream, -1L, blockingBodyReadExecutor);
+    }
+
+    public NettyInputStreamBody(InputStream inputStream, long contentLength, Executor blockingBodyReadExecutor) {
         this.inputStream = inputStream;
         this.contentLength = contentLength;
+        this.blockingBodyReadExecutor = requireNonNull(blockingBodyReadExecutor, "blockingBodyReadExecutor");
     }
 
     public InputStream getInputStream() {
@@ -72,11 +87,15 @@ public class NettyInputStreamBody implements NettyBody {
             future.setStreamConsumed(true);
         }
 
-        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
+        ChunkedWriteHandler chunkedWriteHandler = requireNonNull(channel.pipeline().get(ChunkedWriteHandler.class),
+                "chunkedWriteHandler");
+        OffloadedInputStreamChunkedInput chunkedInput = new OffloadedInputStreamChunkedInput(is, getContentLength(),
+                channel.eventLoop(), chunkedWriteHandler, blockingBodyReadExecutor);
+        channel.write(chunkedInput, channel.newProgressivePromise()).addListener(
                 new WriteProgressListener(future, false, getContentLength()) {
                     @Override
                     public void operationComplete(ChannelProgressiveFuture cf) {
-                        closeSilently(is);
+                        chunkedInput.close();
                         super.operationComplete(cf);
                     }
                 });
@@ -107,49 +126,269 @@ public class NettyInputStreamBody implements NettyBody {
         // backpressure, so a large upload does not buffer the whole stream in heap or read it all inline on
         // the event loop. Cleanup (closeSilently) happens when the async pump completes — see
         // InputStreamChunkSource.close.
-        Http2BodyWriter.start(channel, new InputStreamChunkSource(is));
+        Http2BodyWriter.start(channel, new InputStreamChunkSource(is, channel.eventLoop(), blockingBodyReadExecutor));
     }
 
     /**
-     * Reads an {@link InputStream} in fixed-size chunks for {@link Http2BodyWriter}.
+     * Reads an {@link InputStream} off the event loop and exposes completed chunks to
+     * {@link Http2BodyWriter}.
      */
     private static final class InputStreamChunkSource implements Http2BodyWriter.ChunkSource {
 
         private static final int CHUNK_SIZE = 8192;
 
         private final InputStream is;
+        private final EventExecutor eventLoop;
+        private final Executor blockingBodyReadExecutor;
         private final byte[] buffer = new byte[CHUNK_SIZE];
+        private boolean readInProgress;
+        private boolean endOfInput;
+        private boolean closed;
+        private int readableBytes;
+        private IOException failure;
+        private Runnable resume;
 
-        InputStreamChunkSource(InputStream is) {
+        InputStreamChunkSource(InputStream is, EventExecutor eventLoop, Executor blockingBodyReadExecutor) {
             this.is = is;
+            this.eventLoop = eventLoop;
+            this.blockingBodyReadExecutor = blockingBodyReadExecutor;
         }
 
         @Override
         public ByteBuf nextChunk(ByteBufAllocator alloc) throws IOException {
-            // Blocking InputStream.read returns >0 (data), or -1 (EOF). A transient 0 is possible for some
-            // streams; loop on it so we never emit an empty non-final DATA frame nor end the stream early. The
-            // read blocks until data or EOF, so this does not busy-spin.
-            int read;
-            do {
-                read = is.read(buffer);
-            } while (read == 0);
-
-            if (read == -1) {
+            if (failure != null) {
+                throw failure;
+            }
+            if (readableBytes > 0) {
+                ByteBuf buf = alloc.buffer(readableBytes);
+                try {
+                    buf.writeBytes(buffer, 0, readableBytes);
+                    readableBytes = 0;
+                    return buf;
+                } catch (RuntimeException e) {
+                    buf.release();
+                    throw e;
+                }
+            }
+            if (endOfInput) {
                 return null;
             }
-            ByteBuf buf = alloc.buffer(read);
-            try {
-                buf.writeBytes(buffer, 0, read);
-                return buf;
-            } catch (RuntimeException e) {
-                buf.release();
-                throw e;
+            if (!readInProgress) {
+                submitReadAfterSuspend();
             }
+            return Http2BodyWriter.SUSPEND;
+        }
+
+        @Override
+        public void onResume(Runnable resume) {
+            this.resume = resume;
         }
 
         @Override
         public void close() {
+            closed = true;
             closeSilently(is);
+        }
+
+        private void submitReadAfterSuspend() throws IOException {
+            readInProgress = true;
+            try {
+                eventLoop.execute(this::submitRead);
+            } catch (RejectedExecutionException e) {
+                readInProgress = false;
+                throw new IOException("HTTP/2 request body read executor is unavailable", e);
+            }
+        }
+
+        private void submitRead() {
+            try {
+                blockingBodyReadExecutor.execute(this::readOffEventLoop);
+            } catch (RejectedExecutionException e) {
+                completeRead(-1, new IOException("HTTP/2 request body read executor rejected the read", e));
+            }
+        }
+
+        private void readOffEventLoop() {
+            int read = -1;
+            IOException thrown = null;
+            try {
+                read = read();
+            } catch (IOException e) {
+                thrown = e;
+            }
+            completeRead(read, thrown);
+        }
+
+        private int read() throws IOException {
+            int read;
+            do {
+                read = is.read(buffer);
+            } while (read == 0 && !closed);
+            return read;
+        }
+
+        private void completeRead(int read, IOException thrown) {
+            try {
+                eventLoop.execute(() -> {
+                    readInProgress = false;
+                    if (closed) {
+                        return;
+                    }
+                    if (thrown != null) {
+                        failure = thrown;
+                    } else if (read < 0) {
+                        endOfInput = true;
+                    } else {
+                        readableBytes = read;
+                    }
+                    if (resume != null) {
+                        resume.run();
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                close();
+            }
+        }
+    }
+
+    private static final class OffloadedInputStreamChunkedInput implements ChunkedInput<ByteBuf> {
+
+        private static final int CHUNK_SIZE = 8192;
+
+        private final InputStream is;
+        private final long length;
+        private final EventExecutor eventLoop;
+        private final ChunkedWriteHandler chunkedWriteHandler;
+        private final Executor blockingBodyReadExecutor;
+        private final byte[] buffer = new byte[CHUNK_SIZE];
+        private boolean readInProgress;
+        private boolean endOfInput;
+        private boolean closed;
+        private int readableBytes;
+        private long progress;
+        private IOException failure;
+
+        OffloadedInputStreamChunkedInput(InputStream is,
+                                         long length,
+                                         EventExecutor eventLoop,
+                                         ChunkedWriteHandler chunkedWriteHandler,
+                                         Executor blockingBodyReadExecutor) {
+            this.is = is;
+            this.length = length;
+            this.eventLoop = eventLoop;
+            this.chunkedWriteHandler = chunkedWriteHandler;
+            this.blockingBodyReadExecutor = blockingBodyReadExecutor;
+        }
+
+        @Override
+        @Deprecated
+        public ByteBuf readChunk(io.netty.channel.ChannelHandlerContext ctx) throws Exception {
+            return readChunk(ctx.alloc());
+        }
+
+        @Override
+        public ByteBuf readChunk(ByteBufAllocator alloc) throws Exception {
+            if (failure != null) {
+                throw failure;
+            }
+            if (readableBytes > 0) {
+                ByteBuf buf = alloc.buffer(readableBytes);
+                try {
+                    buf.writeBytes(buffer, 0, readableBytes);
+                    progress += readableBytes;
+                    readableBytes = 0;
+                    return buf;
+                } catch (RuntimeException e) {
+                    buf.release();
+                    throw e;
+                }
+            }
+            if (endOfInput) {
+                return null;
+            }
+            if (!readInProgress) {
+                submitReadAfterSuspend();
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isEndOfInput() {
+            return endOfInput;
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+            closeSilently(is);
+        }
+
+        @Override
+        public long length() {
+            return length;
+        }
+
+        @Override
+        public long progress() {
+            return progress;
+        }
+
+        private void submitReadAfterSuspend() throws IOException {
+            readInProgress = true;
+            try {
+                eventLoop.execute(this::submitRead);
+            } catch (RejectedExecutionException e) {
+                readInProgress = false;
+                throw new IOException("HTTP/1 request body read executor is unavailable", e);
+            }
+        }
+
+        private void submitRead() {
+            try {
+                blockingBodyReadExecutor.execute(this::readOffEventLoop);
+            } catch (RejectedExecutionException e) {
+                completeRead(-1, new IOException("HTTP/1 request body read executor rejected the read", e));
+            }
+        }
+
+        private void readOffEventLoop() {
+            int read = -1;
+            IOException thrown = null;
+            try {
+                read = read();
+            } catch (IOException e) {
+                thrown = e;
+            }
+            completeRead(read, thrown);
+        }
+
+        private int read() throws IOException {
+            int read;
+            do {
+                read = is.read(buffer);
+            } while (read == 0 && !closed);
+            return read;
+        }
+
+        private void completeRead(int read, IOException thrown) {
+            try {
+                eventLoop.execute(() -> {
+                    readInProgress = false;
+                    if (closed) {
+                        return;
+                    }
+                    if (thrown != null) {
+                        failure = thrown;
+                    } else if (read < 0) {
+                        endOfInput = true;
+                    } else {
+                        readableBytes = read;
+                    }
+                    chunkedWriteHandler.resumeTransfer();
+                });
+            } catch (RejectedExecutionException e) {
+                close();
+            }
         }
     }
 }

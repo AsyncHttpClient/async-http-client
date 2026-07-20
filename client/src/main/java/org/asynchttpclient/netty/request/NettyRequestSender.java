@@ -95,6 +95,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -126,6 +127,11 @@ public final class NettyRequestSender {
     private final FailedIpCooldownHolder ipCooldown;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
+        this(config, channelManager, nettyTimer, clientState, Runnable::run);
+    }
+
+    public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer,
+                              AsyncHttpClientState clientState, Executor blockingBodyReadExecutor) {
         this.config = config;
         this.channelManager = channelManager;
         connectionSemaphore = config.getConnectionSemaphoreFactory() == null
@@ -133,7 +139,7 @@ public final class NettyRequestSender {
                 : config.getConnectionSemaphoreFactory().newConnectionSemaphore(config);
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
-        requestFactory = new NettyRequestFactory(config);
+        requestFactory = new NettyRequestFactory(config, blockingBodyReadExecutor);
         // Guard the period against a custom AsyncHttpClientConfig that enables the cooldown but returns a
         // null period: leave the cooldown off rather than NPE while constructing the client.
         Duration cooldownPeriod = config.getFailedIpCooldownPeriod();

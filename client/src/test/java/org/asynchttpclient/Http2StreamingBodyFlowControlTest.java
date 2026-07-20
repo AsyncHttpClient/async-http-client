@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -43,6 +44,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
@@ -60,7 +62,9 @@ import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.zip.CRC32;
 
@@ -68,6 +72,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -333,6 +338,27 @@ public class Http2StreamingBodyFlowControlTest {
         }
     }
 
+    @Test
+    public void inputStreamBodyReadsOffEventLoopOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        EventLoopProbeInputStream is = new EventLoopProbeInputStream(payload);
+
+        try (AsyncHttpClient asyncClient = http2Client()) {
+            DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncClient;
+            is.setEventLoopGroup(client.channelManager().getEventLoopGroup());
+
+            Response response = client.preparePost(httpsUrl("/upload"))
+                    .setBody(new InputStreamBodyGenerator(is, payload.length))
+                    .execute()
+                    .get(30, SECONDS);
+            assertEchoed(response, payload);
+        }
+
+        assertTrue(is.readAttempted.get(), "InputStream should have been read");
+        assertFalse(is.readOnEventLoop.get(), "InputStream.read must not run on an event-loop thread");
+    }
+
     // =========================================================================
     // NettyFileBody — large streaming upload via setBody(File)
     // =========================================================================
@@ -479,6 +505,56 @@ public class Http2StreamingBodyFlowControlTest {
                 public void close() throws IOException {
                 }
             };
+        }
+    }
+
+    private static final class EventLoopProbeInputStream extends InputStream {
+        private final byte[] data;
+        private final AtomicBoolean readAttempted = new AtomicBoolean();
+        private final AtomicBoolean readOnEventLoop = new AtomicBoolean();
+        private final AtomicReference<EventLoopGroup> eventLoopGroup = new AtomicReference<>();
+        private int position;
+
+        EventLoopProbeInputStream(byte[] data) {
+            this.data = data;
+        }
+
+        void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+            this.eventLoopGroup.set(eventLoopGroup);
+        }
+
+        @Override
+        public int read() {
+            if (position == data.length) {
+                return -1;
+            }
+            return data[position++] & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) {
+            recordReadThread();
+            if (position == data.length) {
+                return -1;
+            }
+            int read = Math.min(length, data.length - position);
+            System.arraycopy(data, position, buffer, offset, read);
+            position += read;
+            return read;
+        }
+
+        private void recordReadThread() {
+            readAttempted.set(true);
+            EventLoopGroup group = eventLoopGroup.get();
+            if (group == null) {
+                return;
+            }
+            Thread currentThread = Thread.currentThread();
+            for (EventExecutor executor : group) {
+                if (executor.inEventLoop(currentThread)) {
+                    readOnEventLoop.set(true);
+                }
+            }
         }
     }
 

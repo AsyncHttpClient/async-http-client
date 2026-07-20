@@ -35,7 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -62,6 +65,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
+    private final ExecutorService blockingBodyReadExecutor;
     private final boolean allowStopNettyTimer;
     private final Timer nettyTimer;
 
@@ -105,8 +109,10 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             nettyTimer = configTimer;
         }
 
+        blockingBodyReadExecutor = newBlockingBodyReadExecutor(config);
         channelManager = new ChannelManager(config, nettyTimer);
-        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed));
+        requestSender = new NettyRequestSender(config, channelManager, nettyTimer, new AsyncHttpClientState(closed),
+                blockingBodyReadExecutor);
         channelManager.configureBootstraps(requestSender);
 
         CookieStore cookieStore = config.getCookieStore();
@@ -134,6 +140,16 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         return timer;
     }
 
+    private static ExecutorService newBlockingBodyReadExecutor(AsyncHttpClientConfig config) {
+        ThreadFactory threadFactory = config.getThreadFactory() != null
+                ? config.getThreadFactory()
+                : new DefaultThreadFactory(config.getThreadPoolName() + "-blocking-io");
+        int threads = Math.max(1, config.getIoThreadsCount());
+        int queueSize = Math.max(1024, threads * 16);
+        return new ThreadPoolExecutor(threads, threads, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(queueSize), threadFactory);
+    }
+
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
@@ -142,6 +158,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             } catch (Throwable t) {
                 LOGGER.warn("Unexpected error on ChannelManager close", t);
             }
+            blockingBodyReadExecutor.shutdownNow();
             CookieStore cookieStore = config.getCookieStore();
             if (cookieStore != null) {
                 cookieStore.decrementAndGet();

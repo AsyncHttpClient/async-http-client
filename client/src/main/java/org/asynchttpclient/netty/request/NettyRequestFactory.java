@@ -52,6 +52,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
@@ -68,6 +69,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_VERSION;
 import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaderNames.UPGRADE;
 import static io.netty.handler.codec.http.HttpHeaderNames.USER_AGENT;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizationHeader;
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.ACCEPT_ALL_HEADER_VALUE;
@@ -146,9 +148,15 @@ public final class NettyRequestFactory {
 
     private final AsyncHttpClientConfig config;
     private final ClientCookieEncoder cookieEncoder;
+    private final Executor blockingBodyReadExecutor;
 
     NettyRequestFactory(AsyncHttpClientConfig config) {
+        this(config, Runnable::run);
+    }
+
+    NettyRequestFactory(AsyncHttpClientConfig config, Executor blockingBodyReadExecutor) {
         this.config = config;
+        this.blockingBodyReadExecutor = requireNonNull(blockingBodyReadExecutor, "blockingBodyReadExecutor");
         cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
     }
 
@@ -167,7 +175,7 @@ public final class NettyRequestFactory {
         } else if (request.getByteBufData() != null) {
             nettyBody = new NettyByteBufBody(request.getByteBufData());
         } else if (request.getStreamData() != null) {
-            nettyBody = new NettyInputStreamBody(request.getStreamData());
+            nettyBody = new NettyInputStreamBody(request.getStreamData(), blockingBodyReadExecutor);
         } else if (isNonEmpty(request.getFormParams())) {
             CharSequence contentTypeOverride = request.getHeaders().contains(CONTENT_TYPE) ? null : HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
             nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentTypeOverride);
@@ -180,7 +188,8 @@ public final class NettyRequestFactory {
             nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
         } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
             InputStreamBodyGenerator inStreamGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
-            nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength());
+            nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength(),
+                    blockingBodyReadExecutor);
         } else if (request.getBodyGenerator() != null) {
             nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }

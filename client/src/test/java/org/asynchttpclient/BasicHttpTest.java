@@ -16,11 +16,13 @@
 package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import io.netty.util.concurrent.EventExecutor;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -1039,5 +1041,79 @@ public class BasicHttpTest extends HttpTest {
                                 }
                             }).get(TIMEOUT, SECONDS);
                 }));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void postInputStreamBodyGeneratorReadsOffEventLoop() throws Throwable {
+        withServer(server).run(server -> {
+            server.enqueueEcho();
+            byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
+            EventLoopProbeInputStream bodyStream = new EventLoopProbeInputStream(bodyBytes);
+
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config().build())) {
+                bodyStream.setEventLoopGroup(client.channelManager().getEventLoopGroup());
+
+                Response response = client.preparePost(getTargetUrl())
+                        .setBody(new InputStreamBodyGenerator(bodyStream, bodyBytes.length))
+                        .execute()
+                        .get(TIMEOUT, SECONDS);
+
+                assertEquals(200, response.getStatusCode());
+                assertEquals("{}", response.getResponseBody());
+            }
+
+            assertTrue(bodyStream.readAttempted.get(), "InputStream should have been read");
+            assertFalse(bodyStream.readOnEventLoop.get(), "InputStream.read must not run on an event-loop thread");
+        });
+    }
+
+    private static final class EventLoopProbeInputStream extends InputStream {
+        private final byte[] data;
+        private final AtomicBoolean readAttempted = new AtomicBoolean();
+        private final AtomicBoolean readOnEventLoop = new AtomicBoolean();
+        private final AtomicReference<EventLoopGroup> eventLoopGroup = new AtomicReference<>();
+        private int position;
+
+        EventLoopProbeInputStream(byte[] data) {
+            this.data = data;
+        }
+
+        void setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+            this.eventLoopGroup.set(eventLoopGroup);
+        }
+
+        @Override
+        public int read() {
+            if (position == data.length) {
+                return -1;
+            }
+            return data[position++] & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) {
+            recordReadThread();
+            if (position == data.length) {
+                return -1;
+            }
+            int read = Math.min(length, data.length - position);
+            System.arraycopy(data, position, buffer, offset, read);
+            position += read;
+            return read;
+        }
+
+        private void recordReadThread() {
+            readAttempted.set(true);
+            EventLoopGroup group = eventLoopGroup.get();
+            if (group == null) {
+                return;
+            }
+            Thread currentThread = Thread.currentThread();
+            for (EventExecutor executor : group) {
+                if (executor.inEventLoop(currentThread)) {
+                    readOnEventLoop.set(true);
+                }
+            }
+        }
     }
 }
