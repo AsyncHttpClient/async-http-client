@@ -38,6 +38,10 @@ import static org.asynchttpclient.RequestBuilderBase.DEFAULT_NAME_RESOLVER;
 
 /**
  * Offloads the default blocking fallback name resolver and tracks its pending promises for client shutdown.
+ * This type is public only for cross-package client wiring; applications should configure resolver offloading
+ * through {@link AsyncHttpClientConfig}.
+ *
+ * @since 3.0.12
  */
 public final class NameResolverOffload implements AutoCloseable {
 
@@ -45,6 +49,11 @@ public final class NameResolverOffload implements AutoCloseable {
     private final Map<Promise<?>, EventExecutor> pending = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
+    /**
+     * Creates the client-owned fallback resolver offload support.
+     *
+     * @param config client configuration
+     */
     public NameResolverOffload(AsyncHttpClientConfig config) {
         requireNonNull(config, "config");
         if (!config.isFallbackNameResolverOffloadEnabled()) {
@@ -61,10 +70,23 @@ public final class NameResolverOffload implements AutoCloseable {
                 new LinkedBlockingQueue<>(queueSize), threadFactory);
     }
 
+    /**
+     * Returns whether the resolver is the default blocking resolver and offloading is enabled.
+     *
+     * @param nameResolver resolver selected for the request
+     * @return {@code true} when the resolution should be offloaded
+     */
     public boolean shouldOffload(NameResolver<InetAddress> nameResolver) {
         return executor != null && nameResolver == DEFAULT_NAME_RESOLVER;
     }
 
+    /**
+     * Submits fallback resolution work and associates it with its request promise.
+     *
+     * @param eventLoop event loop that owns the request flow
+     * @param promise request promise to fail on rejection or shutdown
+     * @param task fallback resolution work
+     */
     public void execute(EventExecutor eventLoop, Promise<?> promise, Runnable task) {
         requireNonNull(eventLoop, "eventLoop");
         requireNonNull(promise, "promise");
@@ -101,6 +123,14 @@ public final class NameResolverOffload implements AutoCloseable {
         }
     }
 
+    /**
+     * Completes a resolution promise on its request event loop.
+     *
+     * @param eventLoop event loop that owns the request flow
+     * @param promise request promise
+     * @param result resolution result
+     * @param <T> result type
+     */
     public <T> void completeSuccess(EventExecutor eventLoop, Promise<T> promise, T result) {
         if (eventLoop.inEventLoop()) {
             promise.trySuccess(result);
@@ -113,6 +143,13 @@ public final class NameResolverOffload implements AutoCloseable {
         }
     }
 
+    /**
+     * Fails a resolution promise on its request event loop.
+     *
+     * @param eventLoop event loop that owns the request flow
+     * @param promise request promise
+     * @param cause resolution failure
+     */
     public void completeFailure(EventExecutor eventLoop, Promise<?> promise, Throwable cause) {
         if (eventLoop.inEventLoop()) {
             promise.tryFailure(cause);

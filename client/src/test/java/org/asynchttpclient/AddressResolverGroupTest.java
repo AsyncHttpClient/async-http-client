@@ -48,6 +48,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
+import static org.asynchttpclient.RequestBuilderBase.DEFAULT_NAME_RESOLVER;
 import static org.asynchttpclient.test.TestUtils.isExternalNetworkAvailable;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -185,6 +186,36 @@ public class AddressResolverGroupTest extends HttpTest {
 
         assertTrue(resolver.socksResolutionAttempted.get(), "SOCKS proxy host should have been resolved");
         assertTrue(resolver.socksResolutionOnEventLoop.get(), "custom resolver should retain its calling context");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void defaultSocksProxyResolverUsesOffloadPool() throws Throwable {
+        String poolName = "ahc-socks-resolver-enabled";
+        ProxyServer proxy = new ProxyServer.Builder("localhost", 1080)
+                .setProxyType(ProxyType.SOCKS_V5)
+                .build();
+
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
+                .setThreadPoolName(poolName)
+                .setFallbackNameResolverOffloadEnabled(true)
+                .build())) {
+            EventLoopGroup eventLoopGroup = client.channelManager().getEventLoopGroup();
+            CountDownLatch complete = new CountDownLatch(1);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            eventLoopGroup.next().execute(() -> client.channelManager()
+                    .getBootstrap(Uri.create("http://target.test/"), DEFAULT_NAME_RESOLVER, proxy)
+                    .addListener(bootstrap -> {
+                        if (!bootstrap.isSuccess()) {
+                            failure.set(bootstrap.cause());
+                        }
+                        complete.countDown();
+                    }));
+
+            assertTrue(complete.await(5, SECONDS), "SOCKS bootstrap resolution should complete");
+            assertNull(failure.get(), "SOCKS bootstrap should resolve the proxy host");
+            assertTrue(hasLiveThreadNamed(poolName + "-resolver"),
+                    "SOCKS fallback DNS should use the resolver offload pool");
+        }
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)

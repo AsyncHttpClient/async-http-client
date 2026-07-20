@@ -1153,6 +1153,14 @@ public class ChannelManager {
         return eventLoopGroup;
     }
 
+    /**
+     * Returns the client-owned fallback resolver offload support.
+     * This method is public only for cross-package request-sender wiring; applications should configure
+     * resolver offloading through {@link AsyncHttpClientConfig}.
+     *
+     * @return fallback resolver offload support
+     * @since 3.0.12
+     */
     public NameResolverOffload getNameResolverOffload() {
         return nameResolverOffload;
     }
