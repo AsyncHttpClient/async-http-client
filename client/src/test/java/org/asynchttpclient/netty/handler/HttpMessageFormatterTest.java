@@ -23,6 +23,8 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,5 +62,28 @@ public class HttpMessageFormatterTest {
         assertFalse(value.contains("response-secret"));
         assertTrue(value.contains("Set-Cookie: <redacted>"));
         assertTrue(value.contains("X-Request-Id: request-id"));
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "org.asynchttpclient.enableSensitiveLogging", matches = "(?i)true")
+    public void shouldIncludeSensitiveHeadersWhenSystemPropertyEnabled() {
+        assertSensitiveHeadersIncluded();
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "AHC_ENABLE_SENSITIVE_LOGGING", matches = "(?i)true")
+    public void shouldIncludeSensitiveHeadersWhenEnvironmentVariableEnabled() {
+        assertSensitiveHeadersIncluded();
+    }
+
+    private static void assertSensitiveHeadersIncluded() {
+        HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/test");
+        request.headers().set("Authorization", "Bearer request-secret");
+
+        String value = HttpMessageFormatter.format(request);
+
+        assertFalse(HttpMessageFormatter.isSensitiveHeader("Authorization"));
+        assertTrue(value.contains("Authorization: Bearer request-secret"));
+        assertFalse(value.contains(HttpMessageFormatter.REDACTED));
     }
 }
