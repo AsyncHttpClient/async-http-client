@@ -129,6 +129,11 @@ public final class Utf8UrlEncoder {
         return sb == null ? input : sb.toString();
     }
 
+    public static String encodeQuery(String input) {
+        StringBuilder sb = lazyAppendEncoded(null, input, BUILT_QUERY_UNTOUCHED_CHARS, false);
+        return sb == null ? input : sb.toString();
+    }
+
     public static StringBuilder encodeAndAppendQuery(StringBuilder sb, String query) {
         return appendEncoded(sb, query, BUILT_QUERY_UNTOUCHED_CHARS, false);
     }
