@@ -64,6 +64,9 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEn
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownEnabled;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownPeriod;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadEnabled;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadQueueSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadThreadsCount;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHandshakeTimeout;
@@ -226,6 +229,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
     private final int ioThreadsCount;
+    private final boolean fallbackNameResolverOffloadEnabled;
+    private final int fallbackNameResolverOffloadThreadsCount;
+    private final int fallbackNameResolverOffloadQueueSize;
     private final long hashedWheelTimerTickDuration;
     private final int hashedWheelTimerSize;
 
@@ -330,6 +336,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          @Nullable Consumer<Channel> wsAdditionalChannelInitializer,
                                          ResponseBodyPartFactory responseBodyPartFactory,
                                          int ioThreadsCount,
+                                         boolean fallbackNameResolverOffloadEnabled,
+                                         int fallbackNameResolverOffloadThreadsCount,
+                                         int fallbackNameResolverOffloadQueueSize,
                                          long hashedWheelTimerTickDuration,
                                          int hashedWheelTimerSize) {
 
@@ -449,6 +458,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
         this.responseBodyPartFactory = responseBodyPartFactory;
         this.ioThreadsCount = ioThreadsCount;
+        this.fallbackNameResolverOffloadEnabled = fallbackNameResolverOffloadEnabled;
+        this.fallbackNameResolverOffloadThreadsCount = fallbackNameResolverOffloadThreadsCount;
+        this.fallbackNameResolverOffloadQueueSize = fallbackNameResolverOffloadQueueSize;
         this.hashedWheelTimerTickDuration = hashedWheelTimerTickDuration;
         this.hashedWheelTimerSize = hashedWheelTimerSize;
     }
@@ -907,6 +919,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return ioThreadsCount;
     }
 
+    @Override
+    public boolean isFallbackNameResolverOffloadEnabled() {
+        return fallbackNameResolverOffloadEnabled;
+    }
+
+    @Override
+    public int getFallbackNameResolverOffloadThreadsCount() {
+        return fallbackNameResolverOffloadThreadsCount;
+    }
+
+    @Override
+    public int getFallbackNameResolverOffloadQueueSize() {
+        return fallbackNameResolverOffloadQueueSize;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -1016,6 +1043,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
         private int ioThreadsCount = defaultIoThreadsCount();
+        private boolean fallbackNameResolverOffloadEnabled = defaultFallbackNameResolverOffloadEnabled();
+        private int fallbackNameResolverOffloadThreadsCount = defaultFallbackNameResolverOffloadThreadsCount();
+        private int fallbackNameResolverOffloadQueueSize = defaultFallbackNameResolverOffloadQueueSize();
         private long hashedWheelTickDuration = defaultHashedWheelTimerTickDuration();
         private int hashedWheelSize = defaultHashedWheelTimerSize();
 
@@ -1127,6 +1157,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
             responseBodyPartFactory = config.getResponseBodyPartFactory();
             ioThreadsCount = config.getIoThreadsCount();
+            fallbackNameResolverOffloadEnabled = config.isFallbackNameResolverOffloadEnabled();
+            fallbackNameResolverOffloadThreadsCount = config.getFallbackNameResolverOffloadThreadsCount();
+            fallbackNameResolverOffloadQueueSize = config.getFallbackNameResolverOffloadQueueSize();
             hashedWheelTickDuration = config.getHashedWheelTimerTickDuration();
             hashedWheelSize = config.getHashedWheelTimerSize();
         }
@@ -1688,6 +1721,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setFallbackNameResolverOffloadEnabled(boolean fallbackNameResolverOffloadEnabled) {
+            this.fallbackNameResolverOffloadEnabled = fallbackNameResolverOffloadEnabled;
+            return this;
+        }
+
+        public Builder setFallbackNameResolverOffloadThreadsCount(int fallbackNameResolverOffloadThreadsCount) {
+            this.fallbackNameResolverOffloadThreadsCount = fallbackNameResolverOffloadThreadsCount;
+            return this;
+        }
+
+        public Builder setFallbackNameResolverOffloadQueueSize(int fallbackNameResolverOffloadQueueSize) {
+            this.fallbackNameResolverOffloadQueueSize = fallbackNameResolverOffloadQueueSize;
+            return this;
+        }
+
         private ProxyServerSelector resolveProxyServerSelector() {
             if (proxyServerSelector != null) {
                 return proxyServerSelector;
@@ -1793,6 +1841,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     wsAdditionalChannelInitializer,
                     responseBodyPartFactory,
                     ioThreadsCount,
+                    fallbackNameResolverOffloadEnabled,
+                    fallbackNameResolverOffloadThreadsCount,
+                    fallbackNameResolverOffloadQueueSize,
                     hashedWheelTickDuration,
                     hashedWheelSize);
         }

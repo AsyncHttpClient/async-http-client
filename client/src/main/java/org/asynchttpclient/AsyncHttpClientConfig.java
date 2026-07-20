@@ -166,6 +166,36 @@ public interface AsyncHttpClientConfig {
     ThreadFactory getThreadFactory();
 
     /**
+     * Returns whether fallback resolution with the default blocking name resolver should be offloaded from
+     * Netty event-loop threads.
+     *
+     * @return {@code true} if fallback name resolution should be offloaded
+     */
+    default boolean isFallbackNameResolverOffloadEnabled() {
+        return true;
+    }
+
+    /**
+     * Returns the number of threads used to offload fallback name resolution.
+     *
+     * @return the configured fallback resolver thread count. Values less than or equal to {@code 0} use
+     * {@link #getIoThreadsCount()}.
+     */
+    default int getFallbackNameResolverOffloadThreadsCount() {
+        return -1;
+    }
+
+    /**
+     * Returns the maximum number of pending fallback name resolutions.
+     *
+     * @return the configured fallback resolver queue size. Values less than or equal to {@code 0} use the
+     * default queue size.
+     */
+    default int getFallbackNameResolverOffloadQueueSize() {
+        return 0;
+    }
+
+    /**
      * An instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
      *
      * @return instance of {@link ProxyServer}

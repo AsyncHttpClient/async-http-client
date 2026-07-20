@@ -145,6 +145,27 @@ public class AsyncHttpClientDefaultsTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultFallbackNameResolverOffloadEnabled() {
+        assertTrue(AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadEnabled());
+        testBooleanSystemProperty("fallbackNameResolverOffloadEnabled",
+                "defaultFallbackNameResolverOffloadEnabled", "false");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultFallbackNameResolverOffloadThreadsCount() {
+        assertEquals(-1, AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadThreadsCount());
+        testIntegerSystemProperty("fallbackNameResolverOffloadThreadsCount",
+                "defaultFallbackNameResolverOffloadThreadsCount", "2");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultFallbackNameResolverOffloadQueueSize() {
+        assertEquals(0, AsyncHttpClientConfigDefaults.defaultFallbackNameResolverOffloadQueueSize());
+        testIntegerSystemProperty("fallbackNameResolverOffloadQueueSize",
+                "defaultFallbackNameResolverOffloadQueueSize", "17");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultHashedWheelTimerTickDuration() {
         assertEquals(AsyncHttpClientConfigDefaults.defaultHashedWheelTimerTickDuration(), 100);
         testIntegerSystemProperty("hashedWheelTimerTickDuration", "defaultHashedWheelTimerTickDuration", "100");

@@ -137,7 +137,7 @@ public class AddressResolverGroupTest extends HttpTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void fallbackNameResolverOnRedirectRunsOffEventLoop() throws Throwable {
+    public void customNameResolverOnRedirectKeepsEventLoopContext() throws Throwable {
         server.enqueueRedirect(302, "http://" + REDIRECT_HOST + ':' + server.getHttpPort() + "/target");
         server.enqueueOk();
 
@@ -154,11 +154,11 @@ public class AddressResolverGroupTest extends HttpTest {
         }
 
         assertTrue(resolver.redirectResolutionAttempted.get(), "redirect host should have been resolved");
-        assertFalse(resolver.redirectResolutionOnEventLoop.get(), "redirect DNS must not run on an event-loop thread");
+        assertTrue(resolver.redirectResolutionOnEventLoop.get(), "custom resolver should retain its calling context");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void fallbackSocksProxyResolutionRunsOffEventLoop() throws Throwable {
+    public void customSocksProxyResolverKeepsEventLoopContext() throws Throwable {
         EventLoopProbeNameResolver resolver = new EventLoopProbeNameResolver();
         ProxyServer proxy = new ProxyServer.Builder(SOCKS_HOST, 1080)
                 .setProxyType(ProxyType.SOCKS_V5)
@@ -184,7 +184,46 @@ public class AddressResolverGroupTest extends HttpTest {
         }
 
         assertTrue(resolver.socksResolutionAttempted.get(), "SOCKS proxy host should have been resolved");
-        assertFalse(resolver.socksResolutionOnEventLoop.get(), "SOCKS DNS must not run on an event-loop thread");
+        assertTrue(resolver.socksResolutionOnEventLoop.get(), "custom resolver should retain its calling context");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void defaultNameResolverOnRedirectUsesOffloadPool() throws Throwable {
+        server.enqueueRedirect(302, "http://localhost:" + server.getHttpPort() + "/target");
+        server.enqueueOk();
+
+        String poolName = "ahc-fallback-resolver-enabled";
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setFollowRedirect(true)
+                .setThreadPoolName(poolName))) {
+            Response response = client.prepareGet("http://127.0.0.1:" + server.getHttpPort() + "/start")
+                    .execute()
+                    .get(5, SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+            assertTrue(hasLiveThreadNamed(poolName + "-resolver"),
+                    "redirect fallback DNS should use the resolver offload pool");
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void defaultNameResolverOnRedirectCanKeepInlineBehavior() throws Throwable {
+        server.enqueueRedirect(302, "http://localhost:" + server.getHttpPort() + "/target");
+        server.enqueueOk();
+
+        String poolName = "ahc-fallback-resolver-disabled";
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setFollowRedirect(true)
+                .setThreadPoolName(poolName)
+                .setFallbackNameResolverOffloadEnabled(false))) {
+            Response response = client.prepareGet("http://127.0.0.1:" + server.getHttpPort() + "/start")
+                    .execute()
+                    .get(5, SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+            assertFalse(hasLiveThreadNamed(poolName + "-resolver"),
+                    "disabled offload must not create a resolver worker");
+        }
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
@@ -293,5 +332,14 @@ public class AddressResolverGroupTest extends HttpTest {
             }
             return false;
         }
+    }
+
+    private static boolean hasLiveThreadNamed(String namePart) {
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (thread.isAlive() && thread.getName().contains(namePart)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -76,6 +76,7 @@ import org.asynchttpclient.netty.channel.RoundRobinPartitionKey;
 import org.asynchttpclient.netty.handler.Http2ContentDecompressor;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyDirectBody;
+import org.asynchttpclient.netty.resolver.NameResolverOffload;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -98,7 +99,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,19 +126,13 @@ public final class NettyRequestSender {
     private final AsyncHttpClientState clientState;
     private final NettyRequestFactory requestFactory;
     private final RoundRobinAddressSelector rrSelector = new RoundRobinAddressSelector();
-    private final Executor nameResolverExecutor;
+    private final NameResolverOffload nameResolverOffload;
     // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
     // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
     private final FailedIpCooldownHolder ipCooldown;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer,
                               AsyncHttpClientState clientState) {
-        this(config, channelManager, nettyTimer, clientState, Runnable::run);
-    }
-
-    public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer,
-                              AsyncHttpClientState clientState,
-                              Executor nameResolverExecutor) {
         this.config = config;
         this.channelManager = channelManager;
         connectionSemaphore = config.getConnectionSemaphoreFactory() == null
@@ -146,7 +140,7 @@ public final class NettyRequestSender {
                 : config.getConnectionSemaphoreFactory().newConnectionSemaphore(config);
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
-        this.nameResolverExecutor = requireNonNull(nameResolverExecutor, "nameResolverExecutor");
+        nameResolverOffload = channelManager.getNameResolverOffload();
         requestFactory = new NettyRequestFactory(config);
         // Guard the period against a custom AsyncHttpClientConfig that enables the cooldown but returns a
         // null period: leave the cooldown off rather than NPE while constructing the client.
@@ -617,7 +611,7 @@ public final class NettyRequestSender {
                                                                            InetSocketAddress unresolvedRemoteAddress,
                                                                            AsyncHandler<?> asyncHandler) {
         EventExecutor eventLoop = currentEventLoop();
-        if (eventLoop == null) {
+        if (eventLoop == null || !nameResolverOffload.shouldOffload(nameResolver)) {
             return RequestHostnameResolver.INSTANCE.resolve(nameResolver, unresolvedRemoteAddress, asyncHandler);
         }
 
@@ -632,25 +626,16 @@ public final class NettyRequestSender {
             return promise;
         }
 
-        try {
-            nameResolverExecutor.execute(() -> {
-                try {
-                    nameResolver.resolveAll(hostname).addListener((Future<List<InetAddress>> whenResolved) -> {
-                        if (whenResolved.isSuccess()) {
-                            completeResolutionSuccessOnEventLoop(eventLoop, promise, hostname, port, asyncHandler,
-                                    whenResolved.getNow());
-                        } else {
-                            completeResolutionFailureOnEventLoop(eventLoop, promise, hostname, asyncHandler,
-                                    whenResolved.cause());
-                        }
-                    });
-                } catch (Throwable t) {
-                    completeResolutionFailureOnEventLoop(eventLoop, promise, hostname, asyncHandler, t);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            promise.tryFailure(e);
-        }
+        nameResolverOffload.execute(eventLoop, promise, () ->
+                nameResolver.resolveAll(hostname).addListener((Future<List<InetAddress>> whenResolved) -> {
+                    if (whenResolved.isSuccess()) {
+                        completeResolutionSuccessOnEventLoop(eventLoop, promise, hostname, port, asyncHandler,
+                                whenResolved.getNow());
+                    } else {
+                        completeResolutionFailureOnEventLoop(eventLoop, promise, hostname, asyncHandler,
+                                whenResolved.cause());
+                    }
+                }));
         return promise;
     }
 

@@ -90,6 +90,9 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
     public static final String USE_ONLY_EPOLL_NATIVE_TRANSPORT = "useOnlyEpollNativeTransport";
     public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
+    public static final String FALLBACK_NAME_RESOLVER_OFFLOAD_ENABLED_CONFIG = "fallbackNameResolverOffloadEnabled";
+    public static final String FALLBACK_NAME_RESOLVER_OFFLOAD_THREADS_COUNT_CONFIG = "fallbackNameResolverOffloadThreadsCount";
+    public static final String FALLBACK_NAME_RESOLVER_OFFLOAD_QUEUE_SIZE_CONFIG = "fallbackNameResolverOffloadQueueSize";
     public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
     public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
     public static final String EXPIRED_COOKIE_EVICTION_DELAY = "expiredCookieEvictionDelay";
@@ -345,6 +348,21 @@ public final class AsyncHttpClientConfigDefaults {
             threads = Runtime.getRuntime().availableProcessors();
         }
         return threads;
+    }
+
+    public static boolean defaultFallbackNameResolverOffloadEnabled() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(
+                ASYNC_CLIENT_CONFIG_ROOT + FALLBACK_NAME_RESOLVER_OFFLOAD_ENABLED_CONFIG);
+    }
+
+    public static int defaultFallbackNameResolverOffloadThreadsCount() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(
+                ASYNC_CLIENT_CONFIG_ROOT + FALLBACK_NAME_RESOLVER_OFFLOAD_THREADS_COUNT_CONFIG);
+    }
+
+    public static int defaultFallbackNameResolverOffloadQueueSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(
+                ASYNC_CLIENT_CONFIG_ROOT + FALLBACK_NAME_RESOLVER_OFFLOAD_QUEUE_SIZE_CONFIG);
     }
 
     public static int defaultHashedWheelTimerTickDuration() {

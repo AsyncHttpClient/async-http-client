@@ -82,6 +82,7 @@ import org.asynchttpclient.netty.handler.Http2PingHandler;
 import org.asynchttpclient.netty.handler.HttpHandler;
 import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.netty.resolver.NameResolverOffload;
 import org.asynchttpclient.netty.ssl.DefaultSslEngineFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -100,16 +101,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNull;
 
 public class ChannelManager {
 
@@ -143,7 +140,7 @@ public class ChannelManager {
     private final Map.Entry<ChannelOption<?>, Object>[] channelOptions;
     private final long handshakeTimeout;
     private final @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
-    private final Executor nameResolverExecutor;
+    private final NameResolverOffload nameResolverOffload;
 
     private final ChannelPool channelPool;
     private final ChannelGroup openChannels;
@@ -181,12 +178,8 @@ public class ChannelManager {
     }
 
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
-        this(config, nettyTimer, Runnable::run);
-    }
-
-    public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer, Executor nameResolverExecutor) {
         this.config = config;
-        this.nameResolverExecutor = requireNonNull(nameResolverExecutor, "nameResolverExecutor");
+        nameResolverOffload = new NameResolverOffload(config);
 
         sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new DefaultSslEngineFactory();
         try {
@@ -706,6 +699,7 @@ public class ChannelManager {
     }
 
     public void close() {
+        nameResolverOffload.close();
         // Fail any requests parked waiting for a sibling HTTP/2 connection to register (see the
         // http2ConnectionWaiters field): the client is closing, so no connection will arrive and their
         // request-timeout backstop is not scheduled yet. Do this synchronously up front — doClose() only
@@ -920,45 +914,20 @@ public class ChannelManager {
 
     private Future<InetAddress> resolveProxyHost(NameResolver<InetAddress> nameResolver, String host) {
         EventExecutor eventLoop = currentEventLoop();
-        if (eventLoop == null) {
+        if (eventLoop == null || !nameResolverOffload.shouldOffload(nameResolver)) {
             return nameResolver.resolve(host);
         }
 
         Promise<InetAddress> promise = ImmediateEventExecutor.INSTANCE.newPromise();
-        try {
-            nameResolverExecutor.execute(() -> {
-                try {
-                    nameResolver.resolve(host).addListener((Future<InetAddress> whenResolved) -> {
-                        if (whenResolved.isSuccess()) {
-                            completeSuccessOnEventLoop(eventLoop, promise, whenResolved.getNow());
-                        } else {
-                            completeFailureOnEventLoop(eventLoop, promise, whenResolved.cause());
-                        }
-                    });
-                } catch (Throwable t) {
-                    completeFailureOnEventLoop(eventLoop, promise, t);
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            promise.tryFailure(e);
-        }
+        nameResolverOffload.execute(eventLoop, promise, () ->
+                nameResolver.resolve(host).addListener((Future<InetAddress> whenResolved) -> {
+                    if (whenResolved.isSuccess()) {
+                        nameResolverOffload.completeSuccess(eventLoop, promise, whenResolved.getNow());
+                    } else {
+                        nameResolverOffload.completeFailure(eventLoop, promise, whenResolved.cause());
+                    }
+                }));
         return promise;
-    }
-
-    private static <T> void completeSuccessOnEventLoop(EventExecutor eventLoop, Promise<T> promise, T result) {
-        try {
-            eventLoop.execute(() -> promise.trySuccess(result));
-        } catch (RejectedExecutionException e) {
-            promise.tryFailure(e);
-        }
-    }
-
-    private static void completeFailureOnEventLoop(EventExecutor eventLoop, Promise<?> promise, Throwable cause) {
-        try {
-            eventLoop.execute(() -> promise.tryFailure(cause));
-        } catch (RejectedExecutionException e) {
-            promise.tryFailure(e);
-        }
     }
 
     private @Nullable EventExecutor currentEventLoop() {
@@ -1182,6 +1151,10 @@ public class ChannelManager {
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
+    }
+
+    public NameResolverOffload getNameResolverOffload() {
+        return nameResolverOffload;
     }
 
     /**
