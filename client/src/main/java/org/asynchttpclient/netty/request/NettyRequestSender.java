@@ -564,7 +564,6 @@ public final class NettyRequestSender {
     private <T> Future<List<InetSocketAddress>> resolveAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future,
                                                                  AsyncHandler<T> asyncHandler, boolean scheduleTimeout) {
         Uri uri = request.getUri();
-        final Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
 
         if (proxy != null && !proxy.isIgnoredForHost(uri.getHost()) && proxy.getProxyType().isHttp()) {
             int port = ProxyType.HTTPS.equals(proxy.getProxyType()) || uri.isSecured() ? proxy.getSecuredPort() : proxy.getPort();
@@ -584,6 +583,7 @@ public final class NettyRequestSender {
             if (request.getAddress() != null) {
                 // bypass resolution
                 InetSocketAddress inetSocketAddress = new InetSocketAddress(request.getAddress(), port);
+                Promise<List<InetSocketAddress>> promise = ImmediateEventExecutor.INSTANCE.newPromise();
                 return promise.setSuccess(singletonList(inetSocketAddress));
             }
             return resolveHostname(request, unresolvedRemoteAddress, asyncHandler);
