@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Measures the HPACK-encoded wire size of {@code accept-encoding} for the two value spellings:
  * <ul>
- *   <li>AHC current: {@code "gzip,deflate"} (no space) — built in
+ *   <li>AHC current: {@code "gzip,deflate"} (no space) - built in
  *       {@code HttpUtils.GZIP_DEFLATE = new AsciiString(GZIP + "," + DEFLATE)}.</li>
  *   <li>HPACK static table entry #16: {@code "gzip, deflate"} (with space, RFC 7541 App. A).</li>
  * </ul>
