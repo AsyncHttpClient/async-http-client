@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.channel;
 
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,14 +34,21 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
     public void acquireChannelLock(Object partitionKey) throws IOException {
         long remainingTime = acquireTimeout > 0 ? acquireGlobalTimed(partitionKey) : acquireGlobal(partitionKey);
 
+        Semaphore freeConnections = reserveFreeConnectionsForHost(partitionKey);
+        boolean acquired = false;
         try {
-            if (remainingTime < 0 || !getFreeConnectionsForHost(partitionKey).tryAcquire(remainingTime, TimeUnit.MILLISECONDS)) {
+            acquired = remainingTime >= 0 && freeConnections.tryAcquire(remainingTime, TimeUnit.MILLISECONDS);
+            if (!acquired) {
                 releaseGlobal(partitionKey);
                 throw tooManyConnectionsPerHost;
             }
         } catch (InterruptedException e) {
             releaseGlobal(partitionKey);
             throw new RuntimeException(e);
+        } finally {
+            if (!acquired) {
+                releaseHostReservation(partitionKey, freeConnections);
+            }
         }
     }
 
@@ -53,9 +61,18 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
         // nonBlocking (the caller is on the event loop): take the global permit without waiting, then the
         // per-host permit without waiting, releasing the global one if the per-host permit is unavailable.
         globalMaxConnectionSemaphore.acquireChannelLock(partitionKey, true);
-        if (!getFreeConnectionsForHost(partitionKey).tryAcquire()) {
-            releaseGlobal(partitionKey);
-            throw tooManyConnectionsPerHost;
+        Semaphore freeConnections = reserveFreeConnectionsForHost(partitionKey);
+        boolean acquired = false;
+        try {
+            acquired = freeConnections.tryAcquire();
+            if (!acquired) {
+                releaseGlobal(partitionKey);
+                throw tooManyConnectionsPerHost;
+            }
+        } finally {
+            if (!acquired) {
+                releaseHostReservation(partitionKey, freeConnections);
+            }
         }
     }
 

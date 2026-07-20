@@ -29,6 +29,18 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  */
 public class PerHostConnectionSemaphore implements ConnectionSemaphore {
 
+    private static final class TrackedSemaphore extends Semaphore {
+
+        private static final long serialVersionUID = 1L;
+
+        // Guarded by freeChannelsPerHost.compute/computeIfPresent for this entry's key.
+        private int references;
+
+        private TrackedSemaphore(int permits) {
+            super(permits);
+        }
+    }
+
     protected final ConcurrentHashMap<Object, Semaphore> freeChannelsPerHost = new ConcurrentHashMap<>();
     protected final int maxConnectionsPerHost;
     protected final IOException tooManyConnectionsPerHost;
@@ -48,11 +60,12 @@ public class PerHostConnectionSemaphore implements ConnectionSemaphore {
 
     @Override
     public void acquireChannelLock(Object partitionKey, boolean nonBlocking) throws IOException {
+        Semaphore freeConnections = reserveFreeConnectionsForHost(partitionKey);
+        boolean acquired = false;
         try {
-            Semaphore freeConnections = getFreeConnectionsForHost(partitionKey);
             // nonBlocking (the caller is on the event loop): try once and fail fast rather than parking
             // the loop for up to acquireTimeout.
-            boolean acquired = nonBlocking
+            acquired = nonBlocking
                     ? freeConnections.tryAcquire()
                     : freeConnections.tryAcquire(acquireTimeout, TimeUnit.MILLISECONDS);
             if (!acquired) {
@@ -60,17 +73,55 @@ public class PerHostConnectionSemaphore implements ConnectionSemaphore {
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (!acquired) {
+                releaseHostReservation(partitionKey, freeConnections);
+            }
         }
     }
 
     @Override
     public void releaseChannelLock(Object partitionKey) {
-        getFreeConnectionsForHost(partitionKey).release();
+        if (maxConnectionsPerHost <= 0) {
+            return;
+        }
+        Semaphore freeConnections = freeChannelsPerHost.get(partitionKey);
+        if (freeConnections != null) {
+            freeConnections.release();
+            releaseHostReservation(partitionKey, freeConnections);
+        }
     }
 
     protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
         return maxConnectionsPerHost > 0 ?
-                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new Semaphore(maxConnectionsPerHost)) :
+                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new TrackedSemaphore(maxConnectionsPerHost)) :
                 InfiniteSemaphore.INSTANCE;
+    }
+
+    final Semaphore reserveFreeConnectionsForHost(Object partitionKey) {
+        if (maxConnectionsPerHost <= 0) {
+            return InfiniteSemaphore.INSTANCE;
+        }
+        return freeChannelsPerHost.compute(partitionKey, (pk, current) -> {
+            TrackedSemaphore semaphore = current == null
+                    ? new TrackedSemaphore(maxConnectionsPerHost)
+                    : (TrackedSemaphore) current;
+            semaphore.references++;
+            return semaphore;
+        });
+    }
+
+    final void releaseHostReservation(Object partitionKey, Semaphore expected) {
+        if (maxConnectionsPerHost <= 0) {
+            return;
+        }
+        freeChannelsPerHost.computeIfPresent(partitionKey, (pk, current) -> {
+            if (current != expected) {
+                return current;
+            }
+            TrackedSemaphore semaphore = (TrackedSemaphore) current;
+            semaphore.references--;
+            return semaphore.references == 0 ? null : semaphore;
+        });
     }
 }
