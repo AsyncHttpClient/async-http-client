@@ -37,6 +37,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.asynchttpclient.netty.handler.HttpMessageFormatter.REDACTED;
+import static org.asynchttpclient.netty.handler.HttpMessageFormatter.isSensitiveHeader;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 public class DefaultRequest implements Request {
@@ -293,7 +295,7 @@ public class DefaultRequest implements Request {
                 sb.append('\t');
                 sb.append(header.getKey());
                 sb.append(':');
-                sb.append(header.getValue());
+                sb.append(isSensitiveHeader(header.getKey()) ? REDACTED : header.getValue());
             }
         }
 

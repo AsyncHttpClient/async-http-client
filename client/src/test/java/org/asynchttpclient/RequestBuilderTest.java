@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -411,5 +412,24 @@ public class RequestBuilderTest {
 
         String contentType = request.getHeaders().get("Content-Type");
         assertEquals("text/plain", contentType, "Content-Type set via addHeader(Iterable) should not be modified");
+    }
+
+    @Test
+    public void testRequestToStringRedactsSensitiveHeaders() {
+        Request request = get("http://localhost/test")
+                .setHeader("Authorization", "Bearer request-secret")
+                .setHeader("Proxy-Authorization", "Basic proxy-secret")
+                .setHeader("Cookie", "session=cookie-secret")
+                .setHeader("X-Request-Id", "request-id")
+                .build();
+
+        String value = request.toString();
+        assertFalse(value.contains("request-secret"));
+        assertFalse(value.contains("proxy-secret"));
+        assertFalse(value.contains("cookie-secret"));
+        assertTrue(value.contains("Authorization:<redacted>"));
+        assertTrue(value.contains("Proxy-Authorization:<redacted>"));
+        assertTrue(value.contains("Cookie:<redacted>"));
+        assertTrue(value.contains("request-id"));
     }
 }
