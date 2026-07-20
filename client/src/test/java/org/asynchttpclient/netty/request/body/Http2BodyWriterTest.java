@@ -30,6 +30,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -102,12 +103,16 @@ public class Http2BodyWriterTest {
     }
 
     @Test
-    public void unwritableChannelFlushesAndResumesWhenWritable() throws Exception {
+    public void unwritableChannelResumesWithoutReentrantTerminalWrite() throws Exception {
         Http2StreamChannel channel = mock(Http2StreamChannel.class);
         EventLoop eventLoop = mock(EventLoop.class);
         ChannelPipeline pipeline = mock(ChannelPipeline.class);
         ChannelHandlerContext pipelineContext = mock(ChannelHandlerContext.class);
+        ChannelHandlerContext eventContext = mock(ChannelHandlerContext.class);
         AtomicReference<ChannelHandler> resumeHandler = new AtomicReference<>();
+        AtomicBoolean nestedWritabilityCallbackFired = new AtomicBoolean();
+        AtomicInteger terminalFrames = new AtomicInteger();
+        DefaultChannelPromise terminalWrite = new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE);
         when(eventLoop.inEventLoop()).thenReturn(true);
         when(channel.eventLoop()).thenReturn(eventLoop);
         when(channel.alloc()).thenReturn(UnpooledByteBufAllocator.DEFAULT);
@@ -119,9 +124,25 @@ public class Http2BodyWriterTest {
             return pipeline;
         });
         when(pipeline.context(any(ChannelHandler.class))).thenReturn(pipelineContext);
+        when(eventContext.channel()).thenReturn(channel);
         when(channel.write(any())).thenAnswer(invocation -> {
-            ReferenceCountUtil.release(invocation.getArgument(0));
+            DefaultHttp2DataFrame frame = invocation.getArgument(0);
+            if (frame.isEndStream()) {
+                terminalFrames.incrementAndGet();
+                ReferenceCountUtil.release(frame);
+                return terminalWrite;
+            }
+            ReferenceCountUtil.release(frame);
             return succeededFuture(channel);
+        });
+        when(channel.flush()).thenAnswer(invocation -> {
+            ChannelHandler handler = resumeHandler.get();
+            if (handler != null
+                    && terminalFrames.get() != 0
+                    && nestedWritabilityCallbackFired.compareAndSet(false, true)) {
+                ((io.netty.channel.ChannelInboundHandlerAdapter) handler).channelWritabilityChanged(eventContext);
+            }
+            return channel;
         });
 
         FixedChunkSource source = new FixedChunkSource(3);
@@ -132,10 +153,12 @@ public class Http2BodyWriterTest {
         verify(channel, times(1)).write(any(DefaultHttp2DataFrame.class));
         verify(channel, times(1)).flush();
 
-        ChannelHandlerContext eventContext = mock(ChannelHandlerContext.class);
-        when(eventContext.channel()).thenReturn(channel);
         ((io.netty.channel.ChannelInboundHandlerAdapter) resumeHandler.get())
                 .channelWritabilityChanged(eventContext);
+
+        assertEquals(0, source.closed);
+        assertEquals(1, terminalFrames.get());
+        terminalWrite.setSuccess();
 
         assertEquals(1, source.closed);
         verify(channel, times(3)).write(any(DefaultHttp2DataFrame.class));
