@@ -83,7 +83,7 @@ public class NettyFileBody implements NettyBody {
         // backpressure, so a large file upload does not buffer in heap or read the whole file inline on the
         // event loop. The file is opened here so an open failure still surfaces synchronously to the caller's
         // openHttp2Stream catch; cleanup happens when the async pump completes (see FileChunkSource.close).
-        Http2BodyWriter.start(channel, new FileChunkSource(file, offset, length, config.getChunkedFileChunkSize()));
+        Http2BodyWriter.start(channel, new FileChunkSource(file, offset, length, config.getChunkedFileChunkSize()), future);
     }
 
     /**

@@ -73,6 +73,8 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -357,6 +359,32 @@ public class Http2StreamingBodyFlowControlTest {
 
         assertTrue(is.readAttempted.get(), "InputStream should have been read");
         assertFalse(is.readOnEventLoop.get(), "InputStream.read must not run on an event-loop thread");
+    }
+
+    @Test
+    public void inputStreamRuntimeFailureFailsRequestOverHttp2() throws Exception {
+        startServer(-1);
+        InputStream is = new InputStream() {
+            @Override
+            public int read() {
+                throw new IllegalStateException("stream read failed");
+            }
+
+            @Override
+            public int read(byte[] buffer, int offset, int length) {
+                throw new IllegalStateException("stream read failed");
+            }
+        };
+
+        try (AsyncHttpClient client = http2Client()) {
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
+                    .setBody(new InputStreamBodyGenerator(is, 1))
+                    .execute()
+                    .get(30, SECONDS));
+
+            IOException readFailure = assertInstanceOf(IOException.class, failure.getCause());
+            assertInstanceOf(IllegalStateException.class, readFailure.getCause());
+        }
     }
 
     // =========================================================================

@@ -100,7 +100,7 @@ public class NettyBodyBody implements NettyBody {
         // (closeSilently(body)) happens when the async pump completes — see BodyChunkSource.close.
         BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
         FeedableBodyGenerator feedable = bg instanceof FeedableBodyGenerator ? (FeedableBodyGenerator) bg : null;
-        Http2BodyWriter.start(channel, new BodyChunkSource(body, feedable));
+        Http2BodyWriter.start(channel, new BodyChunkSource(body, feedable), future);
     }
 
     /**

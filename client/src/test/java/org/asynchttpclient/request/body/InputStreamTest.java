@@ -76,9 +76,8 @@ public class InputStreamTest extends AbstractBasicTest {
 
             Response resp = client.preparePost(getTargetUrl()).setHeaders(httpHeaders).setBody(inputStream).execute().get();
             assertNotNull(resp);
-            // TODO: 18-11-2022 Revisit
-            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, resp.getStatusCode());
-//            assertEquals(resp.getHeader("X-Param"), "abc");
+            assertEquals(HttpServletResponse.SC_OK, resp.getStatusCode());
+            assertEquals("abc", resp.getHeader("X-Param"));
         }
     }
 

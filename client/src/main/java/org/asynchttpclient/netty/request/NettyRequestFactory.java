@@ -48,6 +48,7 @@ import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -175,7 +176,7 @@ public final class NettyRequestFactory {
         } else if (request.getByteBufData() != null) {
             nettyBody = new NettyByteBufBody(request.getByteBufData());
         } else if (request.getStreamData() != null) {
-            nettyBody = new NettyInputStreamBody(request.getStreamData(), blockingBodyReadExecutor);
+            nettyBody = inputStreamBody(request.getStreamData(), -1L);
         } else if (isNonEmpty(request.getFormParams())) {
             CharSequence contentTypeOverride = request.getHeaders().contains(CONTENT_TYPE) ? null : HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
             nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentTypeOverride);
@@ -188,13 +189,18 @@ public final class NettyRequestFactory {
             nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
         } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
             InputStreamBodyGenerator inStreamGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
-            nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength(),
-                    blockingBodyReadExecutor);
+            nettyBody = inputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength());
         } else if (request.getBodyGenerator() != null) {
             nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }
 
         return nettyBody;
+    }
+
+    private NettyInputStreamBody inputStreamBody(InputStream inputStream, long contentLength) {
+        return config.isRequestBodyStreamReadOffloadEnabled()
+                ? new NettyInputStreamBody(inputStream, contentLength, blockingBodyReadExecutor)
+                : new NettyInputStreamBody(inputStream, contentLength);
     }
 
     public void addAuthorizationHeader(HttpHeaders headers, String authorizationHeader) {

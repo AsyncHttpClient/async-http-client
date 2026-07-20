@@ -1101,6 +1101,34 @@ public class BasicHttpTest extends HttpTest {
         });
     }
 
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void postInputStreamRuntimeFailureFailsRequest() throws Throwable {
+        withServer(server).run(server -> {
+            server.enqueueEcho();
+            InputStream bodyStream = new InputStream() {
+                @Override
+                public int read() {
+                    throw new IllegalStateException("stream read failed");
+                }
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) {
+                    throw new IllegalStateException("stream read failed");
+                }
+            };
+
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient()) {
+                ExecutionException failure = assertThrows(ExecutionException.class, () -> client.preparePost(getTargetUrl())
+                        .setBody(new InputStreamBodyGenerator(bodyStream, 1))
+                        .execute()
+                        .get(TIMEOUT, SECONDS));
+
+                IOException readFailure = assertInstanceOf(IOException.class, failure.getCause());
+                assertInstanceOf(IllegalStateException.class, readFailure.getCause());
+            }
+        });
+    }
+
     private static final class EventLoopProbeInputStream extends InputStream {
         private final byte[] data;
         private final AtomicBoolean readAttempted = new AtomicBoolean();
@@ -1135,6 +1163,11 @@ public class BasicHttpTest extends HttpTest {
             System.arraycopy(data, position, buffer, offset, read);
             position += read;
             return read;
+        }
+
+        @Override
+        public int available() {
+            return data.length - position;
         }
 
         private void recordReadThread() {

@@ -22,6 +22,7 @@ import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedInput;
+import io.netty.handler.stream.ChunkedStream;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.EventExecutor;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -44,13 +45,14 @@ public class NettyInputStreamBody implements NettyBody {
     private final InputStream inputStream;
     private final long contentLength;
     private final Executor blockingBodyReadExecutor;
+    private final boolean offloadReads;
 
     public NettyInputStreamBody(InputStream inputStream) {
         this(inputStream, -1L);
     }
 
     public NettyInputStreamBody(InputStream inputStream, long contentLength) {
-        this(inputStream, contentLength, Runnable::run);
+        this(inputStream, contentLength, Runnable::run, false);
     }
 
     public NettyInputStreamBody(InputStream inputStream, Executor blockingBodyReadExecutor) {
@@ -58,9 +60,15 @@ public class NettyInputStreamBody implements NettyBody {
     }
 
     public NettyInputStreamBody(InputStream inputStream, long contentLength, Executor blockingBodyReadExecutor) {
+        this(inputStream, contentLength, blockingBodyReadExecutor, true);
+    }
+
+    private NettyInputStreamBody(InputStream inputStream, long contentLength, Executor blockingBodyReadExecutor,
+                                 boolean offloadReads) {
         this.inputStream = inputStream;
         this.contentLength = contentLength;
         this.blockingBodyReadExecutor = requireNonNull(blockingBodyReadExecutor, "blockingBodyReadExecutor");
+        this.offloadReads = offloadReads;
     }
 
     public InputStream getInputStream() {
@@ -87,15 +95,21 @@ public class NettyInputStreamBody implements NettyBody {
             future.setStreamConsumed(true);
         }
 
-        ChunkedWriteHandler chunkedWriteHandler = requireNonNull(channel.pipeline().get(ChunkedWriteHandler.class),
-                "chunkedWriteHandler");
-        OffloadedInputStreamChunkedInput chunkedInput = new OffloadedInputStreamChunkedInput(is, getContentLength(),
-                channel.eventLoop(), chunkedWriteHandler, blockingBodyReadExecutor);
-        channel.write(chunkedInput, channel.newProgressivePromise()).addListener(
+        ChunkedInput<ByteBuf> chunkedInput;
+        if (offloadReads) {
+            ChunkedWriteHandler chunkedWriteHandler = requireNonNull(channel.pipeline().get(ChunkedWriteHandler.class),
+                    "chunkedWriteHandler");
+            chunkedInput = new OffloadedInputStreamChunkedInput(is, getContentLength(), channel.eventLoop(),
+                    chunkedWriteHandler, blockingBodyReadExecutor);
+        } else {
+            chunkedInput = new ChunkedStream(is);
+        }
+        ChunkedInput<ByteBuf> input = chunkedInput;
+        channel.write(input, channel.newProgressivePromise()).addListener(
                 new WriteProgressListener(future, false, getContentLength()) {
                     @Override
                     public void operationComplete(ChannelProgressiveFuture cf) {
-                        chunkedInput.close();
+                        closeChunkedInput(input);
                         super.operationComplete(cf);
                     }
                 });
@@ -122,18 +136,66 @@ public class NettyInputStreamBody implements NettyBody {
             future.setStreamConsumed(true);
         }
 
-        // Stream the InputStream one bounded chunk at a time with HTTP/2 flow control / writability
-        // backpressure, so a large upload does not buffer the whole stream in heap or read it all inline on
-        // the event loop. Cleanup (closeSilently) happens when the async pump completes — see
-        // InputStreamChunkSource.close.
-        Http2BodyWriter.start(channel, new InputStreamChunkSource(is, channel.eventLoop(), blockingBodyReadExecutor));
+        Http2BodyWriter.ChunkSource source = offloadReads
+                ? new OffloadedInputStreamChunkSource(is, channel.eventLoop(), blockingBodyReadExecutor)
+                : new DirectInputStreamChunkSource(is);
+        Http2BodyWriter.start(channel, source, future);
+    }
+
+    private static void closeChunkedInput(ChunkedInput<?> input) {
+        try {
+            input.close();
+        } catch (Exception e) {
+            LOGGER.debug("Failed to close request body stream", e);
+        }
+    }
+
+    private static IOException readFailure(RuntimeException cause) {
+        return new IOException("Request body InputStream read failed", cause);
+    }
+
+    private static final class DirectInputStreamChunkSource implements Http2BodyWriter.ChunkSource {
+
+        private static final int CHUNK_SIZE = 8192;
+
+        private final InputStream is;
+        private final byte[] buffer = new byte[CHUNK_SIZE];
+
+        DirectInputStreamChunkSource(InputStream is) {
+            this.is = is;
+        }
+
+        @Override
+        public ByteBuf nextChunk(ByteBufAllocator alloc) throws IOException {
+            int read;
+            do {
+                read = is.read(buffer);
+            } while (read == 0);
+
+            if (read < 0) {
+                return null;
+            }
+            ByteBuf buf = alloc.buffer(read);
+            try {
+                buf.writeBytes(buffer, 0, read);
+                return buf;
+            } catch (RuntimeException e) {
+                buf.release();
+                throw e;
+            }
+        }
+
+        @Override
+        public void close() {
+            closeSilently(is);
+        }
     }
 
     /**
      * Reads an {@link InputStream} off the event loop and exposes completed chunks to
      * {@link Http2BodyWriter}.
      */
-    private static final class InputStreamChunkSource implements Http2BodyWriter.ChunkSource {
+    private static final class OffloadedInputStreamChunkSource implements Http2BodyWriter.ChunkSource {
 
         private static final int CHUNK_SIZE = 8192;
 
@@ -143,12 +205,12 @@ public class NettyInputStreamBody implements NettyBody {
         private final byte[] buffer = new byte[CHUNK_SIZE];
         private boolean readInProgress;
         private boolean endOfInput;
-        private boolean closed;
+        private volatile boolean closed;
         private int readableBytes;
         private IOException failure;
         private Runnable resume;
 
-        InputStreamChunkSource(InputStream is, EventExecutor eventLoop, Executor blockingBodyReadExecutor) {
+        OffloadedInputStreamChunkSource(InputStream is, EventExecutor eventLoop, Executor blockingBodyReadExecutor) {
             this.is = is;
             this.eventLoop = eventLoop;
             this.blockingBodyReadExecutor = blockingBodyReadExecutor;
@@ -193,18 +255,10 @@ public class NettyInputStreamBody implements NettyBody {
         private void submitReadAfterSuspend() throws IOException {
             readInProgress = true;
             try {
-                eventLoop.execute(this::submitRead);
-            } catch (RejectedExecutionException e) {
-                readInProgress = false;
-                throw new IOException("HTTP/2 request body read executor is unavailable", e);
-            }
-        }
-
-        private void submitRead() {
-            try {
                 blockingBodyReadExecutor.execute(this::readOffEventLoop);
             } catch (RejectedExecutionException e) {
-                completeRead(-1, new IOException("HTTP/2 request body read executor rejected the read", e));
+                readInProgress = false;
+                throw new IOException("HTTP/2 request body read executor rejected the read", e);
             }
         }
 
@@ -215,6 +269,8 @@ public class NettyInputStreamBody implements NettyBody {
                 read = read();
             } catch (IOException e) {
                 thrown = e;
+            } catch (RuntimeException e) {
+                thrown = readFailure(e);
             }
             completeRead(read, thrown);
         }
@@ -263,7 +319,7 @@ public class NettyInputStreamBody implements NettyBody {
         private final byte[] buffer = new byte[CHUNK_SIZE];
         private boolean readInProgress;
         private boolean endOfInput;
-        private boolean closed;
+        private volatile boolean closed;
         private int readableBytes;
         private long progress;
         private IOException failure;
@@ -336,18 +392,10 @@ public class NettyInputStreamBody implements NettyBody {
         private void submitReadAfterSuspend() throws IOException {
             readInProgress = true;
             try {
-                eventLoop.execute(this::submitRead);
-            } catch (RejectedExecutionException e) {
-                readInProgress = false;
-                throw new IOException("HTTP/1 request body read executor is unavailable", e);
-            }
-        }
-
-        private void submitRead() {
-            try {
                 blockingBodyReadExecutor.execute(this::readOffEventLoop);
             } catch (RejectedExecutionException e) {
-                completeRead(-1, new IOException("HTTP/1 request body read executor rejected the read", e));
+                readInProgress = false;
+                throw new IOException("HTTP/1 request body read executor rejected the read", e);
             }
         }
 
@@ -358,6 +406,8 @@ public class NettyInputStreamBody implements NettyBody {
                 read = read();
             } catch (IOException e) {
                 thrown = e;
+            } catch (RuntimeException e) {
+                thrown = readFailure(e);
             }
             completeRead(read, thrown);
         }
