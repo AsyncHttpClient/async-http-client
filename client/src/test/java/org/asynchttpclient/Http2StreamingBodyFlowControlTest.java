@@ -404,7 +404,7 @@ public class Http2StreamingBodyFlowControlTest {
                 .setMaxConnectionsPerHost(1)
                 .setRequestBodyStreamReadOffloadEnabled(true)
                 .setRequestBodyStreamReadThreadsCount(1)
-                .setRequestBodyStreamReadQueueSize(1)
+                .setRequestBodyStreamReadQueueSize(2)
                 .setRequestTimeout(Duration.ofSeconds(30))
                 .build();
 

@@ -1146,7 +1146,7 @@ public class BasicHttpTest extends HttpTest {
             try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
                     .setRequestBodyStreamReadOffloadEnabled(true)
                     .setRequestBodyStreamReadThreadsCount(1)
-                    .setRequestBodyStreamReadQueueSize(1)
+                    .setRequestBodyStreamReadQueueSize(2)
                     .build())) {
                 ThreadPoolExecutor executor = assertInstanceOf(ThreadPoolExecutor.class,
                         client.blockingBodyReadExecutor());
