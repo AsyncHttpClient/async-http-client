@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
-import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 
@@ -87,12 +86,7 @@ public final class AuthenticatorUtils {
     }
 
     private static @Nullable String computeBasicAuthentication(@Nullable Realm realm) {
-        return realm != null ? computeBasicAuthentication(realm.getPrincipal(), realm.getPassword(), realm.getCharset()) : null;
-    }
-
-    private static String computeBasicAuthentication(@Nullable String principal, @Nullable String password, Charset charset) {
-        String s = principal + ':' + password;
-        return "Basic " + Base64.getEncoder().encodeToString(s.getBytes(charset));
+        return realm != null ? realm.getBasicAuthHeader() : null;
     }
 
     public static String computeRealmURI(Uri uri, boolean useAbsoluteURI, boolean omitQuery) {

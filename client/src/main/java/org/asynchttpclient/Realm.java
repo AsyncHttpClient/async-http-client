@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -70,6 +71,7 @@ public class Realm {
     private final boolean userhash;
     private final @Nullable String sid;
     private final int maxIterationCount;
+    private @Nullable String basicAuthHeader;
 
     private Realm(@Nullable AuthScheme scheme,
                   @Nullable String principal,
@@ -243,6 +245,21 @@ public class Realm {
 
     public int getMaxIterationCount() {
         return maxIterationCount;
+    }
+
+    /**
+     * Returns the HTTP Basic authorization header for this immutable realm.
+     *
+     * @return the Basic authorization header
+     */
+    public String getBasicAuthHeader() {
+        String header = basicAuthHeader;
+        if (header == null) {
+            String s = principal + ':' + password;
+            header = "Basic " + Base64.getEncoder().encodeToString(s.getBytes(charset));
+            basicAuthHeader = header;
+        }
+        return header;
     }
 
     @Override

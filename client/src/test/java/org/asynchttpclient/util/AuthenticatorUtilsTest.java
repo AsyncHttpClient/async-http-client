@@ -40,12 +40,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AuthenticatorUtilsTest {
+    @Test
+    void preemptiveBasicAuthorizationHeaderIsMemoizedOnRealm() {
+        Request request = new RequestBuilder("GET")
+                .setUrl("http://example.com/api/users")
+                .build();
+        Realm realm = new Realm.Builder("user", "pass")
+                .setScheme(Realm.AuthScheme.BASIC)
+                .setUsePreemptiveAuth(true)
+                .build();
+
+        String first = AuthenticatorUtils.perRequestAuthorizationHeader(request, realm);
+        String second = AuthenticatorUtils.perRequestAuthorizationHeader(request, realm);
+
+        assertEquals("Basic dXNlcjpwYXNz", first);
+        assertSame(first, second);
+    }
+
     @Test
     void computeBodyHashEmptyBody() throws Exception {
         Request request = new RequestBuilder("GET")
