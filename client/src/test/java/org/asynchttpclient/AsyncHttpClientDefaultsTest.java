@@ -156,6 +156,24 @@ public class AsyncHttpClientDefaultsTest {
         testIntegerSystemProperty("hashedWheelTimerSize", "defaultHashedWheelTimerSize", "512");
     }
 
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultRequestBodyStreamReadOffloadEnabled() {
+        assertTrue(AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadOffloadEnabled());
+        testBooleanSystemProperty("requestBodyStreamReadOffloadEnabled", "defaultRequestBodyStreamReadOffloadEnabled", "false");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultRequestBodyStreamReadThreadsCount() {
+        assertEquals(AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadThreadsCount(), -1);
+        testIntegerSystemProperty("requestBodyStreamReadThreadsCount", "defaultRequestBodyStreamReadThreadsCount", "2");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultRequestBodyStreamReadQueueSize() {
+        assertEquals(AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadQueueSize(), 0);
+        testIntegerSystemProperty("requestBodyStreamReadQueueSize", "defaultRequestBodyStreamReadQueueSize", "17");
+    }
+
     private void testIntegerSystemProperty(String propertyName, String methodName, String value) {
         String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
         System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);

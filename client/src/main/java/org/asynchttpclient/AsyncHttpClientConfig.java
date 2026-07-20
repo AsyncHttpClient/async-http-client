@@ -166,6 +166,36 @@ public interface AsyncHttpClientConfig {
     ThreadFactory getThreadFactory();
 
     /**
+     * Returns whether blocking reads from request body {@link java.io.InputStream} instances should be
+     * offloaded from Netty event-loop threads.
+     *
+     * @return {@code true} if blocking request body stream reads should be offloaded
+     */
+    default boolean isRequestBodyStreamReadOffloadEnabled() {
+        return true;
+    }
+
+    /**
+     * Returns the number of threads used to offload request body {@link java.io.InputStream} reads.
+     *
+     * @return the configured request body stream read thread count. Values less than or equal to {@code 0}
+     * use {@link #getIoThreadsCount()}.
+     */
+    default int getRequestBodyStreamReadThreadsCount() {
+        return -1;
+    }
+
+    /**
+     * Returns the maximum number of pending request body {@link java.io.InputStream} reads.
+     *
+     * @return the configured request body stream read queue size. Values less than or equal to {@code 0} use
+     * the default queue size.
+     */
+    default int getRequestBodyStreamReadQueueSize() {
+        return 0;
+    }
+
+    /**
      * An instance of {@link ProxyServer} used by an {@link AsyncHttpClient}
      *
      * @return instance of {@link ProxyServer}

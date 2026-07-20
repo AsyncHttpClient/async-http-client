@@ -90,6 +90,9 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
     public static final String USE_ONLY_EPOLL_NATIVE_TRANSPORT = "useOnlyEpollNativeTransport";
     public static final String IO_THREADS_COUNT_CONFIG = "ioThreadsCount";
+    public static final String REQUEST_BODY_STREAM_READ_OFFLOAD_ENABLED_CONFIG = "requestBodyStreamReadOffloadEnabled";
+    public static final String REQUEST_BODY_STREAM_READ_THREADS_COUNT_CONFIG = "requestBodyStreamReadThreadsCount";
+    public static final String REQUEST_BODY_STREAM_READ_QUEUE_SIZE_CONFIG = "requestBodyStreamReadQueueSize";
     public static final String HASHED_WHEEL_TIMER_TICK_DURATION = "hashedWheelTimerTickDuration";
     public static final String HASHED_WHEEL_TIMER_SIZE = "hashedWheelTimerSize";
     public static final String EXPIRED_COOKIE_EVICTION_DELAY = "expiredCookieEvictionDelay";
@@ -345,6 +348,21 @@ public final class AsyncHttpClientConfigDefaults {
             threads = Runtime.getRuntime().availableProcessors();
         }
         return threads;
+    }
+
+    public static boolean defaultRequestBodyStreamReadOffloadEnabled() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig()
+                .getBoolean(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_BODY_STREAM_READ_OFFLOAD_ENABLED_CONFIG);
+    }
+
+    public static int defaultRequestBodyStreamReadThreadsCount() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig()
+                .getInt(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_BODY_STREAM_READ_THREADS_COUNT_CONFIG);
+    }
+
+    public static int defaultRequestBodyStreamReadQueueSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig()
+                .getInt(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_BODY_STREAM_READ_QUEUE_SIZE_CONFIG);
     }
 
     public static int defaultHashedWheelTimerTickDuration() {

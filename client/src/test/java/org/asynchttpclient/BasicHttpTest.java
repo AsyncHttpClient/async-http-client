@@ -1050,7 +1050,11 @@ public class BasicHttpTest extends HttpTest {
             byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
             EventLoopProbeInputStream bodyStream = new EventLoopProbeInputStream(bodyBytes);
 
-            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config().build())) {
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
+                    .setThreadPoolName("ahc-body-read-test")
+                    .setRequestBodyStreamReadThreadsCount(1)
+                    .setRequestBodyStreamReadQueueSize(1)
+                    .build())) {
                 bodyStream.setEventLoopGroup(client.channelManager().getEventLoopGroup());
 
                 Response response = client.preparePost(getTargetUrl())
@@ -1064,6 +1068,36 @@ public class BasicHttpTest extends HttpTest {
 
             assertTrue(bodyStream.readAttempted.get(), "InputStream should have been read");
             assertFalse(bodyStream.readOnEventLoop.get(), "InputStream.read must not run on an event-loop thread");
+            String readThreadName = bodyStream.readThreadName.get();
+            assertNotNull(readThreadName, "InputStream read thread should be recorded");
+            assertTrue(readThreadName.contains("ahc-body-read-test-blocking-io"),
+                    "InputStream.read should use the configured body-read thread pool");
+        });
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void postInputStreamBodyGeneratorCanReadOnEventLoopWhenOffloadDisabled() throws Throwable {
+        withServer(server).run(server -> {
+            server.enqueueEcho();
+            byte[] bodyBytes = "{}".getBytes(StandardCharsets.ISO_8859_1);
+            EventLoopProbeInputStream bodyStream = new EventLoopProbeInputStream(bodyBytes);
+
+            try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config()
+                    .setRequestBodyStreamReadOffloadEnabled(false)
+                    .build())) {
+                bodyStream.setEventLoopGroup(client.channelManager().getEventLoopGroup());
+
+                Response response = client.preparePost(getTargetUrl())
+                        .setBody(new InputStreamBodyGenerator(bodyStream, bodyBytes.length))
+                        .execute()
+                        .get(TIMEOUT, SECONDS);
+
+                assertEquals(200, response.getStatusCode());
+                assertEquals("{}", response.getResponseBody());
+            }
+
+            assertTrue(bodyStream.readAttempted.get(), "InputStream should have been read");
+            assertTrue(bodyStream.readOnEventLoop.get(), "disabled offload should preserve inline event-loop reads");
         });
     }
 
@@ -1071,6 +1105,7 @@ public class BasicHttpTest extends HttpTest {
         private final byte[] data;
         private final AtomicBoolean readAttempted = new AtomicBoolean();
         private final AtomicBoolean readOnEventLoop = new AtomicBoolean();
+        private final AtomicReference<String> readThreadName = new AtomicReference<>();
         private final AtomicReference<EventLoopGroup> eventLoopGroup = new AtomicReference<>();
         private int position;
 
@@ -1105,10 +1140,11 @@ public class BasicHttpTest extends HttpTest {
         private void recordReadThread() {
             readAttempted.set(true);
             EventLoopGroup group = eventLoopGroup.get();
+            Thread currentThread = Thread.currentThread();
+            readThreadName.compareAndSet(null, currentThread.getName());
             if (group == null) {
                 return;
             }
-            Thread currentThread = Thread.currentThread();
             for (EventExecutor executor : group) {
                 if (executor.inEventLoop(currentThread)) {
                     readOnEventLoop.set(true);

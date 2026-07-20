@@ -82,6 +82,9 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadOffloadEnabled;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadQueueSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestBodyStreamReadThreadsCount;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultLoadBalance;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
@@ -226,6 +229,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
     private final ResponseBodyPartFactory responseBodyPartFactory;
     private final int ioThreadsCount;
+    private final boolean requestBodyStreamReadOffloadEnabled;
+    private final int requestBodyStreamReadThreadsCount;
+    private final int requestBodyStreamReadQueueSize;
     private final long hashedWheelTimerTickDuration;
     private final int hashedWheelTimerSize;
 
@@ -330,6 +336,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          @Nullable Consumer<Channel> wsAdditionalChannelInitializer,
                                          ResponseBodyPartFactory responseBodyPartFactory,
                                          int ioThreadsCount,
+                                         boolean requestBodyStreamReadOffloadEnabled,
+                                         int requestBodyStreamReadThreadsCount,
+                                         int requestBodyStreamReadQueueSize,
                                          long hashedWheelTimerTickDuration,
                                          int hashedWheelTimerSize) {
 
@@ -449,6 +458,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.wsAdditionalChannelInitializer = wsAdditionalChannelInitializer;
         this.responseBodyPartFactory = responseBodyPartFactory;
         this.ioThreadsCount = ioThreadsCount;
+        this.requestBodyStreamReadOffloadEnabled = requestBodyStreamReadOffloadEnabled;
+        this.requestBodyStreamReadThreadsCount = requestBodyStreamReadThreadsCount;
+        this.requestBodyStreamReadQueueSize = requestBodyStreamReadQueueSize;
         this.hashedWheelTimerTickDuration = hashedWheelTimerTickDuration;
         this.hashedWheelTimerSize = hashedWheelTimerSize;
     }
@@ -907,6 +919,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         return ioThreadsCount;
     }
 
+    @Override
+    public boolean isRequestBodyStreamReadOffloadEnabled() {
+        return requestBodyStreamReadOffloadEnabled;
+    }
+
+    @Override
+    public int getRequestBodyStreamReadThreadsCount() {
+        return requestBodyStreamReadThreadsCount;
+    }
+
+    @Override
+    public int getRequestBodyStreamReadQueueSize() {
+        return requestBodyStreamReadQueueSize;
+    }
+
     /**
      * Builder for an {@link AsyncHttpClient}
      */
@@ -1016,6 +1043,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private @Nullable Consumer<Channel> wsAdditionalChannelInitializer;
         private ResponseBodyPartFactory responseBodyPartFactory = ResponseBodyPartFactory.EAGER;
         private int ioThreadsCount = defaultIoThreadsCount();
+        private boolean requestBodyStreamReadOffloadEnabled = defaultRequestBodyStreamReadOffloadEnabled();
+        private int requestBodyStreamReadThreadsCount = defaultRequestBodyStreamReadThreadsCount();
+        private int requestBodyStreamReadQueueSize = defaultRequestBodyStreamReadQueueSize();
         private long hashedWheelTickDuration = defaultHashedWheelTimerTickDuration();
         private int hashedWheelSize = defaultHashedWheelTimerSize();
 
@@ -1127,6 +1157,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             wsAdditionalChannelInitializer = config.getWsAdditionalChannelInitializer();
             responseBodyPartFactory = config.getResponseBodyPartFactory();
             ioThreadsCount = config.getIoThreadsCount();
+            requestBodyStreamReadOffloadEnabled = config.isRequestBodyStreamReadOffloadEnabled();
+            requestBodyStreamReadThreadsCount = config.getRequestBodyStreamReadThreadsCount();
+            requestBodyStreamReadQueueSize = config.getRequestBodyStreamReadQueueSize();
             hashedWheelTickDuration = config.getHashedWheelTimerTickDuration();
             hashedWheelSize = config.getHashedWheelTimerSize();
         }
@@ -1688,6 +1721,21 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        public Builder setRequestBodyStreamReadOffloadEnabled(boolean requestBodyStreamReadOffloadEnabled) {
+            this.requestBodyStreamReadOffloadEnabled = requestBodyStreamReadOffloadEnabled;
+            return this;
+        }
+
+        public Builder setRequestBodyStreamReadThreadsCount(int requestBodyStreamReadThreadsCount) {
+            this.requestBodyStreamReadThreadsCount = requestBodyStreamReadThreadsCount;
+            return this;
+        }
+
+        public Builder setRequestBodyStreamReadQueueSize(int requestBodyStreamReadQueueSize) {
+            this.requestBodyStreamReadQueueSize = requestBodyStreamReadQueueSize;
+            return this;
+        }
+
         private ProxyServerSelector resolveProxyServerSelector() {
             if (proxyServerSelector != null) {
                 return proxyServerSelector;
@@ -1793,6 +1841,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     wsAdditionalChannelInitializer,
                     responseBodyPartFactory,
                     ioThreadsCount,
+                    requestBodyStreamReadOffloadEnabled,
+                    requestBodyStreamReadThreadsCount,
+                    requestBodyStreamReadQueueSize,
                     hashedWheelTickDuration,
                     hashedWheelSize);
         }
