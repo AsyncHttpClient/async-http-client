@@ -667,8 +667,10 @@ public class Realm {
                 if (entityBodyHash != null) {
                     sb.append(entityBodyHash);
                 } else {
-                    // Hash of empty body using the current algorithm
-                    sb.append(toHexString(md.digest()));
+                    // Hash of empty body using the current algorithm. Must append in place:
+                    // toHexString() would take the same recycled builder and reset it, dropping
+                    // the method and digest-uri already written above.
+                    appendBase16(sb, md.digest());
                 }
             } else if (qop != null && !"auth".equals(qop)) {
                 throw new UnsupportedOperationException("Digest qop not supported: " + qop);
