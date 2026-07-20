@@ -94,6 +94,8 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -103,8 +105,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ChannelManager {
 
@@ -1129,25 +1129,45 @@ public class ChannelManager {
         return addressResolverGroup;
     }
 
+    /**
+     * Builds a point-in-time stats snapshot in O(open channels + idle pooled channels).
+     */
     public ClientStats getClientStats() {
-        Map<String, Long> totalConnectionsPerHost = openChannels.stream()
-                .map(Channel::remoteAddress)
-                .filter(a -> a instanceof InetSocketAddress)
-                .map(a -> (InetSocketAddress) a)
-                .map(InetSocketAddress::getHostString)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        Map<String, ConnectionCounts> connectionsPerHost = new HashMap<>();
+        for (Channel channel : openChannels) {
+            SocketAddress remoteAddress = channel.remoteAddress();
+            if (remoteAddress instanceof InetSocketAddress) {
+                String host = ((InetSocketAddress) remoteAddress).getHostString();
+                ConnectionCounts counts = connectionsPerHost.get(host);
+                if (counts == null) {
+                    counts = new ConnectionCounts();
+                    connectionsPerHost.put(host, counts);
+                }
+                counts.totalConnectionCount++;
+            }
+        }
 
-        Map<String, Long> idleConnectionsPerHost = channelPool.getIdleChannelCountPerHost();
+        for (Entry<String, Long> entry : channelPool.getIdleChannelCountPerHost().entrySet()) {
+            ConnectionCounts counts = connectionsPerHost.get(entry.getKey());
+            if (counts != null) {
+                counts.idleConnectionCount = entry.getValue();
+            }
+        }
 
-        Map<String, HostStats> statsPerHost = totalConnectionsPerHost.entrySet()
-                .stream()
-                .collect(Collectors.toMap(Entry::getKey, entry -> {
-                    final long totalConnectionCount = entry.getValue();
-                    final long idleConnectionCount = idleConnectionsPerHost.getOrDefault(entry.getKey(), 0L);
-                    final long activeConnectionCount = totalConnectionCount - idleConnectionCount;
-                    return new HostStats(activeConnectionCount, idleConnectionCount);
-                }));
+        Map<String, HostStats> statsPerHost = new HashMap<>(connectionsPerHost.size());
+        for (Entry<String, ConnectionCounts> entry : connectionsPerHost.entrySet()) {
+            ConnectionCounts counts = entry.getValue();
+            statsPerHost.put(entry.getKey(), new HostStats(
+                    counts.totalConnectionCount - counts.idleConnectionCount,
+                    counts.idleConnectionCount));
+        }
         return new ClientStats(statsPerHost);
+    }
+
+    private static final class ConnectionCounts {
+
+        private long totalConnectionCount;
+        private long idleConnectionCount;
     }
 
     public boolean isOpen() {

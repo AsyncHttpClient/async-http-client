@@ -27,8 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,9 +38,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
@@ -238,18 +238,22 @@ public final class DefaultChannelPool implements ChannelPool {
 
     @Override
     public Map<String, Long> getIdleChannelCountPerHost() {
-        return partitions
-                .values()
-                .stream()
-                .flatMap(ConcurrentLinkedDeque::stream)
+        Map<String, Long> idleChannelsPerHost = new HashMap<>();
+        for (ConcurrentLinkedDeque<Channel> partition : partitions.values()) {
+            for (Channel channel : partition) {
                 // Skip channels that have been claimed (removeAll tombstone, or a node a concurrent
                 // poll already leased) but not yet unlinked, so the count reflects leasable channels.
-                .filter(DefaultChannelPool::isLeasable)
-                .map(Channel::remoteAddress)
-                .filter(a -> a.getClass() == InetSocketAddress.class)
-                .map(a -> (InetSocketAddress) a)
-                .map(InetSocketAddress::getHostString)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                if (isLeasable(channel)) {
+                    SocketAddress remoteAddress = channel.remoteAddress();
+                    if (remoteAddress.getClass() == InetSocketAddress.class) {
+                        String host = ((InetSocketAddress) remoteAddress).getHostString();
+                        Long currentCount = idleChannelsPerHost.get(host);
+                        idleChannelsPerHost.put(host, currentCount == null ? 1L : currentCount + 1L);
+                    }
+                }
+            }
+        }
+        return idleChannelsPerHost;
     }
 
     private static boolean isLeasable(Channel channel) {
