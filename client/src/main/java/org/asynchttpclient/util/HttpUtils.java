@@ -24,8 +24,8 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -114,9 +114,13 @@ public final class HttpUtils {
     // The pool of ASCII chars to be used for generating a multipart boundary.
     private static final byte[] MULTIPART_CHARS = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII);
 
+    // The boundary is what separates parts whose content is not escaped, so it must be unpredictable,
+    // like the cnonce in Realm and the SCRAM nonce.
+    private static final ThreadLocal<SecureRandom> BOUNDARY_RANDOM = ThreadLocal.withInitial(SecureRandom::new);
+
     // a random size from 30 to 40
     public static byte[] computeMultipartBoundary() {
-        ThreadLocalRandom random = ThreadLocalRandom.current();
+        SecureRandom random = BOUNDARY_RANDOM.get();
         byte[] bytes = new byte[random.nextInt(11) + 30];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = MULTIPART_CHARS[random.nextInt(MULTIPART_CHARS.length)];

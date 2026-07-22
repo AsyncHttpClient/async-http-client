@@ -28,7 +28,9 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -117,6 +119,20 @@ public class HttpUtilsTest {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
         boolean followRedirect = HttpUtils.followRedirect(config, request);
         assertFalse(followRedirect, "Follow redirect value set in request should be given priority");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testComputeMultipartBoundary() {
+        String allowed = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        Set<String> boundaries = new HashSet<>();
+        for (int i = 0; i < 1000; i++) {
+            String boundary = new String(HttpUtils.computeMultipartBoundary(), US_ASCII);
+            assertTrue(boundary.length() >= 30 && boundary.length() <= 40, "Unexpected boundary length: " + boundary.length());
+            for (int j = 0; j < boundary.length(); j++) {
+                assertTrue(allowed.indexOf(boundary.charAt(j)) != -1, "Illegal boundary char: " + boundary.charAt(j));
+            }
+            assertTrue(boundaries.add(boundary), "Boundary was generated twice: " + boundary);
+        }
     }
 
     private static void formUrlEncoding(Charset charset) throws Exception {
