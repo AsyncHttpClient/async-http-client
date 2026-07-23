@@ -28,12 +28,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -171,6 +177,55 @@ public class SemaphoreTest {
             tooManyCaught = true;
         }
         assertFalse(tooManyCaught);
+    }
+
+    @Test
+    public void perHostRemovesEntriesAfterLastRelease() throws IOException {
+        removesEntriesAfterLastRelease(new PerHostConnectionSemaphore(1, 0));
+    }
+
+    @Test
+    public void combinedRemovesEntriesAfterLastRelease() throws IOException {
+        removesEntriesAfterLastRelease(new CombinedConnectionSemaphore(1, 1, 0));
+    }
+
+    private static void removesEntriesAfterLastRelease(PerHostConnectionSemaphore semaphore) throws IOException {
+        for (int i = 0; i < 100; i++) {
+            String partitionKey = "host-" + i;
+            semaphore.acquireChannelLock(partitionKey);
+            semaphore.releaseChannelLock(partitionKey);
+        }
+        assertTrue(semaphore.freeChannelsPerHost.isEmpty());
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
+    public void perHostRetainsEntryDuringWaitingAcquire() throws Exception {
+        PerHostConnectionSemaphore semaphore = new PerHostConnectionSemaphore(1, 30_000);
+        semaphore.acquireChannelLock(PK);
+        Semaphore hostSemaphore = semaphore.freeChannelsPerHost.get(PK);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<Void> waitingAcquire = executor.submit(() -> {
+                semaphore.acquireChannelLock(PK);
+                return null;
+            });
+            while (!hostSemaphore.hasQueuedThreads()) {
+                assertFalse(waitingAcquire.isDone(), "waiting acquire completed before the permit was released");
+                Thread.yield();
+            }
+
+            semaphore.releaseChannelLock(PK);
+            waitingAcquire.get(1, TimeUnit.SECONDS);
+
+            assertSame(hostSemaphore, semaphore.freeChannelsPerHost.get(PK));
+            assertThrows(TooManyConnectionsPerHostException.class,
+                    () -> semaphore.acquireChannelLock(PK, true));
+            semaphore.releaseChannelLock(PK);
+            assertTrue(semaphore.freeChannelsPerHost.isEmpty());
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     // ---- non-blocking acquire (event-loop path): must fail fast, never wait for acquireTimeout ----
