@@ -25,8 +25,11 @@ import org.asynchttpclient.netty.channel.DefaultChannelPool.PoolLeaseStrategy;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -384,6 +387,30 @@ public class DefaultChannelPoolTest {
         pool.destroy();
     }
 
+    @Test
+    public void idleCountPerHostCountsOnlyLeasableChannels() {
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = ttlPool(timer);
+        Channel first = channelWithRemoteAddress("example.com");
+        Channel second = channelWithRemoteAddress("example.com");
+        Channel otherHost = channelWithRemoteAddress("example.org");
+        Channel claimed = channelWithRemoteAddress("example.com");
+
+        pool.offer(first, KEY);
+        pool.offer(second, KEY);
+        pool.offer(otherHost, KEY);
+        pool.offer(claimed, KEY);
+        assertTrue(pool.removeAll(claimed));
+
+        Map<String, Long> idleCounts = pool.getIdleChannelCountPerHost();
+
+        assertEquals(2, idleCounts.size());
+        assertEquals(Long.valueOf(2), idleCounts.get("example.com"));
+        assertEquals(Long.valueOf(1), idleCounts.get("example.org"));
+
+        pool.destroy();
+    }
+
     // ---- concurrency: no leaked tombstones, never leases a claimed channel ----
 
     @Test
@@ -469,6 +496,18 @@ public class DefaultChannelPoolTest {
         @SuppressWarnings("unchecked")
         io.netty.util.AttributeKey<Object> key = (io.netty.util.AttributeKey<Object>) keyField.get(null);
         return channel.attr(key).get();
+    }
+
+    private static Channel channelWithRemoteAddress(String host) {
+        return new EmbeddedChannel() {
+
+            private final InetSocketAddress remoteAddress = InetSocketAddress.createUnresolved(host, 443);
+
+            @Override
+            protected SocketAddress remoteAddress0() {
+                return remoteAddress;
+            }
+        };
     }
 
     @SuppressWarnings("unchecked")
