@@ -146,6 +146,34 @@ public class Uri {
     }
 
     /**
+     * Same as {@link #toUrl()} but without the deprecated userinfo subcomponent. RFC 9110 §4.2.4: a sender
+     * MUST NOT generate the userinfo subcomponent (and its "@" delimiter) when an origin-form or
+     * absolute-form URI reference is generated for a request target, so this is what belongs on the wire
+     * when an absolute-form target is required. {@link #toUrl()} keeps the userinfo for the caller-visible
+     * URL.
+     *
+     * @return [scheme]://[hostname](:[port])/path(?[query])
+     */
+    public String toUrlWithoutUserInfo() {
+        if (userInfo == null) {
+            return toUrl();
+        }
+
+        StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
+        sb.append(scheme).append("://").append(host);
+        if (port != -1) {
+            sb.append(':').append(port);
+        }
+        if (path != null) {
+            sb.append(path);
+        }
+        if (query != null) {
+            sb.append('?').append(query);
+        }
+        return sb.toString();
+    }
+
+    /**
      * @return [scheme]://[hostname](:[port])/path. Port is omitted if it matches the scheme's default one.
      */
     public String toBaseUrl() {
