@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
+import java.util.concurrent.Semaphore;
 
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -86,9 +87,13 @@ class ChannelManagerHttp2DrainPermitTest {
         return channel;
     }
 
-    /** Available per-host permits for {@code baseKey} under a {@link PerHostConnectionSemaphore}. */
+    /**
+     * Available per-host permits for {@code baseKey} under a {@link PerHostConnectionSemaphore}. A pruned
+     * (absent) entry means nobody holds or awaits a permit for that host, so the full capacity is free.
+     */
     private static int availablePerHost(PerHostConnectionSemaphore semaphore, Object baseKey) {
-        return semaphore.getFreeConnectionsForHost(baseKey).availablePermits();
+        Semaphore freeConnections = semaphore.freeChannelsPerHost.get(baseKey);
+        return freeConnections != null ? freeConnections.availablePermits() : semaphore.maxConnectionsPerHost;
     }
 
     /**

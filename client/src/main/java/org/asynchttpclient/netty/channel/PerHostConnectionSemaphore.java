@@ -16,6 +16,8 @@
 package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,8 @@ import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
  * Max per-host connections limiter.
  */
 public class PerHostConnectionSemaphore implements ConnectionSemaphore {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PerHostConnectionSemaphore.class);
 
     private static final class TrackedSemaphore extends Semaphore {
 
@@ -89,13 +93,10 @@ public class PerHostConnectionSemaphore implements ConnectionSemaphore {
         if (freeConnections != null) {
             freeConnections.release();
             releaseHostReservation(partitionKey, freeConnections);
+        } else {
+            LOGGER.debug("releaseChannelLock called for partition key {} with no matching reservation; ignoring "
+                    + "(likely a duplicate release)", partitionKey);
         }
-    }
-
-    protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
-        return maxConnectionsPerHost > 0 ?
-                freeChannelsPerHost.computeIfAbsent(partitionKey, pk -> new TrackedSemaphore(maxConnectionsPerHost)) :
-                InfiniteSemaphore.INSTANCE;
     }
 
     final Semaphore reserveFreeConnectionsForHost(Object partitionKey) {
@@ -117,11 +118,26 @@ public class PerHostConnectionSemaphore implements ConnectionSemaphore {
         }
         freeChannelsPerHost.computeIfPresent(partitionKey, (pk, current) -> {
             if (current != expected) {
+                LOGGER.debug("releaseHostReservation for partition key {} found a different semaphore instance "
+                        + "than expected; leaving it untouched (likely a duplicate release racing a prune)", pk);
                 return current;
             }
             TrackedSemaphore semaphore = (TrackedSemaphore) current;
             semaphore.references--;
             return semaphore.references == 0 ? null : semaphore;
         });
+    }
+
+    /**
+     * @deprecated does not participate in the reference-counted reservation bookkeeping that {@link
+     * #acquireChannelLock(Object, boolean)}/{@link #releaseChannelLock(Object)} rely on to prune idle
+     * host entries, so a permit acquired through the returned {@link Semaphore} should be released
+     * through the same instance rather than through {@link #releaseChannelLock(Object)}. Delegates to
+     * {@link #reserveFreeConnectionsForHost(Object)} so the returned instance is always the map's
+     * current {@code TrackedSemaphore} for this key, kept only for binary compatibility.
+     */
+    @Deprecated
+    protected Semaphore getFreeConnectionsForHost(Object partitionKey) {
+        return reserveFreeConnectionsForHost(partitionKey);
     }
 }

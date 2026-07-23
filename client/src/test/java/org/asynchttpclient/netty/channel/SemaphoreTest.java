@@ -32,7 +32,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -226,6 +229,71 @@ public class SemaphoreTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    // ---- concurrent stress: the reference-counted map entry must never be pruned while a permit is
+    // held or awaited (which would split a host's permits across two semaphore instances and let the
+    // per-host cap be bypassed), and must always be pruned back to empty once nothing is outstanding ----
+
+    static final int STRESS__KEY_COUNT = 4;
+    static final int STRESS__MAX_PER_HOST = 2;
+    static final int STRESS__THREAD_COUNT = 16;
+    static final int STRESS__ITERATIONS_PER_THREAD = 500;
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 20)
+    public void perHostConcurrentStressNeverExceedsCapAndPrunesToEmpty() throws Exception {
+        concurrentStress(new PerHostConnectionSemaphore(STRESS__MAX_PER_HOST, 0));
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 20)
+    public void combinedConcurrentStressNeverExceedsCapAndPrunesToEmpty() throws Exception {
+        // global limit wider than the per-host limit so both layers see real contention
+        concurrentStress(new CombinedConnectionSemaphore(STRESS__THREAD_COUNT, STRESS__MAX_PER_HOST, 0));
+    }
+
+    private static void concurrentStress(PerHostConnectionSemaphore semaphore) throws Exception {
+        Object[] keys = IntStream.range(0, STRESS__KEY_COUNT)
+                .mapToObj(i -> "stress-host-" + i)
+                .toArray();
+        AtomicIntegerArray currentlyHeld = new AtomicIntegerArray(STRESS__KEY_COUNT);
+        AtomicBoolean capExceeded = new AtomicBoolean(false);
+
+        ExecutorService executor = Executors.newFixedThreadPool(STRESS__THREAD_COUNT);
+        try {
+            List<Future<?>> futures = IntStream.range(0, STRESS__THREAD_COUNT)
+                    .mapToObj(t -> executor.submit(() -> {
+                        ThreadLocalRandom random = ThreadLocalRandom.current();
+                        for (int i = 0; i < STRESS__ITERATIONS_PER_THREAD; i++) {
+                            int keyIndex = random.nextInt(STRESS__KEY_COUNT);
+                            Object key = keys[keyIndex];
+                            try {
+                                // non-blocking: cheap enough to run thousands of iterations quickly
+                                semaphore.acquireChannelLock(key, true);
+                            } catch (IOException e) {
+                                continue;
+                            }
+                            if (currentlyHeld.incrementAndGet(keyIndex) > STRESS__MAX_PER_HOST) {
+                                capExceeded.set(true);
+                            }
+                            Thread.onSpinWait();
+                            currentlyHeld.decrementAndGet(keyIndex);
+                            semaphore.releaseChannelLock(key);
+                        }
+                    }))
+                    .collect(Collectors.toList());
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertFalse(capExceeded.get(),
+                "observed more than " + STRESS__MAX_PER_HOST + " concurrently held permits for a single host");
+        assertTrue(semaphore.freeChannelsPerHost.isEmpty(),
+                "map must be pruned back to empty once every permit has been released");
     }
 
     // ---- non-blocking acquire (event-loop path): must fail fast, never wait for acquireTimeout ----
