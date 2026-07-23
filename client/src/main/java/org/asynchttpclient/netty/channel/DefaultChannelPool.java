@@ -362,6 +362,10 @@ public final class DefaultChannelPool implements ChannelPool {
                     totalCount += partition.size();
                 }
 
+                if (partition.isEmpty()) {
+                    continue;
+                }
+
                 closedCount += reapPartition(partition, start);
             }
 
