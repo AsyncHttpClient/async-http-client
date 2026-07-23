@@ -208,7 +208,7 @@ public class ChannelManager {
             if (config.isUseNativeTransport()) {
                 transportFactory = getNativeTransportFactory(config);
             } else {
-                transportFactory = NioTransportFactory.INSTANCE;
+                transportFactory = autoSelectTransportFactory();
             }
             eventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
         } else {
@@ -263,6 +263,23 @@ public class ChannelManager {
         if (NATIVE_FALLBACK_WARNED.compareAndSet(false, true)) {
             LOGGER.warn("Native transport requested (useNativeTransport=true) but no native transport "
                     + "(Epoll, Io_Uring or KQueue) is available on this platform; falling back to NIO.");
+        }
+        return NioTransportFactory.INSTANCE;
+    }
+
+    // Default when useNativeTransport is unset: native transport if its lib is on the classpath (silently),
+    // else NIO. Use -Dio.netty.transport.noNative=true to force NIO.
+    private static TransportFactory<? extends Channel, ? extends EventLoopGroup> autoSelectTransportFactory() {
+        if (PlatformDependent.isOsx()) {
+            if (KQueueTransportFactory.isAvailable()) {
+                return new KQueueTransportFactory();
+            }
+        } else if (!PlatformDependent.isWindows()) {
+            if (IoUringTransportFactory.isAvailable()) {
+                return new IoUringTransportFactory();
+            } else if (EpollTransportFactory.isAvailable()) {
+                return new EpollTransportFactory();
+            }
         }
         return NioTransportFactory.INSTANCE;
     }
