@@ -126,13 +126,9 @@ public final class NettyRequestFactory {
                 new AsciiString("Transfer-Encoding"),
                 new AsciiString("User-Agent")
         };
-        Map<String, AsciiString> map = new HashMap<>(
-                (int) ((lowerCaseNames.length + trainCaseNames.length) / 0.75f) + 1);
-        for (AsciiString name : lowerCaseNames) {
-            putKnownHeaderName(map, name);
-        }
-        for (AsciiString name : trainCaseNames) {
-            putKnownHeaderName(map, name);
+        Map<String, AsciiString> map = new HashMap<>((int) (names.length / 0.75f) + 1);
+        for (AsciiString name : names) {
+            map.put(name.toString(), name);
         }
         return map;
     }
