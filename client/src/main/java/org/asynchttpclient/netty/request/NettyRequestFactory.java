@@ -133,9 +133,6 @@ public final class NettyRequestFactory {
         return map;
     }
 
-    private static void putKnownHeaderName(Map<String, AsciiString> map, AsciiString name) {
-        map.put(name.toString(), name);
-    }
 
     /**
      * Copy {@code source} request headers into the freshly created outbound {@code target}, interning
