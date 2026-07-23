@@ -94,7 +94,7 @@ public final class NettyRequestFactory {
     private static final Map<String, AsciiString> KNOWN_HEADER_NAMES = buildKnownHeaderNames();
 
     private static Map<String, AsciiString> buildKnownHeaderNames() {
-        AsciiString[] lowerCaseNames = {
+        AsciiString[] names = {
                 HttpHeaderNames.ACCEPT,
                 HttpHeaderNames.ACCEPT_ENCODING,
                 HttpHeaderNames.ACCEPT_LANGUAGE,
@@ -108,9 +108,7 @@ public final class NettyRequestFactory {
                 HttpHeaderNames.ORIGIN,
                 HttpHeaderNames.REFERER,
                 HttpHeaderNames.TRANSFER_ENCODING,
-                HttpHeaderNames.USER_AGENT
-        };
-        AsciiString[] trainCaseNames = {
+                HttpHeaderNames.USER_AGENT,
                 new AsciiString("Accept"),
                 new AsciiString("Accept-Encoding"),
                 new AsciiString("Accept-Language"),
@@ -132,7 +130,6 @@ public final class NettyRequestFactory {
         }
         return map;
     }
-
 
     /**
      * Copy {@code source} request headers into the freshly created outbound {@code target}, interning
