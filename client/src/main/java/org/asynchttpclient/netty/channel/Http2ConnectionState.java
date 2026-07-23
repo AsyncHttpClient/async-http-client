@@ -129,18 +129,20 @@ public class Http2ConnectionState {
      * Race-free against {@link #failPendingOpeners}: that method sets {@code closed} and drains the queue under
      * {@code pendingLock}. An opener enqueued before the drain runs is caught by the drain; an enqueue attempt
      * sequenced after it observes {@code closed} here (the lock provides the happens-before) and is rejected.
-     * Either way no opener is left stranded.
+     * Either way no opener is left stranded. Opener callbacks always run after releasing {@code pendingLock},
+     * because opening a stream can invoke user code and must not serialize other request submissions.
      *
      * @return {@code true} if the opener was run inline or queued; {@code false} if rejected because the
      *         connection is draining/closed or the pending queue is full (caller must fail the request)
      */
     public boolean offerPendingOpener(NettyResponseFuture<?> future, Runnable opener) {
+        boolean runOpener = false;
         synchronized (pendingLock) {
             if (draining.get() || closed.get()) {
                 return false;
             }
             if (tryAcquireStream()) {
-                opener.run();
+                runOpener = true;
             } else {
                 if (pendingCount >= MAX_PENDING_OPENERS) {
                     return false;
@@ -148,22 +150,35 @@ public class Http2ConnectionState {
                 pendingOpeners.add(new PendingOpener(future, opener));
                 pendingCount++;
             }
-            return true;
         }
+        if (runOpener) {
+            opener.run();
+        }
+        return true;
     }
 
     private void drainPendingOpeners() {
+        List<PendingOpener> ready = null;
         synchronized (pendingLock) {
             // Open as many queued requests as there are now-free stream slots. A single stream completion
             // frees exactly one slot (so this usually runs one opener), but a SETTINGS frame that RAISES
             // SETTINGS_MAX_CONCURRENT_STREAMS frees several at once — drain them all here rather than waking
             // only one and stalling the rest until the next completion (a missed-wakeup; the Issue #2160
             // silent-timeout class). tryAcquireStream() enforces the cap and the draining/closed gate, so
-            // this never over-opens; every poll is under pendingLock, so a non-empty queue always yields a
-            // non-null opener.
+            // this never over-opens; reserve each slot and dequeue its opener atomically under pendingLock.
             while (!pendingOpeners.isEmpty() && tryAcquireStream()) {
                 pendingCount--;
-                pendingOpeners.poll().opener.run();
+                if (ready == null) {
+                    ready = new ArrayList<>();
+                }
+                ready.add(pendingOpeners.poll());
+            }
+        }
+        // Stream opening can invoke user callbacks such as onRequestSend. Run after releasing pendingLock so
+        // a slow callback does not serialize unrelated submissions to this HTTP/2 connection.
+        if (ready != null) {
+            for (PendingOpener pending : ready) {
+                pending.opener.run();
             }
         }
     }
