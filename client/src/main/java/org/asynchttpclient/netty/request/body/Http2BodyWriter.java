@@ -38,8 +38,9 @@ import java.io.IOException;
  * <p>
  * This writer is a one-chunk-at-a-time pump driven entirely on the stream channel's event loop:
  * <ul>
- *   <li>It produces and writes exactly one chunk, then flushes, so frames actually leave the process
- *       instead of accumulating.</li>
+ *   <li>It writes chunks while the stream remains writable, flushing when the pump yields for flow control,
+ *       a source suspension, or the terminal DATA frame, so frames leave the process without one flush per
+ *       chunk.</li>
  *   <li>It only produces the next chunk while {@link Http2StreamChannel#isWritable()} is {@code true}.
  *       A stream child channel becomes unwritable when the HTTP/2 flow-control window is exhausted or
  *       the local high-water mark is reached (child writes go through {@code incrementPendingOutboundBytes}).
@@ -123,6 +124,11 @@ final class Http2BodyWriter {
     private ByteBuf pending;
     private boolean done;
 
+    // flush() can synchronously fire channelWritabilityChanged. Prevent that callback from re-entering the
+    // pump, and prevent later callbacks from writing a second endStream frame before the first one completes.
+    private boolean pumping;
+    private boolean terminalWritePending;
+
     // Transient handler that resumes the pump when the channel becomes writable again. Added lazily the
     // first time the pump parks, removed by finish().
     private WritabilityResumeHandler resumeHandler;
@@ -176,12 +182,14 @@ final class Http2BodyWriter {
 
     /**
      * Produces and writes chunks until the channel goes unwritable (then parks for
-     * {@code channelWritabilityChanged}) or the body is exhausted. Always runs on the event loop.
+     * {@code channelWritabilityChanged}), the source suspends, or the body is exhausted. Always runs on the
+     * event loop. Any written frames are flushed before the pump parks or completes.
      */
     private void pump() {
-        if (done) {
+        if (done || pumping || terminalWritePending) {
             return;
         }
+        pumping = true;
         try {
             while (true) {
                 if (done) {
@@ -196,6 +204,7 @@ final class Http2BodyWriter {
                     // No data available yet but the body is not finished (feedable body). Park until the
                     // source signals more via the onResume callback. Any already-buffered `pending` chunk is
                     // retained (O(1)); we deliberately do not flush an early endStream.
+                    channel.flush();
                     suspended = true;
                     return;
                 }
@@ -208,6 +217,7 @@ final class Http2BodyWriter {
                     ByteBuf terminal = last != null ? last
                             // Empty body — preserve existing behaviour: a single empty DATA frame ends the stream.
                             : channel.alloc().buffer(0);
+                    terminalWritePending = true;
                     writeLastFrame(terminal);
                     channel.flush();
                     return;
@@ -219,9 +229,12 @@ final class Http2BodyWriter {
                 pending = next;
                 if (toWrite != null) {
                     writeFrame(toWrite, false);
-                    channel.flush();
 
                     if (!channel.isWritable()) {
+                        channel.flush();
+                        if (channel.isWritable()) {
+                            continue;
+                        }
                         // Flow-control window exhausted / high-water mark reached: stop producing and resume
                         // from channelWritabilityChanged. `pending` (one chunk) is retained until then.
                         ensureResumeHandler();
@@ -232,6 +245,8 @@ final class Http2BodyWriter {
             }
         } catch (Throwable t) {
             finish(t);
+        } finally {
+            pumping = false;
         }
     }
 
@@ -308,7 +323,7 @@ final class Http2BodyWriter {
     private final class WritabilityResumeHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void channelWritabilityChanged(ChannelHandlerContext ctx) {
-            if (!done && ctx.channel().isWritable()) {
+            if (!done && !terminalWritePending && ctx.channel().isWritable()) {
                 pump();
             }
             ctx.fireChannelWritabilityChanged();
