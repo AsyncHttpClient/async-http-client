@@ -1457,6 +1457,10 @@ public final class NettyRequestSender {
             public void call() {
                 whenHandshaked.addListener(f -> {
                             if (f.isSuccess()) {
+                                if (!nextRequest.getUri().isWebSocket()) {
+                                    channelManager.upgradePipelineToHttp2AfterProxyConnect(
+                                            channel.pipeline(), future.getPartitionKey());
+                                }
                                 sendNextRequest(nextRequest, future);
                             } else {
                                 future.abort(f.cause());
