@@ -396,6 +396,11 @@ Response response = client
 
 Supported schemes: **Basic**, **Digest**, **NTLM**, **SPNEGO/Kerberos**, **SCRAM-SHA-256**.
 
+SPNEGO/Kerberos canonical-hostname resolution is disabled by default. Enabling it with
+`setUseCanonicalHostname(true)` performs a blocking JVM lookup while generating the authentication token; during
+an authentication retry, that work can run on a Netty event-loop thread. When the service principal name is known,
+provide it with `setServicePrincipalName(...)` instead of enabling hostname canonicalization.
+
 ## Proxy Support
 
 ```java
