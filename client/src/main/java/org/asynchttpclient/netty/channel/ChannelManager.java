@@ -1149,7 +1149,7 @@ public class ChannelManager {
     }
 
     /**
-     * Builds a point-in-time stats snapshot in O(open channels + idle pooled channels).
+     * Builds a point-in-time stats snapshot, scanning open channels and idle pooled channels once each.
      */
     public ClientStats getClientStats() {
         Map<String, ConnectionCounts> connectionsPerHost = new HashMap<>();
