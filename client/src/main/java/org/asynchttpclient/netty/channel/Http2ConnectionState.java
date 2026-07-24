@@ -77,9 +77,10 @@ public class Http2ConnectionState {
     private final AtomicBoolean redundant = new AtomicBoolean(false);
     private volatile Object partitionKey;
     // Releases the per-host permit this connection holds in ROUND_ROBIN mode (installed by
-    // NettyConnectListener, absent in DEFAULT mode). The GOAWAY handler and the channel closeFuture race
-    // to fire it; getAndSet(null) makes it run at most once, since a double release would push the
-    // semaphore above maxConnectionsPerHost.
+    // NettyConnectListener, absent in DEFAULT mode). Fired by the GOAWAY handler so the permit is freed at
+    // drain start rather than at close; the channel closeFuture releases the same permit directly, and both
+    // funnel through a single getAndSet, since a double release would push the semaphore above
+    // maxConnectionsPerHost.
     private final AtomicReference<Runnable> permitRelease = new AtomicReference<>();
 
     public boolean tryAcquireStream() {
@@ -281,8 +282,8 @@ public class Http2ConnectionState {
 
     /**
      * Runs the installed permit-release action the first time it is called; later calls do nothing, as do
-     * calls when no action was installed (DEFAULT mode). Fired at drain start (GOAWAY) and on channel
-     * close, whichever comes first.
+     * calls when no action was installed (DEFAULT mode). Fired at drain start (GOAWAY); a channel that
+     * closes without draining has its permit released by the closeFuture listener instead.
      */
     public void releasePermitOnce() {
         Runnable release = permitRelease.getAndSet(null);
