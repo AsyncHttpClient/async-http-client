@@ -22,9 +22,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Wrapper for {@link AsyncHandler}s to release a permit on {@link AsyncHandler#onCompleted()}. This is done via a dynamic proxy to preserve all interfaces of the wrapped handler.
+ * Wrapper for {@link AsyncHandler}s to release a permit once on {@link AsyncHandler#onCompleted()} or
+ * {@link AsyncHandler#onThrowable(Throwable)}. This is done via a dynamic proxy to preserve all interfaces of the wrapped handler.
  */
 public final class ReleasePermitOnComplete {
 
@@ -33,10 +35,10 @@ public final class ReleasePermitOnComplete {
     }
 
     /**
-     * Wrap handler to release the permit of the semaphore on {@link AsyncHandler#onCompleted()}.
+     * Wrap handler to release the semaphore permit once when the wrapped handler terminates.
      *
      * @param handler   the handler to be wrapped
-     * @param available the Semaphore to be released when the wrapped handler is completed
+     * @param available the Semaphore to be released when the wrapped handler terminates
      * @param <T>       the handler result type
      * @return the wrapped handler
      */
@@ -45,6 +47,7 @@ public final class ReleasePermitOnComplete {
         Class<?> handlerClass = handler.getClass();
         ClassLoader classLoader = handlerClass.getClassLoader();
         Class<?>[] interfaces = allInterfaces(handlerClass);
+        AtomicBoolean permitReleased = new AtomicBoolean();
 
         return (AsyncHandler<T>) Proxy.newProxyInstance(classLoader, interfaces, (proxy, method, args) -> {
             try {
@@ -53,7 +56,10 @@ public final class ReleasePermitOnComplete {
                 switch (method.getName()) {
                     case "onCompleted":
                     case "onThrowable":
-                        available.release();
+                        if (permitReleased.compareAndSet(false, true)) {
+                            available.release();
+                        }
+                        break;
                     default:
                 }
             }
