@@ -194,10 +194,10 @@ class ConnectionSemaphoreLeakTest {
                 .setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true)))
                 .build();
 
-        try (BlackHoleServer server = new BlackHoleServer();
+        try (BlackHoleServer blackHole = new BlackHoleServer();
              AsyncHttpClient client = asyncHttpClient(cfg)) {
             ExecutionException e = assertThrows(ExecutionException.class,
-                    () -> client.prepareGet(server.url()).execute().get(30, TimeUnit.SECONDS));
+                    () -> client.prepareGet(blackHole.url()).execute().get(30, TimeUnit.SECONDS));
             assertInstanceOf(TimeoutException.class, e.getCause(),
                     "sanity: the request timeout must win over the handshake timeout");
 
@@ -225,13 +225,13 @@ class ConnectionSemaphoreLeakTest {
                 .setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true)))
                 .build();
 
-        try (BlackHoleServer server = new BlackHoleServer();
+        try (BlackHoleServer blackHole = new BlackHoleServer();
              AsyncHttpClient client = asyncHttpClient(cfg)) {
             ExecutionException e = assertThrows(ExecutionException.class,
-                    () -> client.prepareGet(server.url()).execute().get(30, TimeUnit.SECONDS));
+                    () -> client.prepareGet(blackHole.url()).execute().get(30, TimeUnit.SECONDS));
             assertInstanceOf(TimeoutException.class, e.getCause());
 
-            Socket peer = server.awaitFirstConnection(10, TimeUnit.SECONDS);
+            Socket peer = blackHole.awaitFirstConnection(10, TimeUnit.SECONDS);
             assertNotNull(peer, "sanity: the client established the TCP connection");
             // Well inside handshakeTimeout: if the abort could not close the connecting channel, draining
             // this socket blocks until the read times out instead of reaching EOF.
@@ -244,6 +244,8 @@ class ConnectionSemaphoreLeakTest {
             } catch (SocketTimeoutException timeout) {
                 fail("issue #2189: the request timeout must close the connecting socket, not leave it "
                         + "until handshakeTimeout");
+            } catch (IOException reset) {
+                // a reset rather than a clean FIN still means the client closed in time
             }
 
             assertTrue(probe.get().released.await(10, TimeUnit.SECONDS), "the permit must come back with it");
@@ -286,13 +288,18 @@ class ConnectionSemaphoreLeakTest {
             Future<Response> inFlight = client.prepareGet(server.getHttpUrl() + "/foo").execute();
             assertTrue(started.await(20, TimeUnit.SECONDS), "sanity: the first request reached the server");
 
-            ExecutionException refused = assertThrows(ExecutionException.class,
-                    () -> client.prepareGet(server.getHttpUrl() + "/foo").execute().get(20, TimeUnit.SECONDS),
-                    "a second connection must not be admitted while the first still holds the only permit");
-            assertInstanceOf(TooManyConnectionsPerHostException.class, refused.getCause());
-
-            release.countDown();
+            try {
+                ExecutionException refused = assertThrows(ExecutionException.class,
+                        () -> client.prepareGet(server.getHttpUrl() + "/foo").execute().get(20, TimeUnit.SECONDS),
+                        "a second connection must not be admitted while the first still holds the only permit");
+                assertInstanceOf(TooManyConnectionsPerHostException.class, refused.getCause());
+            } finally {
+                release.countDown();
+            }
             assertEquals(200, inFlight.get(30, TimeUnit.SECONDS).getStatusCode());
+
+            CountingSemaphore semaphore = probe.get();
+            assertEquals(1, semaphore.acquires.get(), "only the served connection ever took a permit");
         }
     }
 
@@ -334,13 +341,18 @@ class ConnectionSemaphoreLeakTest {
         private final List<Socket> accepted = Collections.synchronizedList(new ArrayList<>());
         private final BlockingQueue<Socket> firstAccepted = new ArrayBlockingQueue<>(1);
         private final Thread thread;
+        private volatile boolean closed;
 
         BlackHoleServer() throws IOException {
             serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
             thread = new Thread(() -> {
                 try {
-                    while (!Thread.currentThread().isInterrupted()) {
+                    while (!closed) {
                         Socket socket = serverSocket.accept();
+                        if (closed) {
+                            socket.close();
+                            return;
+                        }
                         accepted.add(socket);
                         firstAccepted.offer(socket);
                     }
@@ -352,8 +364,16 @@ class ConnectionSemaphoreLeakTest {
             thread.start();
         }
 
+        /**
+         * Brackets an IPv6 literal, which the loopback address is wherever java.net.preferIPv6Addresses is
+         * set: an unbracketed "https://::1:443/foo" does not parse as a URI at all.
+         */
         String url() {
-            return "https://" + serverSocket.getInetAddress().getHostAddress() + ':' + serverSocket.getLocalPort() + "/foo";
+            String host = serverSocket.getInetAddress().getHostAddress();
+            if (host.indexOf(':') >= 0) {
+                host = '[' + host + ']';
+            }
+            return "https://" + host + ':' + serverSocket.getLocalPort() + "/foo";
         }
 
         Socket awaitFirstConnection(long timeout, TimeUnit unit) throws InterruptedException {
@@ -362,12 +382,18 @@ class ConnectionSemaphoreLeakTest {
 
         @Override
         public void close() {
+            closed = true;
             try {
                 serverSocket.close();
             } catch (IOException ignored) {
                 // best effort test cleanup
             }
-            thread.interrupt();
+            try {
+                // join before draining, so a connection accepted during close() cannot be added afterwards
+                thread.join(TimeUnit.SECONDS.toMillis(5));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             synchronized (accepted) {
                 for (Socket socket : accepted) {
                     try {

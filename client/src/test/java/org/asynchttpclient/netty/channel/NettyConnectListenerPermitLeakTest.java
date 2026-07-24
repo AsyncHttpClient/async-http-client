@@ -296,6 +296,10 @@ class NettyConnectListenerPermitLeakTest {
             future.abort(new TimeoutException("Request timeout to example.com:12345 after 100 ms"));
 
             assertTrue(future.isDone());
+            // The premise the whole fix rests on: the token is already off the future, so the abort has
+            // nothing to give back and conservation depends entirely on the channel owning it.
+            assertEquals(0, availablePerHost(semaphore, key),
+                    "abort cannot reclaim a token onSuccess already took");
 
             // The orphaned socket eventually goes away (peer close, or the handshake timeout).
             channel.close().sync();
