@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Non Blocking connect.
@@ -78,19 +79,26 @@ public final class NettyConnectListener<T> {
         Channels.setAttribute(channel, future);
 
         channelManager.registerOpenChannel(channel);
-        future.attachChannel(channel, false);
         requestSender.writeRequest(future, channel);
     }
 
     public void onSuccess(Channel channel, InetSocketAddress remoteAddress) {
-        // Take the semaphore lock from the future. For HTTP/1.1, we'll transfer it to channel.closeFuture().
-        // For HTTP/2, we release it immediately after ALPN negotiation since the connection is multiplexed.
-        final Object partitionKeyLock = (connectionSemaphore != null) ? future.takePartitionKeyLock() : null;
+        // takePartitionKeyLock() is a getAndSet(null): the future can no longer release this permit, so bind
+        // it to the channel here, before anything below can abandon that channel. Everything downstream --
+        // a failed or timed-out TLS handshake, a crashing AsyncHandler callback, a connect retry -- closes
+        // the channel but cannot reach the token, so deferring this to the individual branches leaked the
+        // permit permanently on every one of those paths (issue #2189). The HTTP/2 branches release it
+        // earlier and leave this listener a no-op.
+        final Object partitionKeyLock = connectionSemaphore != null ? future.takePartitionKeyLock() : null;
+        final AtomicReference<Object> permit = new AtomicReference<>(partitionKeyLock);
+        if (partitionKeyLock != null) {
+            channel.closeFuture().addListener(f -> releasePermitOnce(permit));
+        }
 
         Channels.setActiveToken(channel);
 
         if (futureIsAlreadyCompleted(channel)) {
-            releaseSemaphoreImmediately(partitionKeyLock);
+            releasePermitOnce(permit);
             return;
         }
 
@@ -102,9 +110,14 @@ public final class NettyConnectListener<T> {
             // futureIsAlreadyCompleted check above can pass while the holder is already null.
             // Drop this connection rather than NPE-ing on setResolvedRemoteAddress below.
             Channels.silentlyCloseChannel(channel);
-            releaseSemaphoreImmediately(partitionKeyLock);
+            releasePermitOnce(permit);
             return;
         }
+
+        // Publish the channel before the (possibly long) TLS handshake. Until this runs future.channel() is
+        // null, and NettyRequestSender.abort only closes a non-null channel -- so a request timeout firing
+        // mid-handshake could not close the socket, stranding it until handshakeTimeout (issue #2189).
+        future.attachChannel(channel, false);
 
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
@@ -153,7 +166,6 @@ public final class NettyConnectListener<T> {
                         return;
                     }
                     // After SSL handshake to proxy, continue with normal proxy request
-                    attachSemaphoreToChannelClose(channel, partitionKeyLock);
                     writeRequest(channel);
                 }
 
@@ -215,9 +227,7 @@ public final class NettyConnectListener<T> {
                     }
                     if (http2Negotiated && !uri.isWebSocket()) {
                         channelManager.upgradePipelineToHttp2(channel.pipeline());
-                        registerHttp2AndManageSemaphore(channel, partitionKeyLock);
-                    } else {
-                        attachSemaphoreToChannelClose(channel, partitionKeyLock);
+                        registerHttp2AndManageSemaphore(channel, permit);
                     }
                     writeRequest(channel);
                 }
@@ -240,31 +250,21 @@ public final class NettyConnectListener<T> {
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
             if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
                 channelManager.upgradePipelineToHttp2(channel.pipeline());
-                registerHttp2AndManageSemaphore(channel, partitionKeyLock);
-            } else {
-                attachSemaphoreToChannelClose(channel, partitionKeyLock);
+                registerHttp2AndManageSemaphore(channel, permit);
             }
             writeRequest(channel);
         }
     }
 
     /**
-     * Attaches the semaphore lock to the channel's close future (HTTP/1.1 behavior).
-     * The semaphore slot is released when the connection closes.
+     * Returns the per-host permit this connection holds, at most once. The channel closeFuture, the
+     * early-exit paths and the HTTP/2 immediate release all race to call this; a double release would
+     * push the semaphore above {@code maxConnectionsPerHost}, and an unmatched one can prematurely
+     * prune a live entry from the per-host map.
      */
-    private void attachSemaphoreToChannelClose(Channel channel, Object partitionKeyLock) {
-        if (connectionSemaphore != null && partitionKeyLock != null) {
-            channel.closeFuture().addListener(f -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
-        }
-    }
-
-    /**
-     * Releases the semaphore lock immediately (HTTP/2 behavior).
-     * HTTP/2 connections are multiplexed, so the semaphore should not be held
-     * for the lifetime of the connection.
-     */
-    private void releaseSemaphoreImmediately(Object partitionKeyLock) {
-        if (connectionSemaphore != null && partitionKeyLock != null) {
+    private void releasePermitOnce(AtomicReference<Object> permit) {
+        Object partitionKeyLock = permit.getAndSet(null);
+        if (partitionKeyLock != null && connectionSemaphore != null) {
             connectionSemaphore.releaseChannelLock(partitionKeyLock);
         }
     }
@@ -281,7 +281,7 @@ public final class NettyConnectListener<T> {
      * a further request fails to acquire a permit and multiplexes onto a sibling-IP connection via
      * {@link ChannelManager#pollHttp2SiblingConnection(Object)} rather than opening another (issue #2214).
      */
-    private void registerHttp2AndManageSemaphore(Channel channel, Object partitionKeyLock) {
+    private void registerHttp2AndManageSemaphore(Channel channel, AtomicReference<Object> permit) {
         // Register under the future's partition key so the H2 connection is found by the same key the
         // pool is polled with, including the IP-aware key used by LoadBalance.ROUND_ROBIN. Read the key
         // once: it is volatile (repinned on IP failover) and both uses below must agree.
@@ -289,19 +289,14 @@ public final class NettyConnectListener<T> {
         channelManager.registerHttp2Connection(partitionKey, channel);
         if (partitionKey instanceof RoundRobinPartitionKey) {
             // The permit must be freed as soon as the connection stops serving new requests: on close, or
-            // at drain start after GOAWAY (issue #2214). Both paths go through releasePermitOnce(), which
-            // guarantees a single release; a double release would push the semaphore above the cap. The
-            // state attribute is always present after upgradePipelineToHttp2, the fallback is just
-            // belt and braces.
+            // at drain start after GOAWAY (issue #2214). The closeFuture listener installed in onSuccess
+            // covers close; this adds the drain hook. Both funnel through releasePermitOnce.
             Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
-            if (state != null && connectionSemaphore != null && partitionKeyLock != null) {
-                state.setPermitRelease(() -> connectionSemaphore.releaseChannelLock(partitionKeyLock));
-                channel.closeFuture().addListener(f -> state.releasePermitOnce());
-            } else {
-                attachSemaphoreToChannelClose(channel, partitionKeyLock);
+            if (state != null) {
+                state.setPermitRelease(() -> releasePermitOnce(permit));
             }
         } else {
-            releaseSemaphoreImmediately(partitionKeyLock);
+            releasePermitOnce(permit);
         }
     }
 

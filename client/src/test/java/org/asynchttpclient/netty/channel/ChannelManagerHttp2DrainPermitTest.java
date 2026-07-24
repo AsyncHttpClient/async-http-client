@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -81,9 +82,18 @@ class ChannelManagerHttp2DrainPermitTest {
         Http2ConnectionState state = new Http2ConnectionState();
         channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
         channelManager.registerHttp2Connection(registryKey, channel);
-        // Mirror NettyConnectListener.registerHttp2AndManageSemaphore's round-robin branch.
-        state.setPermitRelease(() -> semaphore.releaseChannelLock(baseKey));
-        channel.closeFuture().addListener(f -> state.releasePermitOnce());
+        // Mirror NettyConnectListener's round-robin wiring: the drain hook installed by
+        // registerHttp2AndManageSemaphore, plus the closeFuture release installed in onSuccess. Both funnel
+        // through a single getAndSet so the permit is returned exactly once.
+        AtomicReference<Object> permit = new AtomicReference<>(baseKey);
+        Runnable release = () -> {
+            Object key = permit.getAndSet(null);
+            if (key != null) {
+                semaphore.releaseChannelLock(key);
+            }
+        };
+        state.setPermitRelease(release);
+        channel.closeFuture().addListener(f -> release.run());
         return channel;
     }
 
