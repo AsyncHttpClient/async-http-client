@@ -82,9 +82,10 @@ class ChannelManagerHttp2DrainPermitTest {
         Http2ConnectionState state = new Http2ConnectionState();
         channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
         channelManager.registerHttp2Connection(registryKey, channel);
-        // Mirror NettyConnectListener's round-robin wiring: the drain hook installed by
-        // registerHttp2AndManageSemaphore, plus the closeFuture release installed in onSuccess. Both funnel
-        // through a single getAndSet so the permit is returned exactly once.
+        // Stand in for NettyConnectListener's round-robin wiring - the drain hook from
+        // registerHttp2AndManageSemaphore plus the closeFuture release from onSuccess, both funnelling
+        // through one getAndSet. This fixture only pins ChannelManager's GOAWAY drain contract; that
+        // NettyConnectListener actually installs this wiring is covered end-to-end by BasicHttp2Test.
         AtomicReference<Object> permit = new AtomicReference<>(baseKey);
         Runnable release = () -> {
             Object key = permit.getAndSet(null);

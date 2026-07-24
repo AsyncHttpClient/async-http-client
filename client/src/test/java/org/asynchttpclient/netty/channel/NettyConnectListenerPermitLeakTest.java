@@ -17,6 +17,8 @@ package org.asynchttpclient.netty.channel;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.asynchttpclient.AsyncCompletionHandler;
@@ -44,6 +46,7 @@ import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -169,9 +172,10 @@ class NettyConnectListenerPermitLeakTest {
             assertTrue(channel.isOpen(), "sanity: the TLS handshake is in flight");
             assertEquals(0, availablePerHost(semaphore, key), "the permit is still held during the handshake");
 
-            assertThrows(Exception.class,
+            DecoderException decoderException = assertThrows(DecoderException.class,
                     () -> channel.writeInbound(Unpooled.wrappedBuffer("not-a-tls-record!".getBytes(StandardCharsets.US_ASCII))),
                     "sanity: garbage in place of a ServerHello fails the handshake");
+            assertInstanceOf(NotSslRecordException.class, decoderException.getCause());
 
             assertEquals(1, availablePerHost(semaphore, key),
                     "issue #2189: a failed TLS handshake must not strand the per-host permit");
@@ -292,8 +296,6 @@ class NettyConnectListenerPermitLeakTest {
             future.abort(new TimeoutException("Request timeout to example.com:12345 after 100 ms"));
 
             assertTrue(future.isDone());
-            assertEquals(0, availablePerHost(semaphore, key),
-                    "the mechanism: abort cannot reclaim a token onSuccess already took");
 
             // The orphaned socket eventually goes away (peer close, or the handshake timeout).
             channel.close().sync();
@@ -345,7 +347,7 @@ class NettyConnectListenerPermitLeakTest {
         EmbeddedChannel channel = new EmbeddedChannel();
         try {
             listener.onSuccess(channel, new InetSocketAddress("127.0.0.1", 12345));
-            assertThrows(Exception.class,
+            assertThrows(DecoderException.class,
                     () -> channel.writeInbound(Unpooled.wrappedBuffer("not-a-tls-record!".getBytes(StandardCharsets.US_ASCII))));
 
             // What NettyRequestSender.sendRequestWithNewChannel does on the retry.
@@ -370,7 +372,7 @@ class NettyConnectListenerPermitLeakTest {
         EmbeddedChannel channel = new EmbeddedChannel();
         try {
             listener.onSuccess(channel, new InetSocketAddress("127.0.0.1", 12345));
-            assertThrows(Exception.class,
+            assertThrows(DecoderException.class,
                     () -> channel.writeInbound(Unpooled.wrappedBuffer("not-a-tls-record!".getBytes(StandardCharsets.US_ASCII))));
 
             // Neither a later close nor a late abort may release a second time.

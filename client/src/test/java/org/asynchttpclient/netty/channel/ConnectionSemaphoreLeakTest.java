@@ -16,34 +16,42 @@
 package org.asynchttpclient.netty.channel;
 
 import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.asynchttpclient.testserver.HttpServer;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Exchanger;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -51,8 +59,10 @@ import static org.asynchttpclient.test.TestUtils.createSslEngineFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * End-to-end regression tests for issue #2189 over real sockets: a connection attempt that fails after TCP
@@ -176,8 +186,6 @@ class ConnectionSemaphoreLeakTest {
     @Test
     @Timeout(60)
     void requestTimeoutDuringTlsHandshakeDoesNotLeakThePerHostPermit() throws Exception {
-        List<Socket> accepted = Collections.synchronizedList(new ArrayList<>());
-        int port = startBlackHoleServer(accepted);
         AtomicReference<CountingSemaphore> probe = new AtomicReference<>();
         AsyncHttpClientConfig cfg = countingConfig(probe)
                 .setMaxRequestRetry(0)
@@ -186,9 +194,10 @@ class ConnectionSemaphoreLeakTest {
                 .setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true)))
                 .build();
 
-        try (AsyncHttpClient client = asyncHttpClient(cfg)) {
+        try (BlackHoleServer server = new BlackHoleServer();
+             AsyncHttpClient client = asyncHttpClient(cfg)) {
             ExecutionException e = assertThrows(ExecutionException.class,
-                    () -> client.prepareGet("https://localhost:" + port + "/foo").execute().get(30, TimeUnit.SECONDS));
+                    () -> client.prepareGet(server.url()).execute().get(30, TimeUnit.SECONDS));
             assertInstanceOf(TimeoutException.class, e.getCause(),
                     "sanity: the request timeout must win over the handshake timeout");
 
@@ -196,15 +205,100 @@ class ConnectionSemaphoreLeakTest {
             assertTrue(semaphore.released.await(20, TimeUnit.SECONDS),
                     "issue #2189: the permit must come back after a request timeout during the TLS handshake");
             assertEquals(semaphore.acquires.get(), semaphore.releases.get());
-        } finally {
-            closeAll(accepted);
         }
     }
 
     /**
-     * The other half of the invariant: a successful HTTP/1.1 request must hold its permit for the life of
-     * the connection and return it exactly once, so the fix must not release it early. With a cap of 1 and
-     * a pool disabled, three sequential requests each need the permit back from the previous one.
+     * The payoff of publishing the channel before the handshake: a request timeout must close the socket
+     * itself, at requestTimeout. Without that the connecting channel is invisible to the aborting timeout
+     * (NettyRequestSender.abort only closes a non-null channel) and the socket, and its permit, survive
+     * until the far longer handshakeTimeout - so the deadline below is what distinguishes the two.
+     */
+    @Test
+    @Timeout(60)
+    void requestTimeoutClosesTheConnectingSocketWithoutWaitingForHandshakeTimeout() throws Exception {
+        AtomicReference<CountingSemaphore> probe = new AtomicReference<>();
+        AsyncHttpClientConfig cfg = countingConfig(probe)
+                .setMaxRequestRetry(0)
+                .setRequestTimeout(Duration.ofMillis(300))
+                .setHandshakeTimeout(10_000)
+                .setSslEngineFactory(createSslEngineFactory(new AtomicBoolean(true)))
+                .build();
+
+        try (BlackHoleServer server = new BlackHoleServer();
+             AsyncHttpClient client = asyncHttpClient(cfg)) {
+            ExecutionException e = assertThrows(ExecutionException.class,
+                    () -> client.prepareGet(server.url()).execute().get(30, TimeUnit.SECONDS));
+            assertInstanceOf(TimeoutException.class, e.getCause());
+
+            Socket peer = server.awaitFirstConnection(10, TimeUnit.SECONDS);
+            assertNotNull(peer, "sanity: the client established the TCP connection");
+            // Well inside handshakeTimeout: if the abort could not close the connecting channel, draining
+            // this socket blocks until the read times out instead of reaching EOF.
+            peer.setSoTimeout(3000);
+            try (InputStream in = peer.getInputStream()) {
+                byte[] buffer = new byte[1024];
+                while (in.read(buffer) >= 0) {
+                    // drain the ClientHello until the client closes its end
+                }
+            } catch (SocketTimeoutException timeout) {
+                fail("issue #2189: the request timeout must close the connecting socket, not leave it "
+                        + "until handshakeTimeout");
+            }
+
+            assertTrue(probe.get().released.await(10, TimeUnit.SECONDS), "the permit must come back with it");
+        }
+    }
+
+    /**
+     * The other half of the invariant: an HTTP/1.1 connection must hold its permit for as long as it is
+     * serving, so the fix must not release it early. With a cap of 1 and a request held open, a second
+     * request to the same host must be refused - a permit released at handshake/response time instead of at
+     * close would let it through and breach maxConnectionsPerHost.
+     */
+    @Test
+    @Timeout(60)
+    void permitIsHeldWhileTheConnectionIsStillServing() throws Exception {
+        AtomicReference<CountingSemaphore> probe = new AtomicReference<>();
+        AsyncHttpClientConfig cfg = countingConfig(probe)
+                .setRequestTimeout(Duration.ofSeconds(30))
+                .build();
+
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch started = new CountDownLatch(1);
+        server.enqueue(new AbstractHandler() {
+            @Override
+            public void handle(String target, org.eclipse.jetty.server.Request baseRequest,
+                               HttpServletRequest request, HttpServletResponse response) throws IOException {
+                baseRequest.setHandled(true);
+                started.countDown();
+                try {
+                    release.await(30, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                response.setStatus(200);
+                response.getOutputStream().flush();
+            }
+        });
+
+        try (AsyncHttpClient client = asyncHttpClient(cfg)) {
+            Future<Response> inFlight = client.prepareGet(server.getHttpUrl() + "/foo").execute();
+            assertTrue(started.await(20, TimeUnit.SECONDS), "sanity: the first request reached the server");
+
+            ExecutionException refused = assertThrows(ExecutionException.class,
+                    () -> client.prepareGet(server.getHttpUrl() + "/foo").execute().get(20, TimeUnit.SECONDS),
+                    "a second connection must not be admitted while the first still holds the only permit");
+            assertInstanceOf(TooManyConnectionsPerHostException.class, refused.getCause());
+
+            release.countDown();
+            assertEquals(200, inFlight.get(30, TimeUnit.SECONDS).getStatusCode());
+        }
+    }
+
+    /**
+     * A permit must be returned exactly once per connection: with keep-alive off, three sequential requests
+     * against a cap of 1 each need the previous connection's permit back.
      */
     @Test
     @Timeout(60)
@@ -224,39 +318,66 @@ class ConnectionSemaphoreLeakTest {
 
             CountingSemaphore semaphore = probe.get();
             assertEquals(3, semaphore.acquires.get(), "one new connection per request with keep-alive off");
-            assertTrue(semaphore.releases.get() <= semaphore.acquires.get(),
-                    "a permit must never be released more times than it was acquired");
+            assertEquals(semaphore.acquires.get(), semaphore.releases.get(),
+                    "every connection's permit must be returned exactly once");
         }
     }
 
-    /** Accepts TCP connections and then says nothing at all, so a TLS handshake stalls forever. */
-    private static int startBlackHoleServer(List<Socket> accepted) throws Exception {
-        Exchanger<Integer> portHolder = new Exchanger<>();
-        Thread thread = new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(0)) {
-                portHolder.exchange(serverSocket.getLocalPort());
-                while (!Thread.currentThread().isInterrupted()) {
-                    accepted.add(serverSocket.accept());
-                }
-            } catch (Exception ignored) {
-                Thread.currentThread().interrupt();
-            }
-        });
-        thread.setDaemon(true);
-        thread.start();
-        return portHolder.exchange(0);
-    }
+    /**
+     * Accepts TCP connections on the loopback address and then says nothing at all, so a TLS handshake
+     * started against it stalls until something else closes the socket. Bound to the loopback address rather
+     * than the wildcard so the client's connect cannot miss it where localhost resolves to ::1 first.
+     */
+    private static final class BlackHoleServer implements Closeable {
 
-    private static void closeAll(List<Socket> sockets) {
-        synchronized (sockets) {
-            for (Socket socket : sockets) {
+        private final ServerSocket serverSocket;
+        private final List<Socket> accepted = Collections.synchronizedList(new ArrayList<>());
+        private final BlockingQueue<Socket> firstAccepted = new ArrayBlockingQueue<>(1);
+        private final Thread thread;
+
+        BlackHoleServer() throws IOException {
+            serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
+            thread = new Thread(() -> {
                 try {
-                    socket.close();
+                    while (!Thread.currentThread().isInterrupted()) {
+                        Socket socket = serverSocket.accept();
+                        accepted.add(socket);
+                        firstAccepted.offer(socket);
+                    }
                 } catch (IOException ignored) {
-                    // best effort test cleanup
+                    // the server socket was closed: normal shutdown
                 }
+            });
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        String url() {
+            return "https://" + serverSocket.getInetAddress().getHostAddress() + ':' + serverSocket.getLocalPort() + "/foo";
+        }
+
+        Socket awaitFirstConnection(long timeout, TimeUnit unit) throws InterruptedException {
+            return firstAccepted.poll(timeout, unit);
+        }
+
+        @Override
+        public void close() {
+            try {
+                serverSocket.close();
+            } catch (IOException ignored) {
+                // best effort test cleanup
             }
-            sockets.clear();
+            thread.interrupt();
+            synchronized (accepted) {
+                for (Socket socket : accepted) {
+                    try {
+                        socket.close();
+                    } catch (IOException ignored) {
+                        // best effort test cleanup
+                    }
+                }
+                accepted.clear();
+            }
         }
     }
 }
