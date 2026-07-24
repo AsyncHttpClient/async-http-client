@@ -44,6 +44,7 @@ public class Utf8UrlEncoderTest {
 
         assertNotSame(query, encoded);
         assertEquals("a=one%20two", encoded);
+        assertEquals("a=%C3%A9", Utf8UrlEncoder.encodeQuery("a=\u00e9"));
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
