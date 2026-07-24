@@ -106,6 +106,7 @@ import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthoriza
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
@@ -113,6 +114,8 @@ import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 public final class NettyRequestSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyRequestSender.class);
+    private static final AsciiString HTTP2_HPACK_GZIP_DEFLATE =
+            new AsciiString(HttpHeaderValues.GZIP + ", " + HttpHeaderValues.DEFLATE);
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
@@ -918,6 +921,7 @@ public final class NettyRequestSender {
             // Copy the HTTP/1.1 headers, dropping connection-specific names forbidden in HTTP/2 (RFC 7540
             // §8.1.2.2). iteratorCharSequence() avoids the per-name String the String-typed iterator forces;
             // see isHttp2ExcludedHeader and toLowerCaseHeaderName for the skip-check and lowercasing rules.
+            boolean preferHpackAcceptEncoding = preferHpackAcceptEncoding(future.getCurrentRequest());
             Iterator<Map.Entry<CharSequence, CharSequence>> it = httpRequest.headers().iteratorCharSequence();
             while (it.hasNext()) {
                 Map.Entry<CharSequence, CharSequence> entry = it.next();
@@ -933,7 +937,7 @@ public final class NettyRequestSender {
                         && !HttpHeaderValues.TRAILERS.contentEqualsIgnoreCase(value)) {
                     continue;
                 }
-                h2Headers.add(toLowerCaseHeaderName(name), value);
+                h2Headers.add(toLowerCaseHeaderName(name), http2HeaderValue(name, value, preferHpackAcceptEncoding));
             }
 
             // Determine the body to send: an in-memory buffer (DefaultFullHttpRequest content or a
@@ -969,6 +973,20 @@ public final class NettyRequestSender {
                 nettyRequest.release();
             }
         }
+    }
+
+    private boolean preferHpackAcceptEncoding(Request request) {
+        return config.isCompressionEnforced()
+                && !request.getHeaders().contains(HttpHeaderNames.ACCEPT_ENCODING);
+    }
+
+    private static CharSequence http2HeaderValue(CharSequence name, CharSequence value, boolean preferHpackAcceptEncoding) {
+        if (preferHpackAcceptEncoding
+                && HttpHeaderNames.ACCEPT_ENCODING.contentEqualsIgnoreCase(name)
+                && GZIP_DEFLATE.contentEquals(value)) {
+            return HTTP2_HPACK_GZIP_DEFLATE;
+        }
+        return value;
     }
 
     /**
