@@ -47,7 +47,7 @@ public class Utf8UrlEncoderTest {
         assertEquals("a=%C3%A9", Utf8UrlEncoder.encodeQuery("a=\u00e9"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPercentageEncoding() {
         assertEquals("foobar", Utf8UrlEncoder.percentEncodeQueryElement("foobar"));
         assertEquals("foo%2Abar", Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"));
