@@ -110,7 +110,7 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             HttpResponse response = (HttpResponse) e;
             if (logger.isDebugEnabled()) {
                 HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
-                logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
+                logger.debug("\n\nRequest {}\n\nResponse {}\n", HttpMessageFormatter.format(httpRequest), HttpMessageFormatter.format(response));
             }
 
             WebSocketUpgradeHandler handler = getWebSocketUpgradeHandler(future);

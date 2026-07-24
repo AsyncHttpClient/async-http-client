@@ -1105,7 +1105,8 @@ public final class NettyRequestSender {
         if (future.isReplayPossible()) {
             future.setChannelState(ChannelState.RECONNECTED);
 
-            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
+            HttpRequest request = future.getNettyRequest().getHttpRequest();
+            LOGGER.debug("Trying to recover request '{}' to '{}'\n", request.method(), request.uri());
             try {
                 future.getAsyncHandler().onRetry();
             } catch (Exception e) {
@@ -1413,7 +1414,7 @@ public final class NettyRequestSender {
         future.setChannelState(ChannelState.NEW);
         future.touch();
 
-        LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
+        LOGGER.debug("\n\nReplaying request '{}' to '{}'\n for Future {}\n", newRequest.getMethod(), newRequest.getUri(), future);
         try {
             future.getAsyncHandler().onRetry();
         } catch (Exception e) {
