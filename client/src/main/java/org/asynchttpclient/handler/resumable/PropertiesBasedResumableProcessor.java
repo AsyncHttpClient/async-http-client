@@ -16,15 +16,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.OutputStream;
+import java.nio.channels.Channels;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 /**
@@ -35,8 +47,18 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     private static final Logger log = LoggerFactory.getLogger(PropertiesBasedResumableProcessor.class);
     private static final File TMP = new File(System.getProperty("java.io.tmpdir"), "ahc");
     private static final String storeName = "ResumableAsyncHandler.properties";
+    private static final boolean POSIX = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+    private static final FileAttribute<?>[] DIR_ATTRIBUTES = ownerOnlyAttributes("rwx------");
+    private static final FileAttribute<?>[] FILE_ATTRIBUTES = ownerOnlyAttributes("rw-------");
+    private static final Set<OpenOption> CREATE_OPTIONS = new HashSet<>(Arrays.asList(WRITE, CREATE_NEW));
 
     private final ConcurrentHashMap<String, Long> properties = new ConcurrentHashMap<>();
+
+    private static FileAttribute<?>[] ownerOnlyAttributes(String permissions) {
+        return POSIX
+                ? new FileAttribute<?>[]{PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(permissions))}
+                : new FileAttribute<?>[0];
+    }
 
     private static String append(Map.Entry<String, Long> e) {
         return e.getKey() + '=' + e.getValue() + '\n';
@@ -60,18 +82,18 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
         OutputStream os = null;
         try {
 
-            if (!TMP.exists() && !TMP.mkdirs()) {
-                throw new IllegalStateException("Unable to create directory: " + TMP.getAbsolutePath());
-            }
-            File f = new File(TMP, storeName);
-            if (!f.exists() && !f.createNewFile()) {
-                throw new IllegalStateException("Unable to create temp file: " + f.getAbsolutePath());
-            }
-            if (!f.canWrite()) {
-                throw new IllegalStateException();
+            Path dir = TMP.toPath();
+            if (!Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS)) {
+                Files.createDirectory(dir, DIR_ATTRIBUTES);
             }
 
-            os = Files.newOutputStream(f.toPath());
+            // The store sits at a fixed path in the shared temp directory and holds the URLs being
+            // downloaded, so it is recreated here with owner-only permissions instead of being written
+            // through whatever is already at that path. CREATE_NEW after the delete fails rather than
+            // opens if another local user re-plants a file or a symlink in between.
+            Path f = dir.resolve(storeName);
+            Files.deleteIfExists(f);
+            os = Channels.newOutputStream(Files.newByteChannel(f, CREATE_OPTIONS, FILE_ATTRIBUTES));
             for (Map.Entry<String, Long> e : properties.entrySet()) {
                 os.write(append(e).getBytes(UTF_8));
             }
@@ -87,7 +109,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
     public Map<String, Long> load() {
         Scanner scan = null;
         try {
-            scan = new Scanner(new File(TMP, storeName), UTF_8);
+            scan = new Scanner(Files.newInputStream(new File(TMP, storeName).toPath(), LinkOption.NOFOLLOW_LINKS), UTF_8);
             scan.useDelimiter("[=\n]");
 
             String key;
@@ -98,7 +120,7 @@ public class PropertiesBasedResumableProcessor implements ResumableAsyncHandler.
                 properties.put(key, Long.valueOf(value));
             }
             log.debug("Loading previous download state {}", properties);
-        } catch (FileNotFoundException ex) {
+        } catch (NoSuchFileException ex) {
             log.debug("Missing {}", storeName);
         } catch (Throwable ex) {
             // Survive any exceptions
