@@ -129,6 +129,7 @@ public final class Utf8UrlEncoder {
         return sb == null ? input : sb.toString();
     }
 
+    // package-private: only UriEncoder (same package) needs this; keep API surface minimal
     static String encodeQuery(String input) {
         StringBuilder sb = lazyAppendEncoded(null, input, BUILT_QUERY_UNTOUCHED_CHARS, false);
         return sb == null ? input : sb.toString();

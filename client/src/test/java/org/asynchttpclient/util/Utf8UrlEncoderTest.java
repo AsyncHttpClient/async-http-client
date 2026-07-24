@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient.util;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -30,14 +30,14 @@ public class Utf8UrlEncoderTest {
         assertEquals("a%2Bb", Utf8UrlEncoder.encodeQueryElement("a+b"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void encodeQueryReusesInputWhenNothingNeedsEscaping() {
         String query = "a=1&b=/two?c%20d";
 
         assertSame(query, Utf8UrlEncoder.encodeQuery(query));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void encodeQueryEscapesWhenNeeded() {
         String query = "a=one two";
         String encoded = Utf8UrlEncoder.encodeQuery(query);
