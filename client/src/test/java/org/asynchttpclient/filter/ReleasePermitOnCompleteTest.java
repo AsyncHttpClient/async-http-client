@@ -21,12 +21,18 @@ import org.asynchttpclient.Response;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReleasePermitOnCompleteTest {
@@ -58,5 +64,116 @@ public class ReleasePermitOnCompleteTest {
         assertEquals(Integer.MAX_VALUE, available.availablePermits());
         assertEquals(1, completedCalls.get());
         assertEquals(1, throwableCalls.get());
+    }
+
+    @Test
+    public void releasesPermitOnceWhenOnCompletedThrows() {
+        Semaphore available = new Semaphore(Integer.MAX_VALUE);
+        assertTrue(available.tryAcquire());
+
+        AtomicInteger throwableCalls = new AtomicInteger();
+        AsyncHandler<Object> handler = new AsyncCompletionHandler<Object>() {
+            @Override
+            public @Nullable Object onCompleted(@Nullable Response response) {
+                throw new RuntimeException("boom");
+            }
+
+            @Override
+            public void onThrowable(Throwable t) {
+                throwableCalls.incrementAndGet();
+            }
+        };
+        AsyncHandler<Object> wrapped = ReleasePermitOnComplete.wrap(handler, available);
+
+        Throwable thrown = assertThrows(Exception.class, wrapped::onCompleted);
+        assertDoesNotThrow(() -> wrapped.onThrowable(thrown));
+
+        assertEquals(Integer.MAX_VALUE, available.availablePermits());
+        assertEquals(1, throwableCalls.get());
+    }
+
+    @Test
+    public void releasesSinglePermitOnNormalCompletion() {
+        Semaphore available = new Semaphore(Integer.MAX_VALUE);
+        assertTrue(available.tryAcquire());
+
+        AsyncHandler<Object> handler = new AsyncCompletionHandler<Object>() {
+            @Override
+            public @Nullable Object onCompleted(@Nullable Response response) {
+                return null;
+            }
+        };
+        AsyncHandler<Object> wrapped = ReleasePermitOnComplete.wrap(handler, available);
+
+        assertDoesNotThrow(() -> wrapped.onCompleted());
+
+        assertEquals(Integer.MAX_VALUE, available.availablePermits());
+    }
+
+    @Test
+    public void releasesSinglePermitOnThrowableOnly() {
+        Semaphore available = new Semaphore(Integer.MAX_VALUE);
+        assertTrue(available.tryAcquire());
+
+        AsyncHandler<Object> handler = new AsyncCompletionHandler<Object>() {
+            @Override
+            public @Nullable Object onCompleted(@Nullable Response response) {
+                return null;
+            }
+        };
+        AsyncHandler<Object> wrapped = ReleasePermitOnComplete.wrap(handler, available);
+
+        wrapped.onThrowable(new RuntimeException("failed"));
+
+        assertEquals(Integer.MAX_VALUE, available.availablePermits());
+    }
+
+    @Test
+    public void releasesPermitOnceUnderConcurrentTerminalCallbacks() throws Exception {
+        Semaphore available = new Semaphore(Integer.MAX_VALUE);
+        assertTrue(available.tryAcquire());
+
+        AsyncHandler<Object> handler = new AsyncCompletionHandler<Object>() {
+            @Override
+            public @Nullable Object onCompleted(@Nullable Response response) {
+                return null;
+            }
+        };
+        AsyncHandler<Object> wrapped = ReleasePermitOnComplete.wrap(handler, available);
+
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> completion = executor.submit(() -> {
+                awaitBarrier(barrier);
+                completeQuietly(wrapped);
+            });
+            Future<?> failure = executor.submit(() -> {
+                awaitBarrier(barrier);
+                wrapped.onThrowable(new RuntimeException("racing failure"));
+            });
+            completion.get(5, TimeUnit.SECONDS);
+            failure.get(5, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertEquals(Integer.MAX_VALUE, available.availablePermits());
+    }
+
+    private static void awaitBarrier(CyclicBarrier barrier) {
+        try {
+            barrier.await(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void completeQuietly(AsyncHandler<Object> handler) {
+        try {
+            handler.onCompleted();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
