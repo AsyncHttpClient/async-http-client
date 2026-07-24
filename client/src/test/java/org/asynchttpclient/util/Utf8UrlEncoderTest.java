@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class Utf8UrlEncoderTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testBasics() {
         assertEquals("foobar", Utf8UrlEncoder.encodeQueryElement("foobar"));
         assertEquals("a%26b", Utf8UrlEncoder.encodeQueryElement("a&b"));
