@@ -62,9 +62,7 @@ public enum UriEncoder {
         @Override
         protected String withQueryWithoutParams(final String query) {
             // encode query
-            StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
-            encodeAndAppendQuery(sb, query);
-            return sb.toString();
+            return Utf8UrlEncoder.encodeQuery(query);
         }
 
         @Override

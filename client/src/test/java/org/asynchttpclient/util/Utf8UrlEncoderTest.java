@@ -15,20 +15,39 @@
  */
 package org.asynchttpclient.util;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class Utf8UrlEncoderTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testBasics() {
         assertEquals("foobar", Utf8UrlEncoder.encodeQueryElement("foobar"));
         assertEquals("a%26b", Utf8UrlEncoder.encodeQueryElement("a&b"));
         assertEquals("a%2Bb", Utf8UrlEncoder.encodeQueryElement("a+b"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
+    public void encodeQueryReusesInputWhenNothingNeedsEscaping() {
+        String query = "a=1&b=/two?c%20d";
+
+        assertSame(query, Utf8UrlEncoder.encodeQuery(query));
+    }
+
+    @Test
+    public void encodeQueryEscapesWhenNeeded() {
+        String query = "a=one two";
+        String encoded = Utf8UrlEncoder.encodeQuery(query);
+
+        assertNotSame(query, encoded);
+        assertEquals("a=one%20two", encoded);
+        assertEquals("a=%C3%A9", Utf8UrlEncoder.encodeQuery("a=\u00e9"));
+    }
+
+    @Test
     public void testPercentageEncoding() {
         assertEquals("foobar", Utf8UrlEncoder.percentEncodeQueryElement("foobar"));
         assertEquals("foo%2Abar", Utf8UrlEncoder.percentEncodeQueryElement("foo*bar"));
