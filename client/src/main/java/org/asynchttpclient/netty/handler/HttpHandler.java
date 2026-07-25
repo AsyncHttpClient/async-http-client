@@ -58,7 +58,9 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
-        logger.debug("\n\nRequest {}\n\nResponse {}\n", httpRequest, response);
+        if (logger.isDebugEnabled()) {
+            logger.debug("\n\nRequest {}\n\nResponse {}\n", HttpMessageFormatter.format(httpRequest), HttpMessageFormatter.format(response));
+        }
 
         future.setKeepAlive(config.getKeepAliveStrategy().keepAlive((InetSocketAddress) channel.remoteAddress(), future.getTargetRequest(), httpRequest, response));
 

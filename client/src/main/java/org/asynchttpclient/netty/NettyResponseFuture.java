@@ -715,6 +715,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
                 ",\n\tisDone=" + isDone + //
                 ",\n\tisCancelled=" + isCancelled + //
                 ",\n\tasyncHandler=" + asyncHandler + //
+                // NettyRequest deliberately keeps Object.toString() so request headers are not rendered here.
                 ",\n\tnettyRequest=" + nettyRequest + //
                 ",\n\tfuture=" + future + //
                 ",\n\turi=" + getUri() + //

@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
+import static org.asynchttpclient.util.SensitiveLoggingUtils.REDACTED;
+import static org.asynchttpclient.util.SensitiveLoggingUtils.isSensitiveHeader;
 
 public class DefaultRequest implements Request {
 
@@ -292,8 +294,8 @@ public class DefaultRequest implements Request {
             for (Map.Entry<String, String> header : headers) {
                 sb.append('\t');
                 sb.append(header.getKey());
-                sb.append(':');
-                sb.append(header.getValue());
+                sb.append(": ");
+                sb.append(isSensitiveHeader(header.getKey()) ? REDACTED : header.getValue());
             }
         }
 
