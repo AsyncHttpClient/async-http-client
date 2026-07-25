@@ -20,11 +20,8 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.TRAILER;
-import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,20 +33,31 @@ class Http2HandlerTest {
     void copiesRegularHeadersAndSkipsPseudoHeaders() {
         Http2Headers source = new DefaultHttp2Headers(false)
                 .status("200")
+                .add(CONTENT_LENGTH, "5")
                 .add("x-test", "value");
 
         HttpHeaders copy = Http2Handler.copyHttp2Headers(source);
 
+        assertEquals("5", copy.get(CONTENT_LENGTH));
         assertEquals("value", copy.get("x-test"));
         assertFalse(copy.contains(":status"));
     }
 
     @Test
     void rejectsInvalidHeaderNames() {
-        Http2Headers source = new DefaultHttp2Headers(false)
+        Http2Headers crlf = new DefaultHttp2Headers(false)
                 .add("invalid\r\nname", "value");
+        Http2Headers space = new DefaultHttp2Headers(false)
+                .add("invalid name", "value");
+        Http2Headers parenthesis = new DefaultHttp2Headers(false)
+                .add("invalid(name", "value");
 
-        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(source));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(crlf));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Trailers(crlf));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(space));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Trailers(space));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(parenthesis));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Trailers(parenthesis));
     }
 
     @Test
@@ -66,14 +74,22 @@ class Http2HandlerTest {
                 .add("x-test", "value\r\ninjected");
 
         assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(source));
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Trailers(source));
     }
 
     @Test
-    void rejectsProhibitedTrailingHeaders() {
-        for (CharSequence name : Arrays.asList(CONTENT_LENGTH, TRANSFER_ENCODING, TRAILER)) {
-            Http2Headers source = new DefaultHttp2Headers(false).add(name, "value");
+    void dropsProhibitedTrailingHeaders() {
+        Http2Headers source = new DefaultHttp2Headers(false)
+                .status("200")
+                .add("grpc-status", "0")
+                .add(CONTENT_LENGTH, "5")
+                .add(TRAILER, "x-checksum");
 
-            assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Trailers(source), name.toString());
-        }
+        HttpHeaders copy = Http2Handler.copyHttp2Trailers(source);
+
+        assertEquals("0", copy.get("grpc-status"));
+        assertFalse(copy.contains(CONTENT_LENGTH));
+        assertFalse(copy.contains(TRAILER));
+        assertFalse(copy.contains(":status"));
     }
 }

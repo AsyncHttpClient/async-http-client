@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeadersFactory;
 import io.netty.handler.codec.http.HttpResponse;
@@ -58,8 +59,7 @@ import java.util.Map;
 public final class Http2Handler extends AsyncHttpClientHandler {
 
     private static final HttpVersion HTTP_2 = new HttpVersion("HTTP", 2, 0, true);
-    private static final HttpHeadersFactory RESPONSE_HEADERS_FACTORY = DefaultHttpHeadersFactory.headersFactory();
-    private static final HttpHeadersFactory TRAILING_HEADERS_FACTORY = DefaultHttpHeadersFactory.trailersFactory();
+    private static final HttpHeadersFactory HEADERS_FACTORY = DefaultHttpHeadersFactory.headersFactory();
 
     public Http2Handler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
@@ -232,23 +232,34 @@ public final class Http2Handler extends AsyncHttpClientHandler {
     }
 
     static HttpHeaders copyHttp2Headers(Http2Headers h2Headers) {
-        return copyHttp2Headers(h2Headers, RESPONSE_HEADERS_FACTORY);
+        return copyHttp2Headers(h2Headers, false);
     }
 
     static HttpHeaders copyHttp2Trailers(Http2Headers h2Headers) {
-        return copyHttp2Headers(h2Headers, TRAILING_HEADERS_FACTORY);
+        return copyHttp2Headers(h2Headers, true);
     }
 
-    private static HttpHeaders copyHttp2Headers(Http2Headers h2Headers, HttpHeadersFactory headersFactory) {
+    private static HttpHeaders copyHttp2Headers(Http2Headers h2Headers, boolean trailers) {
         // HTTP/2 validation does not enforce HTTP token syntax or header values, so validate both while converting.
-        HttpHeaders headers = headersFactory.newHeaders();
+        HttpHeaders headers = HEADERS_FACTORY.newHeaders();
         for (Map.Entry<CharSequence, CharSequence> entry : h2Headers) {
             CharSequence name = entry.getKey();
-            if (name.length() > 0 && name.charAt(0) != ':') {
-                headers.add(name, entry.getValue());
+            if (name.length() == 0 || name.charAt(0) == ':') {
+                continue;
             }
+            // The restriction is on the sender; drop prohibited trailers instead of failing after delivering the body.
+            if (trailers && !isPermittedTrailingHeader(name)) {
+                continue;
+            }
+            headers.add(name, entry.getValue());
         }
         return headers;
+    }
+
+    private static boolean isPermittedTrailingHeader(CharSequence name) {
+        return !HttpHeaderNames.CONTENT_LENGTH.contentEqualsIgnoreCase(name)
+                && !HttpHeaderNames.TRANSFER_ENCODING.contentEqualsIgnoreCase(name)
+                && !HttpHeaderNames.TRAILER.contentEqualsIgnoreCase(name);
     }
 
     /**
