@@ -23,6 +23,10 @@ import org.slf4j.LoggerFactory;
  * Shared policy for rendering sensitive HTTP headers in logs. The policy is read once from the
  * {@code org.asynchttpclient.enableSensitiveLogging} system property or {@code AHC_ENABLE_SENSITIVE_LOGGING} environment
  * variable when this class is initialized.
+ * <p>
+ * Covers request credential headers only. {@code WWW-Authenticate} and {@code Proxy-Authenticate} response
+ * challenge headers are logged unredacted, and request form/query/multipart/body values are out of scope since
+ * they have no reliable generic sensitivity classification.
  */
 public final class SensitiveLoggingUtils {
 

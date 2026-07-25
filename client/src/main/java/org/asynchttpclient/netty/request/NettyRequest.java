@@ -21,6 +21,9 @@ import org.asynchttpclient.netty.request.body.NettyBody;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+// Deliberately no toString() override: NettyResponseFuture#toString renders this object via
+// Object.toString() so debug logs never include the wrapped httpRequest's headers. Adding a
+// toString() here that exposes httpRequest would leak Authorization/Cookie values into logs.
 public final class NettyRequest {
 
     @SuppressWarnings("rawtypes")

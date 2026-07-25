@@ -30,9 +30,6 @@ import java.util.Map;
  */
 public final class HttpMessageFormatter {
 
-    /** The value used in place of sensitive header values. */
-    public static final String REDACTED = SensitiveLoggingUtils.REDACTED;
-
     private HttpMessageFormatter() {
     }
 
@@ -54,18 +51,8 @@ public final class HttpMessageFormatter {
     private static StringBuilder appendHeaders(StringBuilder value, HttpHeaders headers) {
         for (Map.Entry<String, String> header : headers) {
             value.append('\n').append(header.getKey()).append(": ")
-                    .append(isSensitiveHeader(header.getKey()) ? REDACTED : header.getValue());
+                    .append(SensitiveLoggingUtils.isSensitiveHeader(header.getKey()) ? SensitiveLoggingUtils.REDACTED : header.getValue());
         }
         return value;
-    }
-
-    /**
-     * Returns whether a header value must be redacted from logs.
-     *
-     * @param name the header name
-     * @return {@code true} for authentication and cookie headers when sensitive logging is disabled
-     */
-    public static boolean isSensitiveHeader(CharSequence name) {
-        return SensitiveLoggingUtils.isSensitiveHeader(name);
     }
 }
