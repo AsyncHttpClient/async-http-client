@@ -106,6 +106,32 @@ public class RealmTest {
         assertEquals(orig.getResponse(), expectedResponse);
     }
 
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testAuthIntDigestKeepsMethodAndUriInA2() throws Exception {
+        String user = "user";
+        String pass = "pass";
+        String realm = "realm";
+        String nonce = "nonce";
+        String method = "POST";
+        Uri uri = Uri.create("http://ahc.io/foo");
+        String qop = "auth-int";
+        Realm orig = digestAuthRealm(user, pass)
+                .setNonce(nonce)
+                .setUri(uri)
+                .setMethodName(method)
+                .setRealmName(realm)
+                .setQop(qop)
+                .build();
+
+        String nc = orig.getNc();
+        String cnonce = orig.getCnonce();
+        String ha1 = getMd5(user + ':' + realm + ':' + pass);
+        String ha2 = getMd5(method + ':' + uri.getPath() + ':' + getMd5(""));
+        String expectedResponse = getMd5(ha1 + ':' + nonce + ':' + nc + ':' + cnonce + ':' + qop + ':' + ha2);
+
+        assertEquals(expectedResponse, orig.getResponse());
+    }
+
     // Phase 1: matchParam tests
     @Test
     public void testMatchParamUnquotedAlgorithm() {
