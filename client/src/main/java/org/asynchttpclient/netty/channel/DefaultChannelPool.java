@@ -132,15 +132,18 @@ public final class DefaultChannelPool implements ChannelPool {
         if (partition == null) {
             partition = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedDeque<>());
         }
-        // Reuse the channel's IdleState instead of allocating a holder per offer; reset() publishes a
-        // new idle generation before offerFirst publishes the channel.
+        // Reuse the channel's IdleState instead of allocating a holder per offer; reset() transfers an
+        // owned generation to a new leasable generation before offerFirst publishes the channel.
         Attribute<IdleState> idleStateAttribute = channel.attr(IDLE_STATE_ATTRIBUTE_KEY);
         IdleState idleState = idleStateAttribute.get();
         if (idleState == null) {
-            idleState = new IdleState();
-            idleStateAttribute.set(idleState);
+            IdleState newIdleState = new IdleState();
+            IdleState existingIdleState = idleStateAttribute.setIfAbsent(newIdleState);
+            idleState = existingIdleState == null ? newIdleState : existingIdleState;
         }
-        idleState.reset(now);
+        if (!idleState.reset(now)) {
+            return false;
+        }
         return partition.offerFirst(channel);
     }
 
@@ -292,11 +295,15 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@link #IDLE_STATE_ATTRIBUTE_KEY} attribute, then reused across every pool checkout so no holder
      * is allocated per offer.
      *
-     * <p>The low bit of {@code state} is the ownership flag; the remaining bits are incremented on
-     * every offer. A successful {@code poll()} lease and a {@code removeAll()} tombstone both claim the
-     * current generation. The cleaner can therefore claim only the exact generation whose expiry it
-     * evaluated, without temporarily claiming a newer entry while checking whether {@code start}
-     * changed.
+     * <p>The low bit of {@code state} is the ownership flag; the remaining bits advance by two on every
+     * offer because bit zero is reserved. A successful {@code poll()} lease and a {@code removeAll()}
+     * tombstone both claim the current generation. The cleaner can therefore claim only the exact
+     * generation whose expiry it evaluated, without temporarily claiming a newer entry while checking
+     * whether {@code start} changed.
+     *
+     * <p>A generation can be reset only while owned. New state starts owned, and {@code poll()} claims
+     * a generation before returning it, so {@code offer()} transfers ownership instead of performing a
+     * non-atomic update from a leasable generation.
      */
     static final class IdleState {
 
@@ -305,7 +312,7 @@ public final class DefaultChannelPool implements ChannelPool {
                 AtomicLongFieldUpdater.newUpdater(IdleState.class, "state");
 
         private volatile long start;
-        private volatile long state;
+        private volatile long state = OWNED_MASK;
 
         long start() {
             return start;
@@ -325,22 +332,24 @@ public final class DefaultChannelPool implements ChannelPool {
 
         /** Atomically claim the current generation. */
         boolean takeOwnership() {
-            return takeOwnership(state);
+            return tryTakeOwnership(state);
         }
 
         /** Atomically claim {@code stateSnapshot}, provided it is still the current generation. */
-        boolean takeOwnership(long stateSnapshot) {
+        boolean tryTakeOwnership(long stateSnapshot) {
             return !isOwned(stateSnapshot)
                     && STATE_UPDATER.compareAndSet(this, stateSnapshot, stateSnapshot | OWNED_MASK);
         }
 
-        /** Stamp a new idle generation and mark the channel leasable again. Called on every offer. */
-        void reset(long now) {
-            long nextGeneration = (state & ~OWNED_MASK) + 2;
-            // Keep the new generation unavailable until its timestamp is published.
-            state = nextGeneration | OWNED_MASK;
+        /** Transfer an owned generation to a new leasable generation. Called on every offer. */
+        synchronized boolean reset(long now) {
+            long stateSnapshot = state;
+            if (!isOwned(stateSnapshot)) {
+                return false;
+            }
+            long nextGeneration = (stateSnapshot & ~OWNED_MASK) + 2;
             start = now;
-            state = nextGeneration;
+            return STATE_UPDATER.compareAndSet(this, stateSnapshot, nextGeneration);
         }
     }
 
@@ -439,7 +448,7 @@ public final class DefaultChannelPool implements ChannelPool {
 
                 // Claim the generation evaluated above. A lease and re-offer changes the generation,
                 // so this CAS cannot claim the fresh entry or interfere with a concurrent poll of it.
-                if (!idleState.takeOwnership(stateSnapshot)) {
+                if (!idleState.tryTakeOwnership(stateSnapshot)) {
                     continue;
                 }
 

@@ -88,6 +88,22 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
+    public void duplicateOfferDoesNotResetLeasableGeneration() throws Exception {
+        DefaultChannelPool pool = noReaperPool();
+        Channel channel = new EmbeddedChannel();
+
+        assertTrue(pool.offer(channel, KEY));
+        long generation = idleState(channel).snapshot();
+
+        assertFalse(pool.offer(channel, KEY), "an already leasable channel must not be offered again");
+        assertEquals(generation, idleState(channel).snapshot());
+        assertEquals(1, partitionSize(pool, KEY));
+        assertSame(channel, pool.poll(KEY));
+
+        pool.destroy();
+    }
+
+    @Test
     public void reofferingReusesTheSameIdleStateInstance() throws Exception {
         DefaultChannelPool pool = noReaperPool();
         Channel channel = new EmbeddedChannel();
@@ -267,25 +283,8 @@ public class DefaultChannelPoolTest {
         cleanerRun.get(5, TimeUnit.SECONDS);
 
         assertTrue(channel.isActive(), "cleaner must not close a freshly re-offered channel");
+        assertEquals(1, partitionSize(pool, KEY), "cleaner must not unlink the fresh generation");
         assertSame(channel, pool.poll(KEY), "freshly re-offered channel must remain leasable");
-
-        pool.destroy();
-    }
-
-    @Test
-    public void staleCleanerClaimDoesNotHideReofferedChannelFromPoll() throws Exception {
-        DefaultChannelPool pool = noReaperPool();
-        Channel channel = new EmbeddedChannel();
-
-        assertTrue(pool.offer(channel, KEY));
-        DefaultChannelPool.IdleState idleState = idleState(channel);
-        long staleSnapshot = idleState.snapshot();
-
-        assertSame(channel, pool.poll(KEY));
-        assertTrue(pool.offer(channel, KEY));
-
-        assertFalse(idleState.takeOwnership(staleSnapshot), "cleaner must not claim a newer idle generation");
-        assertSame(channel, pool.poll(KEY), "a failed stale claim must not hide the fresh generation");
 
         pool.destroy();
     }
@@ -293,13 +292,13 @@ public class DefaultChannelPoolTest {
     @Test
     public void idleGenerationChangesWhenTimestampIsReused() {
         DefaultChannelPool.IdleState idleState = new DefaultChannelPool.IdleState();
-        idleState.reset(1);
+        assertTrue(idleState.reset(1));
         long firstGeneration = idleState.snapshot();
 
         assertTrue(idleState.takeOwnership());
-        idleState.reset(1);
+        assertTrue(idleState.reset(1));
 
-        assertFalse(idleState.takeOwnership(firstGeneration));
+        assertFalse(idleState.tryTakeOwnership(firstGeneration));
         assertFalse(idleState.isOwned());
     }
 
@@ -473,11 +472,15 @@ public class DefaultChannelPoolTest {
 
     @Test
     public void concurrentOfferPollRemoveAllIsConsistent() throws Exception {
-        // Real timer so the cleaner reaps tombstones concurrently with offer/poll/removeAll.
-        // TTL only (idle disabled) so the cleaner never closes our shared EmbeddedChannels cross-thread.
+        // Real timer so the cleaner claims expired entries and reaps tombstones concurrently with
+        // offer/poll/removeAll.
         HashedWheelTimer timer = new HashedWheelTimer(10, TimeUnit.MILLISECONDS);
-        DefaultChannelPool pool = new DefaultChannelPool(Duration.ZERO, Duration.ofHours(1),
+        DefaultChannelPool pool = new DefaultChannelPool(Duration.ofMillis(20), Duration.ofHours(1),
                 PoolLeaseStrategy.LIFO, timer, Duration.ofMillis(10));
+        CountDownLatch cleanerClosedChannel = new CountDownLatch(1);
+        Channel expiringChannel = new EmbeddedChannel();
+        expiringChannel.closeFuture().addListener(future -> cleanerClosedChannel.countDown());
+        assertTrue(pool.offer(expiringChannel, "expiring-partition"));
 
         final int channelCount = 16;
         Channel[] channels = new Channel[channelCount];
@@ -531,6 +534,8 @@ public class DefaultChannelPoolTest {
         if (failure.get() != null) {
             fail("worker threw: " + failure.get(), failure.get());
         }
+        assertTrue(cleanerClosedChannel.await(5, TimeUnit.SECONDS),
+                "soak must exercise the cleaner ownership and close path");
         assertTrue(leasedInactive.isEmpty(), "poll must never lease an inactive channel");
 
         // Drain leases, then let the cleaner run a couple of ticks and confirm no tombstone leak:
@@ -565,6 +570,7 @@ public class DefaultChannelPoolTest {
 
         @Override
         public boolean isActive() {
+            // EmbeddedChannel calls this from its constructor before subclass fields are initialized.
             AtomicBoolean block = blockNextActiveCheck;
             if (block != null && block.compareAndSet(true, false)) {
                 activeCheck.countDown();
