@@ -158,28 +158,19 @@ public class Http2ConnectionState {
     }
 
     private void drainPendingOpeners() {
-        List<PendingOpener> ready = null;
-        synchronized (pendingLock) {
-            // Open as many queued requests as there are now-free stream slots. A single stream completion
-            // frees exactly one slot (so this usually runs one opener), but a SETTINGS frame that RAISES
-            // SETTINGS_MAX_CONCURRENT_STREAMS frees several at once — drain them all here rather than waking
-            // only one and stalling the rest until the next completion (a missed-wakeup; the Issue #2160
-            // silent-timeout class). tryAcquireStream() enforces the cap and the draining/closed gate, so
-            // this never over-opens; reserve each slot and dequeue its opener atomically under pendingLock.
-            while (!pendingOpeners.isEmpty() && tryAcquireStream()) {
-                pendingCount--;
-                if (ready == null) {
-                    ready = new ArrayList<>();
+        while (true) {
+            PendingOpener pending;
+            synchronized (pendingLock) {
+                // A SETTINGS increase can free several slots at once. Reserve and dequeue one opener
+                // atomically, then repeat so an exception cannot strand an already-dequeued batch.
+                if (pendingOpeners.isEmpty() || !tryAcquireStream()) {
+                    return;
                 }
-                ready.add(pendingOpeners.poll());
+                pendingCount--;
+                pending = pendingOpeners.poll();
             }
-        }
-        // Stream opening can invoke user callbacks such as onRequestSend. Run after releasing pendingLock so
-        // a slow callback does not serialize unrelated submissions to this HTTP/2 connection.
-        if (ready != null) {
-            for (PendingOpener pending : ready) {
-                pending.opener.run();
-            }
+            // Stream opening can invoke user callbacks such as onRequestSend.
+            pending.opener.run();
         }
     }
 

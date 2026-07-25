@@ -329,6 +329,45 @@ public class Http2ConnectionStateTest {
     }
 
     @Test
+    public void raisedLimitDrainsMultiplePendingOpenersInOrder() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        List<Integer> executionOrder = new ArrayList<>();
+        state.addPendingOpener(() -> executionOrder.add(1));
+        state.addPendingOpener(() -> executionOrder.add(2));
+        state.addPendingOpener(() -> executionOrder.add(3));
+
+        state.updateMaxConcurrentStreams(4);
+
+        assertEquals(List.of(1, 2, 3), executionOrder);
+        assertEquals(4, state.getActiveStreams());
+    }
+
+    @Test
+    public void throwingBatchOpenerLeavesRemainingQueueDrainable() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        List<Integer> executionOrder = new ArrayList<>();
+        state.addPendingOpener(() -> {
+            executionOrder.add(1);
+            throw new IllegalStateException("boom");
+        });
+        state.addPendingOpener(() -> executionOrder.add(2));
+        state.addPendingOpener(() -> executionOrder.add(3));
+
+        assertThrows(IllegalStateException.class, () -> state.updateMaxConcurrentStreams(4));
+        assertEquals(List.of(1), executionOrder);
+        assertEquals(2, state.getActiveStreams());
+
+        state.releaseStream();
+
+        assertEquals(List.of(1, 2, 3), executionOrder);
+        assertEquals(3, state.getActiveStreams());
+    }
+
+    @Test
     public void multiplePendingOpenersExecuteInOrder() {
         Http2ConnectionState state = new Http2ConnectionState();
         state.updateMaxConcurrentStreams(1);
