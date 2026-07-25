@@ -42,6 +42,7 @@ import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * HTTP/2 channel handler for stream child channels created by {@link io.netty.handler.codec.http2.Http2MultiplexHandler}.
@@ -57,8 +58,8 @@ import java.io.IOException;
 public final class Http2Handler extends AsyncHttpClientHandler {
 
     private static final HttpVersion HTTP_2 = new HttpVersion("HTTP", 2, 0, true);
-    private static final HttpHeadersFactory RESPONSE_HEADERS_FACTORY =
-            DefaultHttpHeadersFactory.headersFactory().withNameValidation(false);
+    private static final HttpHeadersFactory RESPONSE_HEADERS_FACTORY = DefaultHttpHeadersFactory.headersFactory();
+    private static final HttpHeadersFactory TRAILING_HEADERS_FACTORY = DefaultHttpHeadersFactory.trailersFactory();
 
     public Http2Handler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
@@ -218,7 +219,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                                                   NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         Http2Headers h2Headers = headersFrame.headers();
 
-        HttpHeaders trailingHeaders = copyHttp2Headers(h2Headers);
+        HttpHeaders trailingHeaders = copyHttp2Trailers(h2Headers);
 
         boolean abort = false;
         if (!trailingHeaders.isEmpty()) {
@@ -231,15 +232,22 @@ public final class Http2Handler extends AsyncHttpClientHandler {
     }
 
     static HttpHeaders copyHttp2Headers(Http2Headers h2Headers) {
-        // The HTTP/2 decoder validates names but not values by default. Avoid repeating the name scan while
-        // retaining the HTTP/1 value validator that rejects CR/LF and other prohibited characters.
-        HttpHeaders headers = RESPONSE_HEADERS_FACTORY.newHeaders();
-        h2Headers.forEach(entry -> {
+        return copyHttp2Headers(h2Headers, RESPONSE_HEADERS_FACTORY);
+    }
+
+    static HttpHeaders copyHttp2Trailers(Http2Headers h2Headers) {
+        return copyHttp2Headers(h2Headers, TRAILING_HEADERS_FACTORY);
+    }
+
+    private static HttpHeaders copyHttp2Headers(Http2Headers h2Headers, HttpHeadersFactory headersFactory) {
+        // HTTP/2 validation does not enforce HTTP token syntax or header values, so validate both while converting.
+        HttpHeaders headers = headersFactory.newHeaders();
+        for (Map.Entry<CharSequence, CharSequence> entry : h2Headers) {
             CharSequence name = entry.getKey();
             if (name.length() > 0 && name.charAt(0) != ':') {
                 headers.add(name, entry.getValue());
             }
-        });
+        }
         return headers;
     }
 

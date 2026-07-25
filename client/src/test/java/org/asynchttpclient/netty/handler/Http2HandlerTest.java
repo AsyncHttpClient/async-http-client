@@ -20,29 +20,60 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.TRAILER;
+import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class Http2HandlerTest {
 
     @Test
-    void copiesDecoderValidatedHeaderNamesWithoutRevalidation() {
+    void copiesRegularHeadersAndSkipsPseudoHeaders() {
         Http2Headers source = new DefaultHttp2Headers(false)
                 .status("200")
-                .add("invalid name", "value");
+                .add("x-test", "value");
 
         HttpHeaders copy = Http2Handler.copyHttp2Headers(source);
 
-        assertEquals("value", copy.get("invalid name"));
+        assertEquals("value", copy.get("x-test"));
         assertFalse(copy.contains(":status"));
     }
 
     @Test
-    void stillValidatesHeaderValues() {
+    void rejectsInvalidHeaderNames() {
+        Http2Headers source = new DefaultHttp2Headers(false)
+                .add("invalid\r\nname", "value");
+
+        assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(source));
+    }
+
+    @Test
+    void skipsEmptyHeaderNames() {
+        Http2Headers source = new DefaultHttp2Headers(false)
+                .add("", "value");
+
+        assertTrue(Http2Handler.copyHttp2Headers(source).isEmpty());
+    }
+
+    @Test
+    void rejectsInvalidHeaderValues() {
         Http2Headers source = new DefaultHttp2Headers(false)
                 .add("x-test", "value\r\ninjected");
 
         assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Headers(source));
+    }
+
+    @Test
+    void rejectsProhibitedTrailingHeaders() {
+        for (CharSequence name : Arrays.asList(CONTENT_LENGTH, TRANSFER_ENCODING, TRAILER)) {
+            Http2Headers source = new DefaultHttp2Headers(false).add(name, "value");
+
+            assertThrows(IllegalArgumentException.class, () -> Http2Handler.copyHttp2Trailers(source), name.toString());
+        }
     }
 }
