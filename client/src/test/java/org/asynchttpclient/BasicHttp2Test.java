@@ -26,6 +26,8 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.compression.Brotli;
+import io.netty.handler.codec.compression.Zstd;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -80,6 +82,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -1099,6 +1102,39 @@ public class BasicHttp2Test {
             // and the values still round-trip for the forwarded headers
             assertEquals("v1", response.getHeader("X-x-mixed-case"));
             assertEquals("v2", response.getHeader("X-another-custom-header"));
+        }
+    }
+
+    @Test
+    public void generatedAcceptEncodingUsesHpackStaticValueOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(builder -> builder.setCompressionEnforced(true))) {
+            Response response = client.prepareGet(httpsUrl("/echo"))
+                    .execute()
+                    .get(30, SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+            List<String> expected = new ArrayList<>();
+            expected.add("gzip, deflate");
+            if (Brotli.isAvailable()) {
+                expected.add("br");
+            }
+            if (Zstd.isAvailable()) {
+                expected.add("zstd");
+            }
+            assertEquals(expected, response.getHeaders("X-accept-encoding"));
+        }
+    }
+
+    @Test
+    public void userAcceptEncodingSpellingIsPreservedOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(builder -> builder.setCompressionEnforced(true))) {
+            Response response = client.prepareGet(httpsUrl("/echo"))
+                    .setHeader(ACCEPT_ENCODING, "gzip,deflate")
+                    .execute()
+                    .get(30, SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+            assertEquals("gzip,deflate", response.getHeader("X-accept-encoding"));
         }
     }
 

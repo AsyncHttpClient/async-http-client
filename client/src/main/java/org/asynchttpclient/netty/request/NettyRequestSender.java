@@ -106,6 +106,8 @@ import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthoriza
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
+import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE_HPACK;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
@@ -933,7 +935,7 @@ public final class NettyRequestSender {
                         && !HttpHeaderValues.TRAILERS.contentEqualsIgnoreCase(value)) {
                     continue;
                 }
-                h2Headers.add(toLowerCaseHeaderName(name), value);
+                h2Headers.add(toLowerCaseHeaderName(name), http2HeaderValue(name, value));
             }
 
             // Determine the body to send: an in-memory buffer (DefaultFullHttpRequest content or a
@@ -969,6 +971,13 @@ public final class NettyRequestSender {
                 nettyRequest.release();
             }
         }
+    }
+
+    private static CharSequence http2HeaderValue(CharSequence name, CharSequence value) {
+        if (value == GZIP_DEFLATE && HttpHeaderNames.ACCEPT_ENCODING.contentEqualsIgnoreCase(name)) {
+            return GZIP_DEFLATE_HPACK;
+        }
+        return value;
     }
 
     /**
