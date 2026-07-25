@@ -23,8 +23,10 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,6 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HttpMessageFormatterTest {
+
+    @TempDir
+    private Path tempDirectory;
 
     @Test
     public void shouldRedactSensitiveRequestHeaders() {
@@ -96,7 +101,7 @@ public class HttpMessageFormatterTest {
         assertFalse(output.contains("Sensitive HTTP header logging is enabled"), output);
     }
 
-    private static String runProbe(String propertyValue, String environmentValue) throws Exception {
+    private String runProbe(String propertyValue, String environmentValue) throws Exception {
         List<String> command = new ArrayList<>();
         command.add(javaExecutable().toString());
         if (propertyValue != null) {
@@ -106,7 +111,10 @@ public class HttpMessageFormatterTest {
         command.add(System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")));
         command.add(SensitiveLoggingProbe.class.getName());
 
-        ProcessBuilder processBuilder = new ProcessBuilder(command).redirectErrorStream(true);
+        Path outputFile = Files.createTempFile(tempDirectory, "sensitive-logging-probe-", ".log");
+        ProcessBuilder processBuilder = new ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .redirectOutput(outputFile.toFile());
         if (environmentValue == null) {
             processBuilder.environment().remove("AHC_ENABLE_SENSITIVE_LOGGING");
         } else {
@@ -116,9 +124,10 @@ public class HttpMessageFormatterTest {
         Process process = processBuilder.start();
         if (!process.waitFor(30, TimeUnit.SECONDS)) {
             process.destroyForcibly();
-            throw new AssertionError("Sensitive logging probe timed out");
+            process.waitFor(10, TimeUnit.SECONDS);
+            throw new AssertionError("Sensitive logging probe timed out\n" + Files.readString(outputFile, UTF_8));
         }
-        String output = new String(process.getInputStream().readAllBytes(), UTF_8);
+        String output = Files.readString(outputFile, UTF_8);
         assertEquals(0, process.exitValue(), output);
         return output;
     }
