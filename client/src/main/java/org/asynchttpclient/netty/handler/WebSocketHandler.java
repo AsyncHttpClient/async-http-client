@@ -107,6 +107,16 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
     public void handleRead(Channel channel, NettyResponseFuture<?> future, Object e) throws Exception {
 
         if (e instanceof HttpResponse) {
+            // Unlike HttpHandler, this check cannot guard the whole method: a successful upgrade completes
+            // the future (see upgrade() below) and the channel then keeps serving frames, so isDone() is
+            // true for all normal WebSocket traffic. It belongs on the upgrade response alone, where a 101
+            // arriving just as a request timeout aborted the future would otherwise still run onOpen and
+            // deliver the WebSocket lifecycle after onThrowable had already fired.
+            if (future.isDone()) {
+                channelManager.closeChannel(channel);
+                return;
+            }
+
             HttpResponse response = (HttpResponse) e;
             if (logger.isDebugEnabled()) {
                 HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();

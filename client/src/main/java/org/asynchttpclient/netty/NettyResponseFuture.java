@@ -117,8 +117,13 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     // volatile where we don't need CAS ops
     private volatile long touch = unpreciseMillisTime();
     private volatile ChannelState channelState = ChannelState.NEW;
+    // Written and read from the event loop, the caller thread (attachChannel on a pooled hit, cancel()) and
+    // the HashedWheelTimer thread (terminateAndExit, and TimeoutTimerTask.expire which closes this channel
+    // on a request timeout). Without volatile those readers can miss the write and skip the close, which
+    // since the connect path publishes the channel before the TLS handshake would strand a stuck
+    // connection, and its permit, until handshakeTimeout (issue #2189).
+    private volatile Channel channel;
     // state mutated only inside the event loop
-    private Channel channel;
     private boolean keepAlive = true;
     private Request targetRequest;
     private Request currentRequest;

@@ -1071,17 +1071,20 @@ public final class NettyRequestSender {
     }
 
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
-        if (channel != null) {
-            if (channel.isActive()) {
-                channelManager.closeChannel(channel);
-            }
-        }
-
+        // Complete the future before closing, so the caller's cause is the one the user sees. Closing first
+        // can fail an in-flight TLS handshake, and that failure races back through
+        // NettyConnectListener.onFailure to abort the same future with a ConnectException instead -- which a
+        // request timeout on the connect path can now hit, since the channel is published before the
+        // handshake (issue #2189). The close still uses the channel passed in, which abort() does not clear.
         if (!future.isDone()) {
             future.setChannelState(ChannelState.CLOSED);
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
             future.abort(t);
+        }
+
+        if (channel != null && channel.isActive()) {
+            channelManager.closeChannel(channel);
         }
     }
 
