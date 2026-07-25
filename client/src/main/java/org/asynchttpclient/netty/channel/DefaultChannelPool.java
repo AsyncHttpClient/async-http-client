@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
@@ -52,8 +52,8 @@ public final class DefaultChannelPool implements ChannelPool {
     private static final AttributeKey<IdleState> IDLE_STATE_ATTRIBUTE_KEY = AttributeKey.valueOf("channelIdleState");
 
     // The partition deques hold the bare Channel; per-checkout idle state (start timestamp + the
-    // owned/tombstone CAS flag) lives on the channel's IDLE_STATE_ATTRIBUTE_KEY attribute, which is
-    // allocated once per physical connection and reused across every pool cycle (no per-offer holder).
+    // generation/ownership CAS state) lives on the channel's IDLE_STATE_ATTRIBUTE_KEY attribute,
+    // which is allocated once per physical connection and reused across every pool cycle.
     private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<Channel>> partitions = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final Timer nettyTimer;
@@ -132,9 +132,8 @@ public final class DefaultChannelPool implements ChannelPool {
         if (partition == null) {
             partition = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedDeque<>());
         }
-        // Reuse the channel's IdleState instead of allocating a holder per offer; reset() stamps the
-        // idle start and clears the owned flag (must happen-before offerFirst publishes the channel,
-        // so any thread that observes it in the deque also observes owned == 0).
+        // Reuse the channel's IdleState instead of allocating a holder per offer; reset() publishes a
+        // new idle generation before offerFirst publishes the channel.
         Attribute<IdleState> idleStateAttribute = channel.attr(IDLE_STATE_ATTRIBUTE_KEY);
         IdleState idleState = idleStateAttribute.get();
         if (idleState == null) {
@@ -293,52 +292,62 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@link #IDLE_STATE_ATTRIBUTE_KEY} attribute, then reused across every pool checkout so no holder
      * is allocated per offer.
      *
-     * <p>{@code owned} is a single CAS flag with two roles, both meaning "this idle entry is claimed,
-     * do not lease it": a successful {@code poll()} lease, or a {@code removeAll()} tombstone. The pool
-     * upholds the invariant that a channel sitting in a partition deque has {@code owned == 0} unless it
-     * was tombstoned, because {@link #reset(long)} clears the flag before {@code offerFirst} publishes
-     * the channel and {@code poll()} unlinks a channel from the deque before claiming it. {@code start}
-     * doubles as a generation token: it changes on every offer, letting the cleaner detect a channel
-     * that was leased and re-offered between its expiry check and its claim.
+     * <p>The low bit of {@code state} is the ownership flag; the remaining bits are incremented on
+     * every offer. A successful {@code poll()} lease and a {@code removeAll()} tombstone both claim the
+     * current generation. The cleaner can therefore claim only the exact generation whose expiry it
+     * evaluated, without temporarily claiming a newer entry while checking whether {@code start}
+     * changed.
      */
     static final class IdleState {
 
-        private static final AtomicIntegerFieldUpdater<IdleState> OWNED_UPDATER =
-                AtomicIntegerFieldUpdater.newUpdater(IdleState.class, "owned");
+        private static final long OWNED_MASK = 1L;
+        private static final AtomicLongFieldUpdater<IdleState> STATE_UPDATER =
+                AtomicLongFieldUpdater.newUpdater(IdleState.class, "state");
 
         private volatile long start;
-        @SuppressWarnings("unused")
-        private volatile int owned;
+        private volatile long state;
 
         long start() {
             return start;
         }
 
+        long snapshot() {
+            return state;
+        }
+
         boolean isOwned() {
-            return owned != 0;
+            return isOwned(state);
         }
 
-        /** Atomically claim this entry; returns true only for the caller that transitions 0 -> 1. */
+        static boolean isOwned(long stateSnapshot) {
+            return (stateSnapshot & OWNED_MASK) != 0;
+        }
+
+        /** Atomically claim the current generation. */
         boolean takeOwnership() {
-            return OWNED_UPDATER.getAndSet(this, 1) == 0;
+            return takeOwnership(state);
         }
 
-        /** Undo a claim taken via {@link #takeOwnership()} (used only on the cleaner re-offer race). */
-        void releaseOwnership() {
-            owned = 0;
+        /** Atomically claim {@code stateSnapshot}, provided it is still the current generation. */
+        boolean takeOwnership(long stateSnapshot) {
+            return !isOwned(stateSnapshot)
+                    && STATE_UPDATER.compareAndSet(this, stateSnapshot, stateSnapshot | OWNED_MASK);
         }
 
-        /** Stamp the idle start and mark the channel leasable again. Called on every offer. */
+        /** Stamp a new idle generation and mark the channel leasable again. Called on every offer. */
         void reset(long now) {
+            long nextGeneration = (state & ~OWNED_MASK) + 2;
+            // Keep the new generation unavailable until its timestamp is published.
+            state = nextGeneration | OWNED_MASK;
             start = now;
-            owned = 0;
+            state = nextGeneration;
         }
     }
 
     private final class IdleChannelDetector implements TimerTask {
 
-        private boolean isIdleTimeoutExpired(IdleState idleState, long now) {
-            return maxIdleTimeEnabled && now - idleState.start() >= maxIdleTime;
+        private boolean isIdleTimeoutExpired(long idleStart, long now) {
+            return maxIdleTimeEnabled && now - idleStart >= maxIdleTime;
         }
 
         @Override
@@ -410,7 +419,8 @@ public final class DefaultChannelPool implements ChannelPool {
                     continue;
                 }
 
-                if (idleState.isOwned()) {
+                long stateSnapshot = idleState.snapshot();
+                if (IdleState.isOwned(stateSnapshot)) {
                     // In-deque + owned ==> a removeAll(Channel) tombstone, or a node a concurrent poll()
                     // has already leased and unlinked. Either way: unlink, never close — the owner of the
                     // claim is responsible for closing it. Unlinking an already-unlinked node through the
@@ -419,22 +429,17 @@ public final class DefaultChannelPool implements ChannelPool {
                     continue;
                 }
 
-                boolean isIdleTimeoutExpired = isIdleTimeoutExpired(idleState, now);
+                long idleStart = idleState.start();
+                boolean isIdleTimeoutExpired = isIdleTimeoutExpired(idleStart, now);
                 boolean isRemotelyClosed = !Channels.isChannelActive(channel);
                 boolean isTtlExpired = isTtlExpired(channel, now);
                 if (!isIdleTimeoutExpired && !isRemotelyClosed && !isTtlExpired) {
                     continue; // healthy idle channel, leave it for poll()
                 }
 
-                long startSnapshot = idleState.start();
-                // Claim before closing so we never close a channel poll() is leasing concurrently.
-                if (!idleState.takeOwnership()) {
-                    continue; // poll() (or removeAll(Channel)) won the claim; that owner now handles the channel
-                }
-                if (idleState.start() != startSnapshot) {
-                    // The channel was leased and re-offered (fresh start) between the expiry check and
-                    // the claim, so it is leasable again — release it instead of closing it.
-                    idleState.releaseOwnership();
+                // Claim the generation evaluated above. A lease and re-offer changes the generation,
+                // so this CAS cannot claim the fresh entry or interfere with a concurrent poll of it.
+                if (!idleState.takeOwnership(stateSnapshot)) {
                     continue;
                 }
 

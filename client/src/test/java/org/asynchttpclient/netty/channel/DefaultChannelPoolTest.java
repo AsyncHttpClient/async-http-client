@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -243,6 +244,63 @@ public class DefaultChannelPoolTest {
         assertSame(channel, pool.poll(KEY));
 
         pool.destroy();
+    }
+
+    @Test
+    public void cleanerDoesNotCloseChannelReofferedAfterExpiryCheck() throws Exception {
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(1));
+        BlockingActiveChannel channel = new BlockingActiveChannel();
+
+        pool.offer(channel, KEY);
+        idleState(channel).reset(0);
+        channel.blockNextActiveCheck();
+
+        CompletableFuture<Void> cleanerRun = CompletableFuture.runAsync(timer::fire);
+        try {
+            assertTrue(channel.awaitActiveCheck(), "cleaner must reach the active-channel check");
+            assertSame(channel, pool.poll(KEY));
+            assertTrue(pool.offer(channel, KEY));
+        } finally {
+            channel.resumeActiveCheck();
+        }
+        cleanerRun.get(5, TimeUnit.SECONDS);
+
+        assertTrue(channel.isActive(), "cleaner must not close a freshly re-offered channel");
+        assertSame(channel, pool.poll(KEY), "freshly re-offered channel must remain leasable");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void staleCleanerClaimDoesNotHideReofferedChannelFromPoll() throws Exception {
+        DefaultChannelPool pool = noReaperPool();
+        Channel channel = new EmbeddedChannel();
+
+        assertTrue(pool.offer(channel, KEY));
+        DefaultChannelPool.IdleState idleState = idleState(channel);
+        long staleSnapshot = idleState.snapshot();
+
+        assertSame(channel, pool.poll(KEY));
+        assertTrue(pool.offer(channel, KEY));
+
+        assertFalse(idleState.takeOwnership(staleSnapshot), "cleaner must not claim a newer idle generation");
+        assertSame(channel, pool.poll(KEY), "a failed stale claim must not hide the fresh generation");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void idleGenerationChangesWhenTimestampIsReused() {
+        DefaultChannelPool.IdleState idleState = new DefaultChannelPool.IdleState();
+        idleState.reset(1);
+        long firstGeneration = idleState.snapshot();
+
+        assertTrue(idleState.takeOwnership());
+        idleState.reset(1);
+
+        assertFalse(idleState.takeOwnership(firstGeneration));
+        assertFalse(idleState.isOwned());
     }
 
     // ---- reap pass unlinks many channels in a single tick (O(n) iterator-remove) ----
@@ -490,12 +548,49 @@ public class DefaultChannelPoolTest {
 
     // ---- helpers ----
 
-    private static Object idleState(Channel channel) throws Exception {
+    private static DefaultChannelPool.IdleState idleState(Channel channel) throws Exception {
         Field keyField = DefaultChannelPool.class.getDeclaredField("IDLE_STATE_ATTRIBUTE_KEY");
         keyField.setAccessible(true);
         @SuppressWarnings("unchecked")
-        io.netty.util.AttributeKey<Object> key = (io.netty.util.AttributeKey<Object>) keyField.get(null);
+        io.netty.util.AttributeKey<DefaultChannelPool.IdleState> key =
+                (io.netty.util.AttributeKey<DefaultChannelPool.IdleState>) keyField.get(null);
         return channel.attr(key).get();
+    }
+
+    private static final class BlockingActiveChannel extends EmbeddedChannel {
+
+        private final AtomicBoolean blockNextActiveCheck = new AtomicBoolean();
+        private final CountDownLatch activeCheck = new CountDownLatch(1);
+        private final CountDownLatch resumeActiveCheck = new CountDownLatch(1);
+
+        @Override
+        public boolean isActive() {
+            AtomicBoolean block = blockNextActiveCheck;
+            if (block != null && block.compareAndSet(true, false)) {
+                activeCheck.countDown();
+                try {
+                    if (!resumeActiveCheck.await(5, TimeUnit.SECONDS)) {
+                        throw new AssertionError("active-channel check was not resumed");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("active-channel check was interrupted", e);
+                }
+            }
+            return super.isActive();
+        }
+
+        void blockNextActiveCheck() {
+            blockNextActiveCheck.set(true);
+        }
+
+        boolean awaitActiveCheck() throws InterruptedException {
+            return activeCheck.await(5, TimeUnit.SECONDS);
+        }
+
+        void resumeActiveCheck() {
+            resumeActiveCheck.countDown();
+        }
     }
 
     private static Channel channelWithRemoteAddress(String host) {
