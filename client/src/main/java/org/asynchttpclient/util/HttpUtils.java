@@ -37,6 +37,8 @@ public final class HttpUtils {
 
     public static final AsciiString ACCEPT_ALL_HEADER_VALUE = new AsciiString("*/*");
     public static final AsciiString GZIP_DEFLATE = new AsciiString(HttpHeaderValues.GZIP + "," + HttpHeaderValues.DEFLATE);
+    /** RFC 7541 Appendix A static table entry 16. */
+    public static final AsciiString GZIP_DEFLATE_HPACK = new AsciiString(HttpHeaderValues.GZIP + ", " + HttpHeaderValues.DEFLATE);
     private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
     private static final String CONTENT_TYPE_BOUNDARY_ATTRIBUTE = "boundary=";
     private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";

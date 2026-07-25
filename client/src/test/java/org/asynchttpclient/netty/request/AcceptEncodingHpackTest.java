@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/** Verifies Netty HPACK wire sizes; {@code BasicHttp2Test} covers AHC's production request path. */
 public class AcceptEncodingHpackTest {
 
     private static final AsciiString ACCEPT_ENCODING = AsciiString.cached("accept-encoding");

@@ -26,6 +26,8 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.compression.Brotli;
+import io.netty.handler.codec.compression.Zstd;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -1057,7 +1059,15 @@ public class BasicHttp2Test {
                     .get(30, SECONDS);
 
             assertEquals(200, response.getStatusCode());
-            assertEquals("gzip, deflate", response.getHeader("X-accept-encoding"));
+            List<String> expected = new ArrayList<>();
+            expected.add("gzip, deflate");
+            if (Brotli.isAvailable()) {
+                expected.add("br");
+            }
+            if (Zstd.isAvailable()) {
+                expected.add("zstd");
+            }
+            assertEquals(expected, response.getHeaders("X-accept-encoding"));
         }
     }
 
