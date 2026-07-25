@@ -15,27 +15,23 @@
  */
 package org.asynchttpclient.netty.handler;
 
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import org.asynchttpclient.util.SensitiveLoggingUtils;
 
 import java.util.Map;
 
 /**
  * Formats HTTP messages for logging. Sensitive header values are redacted unless the
  * {@code org.asynchttpclient.enableSensitiveLogging} system property or {@code AHC_ENABLE_SENSITIVE_LOGGING} environment
- * variable is set to {@code true} when this class is initialized. Enabling sensitive logging may expose credentials and
- * session data.
+ * variable is set to {@code true} before the sensitive logging policy is initialized. Enabling sensitive logging may
+ * expose credentials and session data.
  */
 public final class HttpMessageFormatter {
 
-    private static final String ENABLE_SENSITIVE_LOGGING_PROPERTY = "org.asynchttpclient.enableSensitiveLogging";
-    private static final String ENABLE_SENSITIVE_LOGGING_ENVIRONMENT_VARIABLE = "AHC_ENABLE_SENSITIVE_LOGGING";
-    private static final boolean SENSITIVE_LOGGING_ENABLED = isSensitiveLoggingEnabled();
-
     /** The value used in place of sensitive header values. */
-    public static final String REDACTED = "<redacted>";
+    public static final String REDACTED = SensitiveLoggingUtils.REDACTED;
 
     private HttpMessageFormatter() {
     }
@@ -63,12 +59,6 @@ public final class HttpMessageFormatter {
         return value;
     }
 
-    private static boolean isSensitiveLoggingEnabled() {
-        String propertyValue = System.getProperty(ENABLE_SENSITIVE_LOGGING_PROPERTY);
-        String value = propertyValue != null ? propertyValue : System.getenv(ENABLE_SENSITIVE_LOGGING_ENVIRONMENT_VARIABLE);
-        return Boolean.parseBoolean(value);
-    }
-
     /**
      * Returns whether a header value must be redacted from logs.
      *
@@ -76,9 +66,6 @@ public final class HttpMessageFormatter {
      * @return {@code true} for authentication and cookie headers when sensitive logging is disabled
      */
     public static boolean isSensitiveHeader(CharSequence name) {
-        return !SENSITIVE_LOGGING_ENABLED && (HttpHeaderNames.AUTHORIZATION.contentEqualsIgnoreCase(name)
-                || HttpHeaderNames.PROXY_AUTHORIZATION.contentEqualsIgnoreCase(name)
-                || HttpHeaderNames.COOKIE.contentEqualsIgnoreCase(name)
-                || HttpHeaderNames.SET_COOKIE.contentEqualsIgnoreCase(name));
+        return SensitiveLoggingUtils.isSensitiveHeader(name);
     }
 }

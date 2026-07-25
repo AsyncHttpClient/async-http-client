@@ -427,9 +427,9 @@ public class RequestBuilderTest {
         assertFalse(value.contains("request-secret"));
         assertFalse(value.contains("proxy-secret"));
         assertFalse(value.contains("cookie-secret"));
-        assertTrue(value.contains("Authorization:<redacted>"));
-        assertTrue(value.contains("Proxy-Authorization:<redacted>"));
-        assertTrue(value.contains("Cookie:<redacted>"));
+        assertTrue(value.contains("Authorization: <redacted>"));
+        assertTrue(value.contains("Proxy-Authorization: <redacted>"));
+        assertTrue(value.contains("Cookie: <redacted>"));
         assertTrue(value.contains("request-id"));
     }
 }

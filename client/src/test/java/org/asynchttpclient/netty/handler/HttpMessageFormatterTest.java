@@ -23,9 +23,17 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -65,25 +73,61 @@ public class HttpMessageFormatterTest {
     }
 
     @Test
-    @EnabledIfSystemProperty(named = "org.asynchttpclient.enableSensitiveLogging", matches = "(?i)true")
-    public void shouldIncludeSensitiveHeadersWhenSystemPropertyEnabled() {
-        assertSensitiveHeadersIncluded();
+    public void shouldIncludeSensitiveHeadersWhenSystemPropertyEnabled() throws Exception {
+        String output = runProbe("true", null);
+
+        assertTrue(output.contains("Authorization: Bearer request-secret"), output);
+        assertTrue(output.contains("Sensitive HTTP header logging is enabled"), output);
     }
 
     @Test
-    @EnabledIfEnvironmentVariable(named = "AHC_ENABLE_SENSITIVE_LOGGING", matches = "(?i)true")
-    public void shouldIncludeSensitiveHeadersWhenEnvironmentVariableEnabled() {
-        assertSensitiveHeadersIncluded();
+    public void shouldIncludeSensitiveHeadersWhenEnvironmentVariableEnabled() throws Exception {
+        String output = runProbe(null, "true");
+
+        assertTrue(output.contains("Authorization: Bearer request-secret"), output);
+        assertTrue(output.contains("Sensitive HTTP header logging is enabled"), output);
     }
 
-    private static void assertSensitiveHeadersIncluded() {
-        HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/test");
-        request.headers().set("Authorization", "Bearer request-secret");
+    @Test
+    public void systemPropertyShouldOverrideEnvironmentVariable() throws Exception {
+        String output = runProbe("false", "true");
 
-        String value = HttpMessageFormatter.format(request);
+        assertTrue(output.contains("Authorization: <redacted>"), output);
+        assertFalse(output.contains("Sensitive HTTP header logging is enabled"), output);
+    }
 
-        assertFalse(HttpMessageFormatter.isSensitiveHeader("Authorization"));
-        assertTrue(value.contains("Authorization: Bearer request-secret"));
-        assertFalse(value.contains(HttpMessageFormatter.REDACTED));
+    private static String runProbe(String propertyValue, String environmentValue) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add(javaExecutable().toString());
+        if (propertyValue != null) {
+            command.add("-Dorg.asynchttpclient.enableSensitiveLogging=" + propertyValue);
+        }
+        command.add("-cp");
+        command.add(System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")));
+        command.add(SensitiveLoggingProbe.class.getName());
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command).redirectErrorStream(true);
+        if (environmentValue == null) {
+            processBuilder.environment().remove("AHC_ENABLE_SENSITIVE_LOGGING");
+        } else {
+            processBuilder.environment().put("AHC_ENABLE_SENSITIVE_LOGGING", environmentValue);
+        }
+
+        Process process = processBuilder.start();
+        if (!process.waitFor(30, TimeUnit.SECONDS)) {
+            process.destroyForcibly();
+            throw new AssertionError("Sensitive logging probe timed out");
+        }
+        String output = new String(process.getInputStream().readAllBytes(), UTF_8);
+        assertEquals(0, process.exitValue(), output);
+        return output;
+    }
+
+    private static Path javaExecutable() throws IOException {
+        String executable = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win")
+                ? "java.exe"
+                : "java";
+        Path path = Paths.get(System.getProperty("java.home"), "bin", executable);
+        return path.toRealPath();
     }
 }
