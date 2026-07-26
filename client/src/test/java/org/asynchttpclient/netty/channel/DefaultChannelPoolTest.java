@@ -88,19 +88,36 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
-    public void duplicateOfferDoesNotResetLeasableGeneration() throws Exception {
+    public void duplicateOfferIsHarmlessNoOp() throws Exception {
         DefaultChannelPool pool = noReaperPool();
         Channel channel = new EmbeddedChannel();
 
         assertTrue(pool.offer(channel, KEY));
         long generation = idleState(channel).snapshot();
 
-        assertFalse(pool.offer(channel, KEY), "an already leasable channel must not be offered again");
+        assertTrue(pool.offer(channel, "other-partition"));
         assertEquals(generation, idleState(channel).snapshot());
         assertEquals(1, partitionSize(pool, KEY));
+        assertEquals(0, partitionSize(pool, "other-partition"));
+        assertTrue(channel.isActive());
         assertSame(channel, pool.poll(KEY));
 
         pool.destroy();
+    }
+
+    @Test
+    public void staleResetCannotTransferNewerOwnedGeneration() {
+        DefaultChannelPool.IdleState idleState = new DefaultChannelPool.IdleState();
+        assertTrue(idleState.reset(1000));
+        assertTrue(idleState.takeOwnership());
+        long staleSnapshot = idleState.snapshot();
+
+        assertTrue(idleState.tryReset(staleSnapshot, 5000));
+        assertTrue(idleState.takeOwnership());
+
+        assertFalse(idleState.tryReset(staleSnapshot, 1000));
+        assertEquals(5000, idleState.start());
+        assertTrue(idleState.isOwned());
     }
 
     @Test
@@ -265,11 +282,17 @@ public class DefaultChannelPoolTest {
     @Test
     public void cleanerDoesNotCloseChannelReofferedAfterExpiryCheck() throws Exception {
         CapturingTimer timer = new CapturingTimer();
-        DefaultChannelPool pool = idlePool(timer, Duration.ofMillis(1));
+        DefaultChannelPool pool = new DefaultChannelPool(Duration.ofMillis(1), Duration.ZERO,
+                PoolLeaseStrategy.FIFO, timer, Duration.ofMillis(1));
         BlockingActiveChannel channel = new BlockingActiveChannel();
+        Channel untouchedChannel = new EmbeddedChannel();
 
-        pool.offer(channel, KEY);
-        idleState(channel).reset(0);
+        assertTrue(pool.offer(channel, KEY));
+        assertTrue(idleState(channel).takeOwnership());
+        assertTrue(idleState(channel).reset(0));
+        assertTrue(pool.offer(untouchedChannel, KEY));
+        assertTrue(idleState(untouchedChannel).takeOwnership());
+        assertTrue(idleState(untouchedChannel).reset(Long.MAX_VALUE));
         channel.blockNextActiveCheck();
 
         CompletableFuture<Void> cleanerRun = CompletableFuture.runAsync(timer::fire);
@@ -283,7 +306,8 @@ public class DefaultChannelPoolTest {
         cleanerRun.get(5, TimeUnit.SECONDS);
 
         assertTrue(channel.isActive(), "cleaner must not close a freshly re-offered channel");
-        assertEquals(1, partitionSize(pool, KEY), "cleaner must not unlink the fresh generation");
+        assertEquals(2, partitionSize(pool, KEY), "cleaner must not unlink the fresh generation");
+        assertSame(untouchedChannel, pool.poll(KEY));
         assertSame(channel, pool.poll(KEY), "freshly re-offered channel must remain leasable");
 
         pool.destroy();

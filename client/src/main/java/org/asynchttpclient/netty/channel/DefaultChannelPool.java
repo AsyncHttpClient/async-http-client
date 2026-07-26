@@ -52,10 +52,11 @@ public final class DefaultChannelPool implements ChannelPool {
     private static final AttributeKey<IdleState> IDLE_STATE_ATTRIBUTE_KEY = AttributeKey.valueOf("channelIdleState");
 
     // The partition deques hold the bare Channel; per-checkout idle state (start timestamp + the
-    // generation/ownership CAS state) lives on the channel's IDLE_STATE_ATTRIBUTE_KEY attribute,
+    // generation/ownership/reset CAS state) lives on the channel's IDLE_STATE_ATTRIBUTE_KEY attribute,
     // which is allocated once per physical connection and reused across every pool cycle.
     private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<Channel>> partitions = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
+    private final AtomicBoolean duplicateOfferLogged = new AtomicBoolean(false);
     private final Timer nettyTimer;
     private final long connectionTtl;
     private final boolean connectionTtlEnabled;
@@ -119,19 +120,10 @@ public final class DefaultChannelPool implements ChannelPool {
             return false;
         }
 
-        boolean offered = offer0(channel, partitionKey, now);
-        if (connectionTtlEnabled && offered) {
-            registerChannelCreation(channel, partitionKey, now);
-        }
-
-        return offered;
+        return offer0(channel, partitionKey, now);
     }
 
     private boolean offer0(Channel channel, Object partitionKey, long now) {
-        ConcurrentLinkedDeque<Channel> partition = partitions.get(partitionKey);
-        if (partition == null) {
-            partition = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedDeque<>());
-        }
         // Reuse the channel's IdleState instead of allocating a holder per offer; reset() transfers an
         // owned generation to a new leasable generation before offerFirst publishes the channel.
         Attribute<IdleState> idleStateAttribute = channel.attr(IDLE_STATE_ATTRIBUTE_KEY);
@@ -142,9 +134,18 @@ public final class DefaultChannelPool implements ChannelPool {
             idleState = existingIdleState == null ? newIdleState : existingIdleState;
         }
         if (!idleState.reset(now)) {
-            return false;
+            if (LOGGER.isDebugEnabled() && duplicateOfferLogged.compareAndSet(false, true)) {
+                LOGGER.debug("Ignoring duplicate pool offer for channel {}", channel);
+            }
+            return true;
         }
-        return partition.offerFirst(channel);
+        ConcurrentLinkedDeque<Channel> partition =
+                partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedDeque<>());
+        boolean offered = partition.offerFirst(channel);
+        if (connectionTtlEnabled && offered) {
+            registerChannelCreation(channel, partitionKey, now);
+        }
+        return offered;
     }
 
     private static void registerChannelCreation(Channel channel, Object partitionKey, long now) {
@@ -295,19 +296,21 @@ public final class DefaultChannelPool implements ChannelPool {
      * {@link #IDLE_STATE_ATTRIBUTE_KEY} attribute, then reused across every pool checkout so no holder
      * is allocated per offer.
      *
-     * <p>The low bit of {@code state} is the ownership flag; the remaining bits advance by two on every
-     * offer because bit zero is reserved. A successful {@code poll()} lease and a {@code removeAll()}
-     * tombstone both claim the current generation. The cleaner can therefore claim only the exact
-     * generation whose expiry it evaluated, without temporarily claiming a newer entry while checking
-     * whether {@code start} changed.
+     * <p>The low bit of {@code state} is the ownership flag and the next bit marks a reset in progress;
+     * the remaining bits advance by four on every offer. A successful {@code poll()} lease, a
+     * {@code removeAll()} tombstone, and the cleaner's pre-close claim all own the current generation.
+     * The cleaner can therefore claim only the exact generation whose expiry it evaluated, without
+     * temporarily claiming a newer entry while checking whether {@code start} changed.
      *
-     * <p>A generation can be reset only while owned. New state starts owned, and {@code poll()} claims
-     * a generation before returning it, so {@code offer()} transfers ownership instead of performing a
-     * non-atomic update from a leasable generation.
+     * <p>A generation can be reset only while owned and not already being reset. New state starts owned,
+     * and reset first claims the generation's reset bit before publishing the timestamp and next leasable
+     * generation. Concurrent or delayed resets therefore cannot transfer a generation they did not claim.
      */
     static final class IdleState {
 
         private static final long OWNED_MASK = 1L;
+        private static final long RESETTING_MASK = 2L;
+        private static final long GENERATION_INCREMENT = 4L;
         private static final AtomicLongFieldUpdater<IdleState> STATE_UPDATER =
                 AtomicLongFieldUpdater.newUpdater(IdleState.class, "state");
 
@@ -330,6 +333,10 @@ public final class DefaultChannelPool implements ChannelPool {
             return (stateSnapshot & OWNED_MASK) != 0;
         }
 
+        private static boolean isResetting(long stateSnapshot) {
+            return (stateSnapshot & RESETTING_MASK) != 0;
+        }
+
         /** Atomically claim the current generation. */
         boolean takeOwnership() {
             return tryTakeOwnership(state);
@@ -341,15 +348,20 @@ public final class DefaultChannelPool implements ChannelPool {
                     && STATE_UPDATER.compareAndSet(this, stateSnapshot, stateSnapshot | OWNED_MASK);
         }
 
-        /** Transfer an owned generation to a new leasable generation. Called on every offer. */
-        synchronized boolean reset(long now) {
-            long stateSnapshot = state;
-            if (!isOwned(stateSnapshot)) {
+        /** Attempt to transfer the current owned generation to a new leasable generation. */
+        boolean reset(long now) {
+            return tryReset(state, now);
+        }
+
+        /** Transfer {@code stateSnapshot} if it is still owned, current, and not already being reset. */
+        boolean tryReset(long stateSnapshot, long now) {
+            if (!isOwned(stateSnapshot) || isResetting(stateSnapshot)
+                    || !STATE_UPDATER.compareAndSet(this, stateSnapshot, stateSnapshot | RESETTING_MASK)) {
                 return false;
             }
-            long nextGeneration = (stateSnapshot & ~OWNED_MASK) + 2;
             start = now;
-            return STATE_UPDATER.compareAndSet(this, stateSnapshot, nextGeneration);
+            state = (stateSnapshot & ~(OWNED_MASK | RESETTING_MASK)) + GENERATION_INCREMENT;
+            return true;
         }
     }
 
@@ -430,10 +442,10 @@ public final class DefaultChannelPool implements ChannelPool {
 
                 long stateSnapshot = idleState.snapshot();
                 if (IdleState.isOwned(stateSnapshot)) {
-                    // In-deque + owned ==> a removeAll(Channel) tombstone, or a node a concurrent poll()
-                    // has already leased and unlinked. Either way: unlink, never close — the owner of the
-                    // claim is responsible for closing it. Unlinking an already-unlinked node through the
-                    // iterator is a harmless no-op.
+                    // In-deque + owned ==> a removeAll(Channel) tombstone, a node a concurrent poll()
+                    // already leased and unlinked, or an old node whose generation is being reset.
+                    // Either way: unlink, never close — the owner of the claim handles the channel.
+                    // Unlinking an already-unlinked node through the iterator is a harmless no-op.
                     it.remove();
                     continue;
                 }
