@@ -64,6 +64,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.head;
@@ -104,6 +105,18 @@ public class BasicHttpTest extends HttpTest {
 
     private String getTargetUrl() {
         return server.getHttpUrl() + "/foo/bar";
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void generatedAcceptEncodingKeepsHttp1Spelling() throws Exception {
+        server.enqueueEcho();
+        try (AsyncHttpClient client = asyncHttpClient(config().setCompressionEnforced(true))) {
+            Response response = client.prepareGet(getTargetUrl())
+                    .execute()
+                    .get(TIMEOUT, SECONDS);
+
+            assertEquals("gzip,deflate", response.getHeader("X-Accept-Encoding"));
+        }
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)

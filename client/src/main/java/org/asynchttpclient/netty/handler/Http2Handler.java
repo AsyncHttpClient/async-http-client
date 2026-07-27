@@ -19,9 +19,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeadersFactory;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
@@ -41,6 +43,7 @@ import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * HTTP/2 channel handler for stream child channels created by {@link io.netty.handler.codec.http2.Http2MultiplexHandler}.
@@ -56,6 +59,7 @@ import java.io.IOException;
 public final class Http2Handler extends AsyncHttpClientHandler {
 
     private static final HttpVersion HTTP_2 = new HttpVersion("HTTP", 2, 0, true);
+    private static final HttpHeadersFactory HEADERS_FACTORY = DefaultHttpHeadersFactory.headersFactory();
 
     public Http2Handler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
@@ -146,14 +150,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         }
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(statusCode);
 
-        // Build HTTP/1.1-style headers, skipping HTTP/2 pseudo-headers (start with ':')
-        HttpHeaders responseHeaders = new DefaultHttpHeaders();
-        h2Headers.forEach(entry -> {
-            CharSequence name = entry.getKey();
-            if (name.length() > 0 && name.charAt(0) != ':') {
-                responseHeaders.add(name, entry.getValue());
-            }
-        });
+        HttpHeaders responseHeaders = copyHttp2Headers(h2Headers);
 
         // Build a synthetic HttpResponse so the existing interceptor chain can be reused unchanged
         HttpResponse syntheticResponse = new DefaultHttpResponse(HTTP_2, nettyStatus, responseHeaders);
@@ -222,13 +219,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
                                                   NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         Http2Headers h2Headers = headersFrame.headers();
 
-        HttpHeaders trailingHeaders = new DefaultHttpHeaders();
-        h2Headers.forEach(entry -> {
-            CharSequence name = entry.getKey();
-            if (name.length() > 0 && name.charAt(0) != ':') {
-                trailingHeaders.add(name, entry.getValue());
-            }
-        });
+        HttpHeaders trailingHeaders = copyHttp2Trailers(h2Headers);
 
         boolean abort = false;
         if (!trailingHeaders.isEmpty()) {
@@ -238,6 +229,37 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         if (abort || headersFrame.isEndStream()) {
             finishUpdate(future, channel, false);
         }
+    }
+
+    static HttpHeaders copyHttp2Headers(Http2Headers h2Headers) {
+        return copyHttp2Headers(h2Headers, false);
+    }
+
+    static HttpHeaders copyHttp2Trailers(Http2Headers h2Headers) {
+        return copyHttp2Headers(h2Headers, true);
+    }
+
+    private static HttpHeaders copyHttp2Headers(Http2Headers h2Headers, boolean trailers) {
+        // HTTP/2 validation does not enforce HTTP token syntax or header values, so validate both while converting.
+        HttpHeaders headers = HEADERS_FACTORY.newHeaders();
+        for (Map.Entry<CharSequence, CharSequence> entry : h2Headers) {
+            CharSequence name = entry.getKey();
+            if (name.length() == 0 || name.charAt(0) == ':') {
+                continue;
+            }
+            // The restriction is on the sender; drop prohibited trailers instead of failing after delivering the body.
+            if (trailers && !isPermittedTrailingHeader(name)) {
+                continue;
+            }
+            headers.add(name, entry.getValue());
+        }
+        return headers;
+    }
+
+    private static boolean isPermittedTrailingHeader(CharSequence name) {
+        return !HttpHeaderNames.CONTENT_LENGTH.contentEqualsIgnoreCase(name)
+                && !HttpHeaderNames.TRANSFER_ENCODING.contentEqualsIgnoreCase(name)
+                && !HttpHeaderNames.TRAILER.contentEqualsIgnoreCase(name);
     }
 
     /**

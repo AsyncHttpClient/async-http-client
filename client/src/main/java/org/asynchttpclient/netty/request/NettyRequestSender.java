@@ -106,6 +106,8 @@ import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionAuthoriza
 import static org.asynchttpclient.util.AuthenticatorUtils.perConnectionProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
+import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
+import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE_HPACK;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
@@ -933,7 +935,7 @@ public final class NettyRequestSender {
                         && !HttpHeaderValues.TRAILERS.contentEqualsIgnoreCase(value)) {
                     continue;
                 }
-                h2Headers.add(toLowerCaseHeaderName(name), value);
+                h2Headers.add(toLowerCaseHeaderName(name), http2HeaderValue(name, value));
             }
 
             // Determine the body to send: an in-memory buffer (DefaultFullHttpRequest content or a
@@ -969,6 +971,13 @@ public final class NettyRequestSender {
                 nettyRequest.release();
             }
         }
+    }
+
+    private static CharSequence http2HeaderValue(CharSequence name, CharSequence value) {
+        if (value == GZIP_DEFLATE && HttpHeaderNames.ACCEPT_ENCODING.contentEqualsIgnoreCase(name)) {
+            return GZIP_DEFLATE_HPACK;
+        }
+        return value;
     }
 
     /**
@@ -1071,17 +1080,20 @@ public final class NettyRequestSender {
     }
 
     public void abort(Channel channel, NettyResponseFuture<?> future, Throwable t) {
-        if (channel != null) {
-            if (channel.isActive()) {
-                channelManager.closeChannel(channel);
-            }
-        }
-
+        // Complete the future before closing, so the caller's cause is the one the user sees. Closing first
+        // can fail an in-flight TLS handshake, and that failure races back through
+        // NettyConnectListener.onFailure to abort the same future with a ConnectException instead -- which a
+        // request timeout on the connect path can now hit, since the channel is published before the
+        // handshake (issue #2189). The close still uses the channel passed in, which abort() does not clear.
         if (!future.isDone()) {
             future.setChannelState(ChannelState.CLOSED);
             LOGGER.debug("Aborting Future {}\n", future);
             LOGGER.debug(t.getMessage(), t);
             future.abort(t);
+        }
+
+        if (channel != null && channel.isActive()) {
+            channelManager.closeChannel(channel);
         }
     }
 
@@ -1105,7 +1117,8 @@ public final class NettyRequestSender {
         if (future.isReplayPossible()) {
             future.setChannelState(ChannelState.RECONNECTED);
 
-            LOGGER.debug("Trying to recover request {}\n", future.getNettyRequest().getHttpRequest());
+            HttpRequest request = future.getNettyRequest().getHttpRequest();
+            LOGGER.debug("Trying to recover request '{}' to '{}'\n", request.method(), request.uri());
             try {
                 future.getAsyncHandler().onRetry();
             } catch (Exception e) {
@@ -1413,7 +1426,7 @@ public final class NettyRequestSender {
         future.setChannelState(ChannelState.NEW);
         future.touch();
 
-        LOGGER.debug("\n\nReplaying Request {}\n for Future {}\n", newRequest, future);
+        LOGGER.debug("\n\nReplaying request '{}' to '{}'\n for Future {}\n", newRequest.getMethod(), newRequest.getUri(), future);
         try {
             future.getAsyncHandler().onRetry();
         } catch (Exception e) {
