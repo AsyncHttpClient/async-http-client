@@ -158,18 +158,21 @@ public class Http2ConnectionState {
     }
 
     private void drainPendingOpeners() {
+        // Drain every slot exposed by a SETTINGS increase; stopping after one can strand requests until another
+        // stream completes (Issue #2160). Reserve and dequeue one opener per iteration under pendingLock:
+        // tryAcquireStream() enforces capacity and draining/closed gates, the lock makes poll() non-null after
+        // the emptiness check, and a throwing opener cannot strand a pre-reserved batch.
         while (true) {
             PendingOpener pending;
             synchronized (pendingLock) {
-                // A SETTINGS increase can free several slots at once. Reserve and dequeue one opener
-                // atomically, then repeat so an exception cannot strand an already-dequeued batch.
                 if (pendingOpeners.isEmpty() || !tryAcquireStream()) {
                     return;
                 }
                 pendingCount--;
                 pending = pendingOpeners.poll();
             }
-            // Stream opening can invoke user callbacks such as onRequestSend.
+            // Opening a stream can invoke user callbacks. Run without pendingLock so a slow callback does not
+            // serialize unrelated submissions to this connection.
             pending.opener.run();
         }
     }

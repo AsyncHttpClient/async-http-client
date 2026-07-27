@@ -359,6 +359,7 @@ public class Http2ConnectionStateTest {
 
         assertThrows(IllegalStateException.class, () -> state.updateMaxConcurrentStreams(4));
         assertEquals(List.of(1), executionOrder);
+        // A throwing public Runnable leaks its reserved slot, matching the behavior before this change.
         assertEquals(2, state.getActiveStreams());
 
         state.releaseStream();
