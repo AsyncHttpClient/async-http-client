@@ -322,8 +322,12 @@ public final class NettyRequestFactory {
         if (!connect) {
             addAuthorizationHeader(headers, perRequestAuthorizationHeader(request, realm));
         }
-        // only set proxy auth on request over plain HTTP, or when performing CONNECT
-        if (!uri.isSecured() || connect) {
+        // Proxy-Authorization belongs on a request the proxy itself receives: the CONNECT that opens a
+        // tunnel, or an absolute-form plaintext request sent directly to the proxy. A ws:// request over an
+        // HTTP proxy is tunnelled through CONNECT (see NettyRequestSender.needConnect), so its upgrade
+        // request travels through the tunnel to the origin, not the proxy — treat it like wss:// and keep
+        // the proxy credentials off it.
+        if (connect || (!uri.isSecured() && !uri.isWebSocket())) {
             setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyRealm));
         }
 
@@ -345,9 +349,10 @@ public final class NettyRequestFactory {
             // proxy tunnelling, connect need host and explicit port
             return uri.getAuthority();
 
-        } else if (proxyServer != null && !uri.isSecured() && proxyServer.getProxyType().isHttp()) {
+        } else if (proxyServer != null && !uri.isSecured() && !uri.isWebSocket() && proxyServer.getProxyType().isHttp()) {
             // proxy over HTTP, need full url, minus the userinfo: this request line is sent to the proxy in
-            // the clear and RFC 9110 §4.2.4 forbids userinfo in a generated request target
+            // the clear and RFC 9110 §4.2.4 forbids userinfo in a generated request target. A ws:// request
+            // is tunnelled through CONNECT, so its upgrade request reaches the origin in origin-form (below)
             return uri.toUrlWithoutUserInfo();
 
         } else {
