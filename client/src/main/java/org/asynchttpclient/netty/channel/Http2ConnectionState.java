@@ -123,9 +123,10 @@ public class Http2ConnectionState {
      * {@link #releaseStream()}. Returns {@code false} — <em>without</em> queuing — when the connection is
      * already draining or closed, or when the pending queue is already at {@link #MAX_PENDING_OPENERS}: in
      * each case the caller MUST fail the request itself rather than let it sit until the request timeout fires
-     * (Issue #2160). A draining/closed connection never runs a queued opener ({@link #drainPendingOpeners} only
-     * re-offers it, and {@link #failPendingOpeners} has already drained the queue); a full queue means the peer
-     * is starving slots and the request would otherwise grow heap without bound.
+     * (Issue #2160). A draining/closed connection never runs a queued opener ({@link #drainPendingOpeners} leaves
+     * it queued, since {@link #tryAcquireStream()} refuses once draining/closed, and {@link #failPendingOpeners}
+     * has already drained the queue); a full queue means the peer is starving slots and the request would
+     * otherwise grow heap without bound.
      * <p>
      * Race-free against {@link #failPendingOpeners}: that method sets {@code closed} and drains the queue under
      * {@code pendingLock}. An opener enqueued before the drain runs is caught by the drain; an enqueue attempt

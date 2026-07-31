@@ -330,6 +330,9 @@ public class Http2ConnectionStateTest {
 
     @Test
     public void raisedLimitDrainsMultiplePendingOpenersInOrder() {
+        // Pins the SETTINGS-raise wakeup: every freed slot is drained in one pass, not just the first (a
+        // missed-wakeup here is the Issue #2160 silent-timeout class). Slot accounting on a throwing opener
+        // is covered separately by throwingBatchOpenerLeavesRemainingQueueDrainable.
         Http2ConnectionState state = new Http2ConnectionState();
         state.updateMaxConcurrentStreams(1);
         assertTrue(state.tryAcquireStream());
