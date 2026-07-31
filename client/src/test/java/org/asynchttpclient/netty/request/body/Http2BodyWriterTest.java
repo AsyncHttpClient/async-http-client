@@ -21,11 +21,22 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 import io.netty.channel.EventLoop;
+import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
+import io.netty.handler.codec.http2.Http2DataFrame;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.junit.jupiter.api.Test;
@@ -36,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -83,23 +95,96 @@ public class Http2BodyWriterTest {
         when(channel.alloc()).thenReturn(UnpooledByteBufAllocator.DEFAULT);
         when(channel.isWritable()).thenReturn(true);
         when(channel.closeFuture()).thenReturn(new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE));
+        AtomicInteger flushes = new AtomicInteger();
         when(channel.write(any())).thenAnswer(invocation -> {
             ReferenceCountUtil.release(invocation.getArgument(0));
             return succeededFuture(channel);
         });
+        when(channel.flush()).thenAnswer(invocation -> {
+            flushes.incrementAndGet();
+            return channel;
+        });
 
-        SuspendingChunkSource source = new SuspendingChunkSource();
+        SuspendingChunkSource source = new SuspendingChunkSource(flushes);
         Http2BodyWriter.start(channel, source);
 
         assertEquals(0, source.closed);
+        assertEquals(0, source.flushesBeforeSuspend);
+        assertEquals(1, flushes.get());
         verify(channel, times(1)).write(any(DefaultHttp2DataFrame.class));
-        verify(channel, times(1)).flush();
 
         source.finish();
 
         assertEquals(1, source.closed);
         verify(channel, times(2)).write(any(DefaultHttp2DataFrame.class));
-        verify(channel, times(2)).flush();
+        assertEquals(2, flushes.get());
+    }
+
+    @Test
+    public void synchronousResumeDuringSuspensionFlushIsNotLost() {
+        Http2StreamChannel channel = mock(Http2StreamChannel.class);
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.inEventLoop()).thenReturn(true);
+        when(channel.eventLoop()).thenReturn(eventLoop);
+        when(channel.alloc()).thenReturn(UnpooledByteBufAllocator.DEFAULT);
+        when(channel.isWritable()).thenReturn(true);
+        when(channel.closeFuture()).thenReturn(new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE));
+        when(channel.write(any())).thenAnswer(invocation -> {
+            ReferenceCountUtil.release(invocation.getArgument(0));
+            return succeededFuture(channel);
+        });
+        AtomicInteger flushes = new AtomicInteger();
+        SuspendingChunkSource source = new SuspendingChunkSource(flushes);
+        when(channel.flush()).thenAnswer(invocation -> {
+            if (flushes.incrementAndGet() == 1) {
+                source.finish();
+            }
+            return channel;
+        });
+
+        Http2BodyWriter.start(channel, source);
+
+        assertEquals(1, source.closed);
+        assertEquals(2, flushes.get());
+        verify(channel, times(2)).write(any(DefaultHttp2DataFrame.class));
+    }
+
+    @Test
+    public void realStreamBoundsUnflushedBytesByWaterMark() {
+        UnflushedBytesTracker tracker = new UnflushedBytesTracker();
+        EmbeddedChannel parent = new EmbeddedChannel(
+                Http2FrameCodecBuilder.forClient().build(),
+                new Http2MultiplexHandler(new ChannelInboundHandlerAdapter()));
+        Http2StreamChannel stream = new Http2StreamChannelBootstrap(parent)
+                .handler(tracker)
+                .open()
+                .syncUninterruptibly()
+                .getNow();
+        int chunkSize = 1024;
+        int highWaterMark = 8 * 1024;
+        stream.config().setWriteBufferWaterMark(new WriteBufferWaterMark(highWaterMark / 2, highWaterMark));
+        FixedChunkSource source = new FixedChunkSource(highWaterMark / chunkSize * 2, chunkSize);
+
+        try {
+            stream.writeAndFlush(new DefaultHttp2HeadersFrame(new DefaultHttp2Headers()
+                    .method("POST")
+                    .scheme("https")
+                    .authority("localhost")
+                    .path("/"))).syncUninterruptibly();
+
+            Http2BodyWriter.start(stream, source);
+            parent.runPendingTasks();
+
+            assertEquals(1, source.closed);
+            assertTrue(tracker.peakUnflushedBytes >= highWaterMark,
+                    "the real stream must reach its configured high-water mark");
+            assertTrue(tracker.peakUnflushedBytes <= highWaterMark + chunkSize,
+                    "unflushed DATA must stay within the high-water mark plus one chunk");
+        } finally {
+            stream.close().syncUninterruptibly();
+            parent.runPendingTasks();
+            parent.finishAndReleaseAll();
+        }
     }
 
     @Test
@@ -116,7 +201,8 @@ public class Http2BodyWriterTest {
         when(eventLoop.inEventLoop()).thenReturn(true);
         when(channel.eventLoop()).thenReturn(eventLoop);
         when(channel.alloc()).thenReturn(UnpooledByteBufAllocator.DEFAULT);
-        when(channel.isWritable()).thenReturn(false, false, true);
+        AtomicBoolean writable = new AtomicBoolean();
+        when(channel.isWritable()).thenAnswer(invocation -> writable.get());
         when(channel.closeFuture()).thenReturn(new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE));
         when(channel.pipeline()).thenReturn(pipeline);
         when(pipeline.addLast(any(ChannelHandler.class))).thenAnswer(invocation -> {
@@ -153,6 +239,7 @@ public class Http2BodyWriterTest {
         verify(channel, times(1)).write(any(DefaultHttp2DataFrame.class));
         verify(channel, times(1)).flush();
 
+        writable.set(true);
         ((io.netty.channel.ChannelInboundHandlerAdapter) resumeHandler.get())
                 .channelWritabilityChanged(eventContext);
 
@@ -172,10 +259,16 @@ public class Http2BodyWriterTest {
 
     private static final class FixedChunkSource implements Http2BodyWriter.ChunkSource {
         private int chunks;
+        private final int chunkSize;
         private int closed;
 
         FixedChunkSource(int chunks) {
+            this(chunks, 1);
+        }
+
+        FixedChunkSource(int chunks, int chunkSize) {
             this.chunks = chunks;
+            this.chunkSize = chunkSize;
         }
 
         @Override
@@ -184,7 +277,7 @@ public class Http2BodyWriterTest {
                 return null;
             }
             chunks--;
-            return alloc.buffer(1).writeByte(chunks);
+            return alloc.buffer(chunkSize).writeZero(chunkSize);
         }
 
         @Override
@@ -194,9 +287,15 @@ public class Http2BodyWriterTest {
     }
 
     private static final class SuspendingChunkSource implements Http2BodyWriter.ChunkSource {
+        private final AtomicInteger flushes;
         private int state;
         private int closed;
+        private int flushesBeforeSuspend;
         private Runnable resume;
+
+        SuspendingChunkSource(AtomicInteger flushes) {
+            this.flushes = flushes;
+        }
 
         @Override
         public ByteBuf nextChunk(ByteBufAllocator alloc) {
@@ -204,7 +303,11 @@ public class Http2BodyWriterTest {
                 state++;
                 return alloc.buffer(1).writeByte(state);
             }
-            return state == 2 ? Http2BodyWriter.SUSPEND : null;
+            if (state == 2) {
+                flushesBeforeSuspend = flushes.get();
+                return Http2BodyWriter.SUSPEND;
+            }
+            return null;
         }
 
         @Override
@@ -220,6 +323,26 @@ public class Http2BodyWriterTest {
         @Override
         public void close() {
             closed++;
+        }
+    }
+
+    private static final class UnflushedBytesTracker extends ChannelOutboundHandlerAdapter {
+        private int unflushedBytes;
+        private int peakUnflushedBytes;
+
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+            if (msg instanceof Http2DataFrame) {
+                unflushedBytes += ((Http2DataFrame) msg).content().readableBytes();
+                peakUnflushedBytes = Math.max(peakUnflushedBytes, unflushedBytes);
+            }
+            ctx.write(msg, promise);
+        }
+
+        @Override
+        public void flush(ChannelHandlerContext ctx) {
+            unflushedBytes = 0;
+            ctx.flush();
         }
     }
 }

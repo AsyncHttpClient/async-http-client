@@ -50,8 +50,8 @@ import java.io.IOException;
  *       an empty body still sends a single empty DATA frame with {@code endStream=true}.</li>
  *   <li>This writer holds at most one buffered "pending" chunk across a writability wait. Production stops
  *       once the channel goes unwritable, so total in-flight heap is bounded by the channel's write
- *       high-water mark (the already-written chunks the channel's outbound buffer still owns) plus that one
- *       pending chunk — not by the size of the whole body.</li>
+ *       high-water mark (64 KiB by default; the already-written chunks the channel's outbound buffer still
+ *       owns) plus that one pending chunk, rather than by the size of the whole body.</li>
  * </ul>
  * <p>
  * <strong>Lifecycle / cleanup.</strong> Because the pump completes asynchronously (after {@code writeHttp2}
@@ -125,9 +125,10 @@ final class Http2BodyWriter {
     private boolean done;
 
     // flush() can synchronously fire channelWritabilityChanged. Prevent that callback from re-entering the
-    // pump, and prevent later callbacks from writing a second endStream frame before the first one completes.
+    // pump, and remember permanently once the terminal frame has been emitted so later callbacks cannot write
+    // a second endStream frame before its write completes.
     private boolean pumping;
-    private boolean terminalWritePending;
+    private boolean terminalWritten;
 
     // Transient handler that resumes the pump when the channel becomes writable again. Added lazily the
     // first time the pump parks, removed by finish().
@@ -186,7 +187,7 @@ final class Http2BodyWriter {
      * event loop. Any written frames are flushed before the pump parks or completes.
      */
     private void pump() {
-        if (done || pumping || terminalWritePending) {
+        if (done || pumping || terminalWritten) {
             return;
         }
         pumping = true;
@@ -204,8 +205,13 @@ final class Http2BodyWriter {
                     // No data available yet but the body is not finished (feedable body). Park until the
                     // source signals more via the onResume callback. Any already-buffered `pending` chunk is
                     // retained (O(1)); we deliberately do not flush an early endStream.
-                    channel.flush();
                     suspended = true;
+                    channel.flush();
+                    if (!suspended) {
+                        // A synchronous flush callback resumed the source while pump() was guarded against
+                        // re-entry. Consume that resume here instead of parking indefinitely.
+                        continue;
+                    }
                     return;
                 }
 
@@ -217,7 +223,7 @@ final class Http2BodyWriter {
                     ByteBuf terminal = last != null ? last
                             // Empty body — preserve existing behaviour: a single empty DATA frame ends the stream.
                             : channel.alloc().buffer(0);
-                    terminalWritePending = true;
+                    terminalWritten = true;
                     writeLastFrame(terminal);
                     channel.flush();
                     return;
@@ -323,7 +329,7 @@ final class Http2BodyWriter {
     private final class WritabilityResumeHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void channelWritabilityChanged(ChannelHandlerContext ctx) {
-            if (!done && !terminalWritePending && ctx.channel().isWritable()) {
+            if (!done && !terminalWritten && ctx.channel().isWritable()) {
                 pump();
             }
             ctx.fireChannelWritabilityChanged();
