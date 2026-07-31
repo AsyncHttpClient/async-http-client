@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -268,6 +269,103 @@ public class Http2ConnectionStateTest {
         // Release the slot — the pending opener should be dequeued and run
         state.releaseStream();
         assertEquals(1, executionCount.get(), "Pending opener should have been executed on release");
+    }
+
+    @Test
+    public void immediateOpenerRunsOutsidePendingLock() throws Exception {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(2);
+        CountDownLatch openerStarted = new CountDownLatch(1);
+        CountDownLatch releaseOpener = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        try {
+            Future<Boolean> blockingOffer = executor.submit(() ->
+                    state.offerPendingOpener(blockingOpener(openerStarted, releaseOpener)));
+            assertTrue(openerStarted.await(5, TimeUnit.SECONDS), "first opener should start");
+
+            Future<Boolean> competingOffer = executor.submit(() -> state.offerPendingOpener(() -> { }));
+            assertTrue(competingOffer.get(5, TimeUnit.SECONDS),
+                    "a running opener must not hold pendingLock");
+
+            releaseOpener.countDown();
+            assertTrue(blockingOffer.get(5, TimeUnit.SECONDS));
+            state.releaseStream();
+            state.releaseStream();
+        } finally {
+            releaseOpener.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test
+    public void queuedOpenerRunsOutsidePendingLock() throws Exception {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        CountDownLatch openerStarted = new CountDownLatch(1);
+        CountDownLatch releaseOpener = new CountDownLatch(1);
+        state.addPendingOpener(blockingOpener(openerStarted, releaseOpener));
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        try {
+            Future<?> drain = executor.submit(state::releaseStream);
+            assertTrue(openerStarted.await(5, TimeUnit.SECONDS), "queued opener should start");
+
+            Future<Boolean> competingOffer = executor.submit(() -> state.offerPendingOpener(() -> { }));
+            assertTrue(competingOffer.get(5, TimeUnit.SECONDS),
+                    "a drained opener must not hold pendingLock");
+
+            releaseOpener.countDown();
+            drain.get(5, TimeUnit.SECONDS);
+            state.releaseStream();
+            state.releaseStream();
+        } finally {
+            releaseOpener.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test
+    public void raisedLimitDrainsMultiplePendingOpenersInOrder() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        List<Integer> executionOrder = new ArrayList<>();
+        state.addPendingOpener(() -> executionOrder.add(1));
+        state.addPendingOpener(() -> executionOrder.add(2));
+        state.addPendingOpener(() -> executionOrder.add(3));
+
+        state.updateMaxConcurrentStreams(4);
+
+        assertEquals(List.of(1, 2, 3), executionOrder);
+        assertEquals(4, state.getActiveStreams());
+    }
+
+    @Test
+    public void throwingBatchOpenerLeavesRemainingQueueDrainable() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.updateMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        List<Integer> executionOrder = new ArrayList<>();
+        state.addPendingOpener(() -> {
+            executionOrder.add(1);
+            throw new IllegalStateException("boom");
+        });
+        state.addPendingOpener(() -> executionOrder.add(2));
+        state.addPendingOpener(() -> executionOrder.add(3));
+
+        assertThrows(IllegalStateException.class, () -> state.updateMaxConcurrentStreams(4));
+        assertEquals(List.of(1), executionOrder);
+        // A throwing public Runnable leaks its reserved slot, matching the behavior before this change.
+        assertEquals(2, state.getActiveStreams());
+
+        state.releaseStream();
+
+        assertEquals(List.of(1, 2, 3), executionOrder);
+        assertEquals(3, state.getActiveStreams());
     }
 
     @Test
@@ -896,5 +994,19 @@ public class Http2ConnectionStateTest {
             assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
         }
         assertEquals(rounds, totalReleases.get(), "exactly one release per round");
+    }
+
+    private static Runnable blockingOpener(CountDownLatch started, CountDownLatch release) {
+        return () -> {
+            started.countDown();
+            try {
+                if (!release.await(10, TimeUnit.SECONDS)) {
+                    throw new AssertionError("timed out waiting to release opener");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("interrupted while waiting to release opener", e);
+            }
+        };
     }
 }
