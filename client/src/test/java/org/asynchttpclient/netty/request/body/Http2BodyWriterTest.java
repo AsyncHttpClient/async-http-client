@@ -226,7 +226,7 @@ public class Http2BodyWriterTest {
             if (handler != null
                     && terminalFrames.get() != 0
                     && nestedWritabilityCallbackFired.compareAndSet(false, true)) {
-                ((io.netty.channel.ChannelInboundHandlerAdapter) handler).channelWritabilityChanged(eventContext);
+                ((ChannelInboundHandlerAdapter) handler).channelWritabilityChanged(eventContext);
             }
             return channel;
         });
