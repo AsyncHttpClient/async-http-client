@@ -240,8 +240,7 @@ public class Http2BodyWriterTest {
         verify(channel, times(1)).flush();
 
         writable.set(true);
-        ((io.netty.channel.ChannelInboundHandlerAdapter) resumeHandler.get())
-                .channelWritabilityChanged(eventContext);
+        ((ChannelInboundHandlerAdapter) resumeHandler.get()).channelWritabilityChanged(eventContext);
 
         assertEquals(0, source.closed);
         assertEquals(1, terminalFrames.get());
