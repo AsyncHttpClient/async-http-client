@@ -28,7 +28,9 @@ public interface ChannelPool {
      *
      * @param channel      an I/O channel
      * @param partitionKey a key used to retrieve the cached channel
-     * @return true if added.
+     * @return true if the pool accepted the channel, false if it rejected it, in which case the caller
+     * owns the channel and must close it. An implementation may accept a channel without pooling it,
+     * for instance when the very same channel is already pooled.
      */
     boolean offer(Channel channel, Object partitionKey);
 
