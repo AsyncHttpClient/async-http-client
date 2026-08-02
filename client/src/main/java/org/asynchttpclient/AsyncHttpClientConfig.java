@@ -436,6 +436,13 @@ public interface AsyncHttpClientConfig {
         return null;
     }
 
+    /**
+     * Whether a native transport was explicitly requested. Note that {@code false} no longer forces NIO:
+     * a native transport is auto-selected whenever its library is on the classpath. Set
+     * {@code -Dio.netty.transport.noNative=true} to force NIO.
+     *
+     * @return true if a native transport was explicitly requested
+     */
     boolean isUseNativeTransport();
 
     boolean isUseOnlyEpollNativeTransport();
