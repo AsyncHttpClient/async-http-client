@@ -7,8 +7,7 @@
 
 package org.asynchttpclient.testserver;
 
-// NOTES : LISTENS ON PORT 8000
-
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -22,74 +21,109 @@ import java.util.Set;
 
 public class SocksProxy {
 
-    private static final ArrayList<SocksClient> clients = new ArrayList<>();
+    private final ArrayList<SocksClient> clients = new ArrayList<>();
+    private final ServerSocketChannel socks;
+    private final Selector select;
+    private final long runningTime;
+    private volatile boolean stopped;
 
     public SocksProxy(int runningTime) throws IOException {
-        ServerSocketChannel socks = ServerSocketChannel.open();
-        socks.socket().bind(new InetSocketAddress(8000));
+        this.runningTime = runningTime;
+        socks = ServerSocketChannel.open();
+        socks.socket().bind(new InetSocketAddress(0));
         socks.configureBlocking(false);
-        Selector select = Selector.open();
+        select = Selector.open();
         socks.register(select, SelectionKey.OP_ACCEPT);
+    }
 
-        int lastClients = clients.size();
-        // select loop
-        for (long end = System.currentTimeMillis() + runningTime; System.currentTimeMillis() < end; ) {
-            select.select(5000);
+    public int getPort() {
+        return socks.socket().getLocalPort();
+    }
 
-            Set<SelectionKey> keys = select.selectedKeys();
-            for (SelectionKey k : keys) {
+    public void stop() {
+        stopped = true;
+        select.wakeup();
+    }
 
-                if (!k.isValid()) {
-                    continue;
-                }
+    public void run() throws IOException {
+        try {
+            int lastClients = clients.size();
+            // select loop
+            for (long end = System.currentTimeMillis() + runningTime; !stopped && System.currentTimeMillis() < end; ) {
+                select.select(5000);
 
-                // new connection?
-                if (k.isAcceptable() && k.channel() == socks) {
-                    // server socket
-                    SocketChannel csock = socks.accept();
-                    if (csock == null) {
+                Set<SelectionKey> keys = select.selectedKeys();
+                for (SelectionKey k : keys) {
+
+                    if (!k.isValid()) {
                         continue;
                     }
-                    addClient(csock);
-                    csock.register(select, SelectionKey.OP_READ);
-                } else if (k.isReadable()) {
-                    // new data on a client/remote socket
-                    for (int i = 0; i < clients.size(); i++) {
-                        SocksClient cl = clients.get(i);
-                        try {
-                            if (k.channel() == cl.client) // from client (e.g. socks client)
-                            {
-                                cl.newClientData(select);
-                            } else if (k.channel() == cl.remote) {  // from server client is connected to (e.g. website)
-                                cl.newRemoteData();
-                            }
-                        } catch (IOException e) { // error occurred - remove client
-                            cl.client.close();
-                            if (cl.remote != null) {
-                                cl.remote.close();
-                            }
-                            k.cancel();
-                            clients.remove(cl);
+
+                    // new connection?
+                    if (k.isAcceptable() && k.channel() == socks) {
+                        // server socket
+                        SocketChannel csock = socks.accept();
+                        if (csock == null) {
+                            continue;
                         }
+                        addClient(csock);
+                        csock.register(select, SelectionKey.OP_READ);
+                    } else if (k.isReadable()) {
+                        // new data on a client/remote socket
+                        for (int i = 0; i < clients.size(); i++) {
+                            SocksClient cl = clients.get(i);
+                            try {
+                                if (k.channel() == cl.client) // from client (e.g. socks client)
+                                {
+                                    cl.newClientData(select);
+                                } else if (k.channel() == cl.remote) {  // from server client is connected to (e.g. website)
+                                    cl.newRemoteData();
+                                }
+                            } catch (IOException e) { // error occurred - remove client
+                                cl.client.close();
+                                if (cl.remote != null) {
+                                    cl.remote.close();
+                                }
+                                k.cancel();
+                                clients.remove(cl);
+                            }
 
+                        }
                     }
                 }
-            }
 
-            // client timeout check
-            for (int i = 0; i < clients.size(); i++) {
-                SocksClient cl = clients.get(i);
-                if (System.currentTimeMillis() - cl.lastData > 30000L) {
-                    cl.client.close();
-                    if (cl.remote != null) {
-                        cl.remote.close();
+                // client timeout check
+                for (int i = 0; i < clients.size(); i++) {
+                    SocksClient cl = clients.get(i);
+                    if (System.currentTimeMillis() - cl.lastData > 30000L) {
+                        cl.client.close();
+                        if (cl.remote != null) {
+                            cl.remote.close();
+                        }
+                        clients.remove(cl);
                     }
-                    clients.remove(cl);
+                }
+                if (clients.size() != lastClients) {
+                    System.out.println(clients.size());
+                    lastClients = clients.size();
                 }
             }
-            if (clients.size() != lastClients) {
-                System.out.println(clients.size());
-                lastClients = clients.size();
+        } finally {
+            for (SocksClient cl : clients) {
+                closeQuietly(cl.client);
+                closeQuietly(cl.remote);
+            }
+            clients.clear();
+            closeQuietly(socks);
+            closeQuietly(select);
+        }
+    }
+
+    private static void closeQuietly(Closeable c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (IOException ignored) {
             }
         }
     }

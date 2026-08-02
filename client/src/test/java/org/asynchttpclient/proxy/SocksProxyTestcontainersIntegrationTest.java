@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -56,11 +57,12 @@ public class SocksProxyTestcontainersIntegrationTest {
 
     private static final int SOCKS_PORT = 1080;
 
-    private static final String TARGET_HTTP_URL = "http://httpbin.org/get";
-    private static final String TARGET_HTTPS_URL = "https://www.example.com/";
-
     private static boolean dockerAvailable = false;
+    private static Network network;
+    private static GenericContainer<?> targetServer;
     private static GenericContainer<?> socksProxy;
+    private static String targetHttpUrl;
+    private static String targetHttpsUrl;
 
     @BeforeAll
     static void checkDockerAvailability() {
@@ -82,14 +84,22 @@ public class SocksProxyTestcontainersIntegrationTest {
             dockerAvailable = false;
             return;
         }
-        // Only start container if Docker is available
+        // Only start containers if Docker is available
         if (dockerAvailable) {
             try {
+                network = Network.newNetwork();
+                targetServer = LocalProxyTestTarget.start(network);
+                String targetIp = LocalProxyTestTarget.networkIpOf(targetServer);
+                targetHttpUrl = "http://" + targetIp + "/get";
+                targetHttpsUrl = "https://" + targetIp + "/";
+                LOGGER.info("Local proxy target started at {} / {}", targetHttpUrl, targetHttpsUrl);
+
                 socksProxy = new GenericContainer<>(
                         new ImageFromDockerfile()
                                 .withFileFromPath("Dockerfile", Path.of("src/test/resources/dante/Dockerfile"))
                                 .withFileFromPath("sockd.conf", Path.of("src/test/resources/dante/sockd.conf"))
                 )
+                        .withNetwork(network)
                         .withExposedPorts(SOCKS_PORT)
                         .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("DANTE"))
                         .waitingFor(Wait.forLogMessage(".*danted.*running.*", 1)
@@ -97,8 +107,8 @@ public class SocksProxyTestcontainersIntegrationTest {
                 socksProxy.start();
                 LOGGER.info("Dante SOCKS proxy started successfully on port {}", socksProxy.getMappedPort(SOCKS_PORT));
             } catch (Exception e) {
-                LOGGER.warn("Failed to start Dante SOCKS proxy container: {}", e.getMessage());
-                dockerAvailable = false; // Mark as unavailable if container start fails
+                LOGGER.warn("Failed to start test containers: {}", e.getMessage());
+                dockerAvailable = false;
             }
         }
     }
@@ -107,6 +117,12 @@ public class SocksProxyTestcontainersIntegrationTest {
     static void stopContainer() {
         if (socksProxy != null && socksProxy.isRunning()) {
             socksProxy.stop();
+        }
+        if (targetServer != null && targetServer.isRunning()) {
+            targetServer.stop();
+        }
+        if (network != null) {
+            network.close();
         }
     }
 
@@ -122,9 +138,9 @@ public class SocksProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTP_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("httpbin"));
+            assertTrue(response.getResponseBody().contains(LocalProxyTestTarget.BODY_MARKER));
             LOGGER.info("SOCKS4 proxy to HTTP target test passed");
         }
     }
@@ -141,9 +157,9 @@ public class SocksProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTP_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("httpbin"));
+            assertTrue(response.getResponseBody().contains(LocalProxyTestTarget.BODY_MARKER));
             LOGGER.info("SOCKS5 proxy to HTTP target test passed");
         }
     }
@@ -161,10 +177,9 @@ public class SocksProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTPS_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpsUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("Example Domain") ||
-                    response.getResponseBody().contains("example"));
+            assertTrue(response.getResponseBody().contains("AHC Test Target"));
             LOGGER.info("SOCKS4 proxy to HTTPS target test passed - issue #1913 RESOLVED!");
         }
     }
@@ -182,10 +197,9 @@ public class SocksProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTPS_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpsUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("Example Domain") ||
-                    response.getResponseBody().contains("example"));
+            assertTrue(response.getResponseBody().contains("AHC Test Target"));
             LOGGER.info("SOCKS5 proxy to HTTPS target test passed - issue #1913 RESOLVED!");
         }
     }
@@ -206,10 +220,9 @@ public class SocksProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000)))) {
             
             // This would previously throw: java.util.NoSuchElementException: socks
-            var response = client.prepareGet("https://www.example.com/").execute().get(30, TimeUnit.SECONDS);
+            var response = client.prepareGet(targetHttpsUrl).execute().get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("Example Domain") ||
-                    response.getResponseBody().contains("example"));
+            assertTrue(response.getResponseBody().contains("AHC Test Target"));
             LOGGER.info("Issue #1913 reproduction test PASSED - NoSuchElementException: socks is FIXED!");
         }
     }

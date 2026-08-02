@@ -60,28 +60,26 @@ public class SocksProxyTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void testSocks4ProxyWithHttp() throws Exception {
-        // Start SOCKS proxy in background thread
-        Thread socksProxyThread = new Thread(() -> {
+        SocksProxy socksProxy = new SocksProxy(60000);
+        new Thread(() -> {
             try {
-                new SocksProxy(60000);
+                socksProxy.run();
             } catch (Exception e) {
                 logger.error("Failed to establish SocksProxy", e);
             }
-        });
-        socksProxyThread.start();
-
-        // Give the proxy time to start
-        Thread.sleep(1000);
+        }).start();
 
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:" + port1 + '/';
             Future<Response> f = client.prepareGet(target)
-                    .setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4))
+                    .setProxyServer(new ProxyServer.Builder("localhost", socksProxy.getPort()).setProxyType(ProxyType.SOCKS_V4))
                     .execute();
 
             Response response = f.get(60, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(200, response.getStatusCode());
+        } finally {
+            socksProxy.stop();
         }
     }
 
