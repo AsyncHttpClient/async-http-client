@@ -93,7 +93,12 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
             }
         }
 
-        if (!sourceExhausted) {
+        // Stop reading once the declared length is accounted for: a socket-backed stream has nothing more
+        // to give and would block that read until the request times out.
+        long contentLength = getContentLength();
+        boolean allBytesInHand = contentLength >= 0 && position + buffer.position() >= contentLength;
+
+        if (!sourceExhausted && !allBytesInHand) {
             int read = channel.read(buffer);
             if (read > 0) {
                 buffer.flip();
@@ -111,8 +116,7 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
             }
         }
 
-        // Don't close until all declared bytes are written, even if source doesn't EOF (socket-backed streams).
-        boolean allDeclaredBytesWritten = getContentLength() >= 0 && position >= getContentLength();
+        boolean allDeclaredBytesWritten = contentLength >= 0 && position >= contentLength;
         if ((sourceExhausted || allDeclaredBytesWritten) && buffer.position() == 0) {
             state = MultipartState.POST_CONTENT;
             if (channel.isOpen()) {
