@@ -294,8 +294,7 @@ public class ChannelManager {
                 return new KQueueTransportFactory();
             }
         } else if (!PlatformDependent.isWindows()) {
-            // Prefer epoll over io_uring: io_uring requires RLIMIT_MEMLOCK (76 KB per io thread)
-            // which is often constrained in containers/CI. epoll is native transport without that overhead.
+            // Prefer epoll: io_uring needs RLIMIT_MEMLOCK (often constrained in CI/containers).
             if (EpollTransportFactory.isAvailable()) {
                 return new EpollTransportFactory();
             } else if (IoUringTransportFactory.isAvailable()) {

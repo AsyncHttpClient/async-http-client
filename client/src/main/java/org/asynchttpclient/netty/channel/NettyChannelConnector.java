@@ -126,11 +126,11 @@ public class NettyChannelConnector {
     }
 
     private Throwable annotateConnectException(Throwable t, InetSocketAddress remoteAddress) {
+        if (t instanceof ConnectException) {
+            return t;  // Already has proper type; preserve for retry predicates
+        }
         String address = remoteAddress.toString();
         String message = t.getMessage();
-        if (message != null && message.contains(address)) {
-            return t;
-        }
         ConnectException annotated = new ConnectException((message != null ? message : t.getClass().getSimpleName()) + ": " + address);
         annotated.initCause(t);
         return annotated;

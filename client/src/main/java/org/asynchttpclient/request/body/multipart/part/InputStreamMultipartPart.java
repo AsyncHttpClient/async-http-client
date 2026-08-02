@@ -111,9 +111,9 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
             }
         }
 
-        // Only transition to POST_CONTENT when source is exhausted AND buffer is fully drained.
-        // Never transition while unwritten bytes remain, to avoid data loss.
-        if (sourceExhausted && buffer.position() == 0) {
+        // Don't close until all declared bytes are written, even if source doesn't EOF (socket-backed streams).
+        boolean allDeclaredBytesWritten = getContentLength() >= 0 && position >= getContentLength();
+        if ((sourceExhausted || allDeclaredBytesWritten) && buffer.position() == 0) {
             state = MultipartState.POST_CONTENT;
             if (channel.isOpen()) {
                 channel.close();
