@@ -56,7 +56,14 @@ public final class StackTraceInspector {
 
     public static boolean recoverOnReadOrWriteException(Throwable t) {
         while (true) {
-            if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage())) {
+            if (t instanceof IOException) {
+                String msg = t.getMessage();
+                if (msg != null && msg.contains("Connection reset")) {
+                    return true;
+                }
+            }
+
+            if (isNativeIoException(t)) {
                 return true;
             }
 
@@ -76,5 +83,21 @@ public final class StackTraceInspector {
             }
             t = t.getCause();
         }
+    }
+
+    private static boolean isNativeIoException(Throwable t) {
+        if (t == null) {
+            return false;
+        }
+        String className = t.getClass().getName();
+        if ("io.netty.channel.unix.Errors$NativeIoException".equals(className)) {
+            try {
+                java.lang.reflect.Method expectedErr = t.getClass().getMethod("expectedErr");
+                int errno = (Integer) expectedErr.invoke(t);
+                return errno == -54 || errno == -104 || errno == -111;
+            } catch (Exception ignore) {
+            }
+        }
+        return false;
     }
 }

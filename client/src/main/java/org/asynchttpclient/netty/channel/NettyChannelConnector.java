@@ -23,6 +23,7 @@ import org.asynchttpclient.netty.SimpleChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -118,9 +119,20 @@ public class NettyChannelConnector {
                         if (retry) {
                             connect(bootstrap, connectListener);
                         } else {
-                            connectListener.onFailure(channel, t);
+                            connectListener.onFailure(channel, annotateConnectException(t, remoteAddress));
                         }
                     }
                 });
+    }
+
+    private Throwable annotateConnectException(Throwable t, InetSocketAddress remoteAddress) {
+        String address = remoteAddress.toString();
+        String message = t.getMessage();
+        if (message != null && message.contains(address)) {
+            return t;
+        }
+        ConnectException annotated = new ConnectException((message != null ? message : t.getClass().getSimpleName()) + ": " + address);
+        annotated.initCause(t);
+        return annotated;
     }
 }
