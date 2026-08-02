@@ -319,9 +319,10 @@ public class ProxyTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void runSocksProxy() throws Exception {
+        SocksProxy socksProxy = new SocksProxy(60000);
         new Thread(() -> {
             try {
-                new SocksProxy(60000);
+                socksProxy.run();
             } catch (IOException e) {
                 logger.error("Failed to establish SocksProxy", e);
             }
@@ -330,10 +331,12 @@ public class ProxyTest extends AbstractBasicTest {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String target = "http://localhost:" + port1 + '/';
             Future<Response> f = client.prepareGet(target)
-                    .setProxyServer(new ProxyServer.Builder("localhost", 8000).setProxyType(ProxyType.SOCKS_V4))
+                    .setProxyServer(new ProxyServer.Builder("localhost", socksProxy.getPort()).setProxyType(ProxyType.SOCKS_V4))
                     .execute();
 
             assertEquals(200, f.get(60, TimeUnit.SECONDS).getStatusCode());
+        } finally {
+            socksProxy.stop();
         }
     }
 

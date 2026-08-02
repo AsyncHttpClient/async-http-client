@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -53,11 +54,12 @@ public class HttpsProxyTestcontainersIntegrationTest {
     private static final int SQUID_HTTP_PORT = 3128;
     private static final int SQUID_HTTPS_PORT = 3129;
 
-    private static final String TARGET_HTTP_URL = "http://httpbin.org/get";
-    private static final String TARGET_HTTPS_URL = "https://www.example.com/";
-
     private static boolean dockerAvailable = false;
+    private static Network network;
+    private static GenericContainer<?> targetServer;
     private static GenericContainer<?> squidProxy;
+    private static String targetHttpUrl;
+    private static String targetHttpsUrl;
 
     @BeforeAll
     static void checkDockerAvailability() {
@@ -76,13 +78,21 @@ public class HttpsProxyTestcontainersIntegrationTest {
         if ("true".equals(System.getProperty("no.docker.tests"))) {
             assumeTrue(false, "Docker tests disabled via -Dno.docker.tests=true");
         }
-        // Only start container if Docker is available
+        // Only start containers if Docker is available
         if (dockerAvailable) {
+            network = Network.newNetwork();
+            targetServer = LocalProxyTestTarget.start(network);
+            String targetIp = LocalProxyTestTarget.networkIpOf(targetServer);
+            targetHttpUrl = "http://" + targetIp + "/get";
+            targetHttpsUrl = "https://" + targetIp + "/";
+            LOGGER.info("Local proxy target started at {} / {}", targetHttpUrl, targetHttpsUrl);
+
             squidProxy = new GenericContainer<>(
                     new ImageFromDockerfile()
                             .withFileFromPath("Dockerfile", Path.of("src/test/resources/squid/Dockerfile"))
                             .withFileFromPath("squid.conf", Path.of("src/test/resources/squid/squid.conf"))
             )
+                    .withNetwork(network)
                     .withExposedPorts(SQUID_HTTP_PORT, SQUID_HTTPS_PORT)
                     .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("SQUID"))
                     .waitingFor(Wait.forLogMessage(".*Accepting HTTP.*", 1)
@@ -95,6 +105,12 @@ public class HttpsProxyTestcontainersIntegrationTest {
     static void stopContainer() {
         if (squidProxy != null && squidProxy.isRunning()) {
             squidProxy.stop();
+        }
+        if (targetServer != null && targetServer.isRunning()) {
+            targetServer.stop();
+        }
+        if (network != null) {
+            network.close();
         }
     }
 
@@ -110,9 +126,9 @@ public class HttpsProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTP_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("httpbin"));
+            assertTrue(response.getResponseBody().contains(LocalProxyTestTarget.BODY_MARKER));
             LOGGER.info("HTTP proxy to HTTP target test passed");
         }
     }
@@ -130,9 +146,9 @@ public class HttpsProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTP_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("httpbin"));
+            assertTrue(response.getResponseBody().contains(LocalProxyTestTarget.BODY_MARKER));
             LOGGER.info("HTTPS proxy to HTTP target test passed");
         }
     }
@@ -150,10 +166,9 @@ public class HttpsProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTPS_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpsUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("Example Domain") ||
-                    response.getResponseBody().contains("example"));
+            assertTrue(response.getResponseBody().contains("AHC Test Target"));
             LOGGER.info("HTTP proxy to HTTPS target test passed");
         }
     }
@@ -171,10 +186,9 @@ public class HttpsProxyTestcontainersIntegrationTest {
                 .setRequestTimeout(Duration.ofMillis(30000))
                 .build();
         try (AsyncHttpClient client = asyncHttpClient(config)) {
-            Response response = client.executeRequest(get(TARGET_HTTPS_URL)).get(30, TimeUnit.SECONDS);
+            Response response = client.executeRequest(get(targetHttpsUrl)).get(30, TimeUnit.SECONDS);
             assertEquals(200, response.getStatusCode());
-            assertTrue(response.getResponseBody().contains("Example Domain") ||
-                    response.getResponseBody().contains("example"));
+            assertTrue(response.getResponseBody().contains("AHC Test Target"));
             LOGGER.info("HTTPS proxy to HTTPS target test passed - core issue #1907 RESOLVED!");
         }
     }
