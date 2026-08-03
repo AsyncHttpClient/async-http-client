@@ -226,6 +226,14 @@ public class NettyResponse implements Response {
 
     @Override
     public String getResponseBody(Charset charset) {
+        // Decode a lone body part straight from its own bytes. getResponseBodyAsBytes concatenates every part
+        // into a fresh array first, so a body that arrived in a single read was copied twice, once to
+        // concatenate and once to decode. The array does not escape this method, so decoding the part's own
+        // one is safe. Several parts are still concatenated before decoding rather than decoded one at a
+        // time, because a multi-byte character can straddle a part boundary.
+        if (bodyParts.size() == 1) {
+            return new String(bodyParts.get(0).getBodyPartBytes(), charset);
+        }
         return new String(getResponseBodyAsBytes(), charset);
     }
 
