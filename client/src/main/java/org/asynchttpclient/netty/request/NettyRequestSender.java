@@ -1380,12 +1380,17 @@ public final class NettyRequestSender {
             if (!uri.isWebSocket()) {
                 Channel h2Channel = channelManager.pollHttp2Connection(override);
                 if (h2Channel != null) {
-                    LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                    // SLF4J has no three-argument overload, so every log statement in this method binds to
+                    // debug(String, Object...) and allocates its varargs array at the call site whatever the
+                    // level. This is the steady-state connection-reuse path, so guard them all explicitly.
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                    }
                     return h2Channel;
                 }
             }
             Channel channel = channelManager.poll(override);
-            if (channel != null) {
+            if (channel != null && LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
             }
             return channel;
@@ -1406,14 +1411,16 @@ public final class NettyRequestSender {
         if (!uri.isWebSocket()) {
             Channel h2Channel = channelManager.pollHttp2Connection(partitionKey);
             if (h2Channel != null) {
-                LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                }
                 return h2Channel;
             }
         }
 
         final Channel channel = channelManager.poll(partitionKey);
 
-        if (channel != null) {
+        if (channel != null && LOGGER.isDebugEnabled()) {
             LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
         }
         return channel;
