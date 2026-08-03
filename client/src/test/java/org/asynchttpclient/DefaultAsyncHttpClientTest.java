@@ -28,6 +28,7 @@ import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.testserver.HttpServer;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -50,6 +51,46 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class DefaultAsyncHttpClientTest {
+
+    /**
+     * Guards the transport axis of the nightly build. CI claims to exercise epoll, io_uring and NIO, but
+     * every selection path has a silent fallback — io_uring degrades to epoll when RLIMIT_MEMLOCK cannot
+     * hold its rings, and native degrades to NIO when the libraries are missing. Without this the job
+     * still passes having tested the wrong thing, which is worse than not running it at all.
+     * <p>
+     * Only runs when {@code -Dahc.expectedTransport} is set; a plain {@code mvn test} skips it.
+     */
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledIfSystemProperty(named = "ahc.expectedTransport", matches = ".+")
+    public void selectedTransportMatchesTheOneCiAskedFor() throws IOException {
+        String expected = System.getProperty("ahc.expectedTransport");
+        try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config().build())) {
+            EventLoopGroup group = client.channelManager().getEventLoopGroup();
+            assertEquals(expected, transportNameOf(group),
+                    "CI asked for " + expected + " but got " + group.getClass().getName()
+                            + "; a fallback fired and this run is not testing what it claims to");
+        }
+    }
+
+    /**
+     * NioEventLoopGroup and EpollEventLoopGroup both extend MultiThreadIoEventLoopGroup, so io_uring is
+     * identified as "native, but neither of those two" rather than by a class of its own.
+     */
+    private static String transportNameOf(EventLoopGroup group) {
+        if (group instanceof NioEventLoopGroup) {
+            return "nio";
+        }
+        if (group instanceof EpollEventLoopGroup) {
+            return "epoll";
+        }
+        if (group instanceof KQueueEventLoopGroup) {
+            return "kqueue";
+        }
+        if (group instanceof MultiThreadIoEventLoopGroup) {
+            return "io_uring";
+        }
+        return group.getClass().getName();
+    }
 
     @RepeatedIfExceptionsTest(repeats = 5)
     @EnabledOnOs(OS.LINUX)

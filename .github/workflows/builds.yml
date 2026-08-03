@@ -3,6 +3,12 @@ name: Build Check
 on:
   schedule:
     - cron: '0 12 * * *'
+  # Lets a CI change be exercised on its own branch, without opening a PR and without waiting for the
+  # nightly. workflow_dispatch only becomes available once this file is on the default branch.
+  push:
+    branches:
+      - 'ci/**'
+  workflow_dispatch:
 
 jobs:
   Verify:
@@ -18,9 +24,24 @@ jobs:
       - name: Verify
         run: ./mvnw -B -ntp clean verify -DskipTests -Dgpg.skip=true
 
+  # Linux is the only platform where the transport choice is ambiguous: epoll, io_uring and NIO are all
+  # reachable, and the PR build only ever exercises whichever one auto-detection happens to pick (epoll).
+  # Every job passes -Dahc.expectedTransport so a silent fallback fails the build instead of quietly
+  # testing the wrong transport.
   RunOnLinux:
+    name: RunOnLinux (${{ matrix.transport }})
     runs-on: ubuntu-latest
     needs: Verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - transport: epoll
+            flags: ''
+          - transport: io_uring
+            flags: '-Dorg.asynchttpclient.useNativeTransport=true'
+          - transport: nio
+            flags: '-Dio.netty.transport.noNative=true'
     steps:
       - uses: actions/checkout@v7
       - name: Grant Permission
@@ -30,7 +51,17 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw -B -ntp test -Ddocker.tests=true -Dexternal.tests=true
+        run: |
+          # io_uring charges its rings against RLIMIT_MEMLOCK, which is 8 MB on GitHub runners and only
+          # raisable as root. Without this the rings fail to allocate, AHC falls back to epoll, and the
+          # job passes without having run io_uring at all. prlimit has to share a shell with Maven for
+          # the child process to inherit the new limit.
+          if [ "${{ matrix.transport }}" = "io_uring" ]; then
+            sudo prlimit --pid $$ --memlock=unlimited
+          fi
+          echo "memlock (KB): $(ulimit -l)"
+          ./mvnw -B -ntp test -Ddocker.tests=true -Dexternal.tests=true \
+            -Dahc.expectedTransport=${{ matrix.transport }} ${{ matrix.flags }}
 
   RunOnMacOs:
     runs-on: macos-latest
@@ -44,7 +75,7 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw -B -ntp test -Dexternal.tests=true
+        run: ./mvnw -B -ntp test -Dexternal.tests=true -Dahc.expectedTransport=kqueue
 
   RunOnWindows:
     runs-on: windows-latest
@@ -56,4 +87,4 @@ jobs:
           distribution: 'corretto'
           java-version: '11'
       - name: Run Tests
-        run: ./mvnw.cmd -B -ntp test "-Dexternal.tests=true"
+        run: ./mvnw.cmd -B -ntp test "-Dexternal.tests=true" "-Dahc.expectedTransport=nio"
