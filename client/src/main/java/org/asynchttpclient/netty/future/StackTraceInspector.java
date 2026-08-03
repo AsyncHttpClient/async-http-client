@@ -56,8 +56,14 @@ public final class StackTraceInspector {
 
     public static boolean recoverOnReadOrWriteException(Throwable t) {
         while (true) {
-            if (t instanceof IOException && "Connection reset by peer".equalsIgnoreCase(t.getMessage())) {
-                return true;
+            // Native transports (epoll, io_uring, kqueue) report resets as NativeIoException with the
+            // strerror text baked into the message, e.g. "recvAddress(..) failed with error(-104):
+            // Connection reset by peer". Modern JDKs drop the "by peer" suffix, hence the substring match.
+            if (t instanceof IOException) {
+                String msg = t.getMessage();
+                if (msg != null && msg.contains("Connection reset")) {
+                    return true;
+                }
             }
 
             try {

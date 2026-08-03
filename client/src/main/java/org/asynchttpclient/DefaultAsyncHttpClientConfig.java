@@ -1643,6 +1643,15 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             return this;
         }
 
+        /**
+         * Requests a native transport, failing back to NIO if none is available on this platform.
+         * <p>
+         * Passing {@code false} does not force NIO: when unset, a native transport is still auto-selected
+         * if its library is on the classpath. Use {@code -Dio.netty.transport.noNative=true} to force NIO.
+         *
+         * @param useNativeTransport whether to explicitly request a native transport
+         * @return the same builder instance
+         */
         public Builder setUseNativeTransport(boolean useNativeTransport) {
             this.useNativeTransport = useNativeTransport;
             return this;

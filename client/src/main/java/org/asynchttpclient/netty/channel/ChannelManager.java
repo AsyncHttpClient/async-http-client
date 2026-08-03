@@ -129,6 +129,8 @@ public class ChannelManager {
     // Guards the one-time WARN emitted when a native transport was requested but is unavailable and we
     // fall back to NIO. Logged once per JVM to avoid spamming logs when many clients are created.
     private static final AtomicBoolean NATIVE_FALLBACK_WARNED = new AtomicBoolean();
+    // Guards the one-time WARN emitted when io_uring allocation fails and we fall back to epoll.
+    private static final AtomicBoolean IO_URING_FALLBACK_WARNED = new AtomicBoolean();
     private final AsyncHttpClientConfig config;
     private final SslEngineFactory sslEngineFactory;
     private final EventLoopGroup eventLoopGroup;
@@ -203,30 +205,47 @@ public class ChannelManager {
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
         allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
         TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
+        EventLoopGroup localEventLoopGroup;
 
         if (allowReleaseEventLoopGroup) {
             if (config.isUseNativeTransport()) {
                 transportFactory = getNativeTransportFactory(config);
             } else {
-                transportFactory = NioTransportFactory.INSTANCE;
+                transportFactory = autoSelectTransportFactory();
             }
-            eventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
+            try {
+                localEventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
+            } catch (Throwable t) {
+                if (transportFactory instanceof IoUringTransportFactory && EpollTransportFactory.isAvailable()) {
+                    if (IO_URING_FALLBACK_WARNED.compareAndSet(false, true)) {
+                        LOGGER.warn("io_uring event loop group creation failed ({}); falling back to epoll. "
+                                + "io_uring rings count against RLIMIT_MEMLOCK (~76 KB per io thread, "
+                                + "{} threads requested); raise 'ulimit -l' to use io_uring.",
+                                t, config.getIoThreadsCount());
+                    }
+                    transportFactory = new EpollTransportFactory();
+                    localEventLoopGroup = transportFactory.newEventLoopGroup(config.getIoThreadsCount(), threadFactory);
+                } else {
+                    throw t;
+                }
+            }
         } else {
-            eventLoopGroup = config.getEventLoopGroup();
+            localEventLoopGroup = config.getEventLoopGroup();
 
-            if (eventLoopGroup instanceof NioEventLoopGroup) {
+            if (localEventLoopGroup instanceof NioEventLoopGroup) {
                 transportFactory = NioTransportFactory.INSTANCE;
-            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
+            } else if (isInstanceof(localEventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
                 transportFactory = new EpollTransportFactory();
-            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
+            } else if (isInstanceof(localEventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
                 transportFactory = new KQueueTransportFactory();
-            } else if (isInstanceof(eventLoopGroup, "io.netty.channel.uring.IOUringEventLoopGroup")) {
+            } else if (isInstanceof(localEventLoopGroup, "io.netty.channel.uring.IOUringEventLoopGroup")) {
                 transportFactory = new IoUringTransportFactory();
             } else {
-                throw new IllegalArgumentException("Unknown event loop group " + eventLoopGroup.getClass().getSimpleName());
+                throw new IllegalArgumentException("Unknown event loop group " + localEventLoopGroup.getClass().getSimpleName());
             }
         }
 
+        this.eventLoopGroup = localEventLoopGroup;
         channelOptions = buildChannelOptions(config);
         httpBootstrap = newBootstrap(transportFactory, eventLoopGroup);
         wsBootstrap = newBootstrap(transportFactory, eventLoopGroup);
@@ -263,6 +282,24 @@ public class ChannelManager {
         if (NATIVE_FALLBACK_WARNED.compareAndSet(false, true)) {
             LOGGER.warn("Native transport requested (useNativeTransport=true) but no native transport "
                     + "(Epoll, Io_Uring or KQueue) is available on this platform; falling back to NIO.");
+        }
+        return NioTransportFactory.INSTANCE;
+    }
+
+    // Default when useNativeTransport is unset: native transport if its lib is on the classpath (silently),
+    // else NIO. Use -Dio.netty.transport.noNative=true to force NIO.
+    private static TransportFactory<? extends Channel, ? extends EventLoopGroup> autoSelectTransportFactory() {
+        if (PlatformDependent.isOsx()) {
+            if (KQueueTransportFactory.isAvailable()) {
+                return new KQueueTransportFactory();
+            }
+        } else if (!PlatformDependent.isWindows()) {
+            // Prefer epoll: io_uring needs RLIMIT_MEMLOCK (often constrained in CI/containers).
+            if (EpollTransportFactory.isAvailable()) {
+                return new EpollTransportFactory();
+            } else if (IoUringTransportFactory.isAvailable()) {
+                return new IoUringTransportFactory();
+            }
         }
         return NioTransportFactory.INSTANCE;
     }

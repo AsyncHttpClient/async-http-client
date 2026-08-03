@@ -33,6 +33,7 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
     private long position;
     private ByteBuffer buffer;
     private ReadableByteChannel channel;
+    private boolean sourceExhausted;
 
     public InputStreamMultipartPart(InputStreamPart part, byte[] boundary) {
         super(part, boundary);
@@ -77,17 +78,46 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
         ByteBuffer buffer = getBuffer();
 
         int transferred = 0;
-        int read = channel.read(buffer);
 
-        if (read > 0) {
+        if (buffer.position() > 0) {
             buffer.flip();
-            while (buffer.hasRemaining()) {
-                transferred += target.write(buffer);
+            int written = target.write(buffer);
+            if (written > 0) {
+                transferred += written;
+                position += written;
             }
             buffer.compact();
-            position += transferred;
+            if (written == 0) {
+                slowTarget = true;
+                return 0;
+            }
         }
-        if (position == getContentLength() || read < 0) {
+
+        // Stop reading once the declared length is accounted for: a socket-backed stream has nothing more
+        // to give and would block that read until the request times out.
+        long contentLength = getContentLength();
+        boolean allBytesInHand = contentLength >= 0 && position + buffer.position() >= contentLength;
+
+        if (!sourceExhausted && !allBytesInHand) {
+            int read = channel.read(buffer);
+            if (read > 0) {
+                buffer.flip();
+                int written = target.write(buffer);
+                if (written > 0) {
+                    transferred += written;
+                    position += written;
+                }
+                buffer.compact();
+                if (written == 0) {
+                    slowTarget = true;
+                }
+            } else if (read < 0) {
+                sourceExhausted = true;
+            }
+        }
+
+        boolean allDeclaredBytesWritten = contentLength >= 0 && position >= contentLength;
+        if ((sourceExhausted || allDeclaredBytesWritten) && buffer.position() == 0) {
             state = MultipartState.POST_CONTENT;
             if (channel.isOpen()) {
                 channel.close();
