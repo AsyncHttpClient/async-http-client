@@ -125,11 +125,7 @@ public class Interceptors {
             return continue100Interceptor.exitAfterHandling100(channel, future);
         }
 
-        // Range check first: REDIRECT_STATUSES is a Set<Integer>, so contains(statusCode) boxed a fresh
-        // Integer on every response (status codes are outside Integer's valueOf cache). The set is public
-        // and mutable, so the lookup is kept rather than inlined as a switch, and a caller that registered
-        // an extra 3xx status still has it honoured.
-        if (statusCode >= 300 && statusCode < 400 && Redirect30xInterceptor.REDIRECT_STATUSES.contains(statusCode)) {
+        if (Redirect30xInterceptor.isRedirect(statusCode)) {
             return redirect30xInterceptor.exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
         }
 
