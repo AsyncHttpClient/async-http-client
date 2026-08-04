@@ -224,22 +224,25 @@ public class NettyResponse implements Response {
         return getResponseBody(withDefault(extractContentTypeCharsetAttribute(getContentType()), UTF_8));
     }
 
+    /**
+     * The body as bytes, for callers that keep the array to themselves. A lone part's own array is returned
+     * rather than a copy of it, so a caller that let it out would let the part's buffer be mutated through it;
+     * {@link #getResponseBodyAsBytes()} is the copying variant for those. Several parts are concatenated
+     * because a multi-byte character can straddle a part boundary.
+     */
+    private byte[] sharedBodyBytes() {
+        return bodyParts.size() == 1 ? bodyParts.get(0).getBodyPartBytes() : getResponseBodyAsBytes();
+    }
+
     @Override
     public String getResponseBody(Charset charset) {
-        // Decode a lone body part straight from its own bytes. getResponseBodyAsBytes concatenates every part
-        // into a fresh array first, so a body that arrived in a single read was copied twice, once to
-        // concatenate and once to decode. The array does not escape this method, so decoding the part's own
-        // one is safe. Several parts are still concatenated before decoding rather than decoded one at a
-        // time, because a multi-byte character can straddle a part boundary.
-        if (bodyParts.size() == 1) {
-            return new String(bodyParts.get(0).getBodyPartBytes(), charset);
-        }
-        return new String(getResponseBodyAsBytes(), charset);
+        return new String(sharedBodyBytes(), charset);
     }
 
     @Override
     public InputStream getResponseBodyAsStream() {
-        return new ByteArrayInputStream(getResponseBodyAsBytes());
+        // ByteArrayInputStream never exposes the array it wraps, so it can read the part's own.
+        return new ByteArrayInputStream(sharedBodyBytes());
     }
 
     @Override

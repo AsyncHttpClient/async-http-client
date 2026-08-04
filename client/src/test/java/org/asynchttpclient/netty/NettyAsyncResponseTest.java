@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -111,6 +112,20 @@ public class NettyAsyncResponseTest {
 
         assertEquals(expected, single.getResponseBody(StandardCharsets.UTF_8));
         assertEquals(expected, multiple.getResponseBody(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testGetResponseBodyReadsOnlyALazyPartsReadableRegion() throws IOException {
+        // A Lazy part's getBodyPartBytes returns just the readable region, not the whole backing array, so a
+        // single-part shortcut must go through it rather than reach for getBodyByteBuf().array().
+        byte[] backing = "XXXHello WorldYYY".getBytes(StandardCharsets.UTF_8);
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer(backing, 3, 11), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        assertEquals("Hello World", response.getResponseBody(StandardCharsets.UTF_8));
+        assertEquals("Hello World",
+                new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
     }
 
     @Test
