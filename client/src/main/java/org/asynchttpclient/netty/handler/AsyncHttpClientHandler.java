@@ -173,23 +173,22 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        readIfNotAutoRead(ctx);
+        readIfNeeded(ctx);
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        readIfNotAutoRead(ctx);
+        readIfNeeded(ctx);
     }
 
     /**
-     * Requests the next read only when the channel will not do it by itself. Netty's HeadContext already
-     * calls Channel#read() after firing channelActive and channelReadComplete whenever autoRead is on, so
-     * reading here as well only repeated the outbound pipeline traversal and doBeginRead. AsyncHttpClient
-     * never clears autoRead, which defaults to on, so this is the usual path; a caller that turns it off
-     * through a channel option still needs reads to be driven from here, which is why the call is kept
-     * rather than dropped.
+     * Requests the next read only when the channel will not do it by itself: Netty's {@code HeadContext}
+     * calls {@code Channel#read()} once channelActive and channelReadComplete have been fired whenever
+     * autoRead is on, so reading here as well would just repeat the outbound traversal and doBeginRead.
+     * Same guard as {@code SslHandler#readIfNeeded}, which {@code Http2ConnectionHandler}
+     * inlines in {@code channelReadComplete0}.
      */
-    private static void readIfNotAutoRead(ChannelHandlerContext ctx) {
+    private static void readIfNeeded(ChannelHandlerContext ctx) {
         if (!ctx.channel().config().isAutoRead()) {
             ctx.read();
         }
