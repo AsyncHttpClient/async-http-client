@@ -1373,6 +1373,10 @@ public final class NettyRequestSender {
         Uri uri = request.getUri();
         String virtualHost = request.getVirtualHost();
 
+        // SLF4J has no three-argument overload, so every debug statement below binds to
+        // debug(String, Object...) and allocates its varargs array at the call site whatever the level. This
+        // is the steady-state connection-reuse path, so they are all guarded explicitly.
+
         // Round-robin mode: poll with the IP-aware key so reuse stays pinned to the chosen IP (both the
         // HTTP/2 registry and the HTTP/1.1 pool).
         Object override = future != null ? future.getPartitionKeyOverride() : null;
@@ -1380,9 +1384,6 @@ public final class NettyRequestSender {
             if (!uri.isWebSocket()) {
                 Channel h2Channel = channelManager.pollHttp2Connection(override);
                 if (h2Channel != null) {
-                    // SLF4J has no three-argument overload, so every log statement in this method binds to
-                    // debug(String, Object...) and allocates its varargs array at the call site whatever the
-                    // level. This is the steady-state connection-reuse path, so guard them all explicitly.
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
                     }
