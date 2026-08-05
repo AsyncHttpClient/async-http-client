@@ -241,8 +241,7 @@ public class NettyResponse implements Response {
 
     @Override
     public InputStream getResponseBodyAsStream() {
-        // ByteArrayInputStream never exposes the array it wraps, so it can read the part's own.
-        return new ByteArrayInputStream(sharedBodyBytes());
+        return new ByteArrayInputStream(getResponseBodyAsBytes());
     }
 
     @Override

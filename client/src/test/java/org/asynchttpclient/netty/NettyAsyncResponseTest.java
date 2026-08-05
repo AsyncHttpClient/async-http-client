@@ -22,6 +22,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -138,5 +139,28 @@ public class NettyAsyncResponseTest {
         // caller, so it must keep copying rather than expose the part's own array.
         assertNotSame(response.getResponseBodyAsBytes(), response.getResponseBodyAsBytes());
         assertNotSame(bodyParts.get(0).getBodyPartBytes(), response.getResponseBodyAsBytes());
+    }
+
+    @Test
+    public void testGetResponseBodyAsStreamDoesNotShareTheBodyPartArray() throws IOException {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        // On JDK 11 ByteArrayInputStream.transferTo passes its own array to the OutputStream, so a stream over
+        // a part's array would put that array in the caller's hands.
+        byte[][] handedOut = new byte[1][];
+        response.getResponseBodyAsStream().transferTo(new OutputStream() {
+            @Override
+            public void write(int b) {
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) {
+                handedOut[0] = b;
+            }
+        });
+
+        assertNotSame(bodyParts.get(0).getBodyPartBytes(), handedOut[0]);
     }
 }
