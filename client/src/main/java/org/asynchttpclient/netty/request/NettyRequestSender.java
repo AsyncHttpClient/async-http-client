@@ -290,7 +290,13 @@ public final class NettyRequestSender {
     if (future.getNettyRequest().getHttpRequest().method() != HttpMethod.CONNECT) {
       requestFactory.addAuthorizationHeader(headers, perConnectionAuthorizationHeader(request, proxy, realm));
     }
-    requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
+    // Preemptive per-connection proxy auth (NTLM/Kerberos/SPNEGO) belongs only on a request sent to an
+    // HTTP proxy. Over a SOCKS proxy the transport tunnels this request to the ORIGIN, so attaching
+    // Proxy-Authorization here would leak the proxy credentials to the origin. Guard on the proxy type,
+    // mirroring the per-request gate in NettyRequestFactory.
+    if (proxy != null && proxy.getProxyType().isHttp()) {
+      requestFactory.setProxyAuthorizationHeader(headers, perConnectionProxyAuthorizationHeader(request, proxyRealm));
+    }
 
     future.setInAuth(realm != null && realm.isUsePreemptiveAuth() && realm.getScheme() != AuthScheme.NTLM);
     future.setInProxyAuth(
