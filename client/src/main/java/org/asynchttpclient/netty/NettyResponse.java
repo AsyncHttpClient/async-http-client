@@ -224,9 +224,19 @@ public class NettyResponse implements Response {
         return getResponseBody(withDefault(extractContentTypeCharsetAttribute(getContentType()), UTF_8));
     }
 
+    /**
+     * The body as bytes, for callers that keep the array to themselves. A lone part's own array is returned
+     * rather than a copy of it, so a caller that let it out would let the part's buffer be mutated through it;
+     * {@link #getResponseBodyAsBytes()} is the copying variant for those. Several parts are concatenated
+     * because a multi-byte character can straddle a part boundary.
+     */
+    private byte[] sharedBodyBytes() {
+        return bodyParts.size() == 1 ? bodyParts.get(0).getBodyPartBytes() : getResponseBodyAsBytes();
+    }
+
     @Override
     public String getResponseBody(Charset charset) {
-        return new String(getResponseBodyAsBytes(), charset);
+        return new String(sharedBodyBytes(), charset);
     }
 
     @Override
