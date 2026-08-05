@@ -23,8 +23,8 @@ import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.asynchttpclient.util.Assertions.assertNotNull;
@@ -253,6 +253,9 @@ public class Realm {
    */
   public static class Builder {
 
+    // cnonce must be unpredictable (RFC 7616 section 3.3), like the NTLM nonce
+    private static final ThreadLocal<SecureRandom> CNONCE_RANDOM = ThreadLocal.withInitial(SecureRandom::new);
+
     private final String principal;
     private final String password;
     private AuthScheme scheme;
@@ -449,7 +452,7 @@ public class Realm {
 
     private void newCnonce(MessageDigest md) {
       byte[] b = new byte[8];
-      ThreadLocalRandom.current().nextBytes(b);
+      CNONCE_RANDOM.get().nextBytes(b);
       b = md.digest(b);
       cnonce = toHexString(b);
     }
