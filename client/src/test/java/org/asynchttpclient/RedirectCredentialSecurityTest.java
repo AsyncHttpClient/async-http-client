@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -63,6 +64,7 @@ public class RedirectCredentialSecurityTest {
   private static final AtomicReference<String> lastCookieHeaderOnB = new AtomicReference<>();
   private static final AtomicReference<String> cookieAtChainStep2 = new AtomicReference<>();
   private static final AtomicReference<String> cookieOnBounceBack = new AtomicReference<>();
+  private static final AtomicReference<String> authOn401Target = new AtomicReference<>();
 
   @BeforeClass
   public static void startServers() throws Exception {
@@ -188,6 +190,27 @@ public class RedirectCredentialSecurityTest {
     serverB.createContext("/target-proxy", exchange -> {
       proxyAuthOnB.set(exchange.getRequestHeaders().getFirst("Proxy-Authorization"));
       exchange.sendResponseHeaders(200, 0);
+      exchange.getResponseBody().close();
+      exchange.close();
+    });
+
+    // Cross-domain redirect to a target that answers 401: the target must never receive
+    // credentials, even those configured client-wide via config.setRealm(...).
+    serverA.createContext("/redirect-to-b-401", exchange -> {
+      exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portB + "/target-401");
+      exchange.sendResponseHeaders(302, -1);
+      exchange.close();
+    });
+
+    serverB.createContext("/target-401", exchange -> {
+      String auth = exchange.getRequestHeaders().getFirst("Authorization");
+      if (auth != null) {
+        authOn401Target.set(auth);
+      }
+      exchange.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"target\"");
+      // A body-carrying response keeps the connection alive, so the client's authenticated retry (the
+      // leak this test guards against) actually reaches this handler instead of dying on a closed socket.
+      exchange.sendResponseHeaders(401, 0);
       exchange.getResponseBody().close();
       exchange.close();
     });
@@ -663,6 +686,35 @@ public class RedirectCredentialSecurityTest {
               "Authorization must be stripped when only the port differs (origin includes port)");
       assertNull(lastCookieHeaderOnB.get(),
               "Cookie must be stripped when only the port differs (origin includes port)");
+    }
+  }
+
+  /**
+   * Client-wide credentials set via {@code config.setRealm(...)} must not be sent to a cross-domain
+   * redirect target, even when that target answers 401 to solicit them. The redirect clears the
+   * request/future realm, but the config realm must not be re-applied.
+   */
+  @Test
+  public void crossDomainRedirectTo401TargetDoesNotLeakConfigRealm() throws Exception {
+    DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+            .setFollowRedirect(true)
+            .setRealm(basicAuthRealm("user", "password").build())
+            .build();
+    try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+      authOn401Target.set(null);
+
+      try {
+        client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b-401")
+                .execute()
+                .get(5, TimeUnit.SECONDS);
+      } catch (ExecutionException ignored) {
+        // Without the fix the 401 triggers an authenticated retry and the JDK test server closes the
+        // connection on it. What the request ends up returning is irrelevant here: the assertion below
+        // is the contract, and it must hold whether or not the exchange completed.
+      }
+
+      assertNull(authOn401Target.get(),
+              "client-wide config Realm must not be sent to a cross-domain 401 target after redirect");
     }
   }
 }
