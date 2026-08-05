@@ -235,9 +235,11 @@ public final class NettyRequestFactory {
       return uri.getAuthority();
 
     } else if (proxyServer != null && !uri.isSecured() && !uri.isWebSocket() && proxyServer.getProxyType().isHttp()) {
-      // proxy over HTTP, need full url. A ws:// request is tunnelled through CONNECT, so its upgrade
-      // request reaches the origin and takes the origin-form request target below
-      return uri.toUrl();
+      // proxy over HTTP, need full url, minus the userinfo: this request line is sent to the proxy in the
+      // clear and RFC 9110 section 4.2.4 forbids userinfo in a generated request target. A ws:// request is
+      // tunnelled through CONNECT, so its upgrade request reaches the origin and takes the origin-form
+      // request target below
+      return uri.toUrlWithoutUserInfo();
 
     } else {
       // direct connection to target host or tunnel already connected: only path and query

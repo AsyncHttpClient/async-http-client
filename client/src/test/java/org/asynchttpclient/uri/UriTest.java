@@ -138,6 +138,22 @@ public class UriTest {
   }
 
   @Test
+  public void testToUrlWithoutUserInfoDropsUserInfo() {
+    Uri uri = new Uri("http", "user:secret", "example.com", 44, "/path/path2", "query=4", null);
+    assertEquals(uri.toUrlWithoutUserInfo(), "http://example.com:44/path/path2?query=4",
+            "toUrlWithoutUserInfo must not emit the userinfo subcomponent");
+    assertEquals(uri.toUrl(), "http://user:secret@example.com:44/path/path2?query=4",
+            "toUrl must keep the userinfo for the caller-visible URL");
+  }
+
+  @Test
+  public void testToUrlWithoutUserInfoWithoutUserInfoMatchesToUrl() {
+    Uri uri = new Uri("http", null, "example.com", -1, "/path", "query=4", null);
+    assertEquals(uri.toUrlWithoutUserInfo(), uri.toUrl(),
+            "toUrlWithoutUserInfo must be identical to toUrl when there is no userinfo");
+  }
+
+  @Test
   public void testQueryWithNonRootPath() {
     Uri uri = Uri.create("http://hello.com/foo?query=value");
     assertEquals(uri.getPath(), "/foo");
