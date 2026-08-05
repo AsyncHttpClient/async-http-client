@@ -73,9 +73,9 @@ public class Redirect30xInterceptor {
 
     /**
      * Whether {@code statusCode} is a redirect this interceptor follows. Only a 3xx can be, and the class
-     * check takes an {@code int}, so it keeps the {@link #REDIRECT_STATUSES} lookup, which boxes, off the
-     * responses that make up almost all traffic. The set is still consulted rather than inlined here because
-     * it is public and mutable, so an extra 3xx status a caller registered stays honoured.
+     * check takes an {@code int}, so the boxing {@link #REDIRECT_STATUSES} lookup stays off the 2xx, 4xx
+     * and 5xx responses that carry almost all traffic. The set is consulted rather than inlined because it
+     * is public and mutable, so an extra 3xx a caller registered is honoured.
      */
     static boolean isRedirect(int statusCode) {
         return HttpStatusClass.REDIRECTION.contains(statusCode) && REDIRECT_STATUSES.contains(statusCode);
