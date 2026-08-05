@@ -209,7 +209,10 @@ public final class NettyRequestFactory {
     // carries an absolute URI straight to the proxy) or on a CONNECT (sent to the proxy to open the
     // tunnel). A SOCKS proxy tunnels at the transport layer, so the request reaches the ORIGIN - a
     // Proxy-Authorization header would leak the proxy credentials to the origin. Guard on the proxy type.
-    if ((connect || !uri.isSecured()) && proxyServer != null && proxyServer.getProxyType().isHttp()) {
+    // A ws:// request is tunnelled through CONNECT the same way wss:// is (see NettyRequestSender's
+    // needConnect check), so the upgrade request that follows also reaches the origin, not the proxy;
+    // exclude it from the plain-HTTP branch the same way wss:// already is.
+    if ((connect || (!uri.isSecured() && !uri.isWebSocket())) && proxyServer != null && proxyServer.getProxyType().isHttp()) {
       setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyRealm));
     }
 
@@ -231,8 +234,9 @@ public final class NettyRequestFactory {
       // proxy tunnelling, connect need host and explicit port
       return uri.getAuthority();
 
-    } else if (proxyServer != null && !uri.isSecured() && proxyServer.getProxyType().isHttp()) {
-      // proxy over HTTP, need full url
+    } else if (proxyServer != null && !uri.isSecured() && !uri.isWebSocket() && proxyServer.getProxyType().isHttp()) {
+      // proxy over HTTP, need full url. A ws:// request is tunnelled through CONNECT, so its upgrade
+      // request reaches the origin and takes the origin-form request target below
       return uri.toUrl();
 
     } else {
