@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.handler.intercept;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -68,6 +69,16 @@ public class Redirect30xInterceptor {
         REDIRECT_STATUSES.add(SEE_OTHER_303);
         REDIRECT_STATUSES.add(TEMPORARY_REDIRECT_307);
         REDIRECT_STATUSES.add(PERMANENT_REDIRECT_308);
+    }
+
+    /**
+     * Whether {@code statusCode} is a redirect this interceptor follows. Only a 3xx can be, and the class
+     * check takes an {@code int}, so the boxing {@link #REDIRECT_STATUSES} lookup stays off the 2xx, 4xx
+     * and 5xx responses that carry almost all traffic. The set is consulted rather than inlined because it
+     * is public and mutable, so an extra 3xx a caller registered is honoured.
+     */
+    static boolean isRedirect(int statusCode) {
+        return HttpStatusClass.REDIRECTION.contains(statusCode) && REDIRECT_STATUSES.contains(statusCode);
     }
 
     private final ChannelManager channelManager;
