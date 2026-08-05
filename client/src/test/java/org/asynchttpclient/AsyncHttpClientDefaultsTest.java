@@ -125,6 +125,11 @@ public class AsyncHttpClientDefaultsTest {
     testIntegerSystemProperty("hashedWheelTimerSize", "defaultHashedWheelTimerSize", "512");
   }
 
+  public void testDefaultMaxDecompressedResponseSize() {
+    Assert.assertEquals(AsyncHttpClientConfigDefaults.defaultMaxDecompressedResponseSize(), 256 * 1024 * 1024);
+    testIntegerSystemProperty("maxDecompressedResponseSize", "defaultMaxDecompressedResponseSize", "1024");
+  }
+
   private void testIntegerSystemProperty(String propertyName, String methodName, String value) {
     String previous = System.getProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
     System.setProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName, value);

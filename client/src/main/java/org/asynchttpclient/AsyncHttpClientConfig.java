@@ -22,6 +22,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.KeepAliveStrategy;
+import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -291,6 +292,7 @@ public interface AsyncHttpClientConfig {
 
   boolean isKeepEncodingHeader();
 
+
   int getShutdownQuietPeriod();
 
   int getShutdownTimeout();
@@ -354,6 +356,17 @@ public interface AsyncHttpClientConfig {
    */
   default boolean isStripAuthorizationOnRedirect() {
     return false;
+  }
+
+  /**
+   * The maximum number of bytes a compressed response body may inflate to. Guards against a
+   * "decompression bomb": a small response that expands without bound once decoded. {@code 0} disables the
+   * limit and restores Netty's unbounded behaviour.
+   *
+   * @return the decompressed response ceiling in bytes
+   */
+  default int getMaxDecompressedResponseSize() {
+    return AsyncHttpClientConfigDefaults.defaultMaxDecompressedResponseSize();
   }
 
   enum ResponseBodyPartFactory {

@@ -290,6 +290,11 @@ public class AsyncHttpClientTypesafeConfig implements AsyncHttpClientConfig {
   }
 
   @Override
+  public int getMaxDecompressedResponseSize() {
+    return getIntegerOpt(MAX_DECOMPRESSED_RESPONSE_SIZE_CONFIG).orElse(defaultMaxDecompressedResponseSize());
+  }
+
+  @Override
   public int getShutdownQuietPeriod() {
     return getIntegerOpt(SHUTDOWN_QUIET_PERIOD_CONFIG).orElse(defaultShutdownQuietPeriod());
   }

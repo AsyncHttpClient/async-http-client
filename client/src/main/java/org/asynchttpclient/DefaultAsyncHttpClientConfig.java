@@ -61,6 +61,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   private final boolean useLaxCookieEncoder;
   private final boolean disableZeroCopy;
   private final boolean keepEncodingHeader;
+  private final int maxDecompressedResponseSize;
   private final ProxyServerSelector proxyServerSelector;
   private final boolean validateResponseHeaders;
   private final boolean stripAuthorizationOnRedirect;
@@ -150,6 +151,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                        boolean useLaxCookieEncoder,
                                        boolean disableZeroCopy,
                                        boolean keepEncodingHeader,
+                                       int maxDecompressedResponseSize,
                                        ProxyServerSelector proxyServerSelector,
                                        boolean validateResponseHeaders,
                                        boolean aggregateWebSocketFrameFragments,
@@ -239,6 +241,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     this.useLaxCookieEncoder = useLaxCookieEncoder;
     this.disableZeroCopy = disableZeroCopy;
     this.keepEncodingHeader = keepEncodingHeader;
+    this.maxDecompressedResponseSize = maxDecompressedResponseSize;
     this.proxyServerSelector = proxyServerSelector;
     this.validateResponseHeaders = validateResponseHeaders;
     this.stripAuthorizationOnRedirect = stripAuthorizationOnRedirect;
@@ -378,6 +381,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
   @Override
   public boolean isKeepEncodingHeader() {
     return keepEncodingHeader;
+  }
+
+  @Override
+  public int getMaxDecompressedResponseSize() {
+    return maxDecompressedResponseSize;
   }
 
   @Override
@@ -717,6 +725,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
     private boolean disableZeroCopy = defaultDisableZeroCopy();
     private boolean keepEncodingHeader = defaultKeepEncodingHeader();
+    private int maxDecompressedResponseSize = defaultMaxDecompressedResponseSize();
     private ProxyServerSelector proxyServerSelector;
     private boolean useProxySelector = defaultUseProxySelector();
     private boolean useProxyProperties = defaultUseProxyProperties();
@@ -809,6 +818,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
       useLaxCookieEncoder = config.isUseLaxCookieEncoder();
       disableZeroCopy = config.isDisableZeroCopy();
       keepEncodingHeader = config.isKeepEncodingHeader();
+      maxDecompressedResponseSize = config.getMaxDecompressedResponseSize();
       proxyServerSelector = config.getProxyServerSelector();
       stripAuthorizationOnRedirect = config.isStripAuthorizationOnRedirect();
 
@@ -937,6 +947,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
     public Builder setKeepEncodingHeader(boolean keepEncodingHeader) {
       this.keepEncodingHeader = keepEncodingHeader;
+      return this;
+    }
+
+    /**
+     * Bound how far a compressed response body may inflate, in bytes. {@code 0} disables the limit.
+     *
+     * @param maxDecompressedResponseSize the decompressed response ceiling in bytes
+     * @return this
+     */
+    public Builder setMaxDecompressedResponseSize(int maxDecompressedResponseSize) {
+      this.maxDecompressedResponseSize = maxDecompressedResponseSize;
       return this;
     }
 
@@ -1325,6 +1346,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
               useLaxCookieEncoder,
               disableZeroCopy,
               keepEncodingHeader,
+              maxDecompressedResponseSize,
               resolveProxyServerSelector(),
               validateResponseHeaders,
               aggregateWebSocketFrameFragments,

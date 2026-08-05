@@ -67,6 +67,7 @@ public final class AsyncHttpClientConfigDefaults {
   public static final String WEBSOCKET_MAX_BUFFER_SIZE_CONFIG = "webSocketMaxBufferSize";
   public static final String WEBSOCKET_MAX_FRAME_SIZE_CONFIG = "webSocketMaxFrameSize";
   public static final String KEEP_ENCODING_HEADER_CONFIG = "keepEncodingHeader";
+  public static final String MAX_DECOMPRESSED_RESPONSE_SIZE_CONFIG = "maxDecompressedResponseSize";
   public static final String SHUTDOWN_QUIET_PERIOD_CONFIG = "shutdownQuietPeriod";
   public static final String SHUTDOWN_TIMEOUT_CONFIG = "shutdownTimeout";
   public static final String USE_NATIVE_TRANSPORT_CONFIG = "useNativeTransport";
@@ -280,6 +281,10 @@ public final class AsyncHttpClientConfigDefaults {
 
   public static boolean defaultKeepEncodingHeader() {
     return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + KEEP_ENCODING_HEADER_CONFIG);
+  }
+
+  public static int defaultMaxDecompressedResponseSize() {
+    return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + MAX_DECOMPRESSED_RESPONSE_SIZE_CONFIG);
   }
 
   public static int defaultShutdownQuietPeriod() {

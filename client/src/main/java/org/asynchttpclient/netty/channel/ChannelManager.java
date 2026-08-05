@@ -254,15 +254,28 @@ public class ChannelManager {
   }
 
   private HttpContentDecompressor newHttpContentDecompressor() {
+    // Bound the decompressor's cumulative allocation to guard against decompression bombs (a small
+    // compressed body that inflates without limit). The no-arg constructor uses maxAllocation=0, i.e.
+    // unbounded; Netty throws a DecompressionException once the inflated size would exceed the ceiling.
+    int maxAllocation = maxDecompressedResponseSize();
     if (config.isKeepEncodingHeader())
-      return new HttpContentDecompressor() {
+      return new HttpContentDecompressor(maxAllocation) {
         @Override
         protected String getTargetContentEncoding(String contentEncoding) {
           return contentEncoding;
         }
       };
     else
-      return new HttpContentDecompressor();
+      return new HttpContentDecompressor(maxAllocation);
+  }
+
+  /**
+   * The configured decompressed-response ceiling, normalised for Netty's maxAllocation parameter: any
+   * non-positive value means "no limit", which is what {@code 0} tells Netty.
+   */
+  private int maxDecompressedResponseSize() {
+    int configured = config.getMaxDecompressedResponseSize();
+    return configured > 0 ? configured : 0;
   }
 
   public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> asyncHandler, boolean keepAlive, Object partitionKey) {
