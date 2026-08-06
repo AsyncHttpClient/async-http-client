@@ -14,6 +14,7 @@
 package org.asynchttpclient.netty;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.HttpMethod;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
@@ -116,6 +117,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
   private boolean headersAlreadyWrittenOnContinue;
   private boolean dontWriteBodyBecauseExpectContinue;
   private boolean allowConnect;
+  private boolean tunnelEstablished;
   private Realm realm;
   private Realm proxyRealm;
 
@@ -338,7 +340,31 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
   }
 
   public final void setNettyRequest(NettyRequest nettyRequest) {
+    if (nettyRequest != null && nettyRequest.getHttpRequest().method() == HttpMethod.CONNECT) {
+      // A new tunnel attempt is starting, so whatever an earlier CONNECT established no longer holds.
+      // Only ConnectSuccessInterceptor may set this back to true. Keeping the invariant here rather than
+      // at the call site means no future path can attach a CONNECT while leaving the flag stale.
+      tunnelEstablished = false;
+    }
     this.nettyRequest = nettyRequest;
+  }
+
+  /**
+   * Whether a CONNECT on the channel this exchange is using actually succeeded, i.e. whether the socket is
+   * a tunnel to the origin rather than a plaintext hop to the proxy. Set only by
+   * {@link org.asynchttpclient.netty.handler.intercept.ConnectSuccessInterceptor}. The fact that the last
+   * request sent was a CONNECT proves nothing on its own: it is equally true when the proxy REJECTED the
+   * CONNECT, and treating that as an established tunnel puts the origin's credentials on a socket the
+   * proxy is still reading in the clear.
+   *
+   * @return true if a CONNECT has been answered successfully for the current channel
+   */
+  public boolean isTunnelEstablished() {
+    return tunnelEstablished;
+  }
+
+  public void setTunnelEstablished(boolean tunnelEstablished) {
+    this.tunnelEstablished = tunnelEstablished;
   }
 
   public final AsyncHandler<V> getAsyncHandler() {

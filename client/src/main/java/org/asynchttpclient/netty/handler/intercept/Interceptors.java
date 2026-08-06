@@ -73,9 +73,15 @@ public class Interceptors {
     // redirect target whose auth was just stripped, leaking them to a different origin that answers 401.
     Realm realm = future.getRealm();
 
+    // A CONNECT is addressed to the PROXY and travels in the clear, so its response is the proxy's, not
+    // the origin's - which changes both what may be stored from it and who may act on it.
+    boolean connectRequest = httpRequest.method() == HttpMethod.CONNECT;
+
     // This MUST BE called before Redirect30xInterceptor because latter assumes cookie store is already updated
     CookieStore cookieStore = config.getCookieStore();
-    if (cookieStore != null) {
+    if (cookieStore != null && !connectRequest) {
+      // Skipped on a CONNECT: currentRequest is the ORIGIN request, so a Set-Cookie in the proxy's answer
+      // would be filed against the URI of an origin the request never reached.
       for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
         Cookie c = cookieDecoder.decode(cookieStr);
         if (c != null) {
@@ -89,6 +95,21 @@ public class Interceptors {
       return true;
     }
 
+    // Only two answers to a CONNECT may be acted on: a 200 that establishes the tunnel, and a 407 asking
+    // the proxy realm for credentials. Everything else - 401, 3xx, 100 - must NOT reach the origin-request
+    // interceptors, which rebuild the exchange as the ORIGIN request with setReuseChannel(true). That put
+    // the origin's Authorization on a socket still terminated by the proxy in plaintext, and let a hostile
+    // or compromised proxy solicit it with nothing more than a 401 or a 302.
+    if (connectRequest) {
+      if (statusCode == PROXY_AUTHENTICATION_REQUIRED_407) {
+        return proxyUnauthorized407Interceptor.exitAfterHandling407(channel, future, response, request, proxyServer, httpRequest);
+      }
+      if (statusCode == OK_200) {
+        return connectSuccessInterceptor.exitAfterHandlingConnect(channel, future, request, proxyServer);
+      }
+      return false;
+    }
+
     if (statusCode == UNAUTHORIZED_401) {
       return unauthorized401Interceptor.exitAfterHandling401(channel, future, response, request, realm, httpRequest);
 
@@ -100,9 +121,6 @@ public class Interceptors {
 
     } else if (Redirect30xInterceptor.REDIRECT_STATUSES.contains(statusCode)) {
       return redirect30xInterceptor.exitAfterHandlingRedirect(channel, future, response, request, statusCode, realm);
-
-    } else if (httpRequest.method() == HttpMethod.CONNECT && statusCode == OK_200) {
-      return connectSuccessInterceptor.exitAfterHandlingConnect(channel, future, request, proxyServer);
 
     }
     return false;

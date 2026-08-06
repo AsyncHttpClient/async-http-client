@@ -117,6 +117,11 @@ public final class NettyRequestSender {
 
   private boolean isConnectAlreadyDone(Request request, NettyResponseFuture<?> future) {
     return future != null
+            // The last request having been a CONNECT proves nothing: it is equally true when the proxy
+            // REJECTED it with 401, 407 or a redirect. ConnectSuccessInterceptor never ran in that case,
+            // so the socket is still a plaintext hop to the proxy. Skipping the CONNECT here would send
+            // the ORIGIN request - Authorization header and all - straight down it.
+            && future.isTunnelEstablished()
             && future.getNettyRequest() != null
             && future.getNettyRequest().getHttpRequest().method() == HttpMethod.CONNECT
             && !request.getMethod().equals(CONNECT);

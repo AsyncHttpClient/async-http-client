@@ -70,6 +70,15 @@ public class ProxyUnauthorized407Interceptor {
       return false;
     }
 
+    // A SOCKS proxy tunnels at the transport layer and never speaks HTTP, so a 407 arriving over one was
+    // written by the ORIGIN. Answering it mints proxy credentials for the origin: the NTLM and
+    // Kerberos/SPNEGO branches below write Proxy-Authorization straight onto the request headers, which
+    // newNettyRequest then copies verbatim, bypassing the proxy-type gate that guards the preemptive path.
+    if (proxyServer == null || !proxyServer.getProxyType().isHttp()) {
+      LOGGER.debug("Can't handle 407: not an HTTP proxy, so the 407 came from the origin");
+      return false;
+    }
+
     List<String> proxyAuthHeaders = response.headers().getAll(PROXY_AUTHENTICATE);
 
     if (proxyAuthHeaders.isEmpty()) {

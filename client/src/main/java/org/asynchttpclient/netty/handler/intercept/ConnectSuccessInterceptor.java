@@ -45,6 +45,10 @@ public class ConnectSuccessInterceptor {
     if (future.isKeepAlive())
       future.attachChannel(channel, true);
 
+    // The single place this may be set. From here on the socket is a tunnel to the origin, so the origin's
+    // credentials may travel on it; until this point it is a plaintext hop to the proxy.
+    future.setTunnelEstablished(true);
+
     Uri requestUri = request.getUri();
     LOGGER.debug("Connecting to proxy {} for scheme {}", proxyServer, requestUri.getScheme());
 
