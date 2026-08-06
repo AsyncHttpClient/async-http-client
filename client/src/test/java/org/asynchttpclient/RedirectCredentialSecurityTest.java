@@ -27,7 +27,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -208,8 +207,10 @@ public class RedirectCredentialSecurityTest {
         authOn401Target.set(auth);
       }
       exchange.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"target\"");
-      // A body-carrying response keeps the connection alive, so the client's authenticated retry (the
-      // leak this test guards against) actually reaches this handler instead of dying on a closed socket.
+      // Streamed framing (length 0 plus a closed body), which this server emits as Transfer-Encoding:
+      // chunked with a terminating chunk, so the connection survives the exchange. sendResponseHeaders
+      // with -1 would send Content-Length: 0 and then reset the connection, and the authenticated retry
+      // this test is watching for - the leak - would die on a closed socket instead of reaching here.
       exchange.sendResponseHeaders(401, 0);
       exchange.getResponseBody().close();
       exchange.close();
@@ -703,16 +704,13 @@ public class RedirectCredentialSecurityTest {
     try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
       authOn401Target.set(null);
 
-      try {
-        client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b-401")
-                .execute()
-                .get(5, TimeUnit.SECONDS);
-      } catch (ExecutionException ignored) {
-        // Without the fix the 401 triggers an authenticated retry and the JDK test server closes the
-        // connection on it. What the request ends up returning is irrelevant here: the assertion below
-        // is the contract, and it must hold whether or not the exchange completed.
-      }
+      Response response = client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b-401")
+              .execute()
+              .get(5, TimeUnit.SECONDS);
 
+      // The redirect is followed and the 401 is returned to the caller: the exchange completes either
+      // way, so a leak cannot hide behind a failed request.
+      assertEquals(response.getStatusCode(), 401);
       assertNull(authOn401Target.get(),
               "client-wide config Realm must not be sent to a cross-domain 401 target after redirect");
     }
