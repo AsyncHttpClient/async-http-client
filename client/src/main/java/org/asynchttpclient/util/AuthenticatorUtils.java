@@ -55,7 +55,13 @@ public final class AuthenticatorUtils {
 
   public static String computeRealmURI(Uri uri, boolean useAbsoluteURI, boolean omitQuery) {
     if (useAbsoluteURI) {
-      return omitQuery && MiscUtils.isNonEmpty(uri.getQuery()) ? uri.withNewQuery(null).toUrl() : uri.toUrl();
+      // Absolute form, so this string goes on the wire as the Digest uri="..." parameter, and the digest
+      // itself is computed over it. RFC 9110 section 4.2.4 forbids generating the userinfo subcomponent in
+      // a request target, and Digest is used precisely on hops where the password must not travel in the
+      // clear - toUrl() would render "user:secret@" straight into the header. Use the userinfo-free form.
+      return omitQuery && MiscUtils.isNonEmpty(uri.getQuery())
+              ? uri.withNewQuery(null).toUrlWithoutUserInfo()
+              : uri.toUrlWithoutUserInfo();
     } else {
       String path = uri.getNonEmptyPath();
       return omitQuery || !MiscUtils.isNonEmpty(uri.getQuery()) ? path : path + "?" + uri.getQuery();
