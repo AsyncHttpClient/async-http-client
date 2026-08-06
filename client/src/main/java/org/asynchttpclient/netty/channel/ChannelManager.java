@@ -23,7 +23,6 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
@@ -46,6 +45,7 @@ import org.asynchttpclient.channel.NoopChannelPool;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.handler.AsyncHttpClientHandler;
+import org.asynchttpclient.netty.handler.BoundedHttpContentDecompressor;
 import org.asynchttpclient.netty.handler.HttpHandler;
 import org.asynchttpclient.netty.handler.WebSocketHandler;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -253,29 +253,14 @@ public class ChannelManager {
     });
   }
 
-  private HttpContentDecompressor newHttpContentDecompressor() {
-    // Bound the decompressor's cumulative allocation to guard against decompression bombs (a small
-    // compressed body that inflates without limit). The no-arg constructor uses maxAllocation=0, i.e.
-    // unbounded; Netty throws a DecompressionException once the inflated size would exceed the ceiling.
-    int maxAllocation = maxDecompressedResponseSize();
-    if (config.isKeepEncodingHeader())
-      return new HttpContentDecompressor(maxAllocation) {
-        @Override
-        protected String getTargetContentEncoding(String contentEncoding) {
-          return contentEncoding;
-        }
-      };
-    else
-      return new HttpContentDecompressor(maxAllocation);
-  }
-
   /**
-   * The configured decompressed-response ceiling, normalised for Netty's maxAllocation parameter: any
-   * non-positive value means "no limit", which is what {@code 0} tells Netty.
+   * A decompressor whose output is counted over the whole response, failing the request once it exceeds
+   * {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}, so a small but highly compressible body
+   * cannot inflate without bound. Netty's own {@code maxAllocation} parameter is deliberately left at 0 -
+   * see {@link BoundedHttpContentDecompressor} for why it neither bounds a response nor is safe to set.
    */
-  private int maxDecompressedResponseSize() {
-    int configured = config.getMaxDecompressedResponseSize();
-    return configured > 0 ? configured : 0;
+  private BoundedHttpContentDecompressor newHttpContentDecompressor() {
+    return new BoundedHttpContentDecompressor(config.isKeepEncodingHeader(), config.getMaxDecompressedResponseSize());
   }
 
   public final void tryToOfferChannelToPool(Channel channel, AsyncHandler<?> asyncHandler, boolean keepAlive, Object partitionKey) {

@@ -292,7 +292,6 @@ public interface AsyncHttpClientConfig {
 
   boolean isKeepEncodingHeader();
 
-
   int getShutdownQuietPeriod();
 
   int getShutdownTimeout();
@@ -359,14 +358,19 @@ public interface AsyncHttpClientConfig {
   }
 
   /**
-   * The maximum number of bytes a compressed response body may inflate to. Guards against a
-   * "decompression bomb": a small response that expands without bound once decoded. {@code 0} disables the
-   * limit and restores Netty's unbounded behaviour.
+   * The maximum number of bytes a compressed response body may inflate to, counted over the whole
+   * response. Guards against a "decompression bomb": a small response that expands without bound once
+   * decoded. {@code 0} disables the limit.
+   * <p>
+   * The literal is hardcoded rather than read through {@link AsyncHttpClientConfigDefaults}: this default
+   * runs for any third-party implementation of this interface, and it is reached on the event loop when
+   * the pipeline is built, so a property lookup plus {@code Integer.parseInt} would turn a typo in a
+   * configuration file into a failure on every connection rather than at startup.
    *
    * @return the decompressed response ceiling in bytes
    */
   default int getMaxDecompressedResponseSize() {
-    return AsyncHttpClientConfigDefaults.defaultMaxDecompressedResponseSize();
+    return 268435456;
   }
 
   enum ResponseBodyPartFactory {
