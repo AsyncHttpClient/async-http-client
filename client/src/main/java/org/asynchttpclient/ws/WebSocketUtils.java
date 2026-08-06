@@ -13,8 +13,7 @@
  */
 package org.asynchttpclient.ws;
 
-import io.netty.util.internal.ThreadLocalRandom;
-
+import java.security.SecureRandom;
 import java.util.Base64;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -23,12 +22,14 @@ import static org.asynchttpclient.util.MessageDigestUtils.pooledSha1MessageDiges
 public final class WebSocketUtils {
   private static final String MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
+  // RFC 6455 section 10.3 requires the handshake nonce to come from a strong source of entropy: it is
+  // what proves the 101 was produced by a peer that saw this request. Netty's ThreadLocalRandom is a
+  // 48-bit LCG, so an off-path party who can guess the key can precompute a valid Sec-WebSocket-Accept.
+  private static final ThreadLocal<SecureRandom> KEY_RANDOM = ThreadLocal.withInitial(SecureRandom::new);
+
   public static String getWebSocketKey() {
     byte[] nonce = new byte[16];
-    ThreadLocalRandom random = ThreadLocalRandom.current();
-    for (int i = 0; i < nonce.length; i++) {
-      nonce[i] = (byte) random.nextInt(256);
-    }
+    KEY_RANDOM.get().nextBytes(nonce);
     return Base64.getEncoder().encodeToString(nonce);
   }
 

@@ -23,11 +23,16 @@ import org.asynchttpclient.netty.util.ByteBufUtils;
 import org.asynchttpclient.uri.Uri;
 import org.testng.annotations.Test;
 
+import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.*;
@@ -111,6 +116,37 @@ public class HttpUtilsTest {
     DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
     boolean followRedirect = HttpUtils.followRedirect(config, request);
     assertFalse(followRedirect, "Follow redirect value set in request should be given priority");
+  }
+
+  /**
+   * The multipart boundary is the only thing separating parts whose content is never escaped, so a caller
+   * that can predict it can close a part early and append a forged Content-Disposition. It is also the
+   * widest window a peer gets onto the generator - 30 to 40 consecutive draws echoed in the clear - so
+   * anything else drawn from the same generator (the Digest cnonce) inherits the weakness. It must come
+   * from a cryptographically strong source, not from ThreadLocalRandom.
+   */
+  @Test
+  public void multipartBoundaryComesFromASecureGenerator() throws Exception {
+    Field field = HttpUtils.class.getDeclaredField("BOUNDARY_RANDOM");
+    field.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    ThreadLocal<Random> holder = (ThreadLocal<Random>) field.get(null);
+    assertTrue(holder.get() instanceof SecureRandom,
+            "the multipart boundary generator must be a SecureRandom but was: " + holder.get().getClass());
+  }
+
+  @Test
+  public void computeMultipartBoundaryRespectsItsContract() {
+    String allowed = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    Set<String> boundaries = new HashSet<>();
+    for (int i = 0; i < 1000; i++) {
+      String boundary = new String(HttpUtils.computeMultipartBoundary(), US_ASCII);
+      assertTrue(boundary.length() >= 30 && boundary.length() <= 40, "Unexpected boundary length: " + boundary.length());
+      for (int j = 0; j < boundary.length(); j++) {
+        assertTrue(allowed.indexOf(boundary.charAt(j)) != -1, "Illegal boundary char: " + boundary.charAt(j));
+      }
+      assertTrue(boundaries.add(boundary), "Boundary was generated twice: " + boundary);
+    }
   }
 
   private void formUrlEncoding(Charset charset) throws Exception {
