@@ -234,7 +234,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     if (close) {
       channelManager.closeChannel(channel);
     } else {
-      channelManager.tryToOfferChannelToPool(channel, future.getAsyncHandler(), true, future.getPartitionKey());
+      channelManager.tryToOfferChannelToPool(channel, future, true, future.getPartitionKey());
     }
 
     try {

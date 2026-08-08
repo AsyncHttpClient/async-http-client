@@ -28,6 +28,7 @@ import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.HttpConstants.ResponseStatusCodes;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -40,8 +41,17 @@ public final class HttpHandler extends AsyncHttpClientHandler {
   }
 
   private boolean abortAfterHandlingStatus(AsyncHandler<?> handler,
+                                           HttpMethod httpMethod,
                                            NettyResponseStatus status) throws Exception {
-    return handler.onStatusReceived(status) == State.ABORT;
+    // For a non-200 response to a CONNECT the tunnel was NOT established: the socket is still a plaintext
+    // hop terminated by the proxy. It has to be either closed or reused by sending the CONNECT again, and
+    // closing is the simpler of the two. Letting the exchange run on would instead reach handleChunk, where
+    // close is only `!future.isKeepAlive()` - i.e. whatever the proxy chose to say - and the still-plaintext
+    // socket would be offered to the pool under a partition key that names the secured origin. The next
+    // exchange polls it and, believing a channel under that key to be a tunnel, sends the ORIGIN request
+    // down it, Authorization header included.
+    return handler.onStatusReceived(status) == State.ABORT
+            || httpMethod == HttpMethod.CONNECT && status.getStatusCode() != ResponseStatusCodes.OK_200;
   }
 
   private boolean abortAfterHandlingHeaders(AsyncHandler<?> handler,
@@ -75,7 +85,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     HttpHeaders responseHeaders = response.headers();
 
     if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-      boolean abort = abortAfterHandlingStatus(handler, status) || //
+      boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status) || //
               abortAfterHandlingHeaders(handler, responseHeaders) || //
               abortAfterHandlingReactiveStreams(channel, future, handler);
 

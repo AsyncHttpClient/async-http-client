@@ -33,11 +33,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.basicAuthRealm;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -70,14 +72,39 @@ public class ConnectTunnelStateTest {
   }
 
   /**
+   * One request head as the proxy saw it, together with the identity of the TCP connection it arrived on.
+   * The connection is the point: "the socket was closed" and "the socket was poisoned and left in the
+   * pool" are indistinguishable from a single request, and only the second one leaks.
+   */
+  private static final class RecordedHead {
+
+    final int connectionId;
+    final String head;
+
+    RecordedHead(int connectionId, String head) {
+      this.connectionId = connectionId;
+      this.head = head;
+    }
+
+    @Override
+    public String toString() {
+      return "[conn#" + connectionId + "] " + head;
+    }
+  }
+
+  /**
    * A minimal HTTP proxy that answers each request head it receives with the next scripted response and
-   * keeps the connection open, recording everything the client sends on it afterwards.
+   * keeps the connection open, recording everything the client sends on it afterwards. Each accepted
+   * connection is served on its own thread and numbered, so a client that opens a second connection is
+   * told apart from one that reuses the first.
    */
   private static final class RecordingProxy implements Closeable {
 
     private final ServerSocket serverSocket;
     private final String[] responses;
-    private final List<String> requestHeads = new CopyOnWriteArrayList<>();
+    private final List<RecordedHead> requestHeads = new CopyOnWriteArrayList<>();
+    private final List<Socket> accepted = new CopyOnWriteArrayList<>();
+    private final AtomicInteger connectionIds = new AtomicInteger();
     /**
      * Counts down to the number of request heads the UNFIXED client would send, so a run that reproduces
      * the leak does not have to wait out a request timeout to record it.
@@ -100,24 +127,38 @@ public class ConnectTunnelStateTest {
 
     private void serve() {
       while (!serverSocket.isClosed()) {
-        try (Socket socket = serverSocket.accept()) {
-          socket.setSoTimeout(5000);
-          InputStream in = socket.getInputStream();
-          OutputStream out = socket.getOutputStream();
-          int answered = 0;
-          String head;
-          while ((head = readHead(in)) != null) {
-            requestHeads.add(head);
-            expectedHeads.countDown();
-            if (answered < responses.length) {
-              out.write(responses[answered++].getBytes(StandardCharsets.US_ASCII));
-              out.flush();
-            }
-          }
+        try {
+          Socket socket = serverSocket.accept();
+          accepted.add(socket);
+          int connectionId = connectionIds.incrementAndGet();
+          Thread connectionThread = new Thread(() -> serveConnection(socket, connectionId));
+          connectionThread.setDaemon(true);
+          connectionThread.start();
         } catch (Exception ignored) {
-          // accept() throws once the socket is closed in tearDown, and a read times out when the client
-          // has nothing more to say. Either way there is nothing left to record on this connection.
+          // accept() throws once the server socket is closed in tearDown.
+          return;
         }
+      }
+    }
+
+    private void serveConnection(Socket socket, int connectionId) {
+      try (Socket toClose = socket) {
+        toClose.setSoTimeout(5000);
+        InputStream in = toClose.getInputStream();
+        OutputStream out = toClose.getOutputStream();
+        int answered = 0;
+        String head;
+        while ((head = readHead(in)) != null) {
+          requestHeads.add(new RecordedHead(connectionId, head));
+          expectedHeads.countDown();
+          if (answered < responses.length) {
+            out.write(responses[answered++].getBytes(StandardCharsets.US_ASCII));
+            out.flush();
+          }
+        }
+      } catch (Exception ignored) {
+        // A read times out or fails once the client has nothing more to say on this connection. Either
+        // way there is nothing left to record on it.
       }
     }
 
@@ -148,6 +189,13 @@ public class ConnectTunnelStateTest {
     @Override
     public void close() throws IOException {
       serverSocket.close();
+      for (Socket socket : accepted) {
+        try {
+          socket.close();
+        } catch (IOException ignored) {
+          // Already closed by the client or by the connection thread.
+        }
+      }
       thread.interrupt();
     }
   }
@@ -170,17 +218,34 @@ public class ConnectTunnelStateTest {
   }
 
   /**
+   * Any Authorization at all, whatever it carries. Nothing addressed to the origin has any business on a
+   * socket the proxy refused to turn into a tunnel.
+   */
+  private static boolean carriesAnyAuthorization(String head) {
+    for (String line : head.split("\r\n")) {
+      if (line.toLowerCase().startsWith("authorization:")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * The contract for a proxy that never established a tunnel: the only thing it may ever be sent is a
    * CONNECT, and certainly not the origin's credentials.
    */
   private void assertOnlyConnectsReachedTheProxy() {
     assertFalse(proxy.requestHeads.isEmpty(), "the proxy should have received the CONNECT");
-    for (String head : proxy.requestHeads) {
-      assertFalse(carriesOriginAuthorization(head),
+    // The credential leak is checked across every head before the weaker "it was not even a CONNECT"
+    // check, so that a failure names the secret that escaped rather than the first symptom on the wire.
+    for (RecordedHead recorded : proxy.requestHeads) {
+      assertFalse(carriesAnyAuthorization(recorded.head),
               "the origin's credentials must never be written to a socket on which no tunnel was "
-                      + "established; the proxy received:\n" + head);
-      assertTrue(isConnect(head),
-              "a proxy that has not established a tunnel must only ever be sent CONNECTs, but got:\n" + head);
+                      + "established; the proxy received:\n" + recorded);
+    }
+    for (RecordedHead recorded : proxy.requestHeads) {
+      assertTrue(isConnect(recorded.head),
+              "a proxy that has not established a tunnel must only ever be sent CONNECTs, but got:\n" + recorded);
     }
   }
 
@@ -298,16 +363,68 @@ public class ConnectTunnelStateTest {
     assertTrue(proxy.requestHeads.size() >= 2,
             "the tunnelled request must be sent on the same socket after the 200, but got: " + proxy.requestHeads);
 
-    String connect = proxy.requestHeads.get(0);
-    assertTrue(isConnect(connect), "the first request must be a CONNECT: " + connect);
-    assertTrue(connect.toLowerCase().contains("proxy-authorization: basic "),
+    RecordedHead connect = proxy.requestHeads.get(0);
+    assertTrue(isConnect(connect.head), "the first request must be a CONNECT: " + connect);
+    assertTrue(connect.head.toLowerCase().contains("proxy-authorization: basic "),
             "the CONNECT is addressed to the proxy and must carry its credentials:\n" + connect);
-    assertFalse(carriesOriginAuthorization(connect),
+    assertFalse(carriesOriginAuthorization(connect.head),
             "the CONNECT travels in the clear and must NOT carry the origin's credentials:\n" + connect);
 
-    String tunnelled = proxy.requestHeads.get(1);
-    assertFalse(isConnect(tunnelled), "the second request must be the tunnelled one: " + tunnelled);
-    assertTrue(carriesOriginAuthorization(tunnelled),
+    RecordedHead tunnelled = proxy.requestHeads.get(1);
+    assertFalse(isConnect(tunnelled.head), "the second request must be the tunnelled one: " + tunnelled);
+    assertEquals(tunnelled.connectionId, connect.connectionId,
+            "the tunnelled request must go down the very socket the CONNECT established: " + proxy.requestHeads);
+    assertTrue(carriesOriginAuthorization(tunnelled.head),
             "once the tunnel is established the origin's credentials must be sent through it:\n" + tunnelled);
+  }
+
+  /**
+   * Two requests, one client. Asserting on a single request is not enough: "the socket was closed" and
+   * "the socket was left in the pool, still plaintext, under the https-origin partition key" produce the
+   * same one request head, and only the second one leaks. It leaks on the request AFTER the rejected
+   * CONNECT, because {@code NettyRequestSender.sendRequestThroughProxy} takes a channel polled under that
+   * key to be a tunnel that is already up and therefore sends the ORIGIN request on it rather than a new
+   * CONNECT - at which point the proxy's next 401 collects the origin's credentials.
+   *
+   * <p>So the second request must arrive on a NEW connection, identified server-side, and no Authorization
+   * may appear anywhere on the wire.
+   */
+  @Test(timeOut = 30000)
+  public void proxyRejectingConnectDoesNotLeavePoisonedConnectionInThePool() throws Exception {
+    String unauthorized = "HTTP/1.1 401 Unauthorized\r\n"
+            + "WWW-Authenticate: Basic realm=\"origin\"\r\n"
+            + "Content-Length: 0\r\n"
+            + "\r\n";
+    // Three heads are scripted because that is what the UNFIXED client sends: the CONNECT, then the origin
+    // GET down the pooled plaintext socket, then the same GET carrying the credentials the second 401
+    // solicited. Answering all three keeps the reproduction fast and lets the leak be recorded in full.
+    proxy = new RecordingProxy(3, unauthorized, unauthorized,
+            "HTTP/1.1 200 OK\r\n"
+                    + "Content-Length: 0\r\n"
+                    + "\r\n");
+
+    try (AsyncHttpClient client = clientWithOriginRealm(false)) {
+      for (int i = 0; i < 2; i++) {
+        try {
+          client.prepareGet("https://origin.example.com/secret").execute().get(10, TimeUnit.SECONDS);
+        } catch (Exception ignored) {
+          // What was written is the contract; the per-request status is asserted by the tests above.
+        }
+      }
+    } finally {
+      // Give a client that would still leak every chance to send the third head before asserting.
+      proxy.awaitExpectedHeads();
+    }
+
+    assertOnlyConnectsReachedTheProxy();
+
+    assertTrue(proxy.requestHeads.size() >= 2,
+            "the second request must have reached the proxy, but it only saw: " + proxy.requestHeads);
+    RecordedHead first = proxy.requestHeads.get(0);
+    for (int i = 1; i < proxy.requestHeads.size(); i++) {
+      assertNotEquals(proxy.requestHeads.get(i).connectionId, first.connectionId,
+              "the socket on which the proxy REFUSED the CONNECT is not a tunnel and must never be pooled; "
+                      + "the client kept using it: " + proxy.requestHeads);
+    }
   }
 }
