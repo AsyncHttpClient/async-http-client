@@ -58,10 +58,10 @@ public class ProxyUnauthorized407Interceptor {
                                       ProxyServer proxyServer,
                                       HttpRequest httpRequest) {
 
-    if (future.isAndSetInProxyAuth(true)) {
-      LOGGER.info("Can't handle 407 as auth was already performed");
-      return false;
-    }
+    // The three questions below all decide whether the PROXY wrote this response, and none of them may be
+    // asked after isAndSetInProxyAuth: that latch is the exchange's one shot at proxy authentication, and
+    // burning it on a 407 we then decline makes a later, legitimate proxy challenge on the same exchange
+    // fail with "auth was already performed" when no proxy auth was ever performed at all.
 
     Realm proxyRealm = future.getProxyRealm();
 
@@ -76,6 +76,23 @@ public class ProxyUnauthorized407Interceptor {
     // newNettyRequest then copies verbatim, bypassing the proxy-type gate that guards the preemptive path.
     if (proxyServer == null || !proxyServer.getProxyType().isHttp()) {
       LOGGER.debug("Can't handle 407: not an HTTP proxy, so the 407 came from the origin");
+      return false;
+    }
+
+    // Being an HTTP proxy only says the proxy CAN write a 407; it does not say it wrote this one. A CONNECT
+    // is addressed to the proxy, so its 407 is the proxy's. Anything else on a tunnelled socket reaches the
+    // ORIGIN, and answering the origin's 407 hands it the proxy's credentials. The tunnel may have been
+    // established by this exchange (tunnelEstablished) or inherited with a channel taken from the pool, in
+    // which case the flag is false but the target still implies one: behind an HTTP proxy a secured or
+    // WebSocket target is only ever reached through a CONNECT.
+    if (httpRequest.method() != HttpMethod.CONNECT
+            && (future.isTunnelEstablished() || request.getUri().isSecured() || request.getUri().isWebSocket())) {
+      LOGGER.debug("Can't handle 407: it arrived through a tunnel, so it came from the origin");
+      return false;
+    }
+
+    if (future.isAndSetInProxyAuth(true)) {
+      LOGGER.info("Can't handle 407 as auth was already performed");
       return false;
     }
 

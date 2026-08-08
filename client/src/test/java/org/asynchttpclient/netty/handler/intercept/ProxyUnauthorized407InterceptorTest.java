@@ -110,8 +110,16 @@ public class ProxyUnauthorized407InterceptorTest {
   }
 
   private NettyResponseFuture<Response> newFuture(ProxyServer proxyServer, Realm proxyRealm) throws Exception {
-    Request request = new RequestBuilder("GET").setUrl("http://origin.example.com/resource").build();
-    HttpRequest httpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/resource");
+    return newFuture(proxyServer, proxyRealm, "http://origin.example.com/resource", HttpMethod.GET);
+  }
+
+  private NettyResponseFuture<Response> newFuture(ProxyServer proxyServer,
+                                                  Realm proxyRealm,
+                                                  String url,
+                                                  HttpMethod method) throws Exception {
+    Request request = new RequestBuilder(method.name()).setUrl(url).build();
+    HttpRequest httpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method,
+            method == HttpMethod.CONNECT ? "origin.example.com:443" : "/resource");
     AsyncHandler<Response> handler = new AsyncCompletionHandlerBase();
 
     NettyResponseFuture<Response> future = new NettyResponseFuture<>(request,
@@ -186,5 +194,97 @@ public class ProxyUnauthorized407InterceptorTest {
     assertTrue(handled, "an HTTP proxy's 407 must still be answered");
     assertTrue(future.getProxyRealm().isUsePreemptiveAuth(),
             "the retried request must carry the proxy credentials");
+  }
+
+  /**
+   * Once a CONNECT has succeeded the peer on the far end of the socket is the ORIGIN, not the proxy, so a
+   * 407 arriving there was written by the origin. The proxy type is still HTTP, which is why asking what
+   * kind of proxy is configured does not answer the question that matters - who wrote this response.
+   */
+  @Test
+  public void origin407InsideAnEstablishedTunnelIsNotAnswered() throws Exception {
+    Realm proxyRealm = nonPreemptiveProxyRealm();
+    ProxyServer http = proxyServer("proxy.example.com", 8080).setRealm(proxyRealm).build();
+    NettyResponseFuture<Response> future = newFuture(http, proxyRealm, "https://origin.example.com/resource", HttpMethod.GET);
+    future.setTunnelEstablished(true);
+
+    boolean handled = interceptor.exitAfterHandling407(channel,
+            future,
+            new407(),
+            future.getCurrentRequest(),
+            http,
+            future.getNettyRequest().getHttpRequest());
+
+    assertFalse(handled,
+            "a 407 seen inside an established tunnel was written by the origin and must not be answered "
+                    + "with the proxy's credentials");
+    assertFalse(future.getProxyRealm().isUsePreemptiveAuth(),
+            "the proxy realm must not be armed to send Proxy-Authorization to the origin");
+  }
+
+  /**
+   * The same request one exchange later. When the tunnelled channel comes from the pool the tunnel was
+   * established by an EARLIER future, so tunnelEstablished is false on this one - but the target still
+   * says what the socket must be: a secured or WebSocket target behind an HTTP proxy is only ever reached
+   * through a CONNECT, so anything that is not the CONNECT itself is talking to the origin.
+   */
+  @Test
+  public void origin407OnATunnelInheritedFromThePoolIsNotAnswered() throws Exception {
+    Realm proxyRealm = nonPreemptiveProxyRealm();
+    ProxyServer http = proxyServer("proxy.example.com", 8080).setRealm(proxyRealm).build();
+    NettyResponseFuture<Response> future = newFuture(http, proxyRealm, "https://origin.example.com/resource", HttpMethod.GET);
+
+    assertFalse(future.isTunnelEstablished(), "this exchange did not build the tunnel itself");
+    assertFalse(interceptor.exitAfterHandling407(channel,
+                    future,
+                    new407(),
+                    future.getCurrentRequest(),
+                    http,
+                    future.getNettyRequest().getHttpRequest()),
+            "a secured target behind an HTTP proxy is reached through a tunnel, so a 407 on anything but "
+                    + "the CONNECT came from the origin");
+  }
+
+  /**
+   * The regression guard for the flow the 407 mechanism exists for: the proxy challenges the CONNECT
+   * itself, which is addressed to it and travels in the clear.
+   */
+  @Test
+  public void proxy407OnTheConnectIsStillAnswered() throws Exception {
+    Realm proxyRealm = nonPreemptiveProxyRealm();
+    ProxyServer http = proxyServer("proxy.example.com", 8080).setRealm(proxyRealm).build();
+    NettyResponseFuture<Response> future = newFuture(http, proxyRealm, "https://origin.example.com/resource", HttpMethod.CONNECT);
+
+    assertTrue(interceptor.exitAfterHandling407(channel,
+                    future,
+                    new407(),
+                    future.getCurrentRequest(),
+                    http,
+                    future.getNettyRequest().getHttpRequest()),
+            "the proxy's challenge to the CONNECT must still be answered");
+    assertTrue(future.getProxyRealm().isUsePreemptiveAuth(),
+            "the retried CONNECT must carry the proxy credentials");
+  }
+
+  /**
+   * A 407 this interceptor refuses to answer must not consume the exchange's one-shot proxy-auth latch
+   * either. Burning it means a later, legitimate proxy challenge on the same exchange is declined with
+   * "auth was already performed" when no proxy auth was ever performed at all.
+   */
+  @Test
+  public void a407ThisInterceptorRefusesDoesNotBurnTheProxyAuthLatch() throws Exception {
+    Realm proxyRealm = nonPreemptiveProxyRealm();
+    ProxyServer socks = proxyServer("proxy.example.com", 1080).setProxyType(ProxyType.SOCKS_V5).setRealm(proxyRealm).build();
+    NettyResponseFuture<Response> future = newFuture(socks, proxyRealm);
+
+    assertFalse(interceptor.exitAfterHandling407(channel,
+            future,
+            new407(),
+            future.getCurrentRequest(),
+            socks,
+            future.getNettyRequest().getHttpRequest()));
+
+    assertFalse(future.isInProxyAuth(),
+            "declining a 407 must leave the proxy-auth latch untouched, since no proxy auth was performed");
   }
 }
