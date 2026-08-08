@@ -208,9 +208,15 @@ public class RedirectCredentialSecurityTest {
       }
       exchange.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"target\"");
       // Streamed framing (length 0 plus a closed body), which this server emits as Transfer-Encoding:
-      // chunked with a terminating chunk, so the connection survives the exchange. sendResponseHeaders
-      // with -1 would send Content-Length: 0 and then reset the connection, and the authenticated retry
-      // this test is watching for - the leak - would die on a closed socket instead of reaching here.
+      // chunked with a terminating chunk, so the connection survives the exchange.
+      //
+      // What decides that is the getResponseBody().close() below, not the 0. Measured against
+      // com.sun.net.httpserver on JDK 11.0.31 and JDK 25: with this handler otherwise unchanged,
+      // sendResponseHeaders(401, -1) reuses the connection too, the authenticated retry this test is
+      // watching for still reaches this handler, and the leak is still observed. Only dropping the body
+      // close strands it, and even then nothing is reset - -1 sends Content-Length: 0 and at worst a
+      // clean FIN. On the client side Unauthorized401Interceptor opens a fresh connection whenever the
+      // channel is not reusable, so a closed idle socket would not strand the retry either.
       exchange.sendResponseHeaders(401, 0);
       exchange.getResponseBody().close();
       exchange.close();
