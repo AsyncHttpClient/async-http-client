@@ -83,7 +83,6 @@ Common commands:
   * `src/main/java/org/asynchttpclient` - production sources
   * `src/test/java` - test sources
   * `src/jmh/java` - JMH benchmarks
-* `docs` - design documentation
 * `.github/workflows` - CI workflows
 
 ## Testing
