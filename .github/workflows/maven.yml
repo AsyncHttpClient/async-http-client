@@ -5,9 +5,10 @@ name: Test PR
 
 on:
   pull_request:
-    branches: [ master, 2.14.5 ]
+    branches: [ 2.x ]
   push:
-    branches: [ 2.14.5 ]
+    branches: [ 2.x ]
+  workflow_dispatch:
 
 jobs:
   build:
