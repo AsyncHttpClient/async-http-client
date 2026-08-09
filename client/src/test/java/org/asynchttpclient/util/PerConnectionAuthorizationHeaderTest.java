@@ -18,31 +18,17 @@ import org.asynchttpclient.RequestBuilder;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 
 /**
- * The origin realm's Negotiate token must be minted for the ORIGIN service, never the proxy's. Building it
- * against the proxy host produced a service ticket for the proxy's SPN: a confused deputy where the origin's
- * credential is delivered to, and only usable by, the proxy, while origin authentication fails.
+ * The contract of the host that names the service a Negotiate token is minted for.
  * <p>
- * This asserts the service name that is chosen, rather than driving SpnegoEngine, deliberately. Minting a
- * token initialises the JVM's Kerberos configuration, and that initialisation is cached process-wide, so a
- * test that triggers it poisons {@code SpnegoEngineTest} - which starts its own KDC and installs a krb5.conf
- * in {@code @BeforeClass} - whenever it happens to run first.
+ * That the origin is chosen rather than the proxy is asserted by
+ * {@code SpnegoEngineTest.negotiateTokenTargetsTheOriginEvenBehindAProxy}, which drives the real
+ * {@code perConnectionAuthorizationHeader} against a KDC and so fails if the product code regresses. These
+ * are the cheap unit-level companions to it, covering the two inputs that test does not vary. They mint no
+ * token and touch no Kerberos configuration.
  */
 public class PerConnectionAuthorizationHeaderTest {
-
-  @Test
-  public void negotiateTokenTargetsTheOriginEvenBehindAProxy() {
-    Request request = new RequestBuilder("GET").setUrl("http://origin.example.com/resource").build();
-
-    String host = AuthenticatorUtils.negotiateHost(request);
-
-    assertEquals(host, "origin.example.com",
-            "the origin realm's Negotiate token must target the origin service");
-    assertFalse(host.contains("proxy"),
-            "the origin credential must not be minted for the proxy's SPN: " + host);
-  }
 
   @Test
   public void negotiateTokenPrefersTheVirtualHost() {

@@ -24,6 +24,54 @@ import static org.asynchttpclient.Dsl.*;
 import static org.testng.Assert.assertEquals;
 
 public class RealmTest {
+
+  /**
+   * A Digest challenge that yields no nonce must not become a Basic one. Answering it as Basic puts the
+   * password on the wire in the clear, and a server cannot obtain that by offering Basic outright,
+   * because a Digest realm refuses a challenge that is not Digest. Omitting the nonce, or sending it
+   * empty, was enough to get the password out of the client.
+   */
+  @Test
+  public void aDigestChallengeWithNoNonceMustNotDowngradeToBasic() {
+    Realm realm = new Realm.Builder("user", "pass")
+            .parseWWWAuthenticateHeader("Digest realm=\"protected\"")
+            .build();
+
+    assertEquals(realm.getScheme(), Realm.AuthScheme.DIGEST,
+            "an unreadable Digest challenge must fail, not answer in cleartext");
+  }
+
+  @Test
+  public void aDigestChallengeWithAnEmptyNonceMustNotDowngradeToBasic() {
+    Realm realm = new Realm.Builder("user", "pass")
+            .parseWWWAuthenticateHeader("Digest realm=\"protected\", nonce=\"\"")
+            .build();
+
+    assertEquals(realm.getScheme(), Realm.AuthScheme.DIGEST);
+  }
+
+  @Test
+  public void aProxyDigestChallengeWithNoNonceMustNotDowngradeToBasic() {
+    Realm realm = new Realm.Builder("user", "pass")
+            .parseProxyAuthenticateHeader("Digest realm=\"protected\"")
+            .build();
+
+    assertEquals(realm.getScheme(), Realm.AuthScheme.DIGEST,
+            "an unreadable proxy Digest challenge must fail, not answer in cleartext");
+  }
+
+  /**
+   * A genuine Basic challenge is still Basic: the fix must not turn every challenge into Digest.
+   */
+  @Test
+  public void aBasicChallengeIsStillBasic() {
+    Realm realm = new Realm.Builder("user", "pass")
+            .parseWWWAuthenticateHeader("Basic realm=\"protected\"")
+            .build();
+
+    assertEquals(realm.getScheme(), Realm.AuthScheme.BASIC);
+  }
+
   @Test
   public void testClone() {
     Realm orig = basicAuthRealm("user", "pass").setCharset(UTF_16)

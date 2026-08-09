@@ -416,11 +416,35 @@ public class Realm {
       return null;
     }
 
+    /**
+     * The scheme a parsed challenge authenticates with.
+     * <p>
+     * A challenge that announces itself as Digest stays Digest even when its parameters do not parse.
+     * Deciding this from the presence of a nonce instead meant any Digest challenge we could not read
+     * became a Basic one, and answering it put the password on the wire in the clear, which is the single
+     * thing Digest exists to prevent. Omitting the nonce, or sending an empty one, was enough to trigger
+     * it. A Digest challenge with no nonce now produces no Authorization header at all, so the request
+     * fails rather than leaking.
+     */
+    private static AuthScheme challengedScheme(String headerLine, String nonce) {
+      if (isNonEmpty(nonce)) {
+        return AuthScheme.DIGEST;
+      }
+      if (headerLine == null) {
+        return AuthScheme.BASIC;
+      }
+      int start = 0;
+      while (start < headerLine.length() && headerLine.charAt(start) == ' ') {
+        start++;
+      }
+      return headerLine.regionMatches(true, start, "Digest", 0, 6) ? AuthScheme.DIGEST : AuthScheme.BASIC;
+    }
+
     public Builder parseWWWAuthenticateHeader(String headerLine) {
       setRealmName(match(headerLine, "realm"))
               .setNonce(match(headerLine, "nonce"))
               .setOpaque(match(headerLine, "opaque"))
-              .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
+              .setScheme(challengedScheme(headerLine, nonce));
       String algorithm = match(headerLine, "algorithm");
       if (isNonEmpty(algorithm)) {
         setAlgorithm(algorithm);
@@ -439,7 +463,7 @@ public class Realm {
       setRealmName(match(headerLine, "realm"))
               .setNonce(match(headerLine, "nonce"))
               .setOpaque(match(headerLine, "opaque"))
-              .setScheme(isNonEmpty(nonce) ? AuthScheme.DIGEST : AuthScheme.BASIC);
+              .setScheme(challengedScheme(headerLine, nonce));
       String algorithm = match(headerLine, "algorithm");
       if (isNonEmpty(algorithm)) {
         setAlgorithm(algorithm);
