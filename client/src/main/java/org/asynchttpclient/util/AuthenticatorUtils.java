@@ -161,6 +161,17 @@ public final class AuthenticatorUtils {
     return proxyAuthorization;
   }
 
+  /**
+   * The service the origin realm's Negotiate token is minted for. It is always the origin, even when a
+   * proxy is configured: building it against the proxy host produced a service ticket for the proxy's SPN,
+   * a confused deputy where the origin's credential is delivered to, and only usable by, the proxy, while
+   * origin authentication fails. The proxy realm has its own path, in
+   * perConnectionProxyAuthorizationHeader, and is unaffected.
+   */
+  static String negotiateHost(Request request) {
+    return request.getVirtualHost() != null ? request.getVirtualHost() : request.getUri().getHost();
+  }
+
   public static String perConnectionAuthorizationHeader(Request request, ProxyServer proxyServer, Realm realm) {
     String authorizationHeader = null;
 
@@ -172,12 +183,7 @@ public final class AuthenticatorUtils {
           break;
         case KERBEROS:
         case SPNEGO:
-          // The origin realm's Negotiate token must target the origin service even when a proxy is
-          // configured. Minting it against the proxy host produced a service ticket for the proxy's SPN: a
-          // confused deputy where the origin's credential is delivered to, and only usable by, the proxy,
-          // while origin authentication fails. The proxy realm has its own path, in
-          // perConnectionProxyAuthorizationHeader, and is unaffected.
-          String host = request.getVirtualHost() != null ? request.getVirtualHost() : request.getUri().getHost();
+          String host = negotiateHost(request);
 
           try {
             authorizationHeader = NEGOTIATE + " " + SpnegoEngine.instance(
