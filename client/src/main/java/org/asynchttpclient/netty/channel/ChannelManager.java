@@ -320,6 +320,14 @@ public class ChannelManager {
     Object partitionKey = connectionPoolPartitioning.getPartitionKey(uri, virtualHost, proxy);
     return channelPool.poll(partitionKey);
   }
+  /**
+   * Polls with a partition key the caller already derived, so the caller can scope it by the
+   * authenticated identity. See {@link PrincipalScopedPartitionKey}.
+   */
+  public Channel poll(Object partitionKey) {
+    return channelPool.poll(partitionKey);
+  }
+
 
   public void removeAll(Channel connection) {
     channelPool.removeAll(connection);
@@ -510,7 +518,8 @@ public class ChannelManager {
   }
 
   public void drainChannelAndOffer(Channel channel, NettyResponseFuture<?> future) {
-    drainChannelAndOffer(channel, future, future.isKeepAlive(), future.getPartitionKey());
+    drainChannelAndOffer(channel, future, future.isKeepAlive(),
+            PrincipalScopedPartitionKey.scope(future.getPartitionKey(), future.getRealm()));
   }
 
   public void drainChannelAndOffer(Channel channel, NettyResponseFuture<?> future, boolean keepAlive, Object partitionKey) {

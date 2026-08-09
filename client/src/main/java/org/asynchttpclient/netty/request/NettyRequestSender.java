@@ -35,6 +35,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.channel.*;
+import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
 import org.asynchttpclient.netty.handler.StreamedResponsePublisher;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -604,7 +605,14 @@ public final class NettyRequestSender {
 
     Uri uri = request.getUri();
     String virtualHost = request.getVirtualHost();
-    final Channel channel = channelManager.poll(uri, virtualHost, proxy, request.getChannelPoolPartitioning());
+    // Scope the pool lookup by the authenticated identity: NTLM and Negotiate authenticate the socket,
+    // not the request, so a connection one principal completed the handshake on must not be handed to
+    // another. A disagreement with the offer side costs a pool miss, never a wrong reuse.
+    // Resolved as newNettyRequestAndResponseFuture resolves it, so the poll and the offer agree.
+    Realm realm = request.getRealm() != null ? request.getRealm() : config.getRealm();
+    Object partitionKey = PrincipalScopedPartitionKey.scope(
+            request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy), realm);
+    final Channel channel = channelManager.poll(partitionKey);
 
     if (channel != null) {
       LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
@@ -639,7 +647,8 @@ public final class NettyRequestSender {
     boolean schemeDowngrade = previousUri.isSecured() && !newUri.isSecured();
     // Sampled while the future still describes the old origin: that is what the drained channel is
     // connected to, so that is the key it has to be filed under.
-    Object initialPartitionKey = future.getPartitionKey();
+    Object initialPartitionKey = PrincipalScopedPartitionKey.scope(
+        future.getPartitionKey(), future.getRealm());
 
     if (!sameBase || schemeDowngrade) {
       future.setRealm(newRequest.getRealm());
