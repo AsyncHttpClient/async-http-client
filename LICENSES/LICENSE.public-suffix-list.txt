@@ -1,0 +1,13 @@
+The file client/src/main/resources/org/asynchttpclient/cookie/public_suffix_list.dat is a copy of the
+ICANN section of the Public Suffix List, maintained by the Mozilla Foundation and distributed from
+https://publicsuffix.org/list/public_suffix_list.dat.
+
+It is used to implement RFC 6265 section 5.3 step 5, which requires a cookie naming a public suffix
+in its Domain attribute to be ignored.
+
+Only the ICANN section is included; the private section is omitted. The upstream licence header and
+the section markers are preserved in the file. No rules were altered.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at https://mozilla.org/MPL/2.0/.
