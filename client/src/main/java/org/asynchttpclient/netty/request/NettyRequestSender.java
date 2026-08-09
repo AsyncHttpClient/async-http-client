@@ -629,7 +629,27 @@ public final class NettyRequestSender {
       return;
     }
 
-    channelManager.drainChannelAndOffer(channel, future);
+    // A replay may target a different origin than the one this future was built for; failover onto a
+    // second host is the documented use of a ResponseFilter. Everything keyed off the future's TARGET has
+    // to move with it or it keeps describing the previous origin: the connection pool partition key, and
+    // the credentials, which must not follow the request to a host they were not meant for.
+    Uri previousUri = future.getTargetRequest().getUri();
+    Uri newUri = newRequest.getUri();
+    boolean sameBase = previousUri.isSameBase(newUri);
+    boolean schemeDowngrade = previousUri.isSecured() && !newUri.isSecured();
+    // Sampled while the future still describes the old origin: that is what the drained channel is
+    // connected to, so that is the key it has to be filed under.
+    Object initialPartitionKey = future.getPartitionKey();
+
+    if (!sameBase || schemeDowngrade) {
+      future.setRealm(newRequest.getRealm());
+      future.setProxyRealm(null);
+    }
+    // The proxy is the other half of the pool key and the replay may resolve to a different one, or none.
+    future.setProxyServer(getProxyServer(config, newRequest));
+    future.setTargetRequest(newRequest);
+
+    channelManager.drainChannelAndOffer(channel, future, future.isKeepAlive(), initialPartitionKey);
     sendNextRequest(newRequest, future);
   }
 

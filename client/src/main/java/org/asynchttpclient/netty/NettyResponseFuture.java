@@ -81,7 +81,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
   private final long start = unpreciseMillisTime();
   private final ChannelPoolPartitioning connectionPoolPartitioning;
   private final ConnectionSemaphore connectionSemaphore;
-  private final ProxyServer proxyServer;
+  // Not final: a filter replay can retarget this future at a different origin, reached through a
+  // different proxy or none at all. getPartitionKey() reads it, so it has to move with the target.
+  private ProxyServer proxyServer;
   private final int maxRetry;
   private final CompletableFuture<V> future = new CompletableFuture<>();
   public Throwable pendingException;
@@ -306,6 +308,15 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
   public Uri getUri() {
     return targetRequest.getUri();
+  }
+
+  /**
+   * Points this future at the proxy serving its current target. Only a replay onto a different origin
+   * needs this: leaving the previous origin's proxy in place leaves the connection pool partition key
+   * naming a route the future no longer takes.
+   */
+  public void setProxyServer(ProxyServer proxyServer) {
+    this.proxyServer = proxyServer;
   }
 
   public ProxyServer getProxyServer() {
