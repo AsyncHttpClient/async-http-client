@@ -924,6 +924,22 @@ public class ChannelManager {
     }
 
     public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {
+        // A WebSocket connection must not negotiate h2 (no RFC 8441 support), so advertise only http/1.1 in ALPN.
+        return addSslHandler(pipeline, uri, virtualHost, hasSocksProxyHandler, !uri.isWebSocket());
+    }
+
+    /**
+     * Same as {@link #addSslHandler(ChannelPipeline, Uri, String, boolean)}, but with ALPN decided by the
+     * caller rather than derived from {@code uri}.
+     * <p>
+     * Deriving it from the URI only holds for a hop that ends at the origin. On the hop to an HTTPS proxy
+     * {@code uri} names the proxy, so nothing about it says WebSocket, yet everything written there is
+     * HTTP/1.1; such callers pass {@code false}.
+     *
+     * @param http2Allowed whether the ALPN advertisement for this hop may include h2
+     */
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler,
+                                    boolean http2Allowed) {
         String peerHost;
         int peerPort;
 
@@ -942,8 +958,7 @@ public class ChannelManager {
             peerPort = uri.getExplicitPort();
         }
 
-        // A WebSocket connection must not negotiate h2 (no RFC 8441 support), so advertise only http/1.1 in ALPN.
-        SslHandler sslHandler = createSslHandler(peerHost, peerPort, !uri.isWebSocket());
+        SslHandler sslHandler = createSslHandler(peerHost, peerPort, http2Allowed);
         // Check if SOCKS handler actually exists in the pipeline before trying to add after it
         if (hasSocksProxyHandler && pipeline.get(SOCKS_HANDLER) != null) {
             pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);

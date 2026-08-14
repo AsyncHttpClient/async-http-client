@@ -142,9 +142,13 @@ public final class NettyConnectListener<T> {
         if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {
             SslHandler sslHandler;
             try {
-                sslHandler = channelManager.addSslHandler(channel.pipeline(), 
-                    Uri.create("https://" + proxyServer.getHost() + ":" + proxyServer.getSecuredPort()), 
-                    null, false);
+                // This hop ends at the proxy, and everything written on it is HTTP/1.1: a CONNECT, or an
+                // absolute-URI request for a cleartext target. Advertise only http/1.1, otherwise an
+                // h2-capable proxy selects h2 and then drops the connection on our HTTP/1.1 bytes. The hop
+                // to the origin is set up after CONNECT succeeds and may still negotiate h2.
+                sslHandler = channelManager.addSslHandler(channel.pipeline(),
+                    Uri.create("https://" + proxyServer.getHost() + ":" + proxyServer.getSecuredPort()),
+                    null, false, false);
             } catch (Exception sslError) {
                 onFailure(channel, sslError);
                 return;
@@ -169,6 +173,16 @@ public final class NettyConnectListener<T> {
                         LOGGER.error("onTlsHandshakeSuccess crashed", e);
                         NettyConnectListener.this.onFailure(channel, e);
                         return;
+                    }
+                    // The engine advertises only http/1.1, so a conformant proxy cannot have selected h2.
+                    // A user-supplied SslContext is reused as-is and can still do it, in which case the
+                    // proxy rejects our HTTP/1.1 bytes and the request dies of a bare "Remotely closed".
+                    // Name the cause, as the WebSocket path below does.
+                    if (ApplicationProtocolNames.HTTP_2.equals(sslHandler.applicationProtocol())) {
+                        LOGGER.warn("HTTPS proxy {}:{} negotiated HTTP/2; AsyncHttpClient speaks only HTTP/1.1 to a "
+                                        + "proxy, so this connection will likely be rejected. Supply an SslContext "
+                                        + "or SslEngineFactory that advertises http/1.1 for the proxy connection.",
+                                proxyServer.getHost(), proxyServer.getSecuredPort());
                     }
                     // After SSL handshake to proxy, continue with normal proxy request
                     writeRequest(channel);
