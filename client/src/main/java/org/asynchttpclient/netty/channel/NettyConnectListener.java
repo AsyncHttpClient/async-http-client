@@ -267,7 +267,13 @@ public final class NettyConnectListener<T> {
         } else {
             // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS. WebSocket (ws://) is
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
-            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
+            // Prior knowledge is knowledge about the origin, so it may only be acted on when the origin is
+            // the peer of this socket. With an HTTP proxy configured a cleartext target needs no CONNECT,
+            // so the request goes to the proxy in absolute-URI form and the preface would be written at a
+            // peer that never agreed to HTTP/2. A SOCKS proxy tunnels at the transport layer, so its peer
+            // is still the origin.
+            boolean peerIsOrigin = proxyServer == null || proxyServer.getProxyType().isSocks();
+            if (peerIsOrigin && !uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
                 channelManager.upgradePipelineToHttp2(channel.pipeline());
                 registerHttp2AndManageSemaphore(channel, semaphore, permit);
             }
