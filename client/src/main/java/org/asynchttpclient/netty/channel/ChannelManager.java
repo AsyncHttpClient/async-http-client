@@ -999,8 +999,9 @@ public class ChannelManager {
     }
 
     /**
-     * @param http2Allowed false for a WebSocket (no RFC 8441 support) and for a realm that authenticates the
-     *                     socket, since every stream of an h2 connection shares it.
+     * @param http2Allowed false for a WebSocket (no RFC 8441 support), for the hop to an HTTPS proxy, which
+     *                     only ever carries HTTP/1.1, and for a realm that authenticates the socket, since
+     *                     every stream of an h2 connection shares it.
      */
     public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler,
                                     boolean http2Allowed) {

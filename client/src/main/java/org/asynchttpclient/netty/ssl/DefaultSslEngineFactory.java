@@ -35,8 +35,9 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 public class DefaultSslEngineFactory extends SslEngineFactoryBase {
 
     private volatile SslContext sslContext;
-    // WebSocket connections use a context that advertises only http/1.1 in ALPN: AsyncHttpClient does not
-    // implement RFC 8441 (WebSocket over HTTP/2), so the server must not be able to negotiate h2 for them.
+    // Connections that must stay on HTTP/1.1 use a context that advertises only http/1.1 in ALPN: WebSocket,
+    // because AsyncHttpClient does not implement RFC 8441 (WebSocket over HTTP/2), and the hop to an HTTPS
+    // proxy, which only ever carries an HTTP/1.1 CONNECT or absolute-URI request.
     private volatile SslContext http1OnlySslContext;
 
     private SslContext buildSslContext(AsyncHttpClientConfig config, boolean http2Allowed) throws SSLException {
@@ -98,16 +99,19 @@ public class DefaultSslEngineFactory extends SslEngineFactoryBase {
     }
 
     /**
-     * Returns the context for a WebSocket connection, which must advertise only http/1.1 (AsyncHttpClient does
-     * not implement RFC 8441, WebSocket over HTTP/2). Built lazily and cached on first use so a client that
-     * never opens a {@code wss://} connection never pays for a second {@link SslContext}.
+     * Returns the context for a connection that must stay on HTTP/1.1 and therefore advertise only http/1.1:
+     * a WebSocket connection (AsyncHttpClient does not implement RFC 8441, WebSocket over HTTP/2), and the hop
+     * to an HTTPS proxy (that hop only ever carries an HTTP/1.1 {@code CONNECT} or absolute-URI request).
+     * Built lazily and cached on first use so a client that never opens such a connection never pays for a
+     * second {@link SslContext}.
      * <p>
      * Only a self-built, h2-enabled context advertises h2 and therefore needs a separate http/1.1-only variant;
      * a user-supplied context or an h2-disabled one already negotiates http/1.1, so it is reused (which also
      * avoids double-releasing it in {@link #destroy()}). <strong>Note:</strong> a user-supplied
      * {@link AsyncHttpClientConfig#getSslContext()} is used as-is for every connection type — if it advertises
-     * h2 in ALPN, a {@code wss://} connection may still negotiate h2, which AHC cannot speak for WebSocket. A
-     * caller needing WebSocket with a custom context must supply one that negotiates http/1.1.
+     * h2 in ALPN, a {@code wss://} connection or an HTTPS-proxy connection may still negotiate h2, which AHC
+     * cannot speak on either. A caller needing those with a custom context must supply one that negotiates
+     * http/1.1.
      */
     private SslContext http1OnlySslContext(AsyncHttpClientConfig config) {
         SslContext ctx = http1OnlySslContext;
