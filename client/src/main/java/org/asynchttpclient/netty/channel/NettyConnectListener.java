@@ -291,16 +291,24 @@ public final class NettyConnectListener<T> {
         } else {
             // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS. WebSocket (ws://) is
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
+            // Prior knowledge is knowledge about the origin, so it may only be acted on when the origin is
+            // the peer of this socket. With an HTTP proxy configured a cleartext target needs no CONNECT,
+            // so the request goes to the proxy in absolute-URI form and the preface would be written at a
+            // peer that never agreed to HTTP/2. A SOCKS proxy tunnels at the transport layer, so its peer
+            // is still the origin.
+            boolean peerIsOrigin = proxyServer == null || proxyServer.getProxyType().isSocks();
+            boolean h2c = peerIsOrigin && !uri.isSecured() && channelManager.isHttp2CleartextEnabled()
+                    && !uri.isWebSocket();
             // Upgrading and then withholding it from the registry would only orphan the socket, and the
             // 401 retry needs the one that issued the challenge.
             boolean connectionAuth = PrincipalScopedPartitionKey.anyHopAuthenticatesTheConnection(future);
-            if (connectionAuth && !uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
+            if (h2c && connectionAuth) {
                 // h2c is prior knowledge (RFC 9113 3.3): there is no negotiation to carry the refusal, so a
                 // server that speaks only h2 sees an HTTP/1.1 request and answers with a preface mismatch.
                 LOGGER.warn("Sending {} over HTTP/1.1 instead of h2c: its login authenticates the connection. "
                         + "Disable http2Cleartext for this client if the server speaks only HTTP/2.", uri);
             }
-            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket() && !connectionAuth) {
+            if (h2c && !connectionAuth) {
                 try {
                     channelManager.upgradePipelineToHttp2(channel.pipeline());
                 } catch (Exception upgradeError) {
