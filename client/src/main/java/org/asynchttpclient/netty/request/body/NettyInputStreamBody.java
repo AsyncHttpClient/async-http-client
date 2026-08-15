@@ -24,8 +24,6 @@ import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedStream;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.WriteProgressListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +31,6 @@ import java.io.InputStream;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class NettyInputStreamBody implements NettyBody {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyInputStreamBody.class);
 
     private final InputStream inputStream;
     private final long contentLength;
