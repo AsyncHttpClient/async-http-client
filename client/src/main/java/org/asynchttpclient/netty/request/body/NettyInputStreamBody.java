@@ -65,8 +65,12 @@ public class NettyInputStreamBody implements NettyBody {
             if (is.markSupported()) {
                 is.reset();
             } else {
-                LOGGER.warn("Stream has already been consumed and cannot be reset");
-                return;
+                // The request headers were already written (sendHttpRequest), so silently returning would
+                // leave the request half-sent with no terminating LastHttpContent — the request would then
+                // hang until it times out (the Issue #1973 silent-timeout class). A non-resettable
+                // InputStream cannot be replayed (retry / redirect / auth), so fail explicitly: the caller
+                // (sendHttpRequest) aborts the future on the IOException.
+                throw new IOException("HTTP/1 request body InputStream already consumed and cannot be reset for a retry");
             }
         } else {
             future.setStreamConsumed(true);
@@ -93,7 +97,7 @@ public class NettyInputStreamBody implements NettyBody {
             } else {
                 // The HEADERS frame was already written with endStream=false (sendHttp2Frames), so silently
                 // returning would leave the stream half-open with no terminating DATA frame — the request
-                // would then hang until it times out (the Issue #2160 silent-timeout class). A non-resettable
+                // would then hang until it times out (the Issue #1973 silent-timeout class). A non-resettable
                 // InputStream cannot be replayed (retry / redirect / auth), so fail the stream explicitly:
                 // the caller (openHttp2Stream / sendHttp2RequestBody) aborts this single stream on the
                 // IOException, leaving sibling multiplexed streams untouched.
