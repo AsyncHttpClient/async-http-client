@@ -56,8 +56,11 @@ class Continue100Interceptor {
                     requestSender.abort(channel, future, e);
                 }
             }
-        } else {
-            // HTTP/1.1: wait for LastHttpContent before sending the body
+        } else if (bodyWasDeferred) {
+            // HTTP/1.1: wait for LastHttpContent before sending the deferred body.
+            // Unsolicited 100 when the body was already sent must not replay it
+            // (RFC 9110 15.2.1). The same guard also avoids a second LastHttpContent
+            // on a keep-alive socket whose first LastHttpContent was already flushed.
             Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
                 @Override
                 public void call() {

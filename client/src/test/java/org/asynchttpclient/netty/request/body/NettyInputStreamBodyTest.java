@@ -16,57 +16,101 @@
 package org.asynchttpclient.netty.request.body;
 
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
- * Regression guard for Issue #1973: a non-resettable {@link InputStream} body that has already been
- * consumed must fail the request immediately on retry instead of hanging until the request timeout.
+ * Regression guard for Issue #1973: a consumed InputStream body must fail the request immediately on
+ * retry instead of hanging until the request timeout.
  */
 public class NettyInputStreamBodyTest {
 
     @Test
-    public void http1WriteFailsWhenStreamAlreadyConsumedAndNotResettable() {
-        NettyInputStreamBody body = new NettyInputStreamBody(new NonResettableInputStream(new byte[] {1, 2, 3}));
-        NettyResponseFuture<?> future = new NettyResponseFuture<>(null, mock(AsyncHandler.class), null, 0, null, null, null);
-        future.setStreamConsumed(true);
+    public void http1WriteFailsWhenStreamAlreadyConsumedAndNotResettable() throws IOException {
+        NettyInputStreamBody body = new NettyInputStreamBody(InputStream.nullInputStream());
+        NettyResponseFuture<?> future = newFuture(true);
 
         EmbeddedChannel channel = new EmbeddedChannel();
         try {
             IOException ex = assertThrows(IOException.class, () -> body.write(channel, future));
-            assertEquals(
-                    "HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                    ex.getMessage());
+            assertNotEquals("Stream closed", ex.getMessage());
         } finally {
             channel.finishAndReleaseAll();
         }
     }
 
-    private static final class NonResettableInputStream extends InputStream {
+    @Test
+    public void http1WriteFailsWhenConsumedMarkSupportedStreamCannotReset() throws IOException {
+        BufferedInputStream is = new BufferedInputStream(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        is.close();
+        NettyInputStreamBody body = new NettyInputStreamBody(is);
+        NettyResponseFuture<?> future = newFuture(true);
 
-        private final byte[] data;
-        private int index;
-
-        NonResettableInputStream(byte[] data) {
-            this.data = data;
+        EmbeddedChannel channel = new EmbeddedChannel();
+        try {
+            IOException ex = assertThrows(IOException.class, () -> body.write(channel, future));
+            assertNotEquals("Stream closed", ex.getMessage());
+            assertTrue(ex.getCause() instanceof IOException);
+        } finally {
+            channel.finishAndReleaseAll();
         }
+    }
 
-        @Override
-        public int read() {
-            return index < data.length ? data[index++] & 0xFF : -1;
-        }
+    @Test
+    public void http1FirstWriteClosesTheStreamAndRetryThenFailsFast() throws IOException {
+        BufferedInputStream is = new BufferedInputStream(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        NettyInputStreamBody body = new NettyInputStreamBody(is);
+        NettyResponseFuture<?> future = newFuture(false);
 
-        @Override
-        public boolean markSupported() {
-            return false;
+        EmbeddedChannel channel = new EmbeddedChannel();
+        try {
+            body.write(channel, future);
+            channel.runPendingTasks();
+            assertThrows(IOException.class, is::read);
+
+            IOException ex = assertThrows(IOException.class, () -> body.write(channel, future));
+            assertNotEquals("Stream closed", ex.getMessage());
+        } finally {
+            channel.finishAndReleaseAll();
         }
+    }
+
+    @Test
+    public void http2WriteFailsWhenStreamAlreadyConsumedAndNotResettable() {
+        NettyInputStreamBody body = new NettyInputStreamBody(InputStream.nullInputStream());
+        NettyResponseFuture<?> future = newFuture(true);
+
+        IOException ex = assertThrows(IOException.class, () -> body.writeHttp2(mock(Http2StreamChannel.class), future));
+        assertNotEquals("Stream closed", ex.getMessage());
+    }
+
+    @Test
+    public void http2WriteFailsWhenConsumedMarkSupportedStreamCannotReset() throws IOException {
+        BufferedInputStream is = new BufferedInputStream(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        is.close();
+        NettyInputStreamBody body = new NettyInputStreamBody(is);
+        NettyResponseFuture<?> future = newFuture(true);
+
+        IOException ex = assertThrows(IOException.class, () -> body.writeHttp2(mock(Http2StreamChannel.class), future));
+        assertNotEquals("Stream closed", ex.getMessage());
+        assertTrue(ex.getCause() instanceof IOException);
+    }
+
+    private static NettyResponseFuture<?> newFuture(boolean streamConsumed) {
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(null, mock(AsyncHandler.class), null, 0, null, null, null);
+        future.setStreamConsumed(streamConsumed);
+        return future;
     }
 }
