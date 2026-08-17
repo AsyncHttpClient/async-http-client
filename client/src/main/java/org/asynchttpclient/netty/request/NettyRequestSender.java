@@ -82,6 +82,7 @@ import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
+import org.jetbrains.annotations.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -404,7 +405,7 @@ public final class NettyRequestSender {
         SocketAddress channelRemoteAddress = channel.remoteAddress();
         if (channelRemoteAddress != null) {
             // otherwise, bad luck, the channel was closed, see bellow
-            scheduleRequestTimeout(future, (InetSocketAddress) channelRemoteAddress);
+            scheduleRequestTimeout(future, (InetSocketAddress) channelRemoteAddress, channel);
         }
 
         future.setChannelState(ChannelState.POOLED);
@@ -1080,10 +1081,37 @@ public final class NettyRequestSender {
 
     private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture,
                                         InetSocketAddress originalRemoteAddress) {
+        scheduleRequestTimeout(nettyResponseFuture, originalRemoteAddress, null);
+    }
+
+    /**
+     * @param channel the channel the exchange will run on when it is already known, so the timeout can be armed
+     *                on the loop that owns it and expire on the thread that would have to close it. Null on the
+     *                connect path: the timeout is armed before the channel exists, deliberately, so that it also
+     *                bounds address resolution and the connect itself.
+     */
+    private void scheduleRequestTimeout(NettyResponseFuture<?> nettyResponseFuture,
+                                        InetSocketAddress originalRemoteAddress,
+                                        @Nullable Channel channel) {
         nettyResponseFuture.touch();
-        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, nettyResponseFuture, this, config,
-                originalRemoteAddress);
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, timeoutExecutor(channel), nettyResponseFuture,
+                this, config, originalRemoteAddress);
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
+    }
+
+    /**
+     * The event loop to arm an exchange's timeouts on, or null to leave them on the client's timer. Prefers the
+     * channel's own loop; without a channel any loop will do, since what the wheel costs is a single thread for
+     * the whole client and a tick the deadline is rounded up to, not the identity of the thread.
+     */
+    private @Nullable EventExecutor timeoutExecutor(@Nullable Channel channel) {
+        if (!config.isUseEventLoopTimeouts()) {
+            return null;
+        }
+        if (channel != null) {
+            return channel.eventLoop();
+        }
+        return channelManager.getEventLoopGroup().next();
     }
 
     private static void scheduleReadTimeout(NettyResponseFuture<?> nettyResponseFuture) {
