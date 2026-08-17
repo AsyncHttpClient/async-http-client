@@ -173,6 +173,17 @@ public interface Request {
     Boolean getFollowRedirect();
 
     /**
+     * Whether {@link #getRequestTimeout()} is a deadline for the whole exchange rather than for each attempt
+     * within it. See {@link AsyncHttpClientConfig#isUseAbsoluteRequestDeadline()}.
+     *
+     * @return the override, or null to use the config value
+     */
+    @Nullable
+    default Boolean getUseAbsoluteRequestDeadline() {
+        return null;
+    }
+
+    /**
      * @return the request timeout. Non zero values means "override config value".
      */
     Duration getRequestTimeout();

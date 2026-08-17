@@ -62,6 +62,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
     public static final String LOAD_BALANCE_CONFIG = "loadBalance";
     public static final String FAILED_IP_COOLDOWN_ENABLED_CONFIG = "failedIpCooldownEnabled";
+    public static final String USE_ABSOLUTE_REQUEST_DEADLINE_CONFIG = "useAbsoluteRequestDeadline";
     public static final String FAILED_IP_COOLDOWN_PERIOD_CONFIG = "failedIpCooldownPeriod";
     public static final String DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG = "disableUrlEncodingForBoundRequests";
     public static final String USE_LAX_COOKIE_ENCODER_CONFIG = "useLaxCookieEncoder";
@@ -181,6 +182,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultFailedIpCooldownEnabled() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + FAILED_IP_COOLDOWN_ENABLED_CONFIG);
+    }
+
+    public static boolean defaultUseAbsoluteRequestDeadline() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_ABSOLUTE_REQUEST_DEADLINE_CONFIG);
     }
 
     public static Duration defaultFailedIpCooldownPeriod() {

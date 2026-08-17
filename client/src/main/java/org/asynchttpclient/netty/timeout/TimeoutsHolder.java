@@ -59,8 +59,16 @@ public class TimeoutsHolder {
         }
 
         if (requestTimeoutInMs > -1) {
-            requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
-            requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs), requestTimeoutInMs);
+            // A redirect, a retry or an auth replay builds a new holder for the same future. Anchoring the
+            // deadline here hands each of those hops a fresh budget, so a chain of n hops runs for n times the
+            // configured timeout; anchoring it on the future bounds the exchange as a whole instead. Which one
+            // applies is the caller's choice, per request or per client.
+            requestTimeoutMillisTime = (nettyResponseFuture.isUseAbsoluteRequestDeadline()
+                    ? nettyResponseFuture.getStart() : unpreciseMillisTime()) + requestTimeoutInMs;
+            // A deadline already behind us is scheduled at zero rather than negative, so the task still runs and
+            // still cancels its read-timeout sibling, which is bookkeeping only it does.
+            requestTimeout = newTimeout(new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs),
+                    Math.max(requestTimeoutMillisTime - unpreciseMillisTime(), 0L));
         } else {
             requestTimeoutMillisTime = -1L;
             requestTimeout = null;

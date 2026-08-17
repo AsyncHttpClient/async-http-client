@@ -110,6 +110,7 @@ import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
 import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE_HPACK;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
+import static org.asynchttpclient.util.HttpUtils.useAbsoluteRequestDeadline;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 
@@ -628,6 +629,8 @@ public final class NettyRequestSender {
                 request.getChannelPoolPartitioning(),
                 connectionSemaphore,
                 proxyServer);
+
+        future.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline(config, request));
 
         String expectHeader = request.getHeaders().get(EXPECT);
         if (HttpHeaderValues.CONTINUE.contentEqualsIgnoreCase(expectHeader)) {

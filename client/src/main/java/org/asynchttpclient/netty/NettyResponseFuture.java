@@ -154,6 +154,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     // future no longer takes, which is how a connection through a proxy comes to be offered as a direct one.
     // Volatile: the mutators run on the redirect and replay paths while reads happen on other threads.
     private volatile Object basePartitionKeyCache;
+    // Read when a TimeoutsHolder is built, which happens on the caller thread, an event loop or the timer
+    // thread depending on the path, so it is published rather than plain.
+    private volatile boolean useAbsoluteRequestDeadline;
 
     public NettyResponseFuture(Request originalRequest,
                                AsyncHandler<V> asyncHandler,
@@ -724,6 +727,21 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             // may be cancelled while we acquired a lock
             releasePartitionKeyLock();
         }
+    }
+
+    /**
+     * Whether this exchange's request timeout is a deadline for the exchange as a whole. Resolved once, from the
+     * request the caller submitted and the client config, and then kept here rather than re-read per hop: a
+     * redirect rebuilds the request from a hand-picked set of fields, so anything carried only on the request
+     * would silently revert to the config value partway through the exchange, which is exactly the case this
+     * setting exists for.
+     */
+    public boolean isUseAbsoluteRequestDeadline() {
+        return useAbsoluteRequestDeadline;
+    }
+
+    public void setUseAbsoluteRequestDeadline(boolean useAbsoluteRequestDeadline) {
+        this.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
     }
 
     public Realm getRealm() {

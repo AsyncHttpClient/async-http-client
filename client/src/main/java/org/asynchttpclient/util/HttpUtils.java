@@ -142,6 +142,11 @@ public final class HttpUtils {
         return request.getFollowRedirect() != null ? request.getFollowRedirect() : config.isFollowRedirect();
     }
 
+    public static boolean useAbsoluteRequestDeadline(AsyncHttpClientConfig config, Request request) {
+        Boolean override = request.getUseAbsoluteRequestDeadline();
+        return override != null ? override : config.isUseAbsoluteRequestDeadline();
+    }
+
     public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
         return StringUtils.charSequence2ByteBuffer(urlEncodeFormParams0(params, charset), US_ASCII);
     }

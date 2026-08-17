@@ -87,6 +87,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected @Nullable Realm realm;
     protected @Nullable File file;
     protected @Nullable Boolean followRedirect;
+    protected @Nullable Boolean useAbsoluteRequestDeadline;
     protected @Nullable Duration requestTimeout;
     protected @Nullable Duration readTimeout;
     protected long rangeOffset;
@@ -165,6 +166,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         realm = prototype.getRealm();
         file = prototype.getFile();
         followRedirect = prototype.getFollowRedirect();
+        useAbsoluteRequestDeadline = prototype.getUseAbsoluteRequestDeadline();
         requestTimeout = prototype.getRequestTimeout();
         readTimeout = prototype.getReadTimeout();
         rangeOffset = prototype.getRangeOffset();
@@ -598,6 +600,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    /**
+     * @param useAbsoluteRequestDeadline whether this request's timeout is a deadline for the whole exchange
+     *                                   rather than for each attempt within it, overriding
+     *                                   {@link AsyncHttpClientConfig#isUseAbsoluteRequestDeadline()}
+     * @return {@code this}
+     */
+    public T setUseAbsoluteRequestDeadline(boolean useAbsoluteRequestDeadline) {
+        this.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
+        return asDerivedType();
+    }
+
     public T setFollowRedirect(boolean followRedirect) {
         this.followRedirect = followRedirect;
         return asDerivedType();
@@ -685,6 +698,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.realm = realm;
         rb.file = file;
         rb.followRedirect = followRedirect;
+        rb.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
         rb.requestTimeout = requestTimeout;
         rb.rangeOffset = rangeOffset;
         rb.charset = charset;
@@ -755,6 +769,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.rangeOffset,
                 rb.charset,
                 rb.channelPoolPartitioning,
-                rb.nameResolver);
+                rb.nameResolver,
+                rb.useAbsoluteRequestDeadline);
     }
 }
