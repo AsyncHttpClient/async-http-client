@@ -58,7 +58,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
         String thisRequestDomain = requestDomain(uri);
         String thisRequestPath = requestPath(uri);
 
-        add(thisRequestDomain, thisRequestPath, cookie);
+        add(thisRequestDomain, thisRequestPath, uri.isSecured(), cookie);
     }
 
     @Override
@@ -189,7 +189,14 @@ public final class ThreadSafeCookieStore implements CookieStore {
                 requestPath.startsWith(cookiePath) && (cookiePath.charAt(cookiePath.length() - 1) == '/' || requestPath.charAt(cookiePath.length()) == '/');
     }
 
-    private void add(String requestDomain, String requestPath, Cookie cookie) {
+    private void add(String requestDomain, String requestPath, boolean requestSecure, Cookie cookie) {
+        // rfc6265bis#section-5.7 step 14: a Secure cookie is only honoured when it arrives over a secure
+        // scheme. Otherwise anyone on the plaintext path of http://example.com can plant or overwrite the
+        // cookie the site only ever sets inside TLS, and the next https request carries it back.
+        if (cookie.isSecure() && !requestSecure) {
+            return;
+        }
+
         AbstractMap.SimpleEntry<String, Boolean> pair = cookieDomain(cookie.domain(), requestDomain);
         String keyDomain = pair.getKey();
         boolean hostOnly = pair.getValue();
@@ -216,6 +223,13 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
         String keyPath = cookiePath(cookie.path(), requestPath);
         CookieKey key = new CookieKey(cookie.name().toLowerCase(), keyPath);
+
+        // rfc6265bis#section-5.7 step 22: a non-Secure cookie from a non-secure scheme must not overlay an
+        // existing Secure cookie either, or the step above is sidestepped by dropping the attribute. This
+        // sits before the expiry branch so a plaintext Max-Age=0 cannot delete a Secure cookie.
+        if (!requestSecure && shadowsSecureCookie(keyDomain, key)) {
+            return;
+        }
 
         if (hasCookieExpired(cookie, 0)) {
             cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
@@ -262,6 +276,32 @@ public final class ThreadSafeCookieStore implements CookieStore {
             Map.Entry<CookieKey, StoredCookie> victim = live.get(i);
             innerMap.remove(victim.getKey(), victim.getValue());
         }
+    }
+
+    /**
+     * Whether the store holds a live Secure cookie the new, non-Secure cookie would overlay: same name,
+     * a domain that domain-matches the new cookie's domain in either direction, and a path the new
+     * cookie's path path-matches. The path test is deliberately one-way, so a non-Secure cookie for /foo
+     * is still allowed next to a Secure one for /login (rfc6265bis#section-5.7 step 22).
+     */
+    private boolean shadowsSecureCookie(String cookieDomain, CookieKey newKey) {
+        for (Map.Entry<String, Map<CookieKey, StoredCookie>> domainEntry : cookieJar.entrySet()) {
+            String storedDomain = domainEntry.getKey();
+            if (!domainsMatch(cookieDomain, storedDomain) && !domainsMatch(storedDomain, cookieDomain)) {
+                continue;
+            }
+            for (Map.Entry<CookieKey, StoredCookie> entry : domainEntry.getValue().entrySet()) {
+                CookieKey storedKey = entry.getKey();
+                StoredCookie storedCookie = entry.getValue();
+                if (storedCookie.cookie.isSecure()
+                        && storedKey.name.equals(newKey.name)
+                        && pathsMatch(storedKey.path, newKey.path)
+                        && !hasCookieExpired(storedCookie.cookie, storedCookie.createdAt)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private List<Cookie> get(String domain, String path, boolean secure) {
