@@ -115,6 +115,34 @@ public interface AsyncHttpClientConfig {
     Duration getRequestTimeout();
 
     /**
+     * Whether request and read timeouts are armed on an event loop rather than on {@link #getNettyTimer()}.
+     * <p>
+     * The timer is a hashed wheel: it fires on the first tick at or after the deadline, so a deadline near or
+     * below {@link #getHashedWheelTimerTickDuration()} is rounded up to it, and one thread carries every expiry
+     * for the whole client. An event loop instead schedules by deadline and derives its own select timeout from
+     * the nearest one, so nothing is rounded up, and the loops share the load rather than funnelling it through
+     * a single thread. Both effects matter most to short deadlines, where a tick is a large fraction of the
+     * budget and a burst of expiries has no headroom to absorb.
+     * <p>
+     * The cost is where the expiry runs. On the timer it runs on the timer thread; on an event loop it runs on
+     * an I/O thread, and so does whatever the caller chained onto the response future, because that future is
+     * completed from there. Blocking an I/O thread stalls every connection it serves, so a caller enabling this
+     * should hand its own work off with {@code handleAsync} or an {@code AsyncHandler} that does the same.
+     * That is why this is opt-in rather than the default.
+     * <p>
+     * The loop is always the one that owns the exchange's channel. Until there is a channel -- while an address
+     * is being resolved and a connection made -- the timer carries the timeout, and the exchange moves it onto
+     * the loop once the connection succeeds.
+     * <p>
+     * The connection-pool cleaner stays on the timer either way.
+     *
+     * @return {@code true} to arm request and read timeouts on an event loop
+     */
+    default boolean isUseEventLoopTimeouts() {
+        return false;
+    }
+
+    /**
      * Is HTTP redirect enabled
      *
      * @return true if enabled.
@@ -268,30 +296,6 @@ public interface AsyncHttpClientConfig {
      */
     default Duration getFailedIpCooldownPeriod() {
         return Duration.ofSeconds(10);
-    }
-
-    /**
-     * Whether request and read timeouts are armed on an event loop rather than on {@link #getNettyTimer()}.
-     * <p>
-     * The timer is a hashed wheel: it fires on the first tick at or after the deadline, so a deadline near or
-     * below {@link #getHashedWheelTimerTickDuration()} is rounded up to it, and one thread carries every expiry
-     * for the whole client. An event loop instead schedules by deadline and derives its own select timeout from
-     * the nearest one, so nothing is rounded up, and the loops share the load rather than funnelling it through
-     * a single thread. Both effects matter most to short deadlines, where a tick is a large fraction of the
-     * budget and a burst of expiries has no headroom to absorb.
-     * <p>
-     * The cost is where the expiry runs. On the timer it runs on the timer thread; on an event loop it runs on
-     * an I/O thread, and so does whatever the caller chained onto the response future, because that future is
-     * completed from there. Blocking an I/O thread stalls every connection it serves, so a caller enabling this
-     * should hand its own work off with {@code handleAsync} or an {@code AsyncHandler} that does the same.
-     * That is why this is opt-in rather than the default.
-     * <p>
-     * The connection-pool cleaner stays on the timer either way.
-     *
-     * @return {@code true} to arm request and read timeouts on an event loop
-     */
-    default boolean isUseEventLoopTimeouts() {
-        return false;
     }
 
     /**

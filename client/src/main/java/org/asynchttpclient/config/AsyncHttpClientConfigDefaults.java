@@ -41,6 +41,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String CONNECTION_POOL_CLEANER_PERIOD_CONFIG = "connectionPoolCleanerPeriod";
     public static final String READ_TIMEOUT_CONFIG = "readTimeout";
     public static final String REQUEST_TIMEOUT_CONFIG = "requestTimeout";
+    public static final String USE_EVENT_LOOP_TIMEOUTS_CONFIG = "useEventLoopTimeouts";
     public static final String CONNECTION_TTL_CONFIG = "connectionTtl";
     public static final String FOLLOW_REDIRECT_CONFIG = "followRedirect";
     public static final String MAX_REDIRECTS_CONFIG = "maxRedirects";
@@ -62,7 +63,6 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
     public static final String LOAD_BALANCE_CONFIG = "loadBalance";
     public static final String FAILED_IP_COOLDOWN_ENABLED_CONFIG = "failedIpCooldownEnabled";
-    public static final String USE_EVENT_LOOP_TIMEOUTS_CONFIG = "useEventLoopTimeouts";
     public static final String FAILED_IP_COOLDOWN_PERIOD_CONFIG = "failedIpCooldownPeriod";
     public static final String DISABLE_URL_ENCODING_FOR_BOUND_REQUESTS_CONFIG = "disableUrlEncodingForBoundRequests";
     public static final String USE_LAX_COOKIE_ENCODER_CONFIG = "useLaxCookieEncoder";
@@ -155,6 +155,10 @@ public final class AsyncHttpClientConfigDefaults {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_TIMEOUT_CONFIG);
     }
 
+    public static boolean defaultUseEventLoopTimeouts() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_EVENT_LOOP_TIMEOUTS_CONFIG);
+    }
+
     public static Duration defaultConnectionTtl() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_TTL_CONFIG);
     }
@@ -182,10 +186,6 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultFailedIpCooldownEnabled() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + FAILED_IP_COOLDOWN_ENABLED_CONFIG);
-    }
-
-    public static boolean defaultUseEventLoopTimeouts() {
-        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_EVENT_LOOP_TIMEOUTS_CONFIG);
     }
 
     public static Duration defaultFailedIpCooldownPeriod() {

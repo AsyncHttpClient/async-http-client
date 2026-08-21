@@ -33,14 +33,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 /**
- * The request and read timeouts of one exchange.
- * <p>
- * Timeouts are armed either on the client's {@link Timer} or, when an {@link EventExecutor} is supplied, on
- * that event loop. The two differ in more than which thread runs the task. A wheel fires on the first tick at
- * or after the deadline, so a deadline near or below the tick duration is rounded up, and one thread carries
- * every expiry for the whole client. An event loop schedules by deadline and derives its select timeout from
- * the nearest one, so nothing is rounded, and the loops share the load. See
- * {@link AsyncHttpClientConfig#isUseEventLoopTimeouts()} for what that costs.
+ * The request and read timeouts of one exchange, armed either on the client's {@link Timer} or on the event
+ * loop of the channel the exchange runs on. What the two differ in, and why the choice is the caller's, is
+ * {@link AsyncHttpClientConfig#isUseEventLoopTimeouts()}.
  */
 public class TimeoutsHolder {
 
@@ -48,15 +43,12 @@ public class TimeoutsHolder {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
     private final Timer nettyTimer;
-    private final @Nullable EventExecutor eventExecutor;
+    private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
     private final long requestTimeoutMillisTime;
     private final long readTimeoutValue;
+    private final boolean useEventLoopTimeouts;
     private final @Nullable RequestTimeoutTimerTask requestTimeoutTask;
-    // Whether the request timeout was actually armed. Distinct from requestTimeoutTask being non-null: the
-    // task exists but is left unarmed when there is nothing to arm it on, and the read timeout is then free to
-    // run to its own deadline rather than assuming a request timeout will outrun it.
-    private final boolean requestTimeoutArmed;
     private volatile @Nullable ReadTimeoutTimerTask readTimeoutTask;
     private final NettyResponseFuture<?> nettyResponseFuture;
     private volatile InetSocketAddress remoteAddress;
@@ -67,9 +59,11 @@ public class TimeoutsHolder {
     }
 
     /**
-     * @param eventExecutor the event loop to arm the timeouts on, or {@code null} to arm them on
-     *                      {@code nettyTimer}. Pass the loop that owns the exchange's channel when it is known,
-     *                      so the timeout fires on the thread that will have to close it.
+     * @param eventExecutor the loop of the channel this exchange will run on, or {@code null} to arm the
+     *                      timeouts on {@code nettyTimer} instead. Only ever a channel's own loop, so that an
+     *                      expiry runs on the thread that would have to close the socket and cancelling one on
+     *                      completion touches no other loop's queue. Null until a channel exists;
+     *                      {@link #rehomeOn} moves the timeouts once one does.
      */
     public TimeoutsHolder(Timer nettyTimer, @Nullable EventExecutor eventExecutor, NettyResponseFuture<?> nettyResponseFuture,
                           NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
@@ -77,6 +71,7 @@ public class TimeoutsHolder {
         this.eventExecutor = eventExecutor;
         this.nettyResponseFuture = nettyResponseFuture;
         this.requestSender = requestSender;
+        useEventLoopTimeouts = config.isUseEventLoopTimeouts();
         remoteAddress = originalRemoteAddress;
 
         final Request targetRequest = nettyResponseFuture.getTargetRequest();
@@ -92,12 +87,41 @@ public class TimeoutsHolder {
         if (requestTimeoutInMs > -1) {
             requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
-            requestTimeoutArmed = arm(requestTimeoutTask, requestTimeoutInMs);
         } else {
             requestTimeoutMillisTime = -1L;
             requestTimeoutTask = null;
-            requestTimeoutArmed = false;
         }
+    }
+
+    /**
+     * Arms the request timeout, which the constructor deliberately leaves undone. The task holds this holder and
+     * can run the moment it is armed, and on an event loop nothing rounds a short deadline up to the next tick,
+     * so arming from the constructor let it run before its own fields were frozen, before the future had been
+     * handed the holder, and on the pooled path before the channel had been attached to the future -- an expiry
+     * that then had no channel to close. The caller does all three first and arms last.
+     */
+    public void start() {
+        if (requestTimeoutTask != null) {
+            arm(requestTimeoutTask, remainingRequestTimeout());
+        }
+    }
+
+    /**
+     * Moves this exchange's timeouts onto {@code executor}, the loop of the channel it turned out to run on. The
+     * connect path arms the request timeout before there is a channel -- deliberately, since it bounds address
+     * resolution and the connect as well -- so there the loop is only known once the connection succeeds. A
+     * no-op when the timeouts belong on the timer, or once the request timeout has fired or been cancelled.
+     */
+    public void rehomeOn(EventExecutor executor) {
+        if (!useEventLoopTimeouts) {
+            return;
+        }
+        eventExecutor = executor;
+        RequestTimeoutTimerTask task = requestTimeoutTask;
+        if (task == null || cancelled.get() || task.isClaimed() || !task.cancelArmed()) {
+            return;
+        }
+        arm(task, remainingRequestTimeout());
     }
 
     public void setResolvedRemoteAddress(InetSocketAddress address) {
@@ -115,7 +139,7 @@ public class TimeoutsHolder {
     }
 
     void startReadTimeout(@Nullable ReadTimeoutTimerTask task) {
-        if (!requestTimeoutArmed
+        if (requestTimeoutTask == null
                 || !requestTimeoutTask.isClaimed() && readTimeoutValue < requestTimeoutMillisTime - unpreciseMillisTime()) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
@@ -145,24 +169,30 @@ public class TimeoutsHolder {
         }
     }
 
+    private long remainingRequestTimeout() {
+        // A deadline already behind us is armed at zero rather than negative, so the task still runs and still
+        // cancels its read-timeout sibling, which is bookkeeping only it does.
+        return Math.max(requestTimeoutMillisTime - unpreciseMillisTime(), 0L);
+    }
+
     /**
      * Arms {@code task} to run after {@code delay} milliseconds, recording the scheduled entry on the task so it
-     * can cancel itself later.
-     *
-     * @return whether the task was armed. It is not when the client is shutting down, in which case there is no
-     *         timeout to deliver anyway
+     * can cancel itself later. Leaves it unarmed when the client is shutting down, in which case there is no
+     * timeout to deliver anyway.
      */
-    private boolean arm(TimeoutTimerTask task, long delay) {
+    private void arm(TimeoutTimerTask task, long delay) {
         // requestSender or nettyTimer might be null in unit tests or in some edge
         // cases where a channel's remote address wasn't available. In such cases
         // avoid scheduling any timeouts rather than throwing a NPE.
         if (requestSender == null || requestSender.isClosed()) {
-            return false;
+            return;
         }
-        if (eventExecutor != null && !eventExecutor.isShuttingDown()) {
+        EventExecutor executor = eventExecutor;
+        if (executor != null && !executor.isShuttingDown()) {
             try {
-                task.armedOn(eventExecutor.schedule(task, delay, TimeUnit.MILLISECONDS));
-                return true;
+                task.armedOn(executor.schedule(task, delay, TimeUnit.MILLISECONDS));
+                cancelIfRaced(task);
+                return;
             } catch (RejectedExecutionException e) {
                 // The loop began shutting down between the check above and here. Losing the timeout entirely
                 // would leave the exchange with nothing to end it, so fall through to the timer, which the
@@ -171,9 +201,20 @@ public class TimeoutsHolder {
             }
         }
         if (nettyTimer == null) {
-            return false;
+            return;
         }
         task.armedOn(nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS));
-        return true;
+        cancelIfRaced(task);
+    }
+
+    /**
+     * Takes a just-armed entry back out of its scheduler when the exchange finished while it was being armed.
+     * {@link #cancel} is one shot, so a handle recorded after it ran is one nobody would ever cancel: the entry
+     * would sit in the scheduler until the full deadline, waking a loop for a request that is long done.
+     */
+    private void cancelIfRaced(TimeoutTimerTask task) {
+        if (cancelled.get()) {
+            release(task);
+        }
     }
 }

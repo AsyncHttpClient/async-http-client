@@ -63,7 +63,6 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEn
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultEnabledProtocols;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultExpiredCookieEvictionDelay;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownEnabled;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseEventLoopTimeouts;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFailedIpCooldownPeriod;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFilterInsecureCipherSuites;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect;
@@ -98,6 +97,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSs
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultStrict302Handling;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTcpNoDelay;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultThreadPoolName;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseEventLoopTimeouts;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseInsecureTrustManager;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseLaxCookieEncoder;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUseNativeTransport;
@@ -139,7 +139,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final int maxRequestRetry;
     private final LoadBalance loadBalance;
     private final boolean failedIpCooldownEnabled;
-    private final boolean useEventLoopTimeouts;
     private final Duration failedIpCooldownPeriod;
     private final boolean disableUrlEncodingForBoundRequests;
     private final boolean useLaxCookieEncoder;
@@ -159,6 +158,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final Duration connectTimeout;
     private final Duration requestTimeout;
     private final Duration readTimeout;
+    private final boolean useEventLoopTimeouts;
     private final Duration shutdownQuietPeriod;
     private final Duration shutdownTimeout;
 
@@ -245,7 +245,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int maxRequestRetry,
                                          LoadBalance loadBalance,
                                          boolean failedIpCooldownEnabled,
-                                         boolean useEventLoopTimeouts,
                                          Duration failedIpCooldownPeriod,
                                          boolean disableUrlEncodingForBoundRequests,
                                          boolean useLaxCookieEncoder,
@@ -261,6 +260,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          Duration connectTimeout,
                                          Duration requestTimeout,
                                          Duration readTimeout,
+                                         boolean useEventLoopTimeouts,
                                          Duration shutdownQuietPeriod,
                                          Duration shutdownTimeout,
 
@@ -351,7 +351,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.maxRequestRetry = maxRequestRetry;
         this.loadBalance = loadBalance;
         this.failedIpCooldownEnabled = failedIpCooldownEnabled;
-        this.useEventLoopTimeouts = useEventLoopTimeouts;
         this.failedIpCooldownPeriod = failedIpCooldownPeriod;
         this.disableUrlEncodingForBoundRequests = disableUrlEncodingForBoundRequests;
         this.useLaxCookieEncoder = useLaxCookieEncoder;
@@ -371,6 +370,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.connectTimeout = connectTimeout;
         this.requestTimeout = requestTimeout;
         this.readTimeout = readTimeout;
+        this.useEventLoopTimeouts = useEventLoopTimeouts;
         this.shutdownQuietPeriod = shutdownQuietPeriod;
         this.shutdownTimeout = shutdownTimeout;
 
@@ -523,11 +523,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     }
 
     @Override
-    public boolean isUseEventLoopTimeouts() {
-        return useEventLoopTimeouts;
-    }
-
-    @Override
     public Duration getFailedIpCooldownPeriod() {
         return failedIpCooldownPeriod;
     }
@@ -592,6 +587,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public Duration getReadTimeout() {
         return readTimeout;
+    }
+
+    @Override
+    public boolean isUseEventLoopTimeouts() {
+        return useEventLoopTimeouts;
     }
 
     @Override
@@ -946,7 +946,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private int maxRequestRetry = defaultMaxRequestRetry();
         private LoadBalance loadBalance = defaultLoadBalance();
         private boolean failedIpCooldownEnabled = defaultFailedIpCooldownEnabled();
-        private boolean useEventLoopTimeouts = defaultUseEventLoopTimeouts();
         private Duration failedIpCooldownPeriod = defaultFailedIpCooldownPeriod();
         private boolean disableUrlEncodingForBoundRequests = defaultDisableUrlEncodingForBoundRequests();
         private boolean useLaxCookieEncoder = defaultUseLaxCookieEncoder();
@@ -968,6 +967,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private Duration connectTimeout = defaultConnectTimeout();
         private Duration requestTimeout = defaultRequestTimeout();
         private Duration readTimeout = defaultReadTimeout();
+        private boolean useEventLoopTimeouts = defaultUseEventLoopTimeouts();
         private Duration shutdownQuietPeriod = defaultShutdownQuietPeriod();
         private Duration shutdownTimeout = defaultShutdownTimeout();
 
@@ -1055,7 +1055,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             maxRequestRetry = config.getMaxRequestRetry();
             loadBalance = config.getLoadBalance();
             failedIpCooldownEnabled = config.isFailedIpCooldownEnabled();
-            useEventLoopTimeouts = config.isUseEventLoopTimeouts();
             failedIpCooldownPeriod = config.getFailedIpCooldownPeriod();
             disableUrlEncodingForBoundRequests = config.isDisableUrlEncodingForBoundRequests();
             useLaxCookieEncoder = config.isUseLaxCookieEncoder();
@@ -1075,6 +1074,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             connectTimeout = config.getConnectTimeout();
             requestTimeout = config.getRequestTimeout();
             readTimeout = config.getReadTimeout();
+            useEventLoopTimeouts = config.isUseEventLoopTimeouts();
             shutdownQuietPeriod = config.getShutdownQuietPeriod();
             shutdownTimeout = config.getShutdownTimeout();
 
@@ -1256,17 +1256,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         /**
-         * @param useEventLoopTimeouts whether to arm request and read timeouts on an event loop instead of on
-         *                             the client's timer; see {@link AsyncHttpClientConfig#isUseEventLoopTimeouts()}
-         *                             for the trade-off this makes
-         * @return this
-         */
-        public Builder setUseEventLoopTimeouts(boolean useEventLoopTimeouts) {
-            this.useEventLoopTimeouts = useEventLoopTimeouts;
-            return this;
-        }
-
-        /**
          * @param failedIpCooldownPeriod how long a failed IP is deprioritized before it is re-probed;
          *                               {@code null} resets to the default. Must not be negative; use
          *                               {@link #setFailedIpCooldownEnabled(boolean)} with {@code false}
@@ -1374,6 +1363,17 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setReadTimeout(Duration readTimeout) {
             this.readTimeout = readTimeout;
+            return this;
+        }
+
+        /**
+         * @param useEventLoopTimeouts whether to arm request and read timeouts on an event loop instead of on
+         *                             the client's timer; see {@link AsyncHttpClientConfig#isUseEventLoopTimeouts()}
+         *                             for the trade-off this makes
+         * @return this
+         */
+        public Builder setUseEventLoopTimeouts(boolean useEventLoopTimeouts) {
+            this.useEventLoopTimeouts = useEventLoopTimeouts;
             return this;
         }
 
@@ -1773,7 +1773,6 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     maxRequestRetry,
                     loadBalance,
                     failedIpCooldownEnabled,
-                    useEventLoopTimeouts,
                     failedIpCooldownPeriod,
                     disableUrlEncodingForBoundRequests,
                     useLaxCookieEncoder,
@@ -1787,6 +1786,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     connectTimeout,
                     requestTimeout,
                     readTimeout,
+                    useEventLoopTimeouts,
                     shutdownQuietPeriod,
                     shutdownTimeout,
                     keepAlive,
