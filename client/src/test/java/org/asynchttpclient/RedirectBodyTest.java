@@ -281,16 +281,45 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @ParameterizedTest(name = "{0} on {1} keeps the existing GET rewrite")
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void put301WithNonRepeatableBodyGeneratorFailsPromptly() throws Exception {
+        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            ExecutionException thrown = assertThrows(ExecutionException.class,
+                    () -> c.preparePut(getTargetUrl())
+                            .setBody(new InputStreamBodyGenerator(body))
+                            .setHeader("X-REDIRECT", "301")
+                            .execute()
+                            .get(TIMEOUT, TimeUnit.SECONDS));
+
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
+                    cause.getMessage());
+        }
+    }
+
+    @ParameterizedTest(name = "{0} on {1} keeps its method and body")
     @CsvSource({
             "PUT, 301",
             "PUT, 302",
             "PATCH, 301",
             "PATCH, 302",
             "DELETE, 301",
-            "DELETE, 302"
+            "DELETE, 302",
+            "CUSTOM, 301",
+            "CUSTOM, 302"
     })
-    public void putPatchAndDelete301And302KeepExistingBehavior(String method, int statusCode) throws Exception {
+    public void nonPost301And302KeepMethodAndBody(String method, int statusCode) throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
@@ -301,9 +330,9 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     .setHeader("X-REDIRECT", Integer.toString(statusCode))
                     .execute()
                     .get(TIMEOUT, TimeUnit.SECONDS);
-            assertEquals("", response.getResponseBody());
-            assertEquals(GET, receivedMethod);
-            assertNull(receivedContentType);
+            assertEquals(body, response.getResponseBody());
+            assertEquals(method, receivedMethod);
+            assertEquals(contentType, receivedContentType);
         }
     }
 
