@@ -157,20 +157,7 @@ public class Redirect30xInterceptor {
                 }
 
                 if (keepBody) {
-                    requestBuilder.setCharset(request.getCharset());
-                    if (isNonEmpty(request.getFormParams())) {
-                        requestBuilder.setFormParams(request.getFormParams());
-                    } else if (request.getStringData() != null) {
-                        requestBuilder.setBody(request.getStringData());
-                    } else if (request.getByteData() != null) {
-                        requestBuilder.setBody(request.getByteData());
-                    } else if (request.getByteBufferData() != null) {
-                        requestBuilder.setBody(request.getByteBufferData());
-                    } else if (request.getBodyGenerator() != null) {
-                        requestBuilder.setBody(request.getBodyGenerator());
-                    } else if (isNonEmpty(request.getBodyParts())) {
-                        requestBuilder.setBodyParts(request.getBodyParts());
-                    }
+                    copyBody(requestBuilder, request);
                 }
 
                 requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody, stripAuth));
@@ -227,6 +214,35 @@ public class Redirect30xInterceptor {
             }
         }
         return false;
+    }
+
+    private static void copyBody(RequestBuilder requestBuilder, Request request) {
+        requestBuilder.setCharset(request.getCharset());
+
+        // Keep this precedence aligned with NettyRequestFactory.body. A Request can retain a File or
+        // BodyGenerator alongside another representation, so the redirect must copy the representation
+        // that the original request actually sent.
+        if (request.getByteData() != null) {
+            requestBuilder.setBody(request.getByteData());
+        } else if (request.getCompositeByteData() != null) {
+            requestBuilder.setBody(request.getCompositeByteData());
+        } else if (request.getStringData() != null) {
+            requestBuilder.setBody(request.getStringData());
+        } else if (request.getByteBufferData() != null) {
+            requestBuilder.setBody(request.getByteBufferData());
+        } else if (request.getByteBufData() != null) {
+            requestBuilder.setBody(request.getByteBufData());
+        } else if (request.getStreamData() != null) {
+            requestBuilder.setBody(request.getStreamData());
+        } else if (isNonEmpty(request.getFormParams())) {
+            requestBuilder.setFormParams(request.getFormParams());
+        } else if (isNonEmpty(request.getBodyParts())) {
+            requestBuilder.setBodyParts(request.getBodyParts());
+        } else if (request.getFile() != null) {
+            requestBuilder.setBody(request.getFile());
+        } else if (request.getBodyGenerator() != null) {
+            requestBuilder.setBody(request.getBodyGenerator());
+        }
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {

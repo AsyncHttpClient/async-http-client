@@ -16,24 +16,42 @@
 package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RedirectBodyTest extends AbstractBasicTest {
+
+    private static final byte[] REDIRECT_BODY = "redirect body".getBytes(UTF_8);
+    private static final String CONTENT_TYPE_VALUE = "application/octet-stream";
 
     private static volatile boolean redirectAlreadyPerformed;
     private static volatile String receivedContentType;
@@ -50,6 +68,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
             @Override
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
 
+                byte[] body = IOUtils.toByteArray(request.getInputStream());
                 String redirectHeader = httpRequest.getHeader("X-REDIRECT");
                 if (redirectHeader != null && !redirectAlreadyPerformed) {
                     redirectAlreadyPerformed = true;
@@ -60,12 +79,9 @@ public class RedirectBodyTest extends AbstractBasicTest {
                 } else {
                     receivedContentType = request.getContentType();
                     httpResponse.setStatus(200);
-                    int len = request.getContentLength();
-                    httpResponse.setContentLength(len);
-                    if (len > 0) {
-                        byte[] buffer = new byte[len];
-                        IOUtils.read(request.getInputStream(), buffer);
-                        httpResponse.getOutputStream().write(buffer);
+                    httpResponse.setContentLength(body.length);
+                    if (body.length > 0) {
+                        httpResponse.getOutputStream().write(body);
                     }
                 }
                 httpResponse.getOutputStream().flush();
@@ -120,5 +136,135 @@ public class RedirectBodyTest extends AbstractBasicTest {
             assertEquals(response.getResponseBody(), body);
             assertEquals(receivedContentType, contentType);
         }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void compositeByteArray307KeepsBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            byte[] first = "redirect ".getBytes(UTF_8);
+            byte[] second = "body".getBytes(UTF_8);
+
+            Response response = execute307(c.preparePost(getTargetUrl()).setBody(Arrays.asList(first, second)));
+
+            assertRedirectBody(response);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void byteBuf307KeepsBody() throws Exception {
+        ByteBuf body = Unpooled.wrappedBuffer(REDIRECT_BODY);
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = execute307(c.preparePost(getTargetUrl()).setBody(body));
+
+            assertRedirectBody(response);
+            assertEquals(1, body.refCnt(), "the caller must retain ownership of its ByteBuf");
+        } finally {
+            body.release();
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void resettableInputStream307KeepsBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = execute307(c.preparePost(getTargetUrl()).setBody(new ByteArrayInputStream(REDIRECT_BODY)));
+
+            assertRedirectBody(response);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void nonResettableInputStream307FailsPromptly() throws Exception {
+        InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            ExecutionException thrown = assertThrows(ExecutionException.class,
+                    () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
+
+            assertInstanceOf(IOException.class, thrown.getCause());
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void file307KeepsBody() throws Exception {
+        Path body = Files.createTempFile("ahc-redirect-body-", ".bin");
+        try {
+            Files.write(body, REDIRECT_BODY);
+            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+                Response response = execute307(c.preparePost(getTargetUrl()).setBody(body.toFile()));
+
+                assertRedirectBody(response);
+            }
+        } finally {
+            Files.deleteIfExists(body);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void coexistingFileAndByteArray308UsesByteArray() throws Exception {
+        Path file = Files.createTempFile("ahc-redirect-precedence-", ".bin");
+        try {
+            Files.write(file, "wrong file body".getBytes(UTF_8));
+            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+                Response response = c.preparePost(getTargetUrl())
+                        .setBody(file.toFile())
+                        .setBody(REDIRECT_BODY)
+                        .setHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
+                        .setHeader("X-REDIRECT", "308")
+                        .execute()
+                        .get(TIMEOUT, TimeUnit.SECONDS);
+
+                assertRedirectBody(response);
+            }
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void formParams307KeepBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = c.preparePost(getTargetUrl())
+                    .addFormParam("field", "value")
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals("field=value", response.getResponseBody());
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void multipart307KeepsBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = c.preparePost(getTargetUrl())
+                    .addBodyPart(new StringPart("field", "multipart value"))
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertTrue(response.getResponseBody().contains("multipart value"));
+        }
+    }
+
+    private static Response execute307(BoundRequestBuilder requestBuilder) throws Exception {
+        return requestBuilder
+                .setHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
+                .setHeader("X-REDIRECT", "307")
+                .execute()
+                .get(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    private static void assertRedirectBody(Response response) {
+        assertArrayEquals(REDIRECT_BODY, response.getResponseBodyAsBytes());
+        assertEquals(CONTENT_TYPE_VALUE, receivedContentType);
     }
 }
