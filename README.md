@@ -339,6 +339,14 @@ AsyncHttpClient client = asyncHttpClient(config()
     .setHttp2CleartextEnabled(true));               // h2c prior knowledge
 ```
 
+When a handler suspends a response with `ResponseBodyControl`, the HTTP/2
+per-stream window remains the buffering bound for that response. AHC continues
+returning connection-level credit so the suspended stream cannot stall sibling
+streams. Consequently, aggregate queued response data can scale with the number
+of concurrently suspended streams. Use `http2InitialWindowSize` and
+`http2MaxConcurrentStreams` together when an application needs a tighter
+aggregate bound.
+
 To force HTTP/1.1, disable HTTP/2:
 
 ```java

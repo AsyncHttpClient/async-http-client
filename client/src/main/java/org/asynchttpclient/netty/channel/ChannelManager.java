@@ -37,6 +37,8 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.codec.http2.DefaultHttp2Connection;
+import io.netty.handler.codec.http2.DefaultHttp2LocalFlowController;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameCodec;
@@ -1079,7 +1081,7 @@ public class ChannelManager {
                 // Netty's default and a pushing server could trip a connection-level PROTOCOL_ERROR.
                 .pushEnabled(false);
 
-        Http2FrameCodec frameCodec = Http2FrameCodecBuilder.forClient()
+        Http2FrameCodec frameCodec = new ClientHttp2FrameCodecBuilder()
                 .initialSettings(settings)
                 .build();
 
@@ -1282,6 +1284,28 @@ public class ChannelManager {
 
         private long totalConnectionCount;
         private long idleConnectionCount;
+    }
+
+    private static final class ClientHttp2FrameCodecBuilder extends Http2FrameCodecBuilder {
+
+        private ClientHttp2FrameCodecBuilder() {
+            // Http2FrameCodecBuilder.forClient() sets this through its package-private constructor. This subclass must
+            // use the protected no-argument constructor, so set it explicitly to preserve the client factory behavior.
+            gracefulShutdownTimeoutMillis(0);
+
+            DefaultHttp2Connection connection = new DefaultHttp2Connection(false);
+            // Refill shared credit on receipt so a suspended stream cannot starve siblings. Per-stream windows retain
+            // application backpressure, at the deliberate cost that aggregate queued data can scale with the number of
+            // suspended streams. ResponseBodyControl documents the relevant configuration bounds.
+            connection.local().flowController(new DefaultHttp2LocalFlowController(
+                    connection, DefaultHttp2LocalFlowController.DEFAULT_WINDOW_UPDATE_RATIO, true));
+            connection(connection);
+        }
+
+        @Override
+        public boolean isServer() {
+            return false;
+        }
     }
 
     public boolean isOpen() {

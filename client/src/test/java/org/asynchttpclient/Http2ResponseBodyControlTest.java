@@ -66,6 +66,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -78,11 +79,14 @@ public class Http2ResponseBodyControlTest {
             AttributeKey.valueOf("response-body-control-h2-connection-id");
     private static final int FRAME_SIZE = 16 * 1024;
     private static final int FRAME_COUNT = 16;
+    private static final int SIBLING_FRAME_COUNT = 64;
+    private static final int CANCELLATION_ATTEMPTS = 8;
 
     private final AtomicInteger connectionCount = new AtomicInteger();
     private final CountDownLatch largeResponseQueued = new CountDownLatch(1);
     private final CompletableFuture<Void> largeResponseWritten = new CompletableFuture<>();
     private final CountDownLatch cancelledStreamClosed = new CountDownLatch(1);
+    private final LinkedBlockingQueue<Boolean> cancelledLargeStreamClosed = new LinkedBlockingQueue<>();
 
     private NioEventLoopGroup serverGroup;
     private Channel serverChannel;
@@ -194,9 +198,62 @@ public class Http2ResponseBodyControlTest {
     }
 
     @Test
+    public void suspendedStreamDoesNotStallSiblingStream() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            RecordingHandler suspendedHandler = new RecordingHandler();
+            ListenableFuture<RecordingHandler> suspendedRequest =
+                    client.prepareGet(url("/large")).execute(suspendedHandler);
+            ResponseBodyControl control = suspendedHandler.control.get(5, SECONDS);
+
+            assertTrue(largeResponseQueued.await(5, SECONDS));
+            assertThrows(TimeoutException.class, () -> suspendedRequest.get(250, MILLISECONDS));
+
+            Response sibling = client.prepareGet(url("/large-sibling"))
+                    .setReadTimeout(Duration.ofSeconds(5))
+                    .execute()
+                    .get(10, SECONDS);
+            assertEquals((long) FRAME_SIZE * SIBLING_FRAME_COUNT, sibling.getResponseBodyAsBytes().length);
+            assertEquals(1, connectionCount.get(), "a suspended stream must not stall a sibling on the same connection");
+            assertFalse(largeResponseWritten.isDone(),
+                    "connection-level refills must not consume the suspended stream's flow-control window");
+
+            control.cancel();
+            assertSame(suspendedHandler, suspendedRequest.get(5, SECONDS));
+            assertNull(suspendedHandler.throwable.get());
+        }
+    }
+
+    @Test
+    public void repeatedCancellationReturnsHttp2ConnectionWindow() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            for (int i = 0; i < CANCELLATION_ATTEMPTS; i++) {
+                RecordingHandler handler = new RecordingHandler(true);
+                ListenableFuture<RecordingHandler> request =
+                        client.prepareGet(url("/cancel-large")).execute(handler);
+                ResponseBodyControl control = handler.control.get(5, SECONDS);
+
+                control.resume();
+                handler.firstBodyPart.get(5, SECONDS);
+                control.cancel();
+
+                assertSame(handler, request.get(5, SECONDS));
+                assertTrue(Boolean.TRUE.equals(cancelledLargeStreamClosed.poll(5, SECONDS)));
+                assertNull(handler.throwable.get());
+            }
+
+            Response sibling = client.prepareGet(url("/large-sibling"))
+                    .setReadTimeout(Duration.ofSeconds(5))
+                    .execute()
+                    .get(10, SECONDS);
+            assertEquals((long) FRAME_SIZE * SIBLING_FRAME_COUNT, sibling.getResponseBodyAsBytes().length);
+            assertEquals(1, connectionCount.get(), "cancelled streams must return connection-level flow-control credit");
+        }
+    }
+
+    @Test
     public void cancellationFromTerminalBodyCallbackCompletesOnce() throws Exception {
         try (AsyncHttpClient client = http2Client()) {
-            RecordingHandler handler = new RecordingHandler(true);
+            RecordingHandler handler = new RecordingHandler(false, true);
             ListenableFuture<RecordingHandler> request = client.prepareGet(url("/pool")).execute(handler);
 
             handler.control.get(5, SECONDS).resume();
@@ -237,14 +294,7 @@ public class Http2ResponseBodyControlTest {
             switch (path) {
                 case "/large":
                     writeHeaders(ctx);
-                    ChannelFuture finalWrite = null;
-                    for (int i = 0; i < FRAME_COUNT; i++) {
-                        ByteBuf content = ctx.alloc().buffer(FRAME_SIZE).writeZero(FRAME_SIZE);
-                        boolean last = i == FRAME_COUNT - 1;
-                        finalWrite = last
-                                ? ctx.writeAndFlush(new DefaultHttp2DataFrame(content, true))
-                                : ctx.write(new DefaultHttp2DataFrame(content, false));
-                    }
+                    ChannelFuture finalWrite = writeFrames(ctx, FRAME_COUNT);
                     largeResponseQueued.countDown();
                     finalWrite.addListener(result -> {
                         if (result.isSuccess()) {
@@ -260,6 +310,15 @@ public class Http2ResponseBodyControlTest {
                     ctx.writeAndFlush(new DefaultHttp2DataFrame(
                             Unpooled.copiedBuffer("first", CharsetUtil.US_ASCII), false));
                     break;
+                case "/cancel-large":
+                    ctx.channel().closeFuture().addListener(ignored -> cancelledLargeStreamClosed.offer(Boolean.TRUE));
+                    writeHeaders(ctx);
+                    writeFrames(ctx, FRAME_COUNT);
+                    break;
+                case "/large-sibling":
+                    writeHeaders(ctx);
+                    writeFrames(ctx, SIBLING_FRAME_COUNT);
+                    break;
                 default:
                     writeHeaders(ctx);
                     Integer connectionId = ctx.channel().parent().attr(CONNECTION_ID).get();
@@ -272,6 +331,18 @@ public class Http2ResponseBodyControlTest {
         private void writeHeaders(ChannelHandlerContext ctx) {
             ctx.write(new DefaultHttp2HeadersFrame(new DefaultHttp2Headers().status("200"), false));
         }
+
+        private ChannelFuture writeFrames(ChannelHandlerContext ctx, int frameCount) {
+            ChannelFuture finalWrite = null;
+            for (int i = 0; i < frameCount; i++) {
+                ByteBuf content = ctx.alloc().buffer(FRAME_SIZE).writeZero(FRAME_SIZE);
+                boolean last = i == frameCount - 1;
+                finalWrite = last
+                        ? ctx.writeAndFlush(new DefaultHttp2DataFrame(content, true))
+                        : ctx.write(new DefaultHttp2DataFrame(content, false));
+            }
+            return finalWrite;
+        }
     }
 
     private static final class RecordingHandler implements AsyncHandler<RecordingHandler> {
@@ -280,15 +351,22 @@ public class Http2ResponseBodyControlTest {
         private final AtomicLong bodyBytes = new AtomicLong();
         private final AtomicInteger protocolMajorVersion = new AtomicInteger();
         private final AtomicReference<Throwable> throwable = new AtomicReference<>();
+        private final CompletableFuture<Void> firstBodyPart = new CompletableFuture<>();
         private final AtomicInteger completionCount = new AtomicInteger();
+        private final boolean suspendEveryPart;
         private final boolean cancelOnBodyPart;
         private ResponseBodyControl responseBodyControl;
 
         private RecordingHandler() {
-            this(false);
+            this(false, false);
         }
 
-        private RecordingHandler(boolean cancelOnBodyPart) {
+        private RecordingHandler(boolean suspendEveryPart) {
+            this(suspendEveryPart, false);
+        }
+
+        private RecordingHandler(boolean suspendEveryPart, boolean cancelOnBodyPart) {
+            this.suspendEveryPart = suspendEveryPart;
             this.cancelOnBodyPart = cancelOnBodyPart;
         }
 
@@ -316,7 +394,11 @@ public class Http2ResponseBodyControlTest {
             byte[] bytes = bodyPart.getBodyPartBytes();
             bodyBytes.addAndGet(bytes.length);
             if (bytes.length > 0) {
+                if (suspendEveryPart) {
+                    responseBodyControl.suspend();
+                }
                 items.add(new String(bytes, CharsetUtil.US_ASCII));
+                firstBodyPart.complete(null);
             }
             if (cancelOnBodyPart) {
                 responseBodyControl.cancel();
