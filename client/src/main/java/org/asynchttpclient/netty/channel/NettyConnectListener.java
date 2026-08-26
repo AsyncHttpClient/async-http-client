@@ -124,6 +124,11 @@ public final class NettyConnectListener<T> {
         // mid-handshake could not close the socket, stranding it until handshakeTimeout (issue #2189).
         future.attachChannel(channel, false);
 
+        // The timeouts were armed before there was a channel to arm them on; hand them the one the exchange
+        // ended up with. This listener runs on that channel's own loop, so the move needs no wakeup, and from
+        // here on an expiry runs on the thread that would have to close the socket.
+        timeoutsHolder.rehomeOn(channel.eventLoop());
+
         Request request = future.getTargetRequest();
         Uri uri = request.getUri();
         // don't set a null resolved address - if the remoteAddress is null we keep

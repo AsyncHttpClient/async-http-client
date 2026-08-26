@@ -41,6 +41,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String CONNECTION_POOL_CLEANER_PERIOD_CONFIG = "connectionPoolCleanerPeriod";
     public static final String READ_TIMEOUT_CONFIG = "readTimeout";
     public static final String REQUEST_TIMEOUT_CONFIG = "requestTimeout";
+    public static final String USE_EVENT_LOOP_TIMEOUTS_CONFIG = "useEventLoopTimeouts";
     public static final String CONNECTION_TTL_CONFIG = "connectionTtl";
     public static final String FOLLOW_REDIRECT_CONFIG = "followRedirect";
     public static final String MAX_REDIRECTS_CONFIG = "maxRedirects";
@@ -153,6 +154,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static Duration defaultRequestTimeout() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getDuration(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_TIMEOUT_CONFIG);
+    }
+
+    public static boolean defaultUseEventLoopTimeouts() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_EVENT_LOOP_TIMEOUTS_CONFIG);
     }
 
     public static Duration defaultConnectionTtl() {
