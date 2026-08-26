@@ -92,6 +92,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             .newUpdater(NettyResponseFuture.class, Object.class, "partitionKeyLock");
 
     private final long start = unpreciseMillisTime();
+    // Wall clock is what start reports, and a deadline anchored on it for the length of a whole exchange would
+    // be moved by any clock correction that lands mid-chain: a step back would hand a later hop a budget it
+    // never had, a step forward would abort it on a healthy connection. Elapsed time is measured from here.
+    private final long startNanos = System.nanoTime();
     private final ChannelPoolPartitioning connectionPoolPartitioning;
     private final ConnectionSemaphore connectionSemaphore;
     // Not final: a filter replay can retarget this future at a different origin, reached through a
@@ -599,6 +603,14 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public long getStart() {
         return start;
+    }
+
+    /**
+     * When this exchange was submitted, on a monotonic clock, for measuring how much of a deadline spanning the
+     * whole exchange it has spent. Comparable only with other {@link System#nanoTime()} readings.
+     */
+    public long getStartNanos() {
+        return startNanos;
     }
 
     public Object getPartitionKey() {

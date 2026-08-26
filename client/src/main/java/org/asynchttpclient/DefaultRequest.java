@@ -107,38 +107,42 @@ public class DefaultRequest implements Request {
     }
 
     /**
+     * Not public, and the parameter is trailing rather than beside {@code followRedirect}: the constructor above
+     * keeps the signature outside callers compile against, while this one stays free to grow. A public
+     * twenty-seven argument constructor would be pinned by revapi, and its parameter list would have to be kept
+     * in step with the one above by hand, with the compiler unable to help once the tail is all reference types.
+     * {@link RequestBuilderBase#build()} is the only caller.
+     *
      * @param useAbsoluteRequestDeadline whether {@code requestTimeout} bounds the whole exchange rather than
-     *                                   each attempt within it, or null to defer to the client config. Trailing
-     *                                   rather than beside {@code followRedirect} so the original signature
-     *                                   stays intact for callers that build a request without the builder.
+     *                                   each attempt within it, or null to defer to the client config
      */
-    public DefaultRequest(String method,
-                          Uri uri,
-                          @Nullable InetAddress address,
-                          @Nullable InetAddress localAddress,
-                          HttpHeaders headers,
-                          List<Cookie> cookies,
-                          byte @Nullable [] byteData,
-                          @Nullable List<byte[]> compositeByteData,
-                          @Nullable String stringData,
-                          @Nullable ByteBuffer byteBufferData,
-                          @Nullable ByteBuf byteBufData,
-                          @Nullable InputStream streamData,
-                          @Nullable BodyGenerator bodyGenerator,
-                          List<Param> formParams,
-                          List<Part> bodyParts,
-                          @Nullable String virtualHost,
-                          @Nullable ProxyServer proxyServer,
-                          @Nullable Realm realm,
-                          @Nullable File file,
-                          @Nullable Boolean followRedirect,
-                          @Nullable Duration requestTimeout,
-                          @Nullable Duration readTimeout,
-                          long rangeOffset,
-                          @Nullable Charset charset,
-                          ChannelPoolPartitioning channelPoolPartitioning,
-                          NameResolver<InetAddress> nameResolver,
-                          @Nullable Boolean useAbsoluteRequestDeadline) {
+    DefaultRequest(String method,
+                   Uri uri,
+                   @Nullable InetAddress address,
+                   @Nullable InetAddress localAddress,
+                   HttpHeaders headers,
+                   List<Cookie> cookies,
+                   byte @Nullable [] byteData,
+                   @Nullable List<byte[]> compositeByteData,
+                   @Nullable String stringData,
+                   @Nullable ByteBuffer byteBufferData,
+                   @Nullable ByteBuf byteBufData,
+                   @Nullable InputStream streamData,
+                   @Nullable BodyGenerator bodyGenerator,
+                   List<Param> formParams,
+                   List<Part> bodyParts,
+                   @Nullable String virtualHost,
+                   @Nullable ProxyServer proxyServer,
+                   @Nullable Realm realm,
+                   @Nullable File file,
+                   @Nullable Boolean followRedirect,
+                   @Nullable Duration requestTimeout,
+                   @Nullable Duration readTimeout,
+                   long rangeOffset,
+                   @Nullable Charset charset,
+                   ChannelPoolPartitioning channelPoolPartitioning,
+                   NameResolver<InetAddress> nameResolver,
+                   @Nullable Boolean useAbsoluteRequestDeadline) {
         this.method = method;
         this.uri = uri;
         this.address = address;

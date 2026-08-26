@@ -81,6 +81,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.util.StringBuilderPool;
 import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,9 +99,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
@@ -1213,7 +1216,23 @@ public final class NettyRequestSender {
     }
 
     public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) {
+        TimeoutsHolder timeoutsHolder = future.getTimeoutsHolder();
+        if (timeoutsHolder != null && timeoutsHolder.isDeadlinePassed()) {
+            // Arming the next hop's timeout at zero would abort it, but only after this call has taken a
+            // connection permit, taken a connection and written the request -- so a 307 would put the body on
+            // the wire and then hand the caller a TimeoutException that reads as if nothing was sent.
+            abort(future.channel(), future, new TimeoutException(deadlinePassedMessage(request, future)));
+            return;
+        }
         sendRequest(request, future.getAsyncHandler(), future);
+    }
+
+    private static String deadlinePassedMessage(Request request, NettyResponseFuture<?> future) {
+        return StringBuilderPool.DEFAULT.stringBuilder()
+                .append("Request timeout to ").append(request.getUri().getHost())
+                .append(':').append(request.getUri().getExplicitPort())
+                .append(" after ").append(unpreciseMillisTime() - future.getStart())
+                .append(" ms, before the next hop was sent").toString();
     }
 
     private static void validateWebSocketRequest(Request request, AsyncHandler<?> asyncHandler) {

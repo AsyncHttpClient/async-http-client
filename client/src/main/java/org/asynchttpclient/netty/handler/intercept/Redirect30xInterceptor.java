@@ -139,7 +139,19 @@ public class Redirect30xInterceptor {
                         .setNameResolver(request.getNameResolver())
                         .setProxyServer(request.getProxyServer())
                         .setRealm(stripAuth ? null : request.getRealm())
-                        .setRequestTimeout(request.getRequestTimeout());
+                        .setRequestTimeout(request.getRequestTimeout())
+                        // Dropped here until now, so a per-request read timeout reverted to the config default
+                        // on every hop after the first.
+                        .setReadTimeout(request.getReadTimeout());
+
+                // Also dropped, which left the request disagreeing with the deadline the exchange was being
+                // held to: the future carries the flag, so a filter or a signature calculator reading the
+                // request saw per-attempt timeouts while the exchange was bounded as a whole. Only when it was
+                // set, since the setter takes a primitive and null means defer to the client config.
+                Boolean useAbsoluteRequestDeadline = request.getUseAbsoluteRequestDeadline();
+                if (useAbsoluteRequestDeadline != null) {
+                    requestBuilder.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline);
+                }
 
                 if (stripAuth) {
                     future.setRealm(null);

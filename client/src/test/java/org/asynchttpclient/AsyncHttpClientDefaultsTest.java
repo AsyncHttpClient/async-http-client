@@ -79,6 +79,18 @@ public class AsyncHttpClientDefaultsTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultUseAbsoluteRequestDeadline() {
+        assertFalse(AsyncHttpClientConfigDefaults.defaultUseAbsoluteRequestDeadline());
+        testBooleanSystemProperty("useAbsoluteRequestDeadline", "defaultUseAbsoluteRequestDeadline", "true");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultUseEventLoopTimeouts() {
+        assertFalse(AsyncHttpClientConfigDefaults.defaultUseEventLoopTimeouts());
+        testBooleanSystemProperty("useEventLoopTimeouts", "defaultUseEventLoopTimeouts", "true");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultFollowRedirect() {
         assertFalse(AsyncHttpClientConfigDefaults.defaultFollowRedirect());
         testBooleanSystemProperty("followRedirect", "defaultFollowRedirect", "true");

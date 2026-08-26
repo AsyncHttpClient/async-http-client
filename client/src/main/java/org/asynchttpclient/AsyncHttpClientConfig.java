@@ -159,6 +159,10 @@ public interface AsyncHttpClientConfig {
      * Off by default because turning it on shortens exchanges that rely on the per-attempt behaviour. A caller
      * working to an end-to-end budget wants it on; {@link Request#getUseAbsoluteRequestDeadline()} sets it for a
      * single request.
+     * <p>
+     * As with every option on this interface, the {@code org.asynchttpclient.useAbsoluteRequestDeadline}
+     * property is read by {@link DefaultAsyncHttpClientConfig.Builder}, not here: an implementation of this
+     * interface that does not override this method gets {@code false} whatever the property says.
      *
      * @return {@code true} to treat the request timeout as a deadline for the whole exchange
      */

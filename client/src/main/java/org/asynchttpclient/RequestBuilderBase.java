@@ -700,6 +700,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.followRedirect = followRedirect;
         rb.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
         rb.requestTimeout = requestTimeout;
+        rb.readTimeout = readTimeout;
         rb.rangeOffset = rangeOffset;
         rb.charset = charset;
         rb.channelPoolPartitioning = channelPoolPartitioning;
