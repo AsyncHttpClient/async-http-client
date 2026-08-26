@@ -91,6 +91,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         }
 
         Channel channel = ctx.channel();
+        NettyResponseBodyControl.discardForChannelClose(channel);
         channelManager.removeAll(channel);
 
         Object attribute = Channels.getAttribute(channel);
@@ -122,6 +123,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         }
 
         Channel channel = ctx.channel();
+        NettyResponseBodyControl.discardForChannelClose(channel);
         NettyResponseFuture<?> future = null;
 
         logger.debug("Unexpected I/O exception on channel {}", channel, cause);
@@ -179,7 +181,9 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        readIfNeeded(ctx);
+        if (!NettyResponseBodyControl.isSuspended(ctx.channel())) {
+            readIfNeeded(ctx);
+        }
     }
 
     /**
@@ -196,6 +200,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     }
 
     void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) {
+        NettyResponseBodyControl.complete(channel);
         future.cancelTimeouts();
 
         if (close) {

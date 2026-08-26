@@ -180,14 +180,26 @@ public final class Http2Handler extends AsyncHttpClientHandler {
             if (!abort) {
                 abort = handler.onHeadersReceived(responseHeaders) == State.ABORT;
             }
+            if (!abort) {
+                NettyResponseBodyControl control = NettyResponseBodyControl.create(
+                        channel, future::touch, () -> finishUpdate(future, channel, false));
+                abort = handler.onResponseBodyStart(control) == State.ABORT;
+                if (abort) {
+                    NettyResponseBodyControl.complete(channel);
+                }
+            }
             if (abort) {
-                finishUpdate(future, channel, false);
+                // cancel() may have completed the future inline from onResponseBodyStart.
+                if (!future.isDone()) {
+                    finishUpdate(future, channel, false);
+                }
                 return;
             }
         }
 
         // If headers frame also ends the stream (no body), finish the response
-        if (headersFrame.isEndStream()) {
+        // unless cancel() already completed it inline from onResponseBodyStart.
+        if (headersFrame.isEndStream() && !future.isDone()) {
             finishUpdate(future, channel, false);
         }
     }
@@ -205,6 +217,10 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         if (data.isReadable() || last) {
             HttpResponseBodyPart bodyPart = config.getResponseBodyPartFactory().newResponseBodyPart(data, last);
             boolean abort = handler.onBodyPartReceived(bodyPart) == State.ABORT;
+            // cancel() may have completed the future inline from the handler callback.
+            if (future.isDone()) {
+                return;
+            }
             if (abort || last) {
                 finishUpdate(future, channel, false);
             }
@@ -224,6 +240,10 @@ public final class Http2Handler extends AsyncHttpClientHandler {
         boolean abort = false;
         if (!trailingHeaders.isEmpty()) {
             abort = handler.onTrailingHeadersReceived(trailingHeaders) == State.ABORT;
+            // cancel() may have completed the future inline from the handler callback.
+            if (future.isDone()) {
+                return;
+            }
         }
 
         if (abort || headersFrame.isEndStream()) {
@@ -285,6 +305,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
      */
     @Override
     void finishUpdate(NettyResponseFuture<?> future, Channel streamChannel, boolean close) {
+        NettyResponseBodyControl.complete(streamChannel);
         future.cancelTimeouts();
 
         // Stream channels are single-use in HTTP/2 — close the stream

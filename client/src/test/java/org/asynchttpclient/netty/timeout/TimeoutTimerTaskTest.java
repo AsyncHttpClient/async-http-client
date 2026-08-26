@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TimeoutTimerTaskTest {
@@ -83,5 +84,28 @@ public class TimeoutTimerTaskTest {
         StringBuilder sb = new StringBuilder();
         task.appendRemoteAddress(sb);
         assertTrue(sb.toString().contains(":8080"), sb.toString());
+    }
+
+    @Test
+    public void cancelledHolderCleansReschedulingReadTimeout() {
+        Request request = new RequestBuilder().setUrl("http://example.com").build();
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
+            @Override
+            public Object onCompleted(org.asynchttpclient.Response response) {
+                return null;
+            }
+        }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(
+                null, future, null, new DefaultAsyncHttpClientConfig.Builder().build(), null);
+        ReadTimeoutTimerTask task = new ReadTimeoutTimerTask(future, null, timeoutsHolder, 1_000);
+
+        // Model cancel() racing after run() marked the task done but before it tries to reschedule itself.
+        task.done.set(true);
+        timeoutsHolder.cancel();
+        task.done.set(false);
+        timeoutsHolder.startReadTimeout(task);
+
+        assertNull(task.nettyResponseFuture);
+        assertTrue(task.done.get());
     }
 }

@@ -56,6 +56,17 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
+    private boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
+                                                   AsyncHandler<?> handler) throws Exception {
+        NettyResponseBodyControl control = NettyResponseBodyControl.create(
+                channel, future::touch, () -> finishUpdate(future, channel, true));
+        boolean abort = handler.onResponseBodyStart(control) == State.ABORT;
+        if (abort) {
+            NettyResponseBodyControl.complete(channel);
+        }
+        return abort;
+    }
+
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         if (logger.isDebugEnabled()) {
@@ -68,8 +79,11 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         HttpHeaders responseHeaders = response.headers();
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-            boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status) || abortAfterHandlingHeaders(handler, responseHeaders);
-            if (abort) {
+            boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status)
+                    || abortAfterHandlingHeaders(handler, responseHeaders)
+                    || abortAfterStartingResponseBody(channel, future, handler);
+            // cancel() may have completed the future inline from onResponseBodyStart.
+            if (abort && !future.isDone()) {
                 finishUpdate(future, channel, true);
             }
         }
@@ -92,6 +106,10 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         if (!abort && (buf.isReadable() || last)) {
             HttpResponseBodyPart bodyPart = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
             abort = handler.onBodyPartReceived(bodyPart) == State.ABORT;
+            // cancel() may have completed the future inline from the handler callback.
+            if (future.isDone()) {
+                return;
+            }
         }
 
         if (abort || last) {

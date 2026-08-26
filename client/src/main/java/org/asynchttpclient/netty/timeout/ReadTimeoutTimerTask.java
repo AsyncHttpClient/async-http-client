@@ -17,6 +17,7 @@ package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.Timeout;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.handler.NettyResponseBodyControl;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.StringBuilderPool;
 
@@ -48,6 +49,12 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
         if (nettyResponseFuture.isDone()) {
             timeoutsHolder.cancel();
+            return;
+        }
+
+        if (NettyResponseBodyControl.isSuspended(nettyResponseFuture.channel())) {
+            done.set(false);
+            timeoutsHolder.startReadTimeout(this);
             return;
         }
 
