@@ -43,6 +43,7 @@ public class TimeoutsHolder {
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutsHolder.class);
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
+    private final AtomicBoolean started = new AtomicBoolean();
     private final Timer nettyTimer;
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
@@ -105,8 +106,14 @@ public class TimeoutsHolder {
      * <p>
      * Called by {@link org.asynchttpclient.netty.NettyResponseFuture#setTimeoutsHolder}, so that installing a
      * holder is what arms it and neither can be done without the other.
+     * <p>
+     * Only the first call arms. A second would overwrite the first handle, leaving an entry nobody can
+     * cancel to sit in its scheduler until the full deadline, pinning the task, the future and the channel.
      */
     public void start() {
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
         if (requestTimeoutTask != null) {
             // The configured duration rather than the remaining time: this runs within microseconds of the
             // constructor, and reading the clock again would only expose the deadline to a step between the two.
