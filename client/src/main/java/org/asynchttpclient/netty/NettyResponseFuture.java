@@ -466,6 +466,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         if (ref != null) {
             ref.cancel();
         }
+        if (timeoutsHolder != null) {
+            // Armed here rather than by the caller: a holder can run its timeout the moment it is armed, so it
+            // has to be reachable from this future first, and no caller can then install one that never arms.
+            timeoutsHolder.start();
+        }
     }
 
     public boolean isInAuth() {

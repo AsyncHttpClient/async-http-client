@@ -17,6 +17,7 @@ package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.Timer;
 import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.ScheduledFuture;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
@@ -46,6 +47,7 @@ public class TimeoutsHolder {
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
     private final long requestTimeoutMillisTime;
+    private final long requestTimeoutValue;
     private final long readTimeoutValue;
     private final boolean useEventLoopTimeouts;
     private final @Nullable RequestTimeoutTimerTask requestTimeoutTask;
@@ -84,6 +86,7 @@ public class TimeoutsHolder {
             requestTimeoutInMs = config.getRequestTimeout().toMillis();
         }
 
+        requestTimeoutValue = requestTimeoutInMs;
         if (requestTimeoutInMs > -1) {
             requestTimeoutMillisTime = unpreciseMillisTime() + requestTimeoutInMs;
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
@@ -98,11 +101,16 @@ public class TimeoutsHolder {
      * can run the moment it is armed, and on an event loop nothing rounds a short deadline up to the next tick,
      * so arming from the constructor let it run before its own fields were frozen, before the future had been
      * handed the holder, and on the pooled path before the channel had been attached to the future -- an expiry
-     * that then had no channel to close. The caller does all three first and arms last.
+     * that then had no channel to close.
+     * <p>
+     * Called by {@link org.asynchttpclient.netty.NettyResponseFuture#setTimeoutsHolder}, so that installing a
+     * holder is what arms it and neither can be done without the other.
      */
     public void start() {
         if (requestTimeoutTask != null) {
-            arm(requestTimeoutTask, remainingRequestTimeout());
+            // The configured duration rather than the remaining time: this runs within microseconds of the
+            // constructor, and reading the clock again would only expose the deadline to a step between the two.
+            arm(requestTimeoutTask, requestTimeoutValue);
         }
     }
 
@@ -179,8 +187,11 @@ public class TimeoutsHolder {
      * Arms {@code task} to run after {@code delay} milliseconds, recording the scheduled entry on the task so it
      * can cancel itself later. Leaves it unarmed when the client is shutting down, in which case there is no
      * timeout to deliver anyway.
+     *
+     * @param <T> a task that both schedulers accept: the timer takes a {@link io.netty.util.TimerTask} and an
+     *            event loop a {@link Runnable}, and only the concrete subclasses are both
      */
-    private void arm(TimeoutTimerTask task, long delay) {
+    private <T extends TimeoutTimerTask & Runnable> void arm(T task, long delay) {
         // requestSender or nettyTimer might be null in unit tests or in some edge
         // cases where a channel's remote address wasn't available. In such cases
         // avoid scheduling any timeouts rather than throwing a NPE.
@@ -189,15 +200,21 @@ public class TimeoutsHolder {
         }
         EventExecutor executor = eventExecutor;
         if (executor != null && !executor.isShuttingDown()) {
+            ScheduledFuture<?> handle = null;
             try {
-                task.armedOn(executor.schedule(task, delay, TimeUnit.MILLISECONDS));
-                cancelIfRaced(task);
-                return;
+                handle = executor.schedule(task, delay, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException e) {
                 // The loop began shutting down between the check above and here. Losing the timeout entirely
                 // would leave the exchange with nothing to end it, so fall through to the timer, which the
                 // client keeps running until it is itself closed.
                 LOGGER.debug("Event loop rejected a timeout, falling back to the timer", e);
+            }
+            // Outside the try: only the schedule above may fall back to the timer. Anything thrown while
+            // recording or unwinding the entry belongs to an exchange that is already armed.
+            if (handle != null) {
+                task.armedOn(handle);
+                cancelIfRaced(task);
+                return;
             }
         }
         if (nettyTimer == null) {

@@ -52,6 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class EventLoopTimeoutTest extends HttpTest {
 
     private static final Duration SHORT_TIMEOUT = Duration.ofMillis(200);
+    // For the cases whose request has to connect, or succeed, before the deadline can prove anything.
+    private static final Duration COLD_TIMEOUT = Duration.ofSeconds(1);
 
     private HttpServer server;
     private EventLoopGroup eventLoopGroup;
@@ -64,7 +66,9 @@ public class EventLoopTimeoutTest extends HttpTest {
     public void start() throws Throwable {
         server = new HttpServer();
         server.start();
-        eventLoopGroup = new NioEventLoopGroup(2, new DefaultThreadFactory("ahc-timeout-test"));
+        // Eight, not two: with two loops a timeout armed on the wrong one is on the right one half the time,
+        // and these assertions would pass about half the runs against the bug they exist to catch.
+        eventLoopGroup = new NioEventLoopGroup(8, new DefaultThreadFactory("ahc-timeout-test"));
         // The client's own wheel settings, so that the timer case is timed the way it would be in production.
         timer = new HashedWheelTimer(runnable -> {
             Thread thread = new Thread(runnable, "ahc-timeout-test-timer");
@@ -96,7 +100,7 @@ public class EventLoopTimeoutTest extends HttpTest {
         // to the loop once there is a channel. A deadline it could reach before connecting would be delivered
         // from the timer quite correctly -- there was no channel to deliver it from -- and prove nothing, hence
         // a budget the first connect of a JVM comfortably fits inside.
-        Recorder recorder = runAgainstAnUnansweringServer(baseConfig(true).setRequestTimeout(Duration.ofSeconds(1)));
+        Recorder recorder = runAgainstAnUnansweringServer(baseConfig(true).setRequestTimeout(COLD_TIMEOUT));
 
         assertNull(recorder.pooledChannel.get(), "this request was meant to open its own connection");
         assertDeliveredOnTheLoopOf(recorder.connectedChannel.get(), recorder);
@@ -107,20 +111,20 @@ public class EventLoopTimeoutTest extends HttpTest {
         Recorder first = new Recorder();
         Recorder second = new Recorder();
 
-        withClient(baseConfig(true)).run(client -> withServer(server).run(server -> {
+        // The first request here is the cold one -- class loading, the connect, the server's own first
+        // response -- and it is meant to succeed, so it gets the same budget the connecting case needs.
+        withClient(baseConfig(true).setRequestTimeout(COLD_TIMEOUT)).run(client -> withServer(server).run(server -> {
             server.enqueueOk();
             client.prepareGet(server.getHttpUrl() + "/foo/bar").execute(first);
             first.awaitCompletion();
-            // Waited for, not assumed: the connection is offered to the pool around the same time as the future
-            // completes, and a second request that overtook the offer would open its own connection and test
-            // the wrong branch.
-            assertTrue(first.offered.await(10, TimeUnit.SECONDS), "the first connection was never pooled");
 
             server.enqueueResponse(response -> awaitRelease());
             client.prepareGet(server.getHttpUrl() + "/foo/bar").execute(second);
             second.awaitTimeout();
         }));
 
+        // The pool offer happens before the future completes, so awaiting the first request above is enough to
+        // know the connection was there to be reused; this says the second one actually took it.
         assertNotNull(second.pooledChannel.get(), "the second request did not reuse the pooled connection");
         assertDeliveredOnTheLoopOf(second.pooledChannel.get(), second);
     }
@@ -183,7 +187,6 @@ public class EventLoopTimeoutTest extends HttpTest {
     private static final class Recorder extends AsyncCompletionHandler<Void> {
 
         private final CountDownLatch settled = new CountDownLatch(1);
-        private final CountDownLatch offered = new CountDownLatch(1);
         private final AtomicReference<Channel> connectedChannel = new AtomicReference<>();
         private final AtomicReference<Channel> pooledChannel = new AtomicReference<>();
         private final AtomicReference<Thread> deliveredOn = new AtomicReference<>();
@@ -197,11 +200,6 @@ public class EventLoopTimeoutTest extends HttpTest {
         @Override
         public void onConnectionPooled(Channel connection) {
             pooledChannel.set(connection);
-        }
-
-        @Override
-        public void onConnectionOffer(Channel connection) {
-            offered.countDown();
         }
 
         @Override

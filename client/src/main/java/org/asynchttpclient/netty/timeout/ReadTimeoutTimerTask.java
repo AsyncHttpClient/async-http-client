@@ -22,13 +22,22 @@ import org.asynchttpclient.util.StringBuilderPool;
 
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
-public class ReadTimeoutTimerTask extends TimeoutTimerTask {
+public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
     private final long readTimeout;
 
     ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder, long readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
         this.readTimeout = readTimeout;
+    }
+
+    /**
+     * The event-loop entry point. Nothing below reads the {@link Timeout}, which is the timer's own handle on
+     * this task and something an event loop has no equivalent of, so both entry points share one body.
+     */
+    @Override
+    public void run() {
+        run(null);
     }
 
     @Override

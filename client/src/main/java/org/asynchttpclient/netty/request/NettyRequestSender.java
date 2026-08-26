@@ -1098,10 +1098,9 @@ public final class NettyRequestSender {
         nettyResponseFuture.touch();
         TimeoutsHolder timeoutsHolder = new TimeoutsHolder(nettyTimer, timeoutExecutor(channel), nettyResponseFuture,
                 this, config, originalRemoteAddress);
+        // Arms the timeout as a part of installing the holder, which is why the pooled path attaches the
+        // channel first: an expiry that lands immediately reaches the channel only through the future.
         nettyResponseFuture.setTimeoutsHolder(timeoutsHolder);
-        // Only now that the future can be reached from the holder and the channel from the future, since either
-        // may be needed by an expiry that lands immediately; see TimeoutsHolder#start.
-        timeoutsHolder.start();
     }
 
     /**

@@ -30,12 +30,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Also a {@link Runnable} so the same task can be armed either on a {@link io.netty.util.Timer} or on an
- * event loop, which schedules {@code Runnable}s. Neither subclass reads the {@link Timeout} handed to
- * {@link TimerTask#run(Timeout)}, so the two entry points are interchangeable. Which one an exchange uses is
- * {@link org.asynchttpclient.AsyncHttpClientConfig#isUseEventLoopTimeouts()}.
+ * A timeout that can be armed either on a {@link io.netty.util.Timer} or on an event loop; which one an
+ * exchange uses is {@link org.asynchttpclient.AsyncHttpClientConfig#isUseEventLoopTimeouts()}. An event loop
+ * schedules {@link Runnable}s, so each subclass implements that as a second entry point into the same body.
+ * This class stays a {@link TimerTask} alone: {@code Runnable#run} declares no checked exception, so a
+ * {@code run()} here would have to catch what {@link TimerTask#run(Timeout)} declares and no subclass throws.
  */
-public abstract class TimeoutTimerTask implements TimerTask, Runnable {
+public abstract class TimeoutTimerTask implements TimerTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
 
@@ -55,25 +56,15 @@ public abstract class TimeoutTimerTask implements TimerTask, Runnable {
         this.timeoutsHolder = timeoutsHolder;
     }
 
-    /**
-     * Narrows {@link TimerTask#run(Timeout)} to not throw, so that {@link #run()} can call it with nothing to
-     * catch. Neither subclass throws, and no other can exist: the only constructor is package private.
-     */
-    @Override
-    public abstract void run(Timeout timeout);
-
-    @Override
-    public void run() {
-        // The argument is the timer's handle on this task and nothing reads it, so an event loop, which
-        // schedules a Runnable and has no such handle, enters through the same body.
-        run(null);
-    }
-
     void armedOn(Timeout handle) {
+        // Each clears the other, so a handle left over from a previous arming cannot mask the live one and
+        // leave its entry sitting in a scheduler, holding the future until a deadline nobody is waiting for.
+        loopHandle = null;
         timerHandle = handle;
     }
 
     void armedOn(ScheduledFuture<?> handle) {
+        timerHandle = null;
         loopHandle = handle;
     }
 
