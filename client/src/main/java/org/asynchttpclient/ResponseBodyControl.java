@@ -37,11 +37,13 @@ public interface ResponseBodyControl {
      * While reads are suspended, the read timeout is paused but the request timeout remains active. If the request
      * timeout is disabled, failing to resume or cancel the response can retain its transport resources indefinitely.
      * <p>
-     * For HTTP/2, AHC continues returning connection-level flow-control credit so a suspended stream cannot block
-     * sibling streams. The per-stream window still applies, so roughly
+     * For HTTP/2, while any response on a connection is suspended, AHC continues returning connection-level
+     * flow-control credit so a suspended stream cannot block sibling streams. Responses on connections with no active
+     * suspension retain the normal shared connection-window bound. The per-stream window always applies, so roughly
      * {@link AsyncHttpClientConfig#getHttp2InitialWindowSize()} bytes can be queued for each suspended stream. Aggregate
-     * buffering can therefore scale with the number of concurrent suspended streams; applications can bound it with
-     * {@link AsyncHttpClientConfig#getHttp2InitialWindowSize()} and
+     * buffering during suspension can therefore scale with the number of concurrent streams. Once the last suspension
+     * ends, normal connection accounting resumes; credit already returned and data already queued cannot be revoked.
+     * Applications can bound buffering with {@link AsyncHttpClientConfig#getHttp2InitialWindowSize()} and
      * {@link AsyncHttpClientConfig#getHttp2MaxConcurrentStreams()}.
      */
     void suspend();

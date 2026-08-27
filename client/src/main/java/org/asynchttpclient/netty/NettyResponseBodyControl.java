@@ -32,6 +32,8 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
 
     private final NettyResponseFuture<?> future;
     private final Channel channel;
+    private final Runnable suspensionStartedAction;
+    private final Runnable suspensionEndedAction;
     private final Runnable resumeAction;
     private final Consumer<Boolean> cancelAction;
     private final boolean previousAutoRead;
@@ -42,11 +44,20 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
 
     public static NettyResponseBodyControl create(NettyResponseFuture<?> future, Channel channel,
                                                   Runnable resumeAction, Consumer<Boolean> cancelAction) {
+        return create(future, channel, NettyResponseBodyControl::noop, NettyResponseBodyControl::noop,
+                resumeAction, cancelAction);
+    }
+
+    public static NettyResponseBodyControl create(NettyResponseFuture<?> future, Channel channel,
+                                                  Runnable suspensionStartedAction,
+                                                  Runnable suspensionEndedAction,
+                                                  Runnable resumeAction, Consumer<Boolean> cancelAction) {
         if (!channel.eventLoop().inEventLoop()) {
             throw new IllegalStateException("A response body control must be initialized on its channel event loop");
         }
 
-        NettyResponseBodyControl control = new NettyResponseBodyControl(future, channel, resumeAction, cancelAction);
+        NettyResponseBodyControl control = new NettyResponseBodyControl(
+                future, channel, suspensionStartedAction, suspensionEndedAction, resumeAction, cancelAction);
         NettyResponseBodyControl previous = future.replaceResponseBodyControl(control);
         if (previous != null) {
             previous.deactivate(true);
@@ -95,9 +106,12 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private NettyResponseBodyControl(NettyResponseFuture<?> future, Channel channel,
+                                     Runnable suspensionStartedAction, Runnable suspensionEndedAction,
                                      Runnable resumeAction, Consumer<Boolean> cancelAction) {
         this.future = Objects.requireNonNull(future, "future");
         this.channel = Objects.requireNonNull(channel, "channel");
+        this.suspensionStartedAction = Objects.requireNonNull(suspensionStartedAction, "suspensionStartedAction");
+        this.suspensionEndedAction = Objects.requireNonNull(suspensionEndedAction, "suspensionEndedAction");
         this.resumeAction = Objects.requireNonNull(resumeAction, "resumeAction");
         this.cancelAction = Objects.requireNonNull(cancelAction, "cancelAction");
         previousAutoRead = channel.config().isAutoRead();
@@ -120,6 +134,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
 
     private void suspend0() {
         if (active.get() && !suspended) {
+            suspensionStartedAction.run();
             suspended = true;
             channel.config().setAutoRead(false);
         }
@@ -130,7 +145,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
             return;
         }
 
-        suspended = false;
+        endSuspension();
         resumeAction.run();
         if (previousAutoRead) {
             channel.config().setAutoRead(true);
@@ -158,9 +173,16 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private void detach0(boolean restoreAutoRead) {
-        suspended = false;
+        endSuspension();
         if (restoreAutoRead && previousAutoRead && !channel.config().isAutoRead()) {
             channel.config().setAutoRead(true);
+        }
+    }
+
+    private void endSuspension() {
+        if (suspended) {
+            suspended = false;
+            suspensionEndedAction.run();
         }
     }
 
@@ -174,5 +196,8 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
                 // The channel is shutting down, so the control has no transport left to affect.
             }
         }
+    }
+
+    private static void noop() {
     }
 }
