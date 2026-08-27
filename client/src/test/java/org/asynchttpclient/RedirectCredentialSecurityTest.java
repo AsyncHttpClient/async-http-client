@@ -535,6 +535,26 @@ public class RedirectCredentialSecurityTest {
         }
     }
 
+    @Test
+    void crossDomainRedirectStripsCookieObject() throws Exception {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setFollowRedirect(true)
+                .build();
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+            lastCookieHeaderOnA.set(null);
+            lastCookieHeaderOnB.set(null);
+
+            client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+                    .addCookie(new DefaultCookie("session", "abc123"))
+                    .execute()
+                    .get(5, TimeUnit.SECONDS);
+
+            assertEquals("session=abc123", lastCookieHeaderOnA.get());
+            assertNull(lastCookieHeaderOnB.get(),
+                    "Cookie objects must not be copied to a cross-domain redirect target");
+        }
+    }
+
     /**
      * Same-origin redirect (same host and port) should preserve the Cookie header.
      */

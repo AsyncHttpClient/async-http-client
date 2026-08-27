@@ -56,7 +56,6 @@ import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.PERMANE
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.SEE_OTHER_303;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.TEMPORARY_REDIRECT_307;
 import static org.asynchttpclient.util.HttpUtils.followRedirect;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 public class Redirect30xInterceptor {
@@ -132,13 +131,27 @@ public class Redirect30xInterceptor {
                     LOGGER.debug("Stripping credentials on redirect to {}", newUri);
                 }
 
-                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
-                        .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
+                final RequestBuilder requestBuilder;
+                if (keepBody) {
+                    requestBuilder = request.toBuilder();
+                    if (!sameBase) {
+                        // An explicitly resolved address and virtual host belong to the previous target.
+                        requestBuilder.setAddress(null);
+                        requestBuilder.setVirtualHost(null);
+                    }
+                } else {
+                    requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
+                            .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
+                            .setLocalAddress(request.getLocalAddress())
+                            .setNameResolver(request.getNameResolver())
+                            .setProxyServer(request.getProxyServer())
+                            .setRangeOffset(request.getRangeOffset());
+                }
+
+                requestBuilder.setMethod(switchToGet ? GET : originalMethod)
                         .setFollowRedirect(true)
-                        .setLocalAddress(request.getLocalAddress())
-                        .setNameResolver(request.getNameResolver())
-                        .setProxyServer(request.getProxyServer())
                         .setRealm(stripAuth ? null : request.getRealm())
+                        .setHeaders(propagatedHeaders(request, realm, keepBody, stripAuth))
                         .setRequestTimeout(request.getRequestTimeout())
                         .setReadTimeout(request.getReadTimeout());
 
@@ -154,13 +167,9 @@ public class Redirect30xInterceptor {
                 if (stripAuth) {
                     future.setRealm(null);
                     future.setProxyRealm(null);
+                    // Request.toBuilder copies Cookie objects separately from the Cookie header.
+                    requestBuilder.resetCookies();
                 }
-
-                if (keepBody) {
-                    copyBody(requestBuilder, request);
-                }
-
-                requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody, stripAuth));
 
                 // in case of a redirect from HTTP to HTTPS, future
                 // attributes might change
@@ -179,7 +188,7 @@ public class Redirect30xInterceptor {
                     }
                 }
 
-                if (sameBase) {
+                if (sameBase && !keepBody) {
                     // we can only assume the virtual host is still valid if the baseUrl is the same
                     requestBuilder.setVirtualHost(request.getVirtualHost());
                 }
@@ -216,37 +225,8 @@ public class Redirect30xInterceptor {
         return false;
     }
 
-    private static void copyBody(RequestBuilder requestBuilder, Request request) {
-        requestBuilder.setCharset(request.getCharset());
-
-        // Keep this precedence aligned with NettyRequestFactory.body. A Request can retain a File or
-        // BodyGenerator alongside another representation, so the redirect must copy the representation
-        // that the original request actually sent.
-        if (request.getByteData() != null) {
-            requestBuilder.setBody(request.getByteData());
-        } else if (request.getCompositeByteData() != null) {
-            requestBuilder.setBody(request.getCompositeByteData());
-        } else if (request.getStringData() != null) {
-            requestBuilder.setBody(request.getStringData());
-        } else if (request.getByteBufferData() != null) {
-            requestBuilder.setBody(request.getByteBufferData());
-        } else if (request.getByteBufData() != null) {
-            requestBuilder.setBody(request.getByteBufData());
-        } else if (request.getStreamData() != null) {
-            requestBuilder.setBody(request.getStreamData());
-        } else if (isNonEmpty(request.getFormParams())) {
-            requestBuilder.setFormParams(request.getFormParams());
-        } else if (isNonEmpty(request.getBodyParts())) {
-            requestBuilder.setBodyParts(request.getBodyParts());
-        } else if (request.getFile() != null) {
-            requestBuilder.setBody(request.getFile());
-        } else if (request.getBodyGenerator() != null) {
-            requestBuilder.setBody(request.getBodyGenerator());
-        }
-    }
-
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
-        HttpHeaders headers = request.getHeaders()
+        HttpHeaders headers = request.getHeaders().copy()
                 .remove(HOST)
                 .remove(CONTENT_LENGTH);
 

@@ -21,6 +21,8 @@ import io.netty.buffer.Unpooled;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -32,7 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -135,6 +140,36 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = c.preparePost(getTargetUrl()).setHeader(CONTENT_TYPE, contentType).setBody(body).setHeader("X-REDIRECT", "307").execute().get(TIMEOUT, TimeUnit.SECONDS);
             assertEquals(response.getResponseBody(), body);
             assertEquals(receivedContentType, contentType);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void redirectPreservesPerRequestSettings() throws Exception {
+        Duration readTimeout = Duration.ofSeconds(7);
+        long rangeOffset = 41L;
+        List<Duration> observedReadTimeouts = new CopyOnWriteArrayList<>();
+        List<Long> observedRangeOffsets = new CopyOnWriteArrayList<>();
+        ResponseFilter observer = new ResponseFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                observedReadTimeouts.add(ctx.getRequest().getReadTimeout());
+                observedRangeOffsets.add(ctx.getRequest().getRangeOffset());
+                return ctx;
+            }
+        };
+
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(observer))) {
+            Response response = c.preparePost(getTargetUrl())
+                    .setReadTimeout(readTimeout)
+                    .setRangeOffset(rangeOffset)
+                    .setBody(REDIRECT_BODY)
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertArrayEquals(REDIRECT_BODY, response.getResponseBodyAsBytes());
+            assertEquals(List.of(readTimeout, readTimeout), observedReadTimeouts);
+            assertEquals(List.of(rangeOffset, rangeOffset), observedRangeOffsets);
         }
     }
 
