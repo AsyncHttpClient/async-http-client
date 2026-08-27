@@ -23,6 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -326,6 +327,30 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     .get(TIMEOUT, TimeUnit.SECONDS);
 
             assertTrue(response.getResponseBody().contains("multipart value"));
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void inputStreamMultipart307FailsPromptly() throws Exception {
+        Path bodyFile = Files.createTempFile("ahc-redirect-multipart-", ".bin");
+        try {
+            Files.write(bodyFile, REDIRECT_BODY);
+            try (InputStream body = Files.newInputStream(bodyFile);
+                 AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class,
+                        () -> c.preparePost(getTargetUrl())
+                                .addBodyPart(new InputStreamPart("file", body, bodyFile.getFileName().toString(),
+                                        REDIRECT_BODY.length, CONTENT_TYPE_VALUE))
+                                .setHeader("X-REDIRECT", "307")
+                                .execute()
+                                .get(TIMEOUT, TimeUnit.SECONDS));
+
+                IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+                assertEquals("Multipart InputStream body part 'file' cannot be replayed after redirect",
+                        cause.getMessage());
+            }
+        } finally {
+            Files.deleteIfExists(bodyFile);
         }
     }
 

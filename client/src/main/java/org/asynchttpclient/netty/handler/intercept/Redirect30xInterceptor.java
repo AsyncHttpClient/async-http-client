@@ -33,10 +33,13 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import org.asynchttpclient.request.body.multipart.InputStreamPart;
+import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -133,6 +136,7 @@ public class Redirect30xInterceptor {
 
                 final RequestBuilder requestBuilder;
                 if (keepBody) {
+                    ensureBodyReplayable(request);
                     requestBuilder = request.toBuilder();
                     if (!sameBase) {
                         // An explicitly resolved address and virtual host belong to the previous target.
@@ -223,6 +227,15 @@ public class Redirect30xInterceptor {
             }
         }
         return false;
+    }
+
+    private static void ensureBodyReplayable(Request request) throws IOException {
+        for (Part part : request.getBodyParts()) {
+            if (part instanceof InputStreamPart) {
+                throw new IOException("Multipart InputStream body part '" + part.getName()
+                        + "' cannot be replayed after redirect");
+            }
+        }
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
