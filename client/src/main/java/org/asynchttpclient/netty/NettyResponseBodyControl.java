@@ -22,6 +22,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * Netty implementation of {@link ResponseBodyControl}.
@@ -32,14 +33,15 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     private final NettyResponseFuture<?> future;
     private final Channel channel;
     private final Runnable resumeAction;
-    private final Runnable cancelAction;
+    private final Consumer<Boolean> cancelAction;
     private final boolean previousAutoRead;
 
     private final AtomicBoolean active = new AtomicBoolean(true);
     private volatile boolean suspended;
+    private volatile boolean bodyFullyRead;
 
     public static NettyResponseBodyControl create(NettyResponseFuture<?> future, Channel channel,
-                                                  Runnable resumeAction, Runnable cancelAction) {
+                                                  Runnable resumeAction, Consumer<Boolean> cancelAction) {
         if (!channel.eventLoop().inEventLoop()) {
             throw new IllegalStateException("A response body control must be initialized on its channel event loop");
         }
@@ -82,8 +84,18 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
         return control != null && control.channel == channel && control.active.get() && control.suspended;
     }
 
+    /**
+     * Records that the complete HTTP/1.1 response has reached the client before its terminal callbacks run.
+     */
+    public static void markBodyFullyRead(NettyResponseFuture<?> future) {
+        NettyResponseBodyControl control = future.responseBodyControl();
+        if (control != null) {
+            control.bodyFullyRead = true;
+        }
+    }
+
     private NettyResponseBodyControl(NettyResponseFuture<?> future, Channel channel,
-                                     Runnable resumeAction, Runnable cancelAction) {
+                                     Runnable resumeAction, Consumer<Boolean> cancelAction) {
         this.future = Objects.requireNonNull(future, "future");
         this.channel = Objects.requireNonNull(channel, "channel");
         this.resumeAction = Objects.requireNonNull(resumeAction, "resumeAction");
@@ -133,8 +145,8 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
         }
 
         future.clearResponseBodyControl(this);
-        suspended = false;
-        cancelAction.run();
+        detach0(bodyFullyRead);
+        cancelAction.accept(bodyFullyRead);
     }
 
     private void deactivate(boolean restoreAutoRead) {

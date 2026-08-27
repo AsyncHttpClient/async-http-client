@@ -60,12 +60,9 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     private boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
                                                    AsyncHandler<?> handler) throws Exception {
         NettyResponseBodyControl control = NettyResponseBodyControl.create(
-                future, channel, future::touch, () -> finishUpdate(future, channel, true));
-        boolean abort = handler.onResponseBodyStart(control) == State.ABORT;
-        if (abort) {
-            NettyResponseBodyControl.complete(future);
-        }
-        return abort;
+                future, channel, future::touch,
+                bodyFullyRead -> finishUpdate(future, channel, !bodyFullyRead || !future.isKeepAlive()));
+        return handler.onResponseBodyStart(control) == State.ABORT;
     }
 
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
@@ -96,10 +93,15 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         // Netty 4: the last chunk is not empty
         if (last) {
+            NettyResponseBodyControl.markBodyFullyRead(future);
             LastHttpContent lastChunk = (LastHttpContent) chunk;
             HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
             if (!trailingHeaders.isEmpty()) {
                 abort = handler.onTrailingHeadersReceived(trailingHeaders) == State.ABORT;
+                // cancel() may have completed the future inline from the trailer callback.
+                if (future.isDone()) {
+                    return;
+                }
             }
         }
 

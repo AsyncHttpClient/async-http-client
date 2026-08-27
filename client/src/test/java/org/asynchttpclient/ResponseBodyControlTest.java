@@ -29,6 +29,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -305,8 +306,50 @@ public class ResponseBodyControlTest {
             assertNull(handler.throwable.get());
 
             Response replacement = client.prepareGet(url("/pool")).execute().get(5, SECONDS);
-            assertEquals("2", replacement.getResponseBody());
-            assertEquals(2, connectionCount.get());
+            assertEquals("1", replacement.getResponseBody());
+            assertEquals(1, connectionCount.get(), "a fully read response can reuse its HTTP/1.1 connection");
+        }
+    }
+
+    @Test
+    public void cancellationFromTrailerCallbackSkipsTerminalBodyCallbackAndReusesConnection() throws Exception {
+        AtomicReference<ResponseBodyControl> callbackControl = new AtomicReference<>();
+        AtomicBoolean trailerSeen = new AtomicBoolean();
+        AtomicInteger bodyPartCallsAfterTrailers = new AtomicInteger();
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)))) {
+            RecordingHandler handler = new RecordingHandler(false) {
+                @Override
+                public State onResponseBodyStart(ResponseBodyControl newControl) {
+                    callbackControl.set(newControl);
+                    return State.CONTINUE;
+                }
+
+                @Override
+                public State onTrailingHeadersReceived(io.netty.handler.codec.http.HttpHeaders headers) {
+                    trailerSeen.set(true);
+                    callbackControl.get().cancel();
+                    return State.CONTINUE;
+                }
+
+                @Override
+                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws IOException {
+                    if (trailerSeen.get()) {
+                        bodyPartCallsAfterTrailers.incrementAndGet();
+                    }
+                    return super.onBodyPartReceived(bodyPart);
+                }
+            };
+
+            assertSame(handler, client.prepareGet(url("/trailers")).execute(handler).get(5, SECONDS));
+            assertTrue(trailerSeen.get());
+            assertEquals(0, bodyPartCallsAfterTrailers.get(),
+                    "cancellation from trailers must skip later terminal body callbacks");
+            assertEquals(1, handler.completionCount.get());
+            assertNull(handler.throwable.get());
+
+            Response replacement = client.prepareGet(url("/pool")).execute().get(5, SECONDS);
+            assertEquals("1", replacement.getResponseBody());
+            assertEquals(1, connectionCount.get());
         }
     }
 
@@ -491,6 +534,15 @@ public class ResponseBodyControlTest {
                         secondReplayContext.complete(ctx);
                     }
                     break;
+                case "/trailers":
+                    HttpResponse trailerResponse = streamingResponse();
+                    trailerResponse.headers().set("trailer", "test-trailer");
+                    ctx.write(trailerResponse);
+                    DefaultLastHttpContent last = new DefaultLastHttpContent(
+                            Unpooled.copiedBuffer("last", CharsetUtil.US_ASCII));
+                    last.trailingHeaders().set("test-trailer", "present");
+                    ctx.writeAndFlush(last);
+                    break;
                 default:
                     ByteBuf content = Unpooled.copiedBuffer(
                             Integer.toString(ctx.channel().attr(CONNECTION_ID).get()), CharsetUtil.US_ASCII);
@@ -503,10 +555,14 @@ public class ResponseBodyControlTest {
         }
 
         private void writeStreamingHeaders(ChannelHandlerContext ctx) {
+            ctx.writeAndFlush(streamingResponse());
+        }
+
+        private HttpResponse streamingResponse() {
             HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
             HttpUtil.setTransferEncodingChunked(response, true);
             HttpUtil.setKeepAlive(response, true);
-            ctx.writeAndFlush(response);
+            return response;
         }
     }
 

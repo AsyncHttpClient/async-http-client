@@ -183,11 +183,8 @@ public final class Http2Handler extends AsyncHttpClientHandler {
             }
             if (!abort) {
                 NettyResponseBodyControl control = NettyResponseBodyControl.create(
-                        future, channel, future::touch, () -> finishUpdate(future, channel, false));
+                        future, channel, future::touch, ignored -> finishUpdate(future, channel, false));
                 abort = handler.onResponseBodyStart(control) == State.ABORT;
-                if (abort) {
-                    NettyResponseBodyControl.complete(future);
-                }
             }
             if (abort) {
                 // cancel() may have completed the future inline from onResponseBodyStart.
