@@ -107,11 +107,10 @@ public class DefaultRequest implements Request {
     }
 
     /**
-     * Not public, and the parameter is trailing rather than beside {@code followRedirect}: the constructor above
-     * keeps the signature outside callers compile against, while this one stays free to grow. A public
-     * twenty-seven argument constructor would be pinned by revapi, and its parameter list would have to be kept
-     * in step with the one above by hand, with the compiler unable to help once the tail is all reference types.
-     * {@link RequestBuilderBase#build()} is the only caller.
+     * The full set of fields a request carries, called only by {@link RequestBuilderBase#build()}. Not public and
+     * not part of the API: the constructor above is what outside callers compile against, so this one is free to
+     * take another field without pinning a signature or asking the next reader to keep two parameter lists of
+     * reference types in step by eye.
      *
      * @param useAbsoluteRequestDeadline whether {@code requestTimeout} bounds the whole exchange rather than
      *                                   each attempt within it, or null to defer to the client config

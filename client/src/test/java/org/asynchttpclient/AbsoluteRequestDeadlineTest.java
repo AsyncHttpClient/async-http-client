@@ -185,12 +185,12 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         }
 
         /**
-         * That the exchange was failed by the check before the next hop was written, rather than by the timeout
-         * arming at zero and expiring once it had been. The message is the only thing that tells the two apart.
+         * That the exchange was failed by the check before the request was written, rather than by a timeout
+         * armed at zero expiring once it had been. The message is the only thing that tells the two apart.
          */
         void assertTimedOutBeforeSending() {
             assertTimedOut();
-            assertTrue(cause.getMessage().contains("before the next hop was sent"),
+            assertTrue(cause.getMessage().contains("before the request was sent"),
                     "expected the deadline to be caught before the write, got " + cause.getMessage());
         }
     }

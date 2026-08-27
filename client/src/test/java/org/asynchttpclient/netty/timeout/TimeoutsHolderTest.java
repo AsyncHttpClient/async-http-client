@@ -27,7 +27,6 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -73,22 +72,27 @@ public class TimeoutsHolderTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void anExchangeThatOutranItsDeadlineSaysSo() throws Exception {
+    public void anExchangeThatOutranItsDeadlineHasNothingLeft() throws Exception {
         // A budget this small is spent by the time the sleep is over, so the next hop has nothing to run in.
         NettyResponseFuture<?> future = exchange(true);
         Thread.sleep(ELAPSED_MS);
 
-        assertTrue(holder(future, Duration.ofMillis(1)).isDeadlinePassed(),
-                "a spent deadline should report itself as passed");
+        assertTrue(TimeoutsHolder.remainingBudget(config(Duration.ofMillis(1)), future) <= 0,
+                "a spent deadline should leave nothing to send a further hop with");
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
-    public void aPerAttemptExchangeNeverRunsOutOfBudgetBetweenHops() throws Exception {
+    public void aPerAttemptExchangeIsNotBoundedAsAWhole() throws Exception {
+        // Asserted on the deadline the holder computes rather than on the budget: per attempt there is no
+        // exchange-wide budget to run out of, so the arithmetic is not what the answer rests on.
         NettyResponseFuture<?> future = exchange(false);
         Thread.sleep(ELAPSED_MS);
 
-        assertFalse(holder(future, Duration.ofMillis(1)).isDeadlinePassed(),
-                "a per-attempt timeout hands every hop a budget of its own, however long the exchange has run");
+        long deadline = deadlineOf(future, BUDGET);
+
+        assertTrue(deadline - System.currentTimeMillis() >= BUDGET.toMillis() - TOLERANCE_MS,
+                "a hop should be given the configured timeout of its own however long the exchange has run, got "
+                        + (deadline - System.currentTimeMillis()) + " ms");
     }
 
     private static long deadlineOf(NettyResponseFuture<?> future, Duration requestTimeout) {
@@ -96,8 +100,11 @@ public class TimeoutsHolderTest {
     }
 
     private static TimeoutsHolder holder(NettyResponseFuture<?> future, Duration requestTimeout) {
-        return new TimeoutsHolder(null, future, null,
-                new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(requestTimeout).build(), null);
+        return new TimeoutsHolder(null, future, null, config(requestTimeout), null);
+    }
+
+    private static AsyncHttpClientConfig config(Duration requestTimeout) {
+        return new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(requestTimeout).build();
     }
 
     private static NettyResponseFuture<?> exchange(boolean useAbsoluteRequestDeadline) {
