@@ -33,12 +33,14 @@ import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -236,6 +238,33 @@ public class Redirect30xInterceptor {
                         + "' cannot be replayed after redirect");
             }
         }
+
+        File file = selectedBodyFile(request);
+        if (file != null && !file.isFile()) {
+            throw new IOException("Redirect request body file " + file.getAbsolutePath()
+                    + " is not a file or does not exist");
+        }
+    }
+
+    private static File selectedBodyFile(Request request) {
+        // Keep this precedence aligned with NettyRequestFactory.body. A File can remain set alongside a
+        // higher-priority representation, so only validate it when the original request actually sent it.
+        if (request.getByteData() != null
+                || request.getCompositeByteData() != null
+                || request.getStringData() != null
+                || request.getByteBufferData() != null
+                || request.getByteBufData() != null
+                || request.getStreamData() != null
+                || !request.getFormParams().isEmpty()
+                || !request.getBodyParts().isEmpty()) {
+            return null;
+        }
+        if (request.getFile() != null) {
+            return request.getFile();
+        }
+        return request.getBodyGenerator() instanceof FileBodyGenerator
+                ? ((FileBodyGenerator) request.getBodyGenerator()).getFile()
+                : null;
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {

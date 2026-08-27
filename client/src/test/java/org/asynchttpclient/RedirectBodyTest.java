@@ -63,12 +63,14 @@ public class RedirectBodyTest extends AbstractBasicTest {
     private static final List<String> receivedContentLengths = new CopyOnWriteArrayList<>();
     private static volatile boolean redirectAlreadyPerformed;
     private static volatile String receivedContentType;
+    private static volatile Path fileToDeleteBeforeRedirect;
 
     @BeforeEach
     public void setUp() {
         receivedContentLengths.clear();
         redirectAlreadyPerformed = false;
         receivedContentType = null;
+        fileToDeleteBeforeRedirect = null;
     }
 
     @Override
@@ -82,6 +84,9 @@ public class RedirectBodyTest extends AbstractBasicTest {
                 String redirectHeader = httpRequest.getHeader("X-REDIRECT");
                 if (redirectHeader != null && !redirectAlreadyPerformed) {
                     redirectAlreadyPerformed = true;
+                    if (fileToDeleteBeforeRedirect != null) {
+                        Files.deleteIfExists(fileToDeleteBeforeRedirect);
+                    }
                     httpResponse.setStatus(Integer.valueOf(redirectHeader));
                     httpResponse.setContentLength(0);
                     httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
@@ -284,10 +289,30 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void vanishedFile307FailsPromptly() throws Exception {
+        Path body = Files.createTempFile("ahc-redirect-vanished-", ".bin");
+        try {
+            Files.write(body, REDIRECT_BODY);
+            fileToDeleteBeforeRedirect = body;
+            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class,
+                        () -> execute307(c.preparePost(getTargetUrl()).setBody(body.toFile())));
+
+                IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+                assertEquals("Redirect request body file " + body.toAbsolutePath()
+                        + " is not a file or does not exist", cause.getMessage());
+            }
+        } finally {
+            Files.deleteIfExists(body);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void coexistingFileAndByteArray308UsesByteArray() throws Exception {
         Path file = Files.createTempFile("ahc-redirect-precedence-", ".bin");
         try {
             Files.write(file, "wrong file body".getBytes(UTF_8));
+            fileToDeleteBeforeRedirect = file;
             try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
                 Response response = c.preparePost(getTargetUrl())
                         .setBody(file.toFile())
