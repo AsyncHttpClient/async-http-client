@@ -36,23 +36,34 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.pkitesting.CertificateBuilder;
+import io.netty.pkitesting.X509Bundle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.IOExceptionFilter;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -62,6 +73,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -77,12 +89,18 @@ public class ResponseBodyControlTest {
 
     private final AtomicInteger connectionCount = new AtomicInteger();
     private final CompletableFuture<ChannelHandlerContext> responseContext = new CompletableFuture<>();
+    private final CompletableFuture<ChannelHandlerContext> firstReplayContext = new CompletableFuture<>();
+    private final CompletableFuture<ChannelHandlerContext> secondReplayContext = new CompletableFuture<>();
     private final CountDownLatch cancelledConnectionClosed = new CountDownLatch(1);
+    private final AtomicInteger replayRequestCount = new AtomicInteger();
 
     private NioEventLoopGroup serverGroup;
     private Channel serverChannel;
+    private Channel tlsServerChannel;
     private ChannelGroup serverChildChannels;
+    private SslContext tlsServerSslContext;
     private int serverPort;
+    private int tlsServerPort;
 
     @BeforeEach
     public void startServer() throws InterruptedException {
@@ -117,9 +135,13 @@ public class ResponseBodyControlTest {
         if (serverChannel != null) {
             serverChannel.close().sync();
         }
+        if (tlsServerChannel != null) {
+            tlsServerChannel.close().sync();
+        }
         if (serverGroup != null) {
             serverGroup.shutdownGracefully(0, 100, MILLISECONDS).sync();
         }
+        ReferenceCountUtil.release(tlsServerSslContext);
     }
 
     @Test
@@ -270,7 +292,7 @@ public class ResponseBodyControlTest {
                 }
 
                 @Override
-                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
+                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws IOException {
                     State state = super.onBodyPartReceived(bodyPart);
                     callbackControl.get().cancel();
                     return state;
@@ -303,8 +325,126 @@ public class ResponseBodyControlTest {
         }
     }
 
+    @Test
+    public void ioExceptionReplayReplacesControlAndRestoresDrainingChannel() throws Exception {
+        startTlsServer();
+        AtomicBoolean replay = new AtomicBoolean();
+        IOExceptionFilter replayOnce = new IOExceptionFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                if (ctx.getIOException() != null && "replay response".equals(ctx.getIOException().getMessage())
+                        && replay.compareAndSet(false, true)) {
+                    return new FilterContext.FilterContextBuilder<>(ctx.getAsyncHandler(), ctx.getRequest())
+                            .replayRequest(true)
+                            .build();
+                }
+                return ctx;
+            }
+        };
+        List<Channel> clientChannels = new CopyOnWriteArrayList<>();
+        AtomicInteger responseStarts = new AtomicInteger();
+        AtomicBoolean failFirstBodyPart = new AtomicBoolean(true);
+        AtomicReference<ResponseBodyControl> firstControl = new AtomicReference<>();
+        CompletableFuture<ResponseBodyControl> replacementControl = new CompletableFuture<>();
+
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseInsecureTrustManager(true)
+                .setMaxRequestRetry(1)
+                .setRequestTimeout(Duration.ofSeconds(10))
+                .addIOExceptionFilter(replayOnce)
+                .setHttpAdditionalChannelInitializer(clientChannels::add))) {
+            RecordingHandler handler = new RecordingHandler(false) {
+                @Override
+                public State onResponseBodyStart(ResponseBodyControl control) {
+                    if (responseStarts.incrementAndGet() == 1) {
+                        firstControl.set(control);
+                    } else {
+                        replacementControl.complete(control);
+                    }
+                    return State.CONTINUE;
+                }
+
+                @Override
+                public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws IOException {
+                    if (failFirstBodyPart.compareAndSet(true, false)) {
+                        firstControl.get().suspend();
+                        throw new IOException("replay response");
+                    }
+                    return super.onBodyPartReceived(bodyPart);
+                }
+            };
+
+            ListenableFuture<RecordingHandler> request = client.prepareGet(httpsUrl("/replay")).execute(handler);
+            ChannelHandlerContext firstServer = firstReplayContext.get(5, SECONDS);
+            ResponseBodyControl replacement = replacementControl.get(5, SECONDS);
+
+            Channel firstClient = clientChannels.get(0);
+            awaitEventLoop(firstClient);
+            assertTrue(firstClient.config().isAutoRead(), "replay must restore reads before draining the old response");
+
+            firstControl.get().suspend();
+            firstControl.get().cancel();
+            ChannelHandlerContext secondServer = secondReplayContext.get(5, SECONDS);
+            writeChunk(secondServer, "replayed");
+            writeLast(secondServer);
+            replacement.resume();
+
+            assertSame(handler, request.get(5, SECONDS));
+            assertEquals("replayed", handler.items.poll(5, SECONDS));
+            assertEquals(2, responseStarts.get());
+            assertNull(handler.throwable.get());
+
+            writeLast(firstServer);
+        }
+    }
+
+    @Test
+    public void callsAfterClientShutdownDoNotThrow() throws Exception {
+        AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)));
+        RecordingHandler handler = new RecordingHandler(false);
+        client.prepareGet(url("/cancel")).execute(handler);
+        ResponseBodyControl control = handler.control.get(5, SECONDS);
+
+        client.close();
+
+        assertDoesNotThrow(control::suspend);
+        assertDoesNotThrow(control::resume);
+        assertDoesNotThrow(control::cancel);
+    }
+
     private String url(String path) {
         return "http://localhost:" + serverPort + path;
+    }
+
+    private String httpsUrl(String path) {
+        return "https://localhost:" + tlsServerPort + path;
+    }
+
+    private void startTlsServer() throws Exception {
+        X509Bundle bundle = new CertificateBuilder()
+                .subject("CN=localhost")
+                .setIsCertificateAuthority(true)
+                .buildSelfSigned();
+        tlsServerSslContext = SslContextBuilder.forServer(bundle.toKeyManagerFactory()).build();
+        tlsServerChannel = new ServerBootstrap()
+                .group(serverGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<Channel>() {
+                    @Override
+                    protected void initChannel(Channel channel) {
+                        serverChildChannels.add(channel);
+                        channel.attr(CONNECTION_ID).set(connectionCount.incrementAndGet());
+                        channel.pipeline()
+                                .addLast(tlsServerSslContext.newHandler(channel.alloc()))
+                                .addLast(new HttpServerCodec())
+                                .addLast(new HttpObjectAggregator(1024))
+                                .addLast(new StreamingServerHandler());
+                    }
+                })
+                .bind(0)
+                .sync()
+                .channel();
+        tlsServerPort = ((InetSocketAddress) tlsServerChannel.localAddress()).getPort();
     }
 
     private static void awaitEventLoop(Channel channel) throws InterruptedException {
@@ -340,6 +480,16 @@ public class ResponseBodyControlTest {
                     HttpUtil.setContentLength(emptyResponse, 0);
                     HttpUtil.setKeepAlive(emptyResponse, true);
                     ctx.writeAndFlush(emptyResponse);
+                    break;
+                case "/replay":
+                    writeStreamingHeaders(ctx);
+                    if (replayRequestCount.incrementAndGet() == 1) {
+                        firstReplayContext.complete(ctx);
+                        ctx.writeAndFlush(new DefaultHttpContent(
+                                Unpooled.copiedBuffer("first", CharsetUtil.US_ASCII)));
+                    } else {
+                        secondReplayContext.complete(ctx);
+                    }
                     break;
                 default:
                     ByteBuf content = Unpooled.copiedBuffer(
@@ -391,7 +541,7 @@ public class ResponseBodyControlTest {
         }
 
         @Override
-        public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
+        public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws IOException {
             if (suspendEveryPart) {
                 responseBodyControl.suspend();
             }

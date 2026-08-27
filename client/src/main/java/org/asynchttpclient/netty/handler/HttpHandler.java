@@ -29,6 +29,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -59,10 +60,10 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     private boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
                                                    AsyncHandler<?> handler) throws Exception {
         NettyResponseBodyControl control = NettyResponseBodyControl.create(
-                channel, future::touch, () -> finishUpdate(future, channel, true));
+                future, channel, future::touch, () -> finishUpdate(future, channel, true));
         boolean abort = handler.onResponseBodyStart(control) == State.ABORT;
         if (abort) {
-            NettyResponseBodyControl.complete(channel);
+            NettyResponseBodyControl.complete(future);
         }
         return abort;
     }

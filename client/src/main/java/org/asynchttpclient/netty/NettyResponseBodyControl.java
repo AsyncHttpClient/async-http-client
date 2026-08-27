@@ -13,14 +13,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.asynchttpclient.netty.handler;
+package org.asynchttpclient.netty;
 
 import io.netty.channel.Channel;
-import io.netty.util.AttributeKey;
 import org.asynchttpclient.ResponseBodyControl;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Netty implementation of {@link ResponseBodyControl}.
@@ -28,57 +29,62 @@ import java.util.Objects;
 @ApiStatus.Internal
 public final class NettyResponseBodyControl implements ResponseBodyControl {
 
-    private static final AttributeKey<NettyResponseBodyControl> ATTRIBUTE =
-            AttributeKey.valueOf(NettyResponseBodyControl.class, "control");
-
+    private final NettyResponseFuture<?> future;
     private final Channel channel;
     private final Runnable resumeAction;
     private final Runnable cancelAction;
     private final boolean previousAutoRead;
 
+    private final AtomicBoolean active = new AtomicBoolean(true);
     private volatile boolean suspended;
-    private boolean active = true;
 
-    static NettyResponseBodyControl create(Channel channel, Runnable resumeAction, Runnable cancelAction) {
+    public static NettyResponseBodyControl create(NettyResponseFuture<?> future, Channel channel,
+                                                  Runnable resumeAction, Runnable cancelAction) {
         if (!channel.eventLoop().inEventLoop()) {
             throw new IllegalStateException("A response body control must be initialized on its channel event loop");
         }
-        if (get(channel) != null) {
-            throw new IllegalStateException("The channel already has a response body control");
-        }
 
-        NettyResponseBodyControl control = new NettyResponseBodyControl(channel, resumeAction, cancelAction);
-        channel.attr(ATTRIBUTE).set(control);
+        NettyResponseBodyControl control = new NettyResponseBodyControl(future, channel, resumeAction, cancelAction);
+        NettyResponseBodyControl previous = future.replaceResponseBodyControl(control);
+        if (previous != null) {
+            previous.deactivate(true);
+        }
         return control;
     }
 
-    static NettyResponseBodyControl get(Channel channel) {
-        return channel != null ? channel.attr(ATTRIBUTE).get() : null;
-    }
-
-    static void complete(Channel channel) {
-        NettyResponseBodyControl control = get(channel);
+    public static void complete(NettyResponseFuture<?> future) {
+        NettyResponseBodyControl control = future.responseBodyControl();
         if (control != null) {
-            control.execute(control::complete0);
+            control.deactivate(true);
         }
     }
 
-    static void discardForChannelClose(Channel channel) {
-        NettyResponseBodyControl control = get(channel);
-        if (control != null) {
-            control.execute(control::discard0);
+    public static void discardForChannelClose(NettyResponseFuture<?> future, Channel channel) {
+        NettyResponseBodyControl control = future.responseBodyControl();
+        if (control != null && control.channel == channel) {
+            control.deactivate(false);
         }
     }
 
     /**
-     * Returns whether response reads on {@code channel} are suspended by a response body control.
+     * Returns whether response reads for {@code future} are suspended by its current response body control.
      */
-    public static boolean isSuspended(Channel channel) {
-        NettyResponseBodyControl control = get(channel);
-        return control != null && control.suspended;
+    public static boolean isSuspended(NettyResponseFuture<?> future) {
+        NettyResponseBodyControl control = future.responseBodyControl();
+        return control != null && control.active.get() && control.suspended;
     }
 
-    private NettyResponseBodyControl(Channel channel, Runnable resumeAction, Runnable cancelAction) {
+    /**
+     * Returns whether {@code future} is suspended on {@code channel}.
+     */
+    public static boolean isSuspended(NettyResponseFuture<?> future, Channel channel) {
+        NettyResponseBodyControl control = future.responseBodyControl();
+        return control != null && control.channel == channel && control.active.get() && control.suspended;
+    }
+
+    private NettyResponseBodyControl(NettyResponseFuture<?> future, Channel channel,
+                                     Runnable resumeAction, Runnable cancelAction) {
+        this.future = Objects.requireNonNull(future, "future");
         this.channel = Objects.requireNonNull(channel, "channel");
         this.resumeAction = Objects.requireNonNull(resumeAction, "resumeAction");
         this.cancelAction = Objects.requireNonNull(cancelAction, "cancelAction");
@@ -101,14 +107,14 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private void suspend0() {
-        if (active && !suspended) {
+        if (active.get() && !suspended) {
             suspended = true;
             channel.config().setAutoRead(false);
         }
     }
 
     private void resume0() {
-        if (!active || !suspended) {
+        if (!active.get() || !suspended) {
             return;
         }
 
@@ -122,31 +128,25 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private void cancel0() {
-        if (!active) {
+        if (!active.compareAndSet(true, false)) {
             return;
         }
 
-        detach(false);
+        future.clearResponseBodyControl(this);
+        suspended = false;
         cancelAction.run();
     }
 
-    private void complete0() {
-        if (active) {
-            detach(true);
+    private void deactivate(boolean restoreAutoRead) {
+        if (!active.compareAndSet(true, false)) {
+            return;
         }
+        future.clearResponseBodyControl(this);
+        execute(() -> detach0(restoreAutoRead));
     }
 
-    private void discard0() {
-        if (active) {
-            // The caller is already tearing down the channel, so restoring its read mode has no purpose.
-            detach(false);
-        }
-    }
-
-    private void detach(boolean restoreAutoRead) {
-        active = false;
+    private void detach0(boolean restoreAutoRead) {
         suspended = false;
-        channel.attr(ATTRIBUTE).compareAndSet(this, null);
         if (restoreAutoRead && previousAutoRead && !channel.config().isAutoRead()) {
             channel.config().setAutoRead(true);
         }
@@ -156,7 +156,11 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
         if (channel.eventLoop().inEventLoop()) {
             task.run();
         } else {
-            channel.eventLoop().execute(task);
+            try {
+                channel.eventLoop().execute(task);
+            } catch (RejectedExecutionException ignored) {
+                // The channel is shutting down, so the control has no transport left to affect.
+            }
         }
     }
 }

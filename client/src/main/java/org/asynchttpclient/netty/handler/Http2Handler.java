@@ -36,6 +36,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -182,10 +183,10 @@ public final class Http2Handler extends AsyncHttpClientHandler {
             }
             if (!abort) {
                 NettyResponseBodyControl control = NettyResponseBodyControl.create(
-                        channel, future::touch, () -> finishUpdate(future, channel, false));
+                        future, channel, future::touch, () -> finishUpdate(future, channel, false));
                 abort = handler.onResponseBodyStart(control) == State.ABORT;
                 if (abort) {
-                    NettyResponseBodyControl.complete(channel);
+                    NettyResponseBodyControl.complete(future);
                 }
             }
             if (abort) {
@@ -305,7 +306,7 @@ public final class Http2Handler extends AsyncHttpClientHandler {
      */
     @Override
     void finishUpdate(NettyResponseFuture<?> future, Channel streamChannel, boolean close) {
-        NettyResponseBodyControl.complete(streamChannel);
+        NettyResponseBodyControl.complete(future);
         future.cancelTimeouts();
 
         // Stream channels are single-use in HTTP/2 — close the stream
