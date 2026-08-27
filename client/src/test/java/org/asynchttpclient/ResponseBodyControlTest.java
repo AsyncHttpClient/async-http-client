@@ -68,6 +68,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.EARLY_HINTS;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -376,6 +377,51 @@ public class ResponseBodyControlTest {
     }
 
     @Test
+    public void earlyHintsDoNotStartOrCompleteTheResponseBody() throws Exception {
+        AtomicInteger statuses = new AtomicInteger();
+        AtomicInteger headers = new AtomicInteger();
+        AtomicInteger bodyStarts = new AtomicInteger();
+        AtomicInteger finalStatus = new AtomicInteger();
+        try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)))) {
+            RecordingHandler handler = new RecordingHandler(false) {
+                @Override
+                public State onStatusReceived(HttpResponseStatus responseStatus) {
+                    statuses.incrementAndGet();
+                    finalStatus.set(responseStatus.getStatusCode());
+                    return State.CONTINUE;
+                }
+
+                @Override
+                public State onHeadersReceived(io.netty.handler.codec.http.HttpHeaders responseHeaders) {
+                    headers.incrementAndGet();
+                    assertEquals("present", responseHeaders.get("final-header"));
+                    assertNull(responseHeaders.get("link"));
+                    return State.CONTINUE;
+                }
+
+                @Override
+                public State onResponseBodyStart(ResponseBodyControl control) {
+                    bodyStarts.incrementAndGet();
+                    return State.CONTINUE;
+                }
+            };
+
+            assertSame(handler, client.prepareGet(url("/early-hints")).execute(handler).get(5, SECONDS));
+            assertEquals(1, statuses.get());
+            assertEquals(OK.code(), finalStatus.get());
+            assertEquals(1, headers.get());
+            assertEquals(1, bodyStarts.get());
+            assertEquals("final", handler.items.poll(5, SECONDS));
+            assertEquals(1, handler.completionCount.get());
+            assertNull(handler.throwable.get());
+
+            Response pooled = client.prepareGet(url("/pool")).execute().get(5, SECONDS);
+            assertEquals("1", pooled.getResponseBody());
+            assertEquals(1, connectionCount.get());
+        }
+    }
+
+    @Test
     public void ioExceptionReplayReplacesControlAndRestoresDrainingChannel() throws Exception {
         startTlsServer();
         AtomicBoolean replay = new AtomicBoolean();
@@ -549,6 +595,18 @@ public class ResponseBodyControlTest {
                             Unpooled.copiedBuffer("last", CharsetUtil.US_ASCII));
                     last.trailingHeaders().set("test-trailer", "present");
                     ctx.writeAndFlush(last);
+                    break;
+                case "/early-hints":
+                    HttpResponse earlyHints = new DefaultHttpResponse(HTTP_1_1, EARLY_HINTS);
+                    earlyHints.headers().set("link", "</style.css>; rel=preload; as=style");
+                    ctx.write(earlyHints);
+                    ctx.write(LastHttpContent.EMPTY_LAST_CONTENT);
+                    ByteBuf finalContent = Unpooled.copiedBuffer("final", CharsetUtil.US_ASCII);
+                    DefaultFullHttpResponse finalResponse = new DefaultFullHttpResponse(HTTP_1_1, OK, finalContent);
+                    finalResponse.headers().set("final-header", "present");
+                    HttpUtil.setContentLength(finalResponse, finalContent.readableBytes());
+                    HttpUtil.setKeepAlive(finalResponse, true);
+                    ctx.writeAndFlush(finalResponse);
                     break;
                 default:
                     ByteBuf content = Unpooled.copiedBuffer(

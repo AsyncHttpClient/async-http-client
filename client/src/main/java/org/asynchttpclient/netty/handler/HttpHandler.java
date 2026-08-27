@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.AttributeKey;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -33,6 +34,7 @@ import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.HttpConstants.ResponseStatusCodes;
 
@@ -41,6 +43,9 @@ import java.net.InetSocketAddress;
 
 @Sharable
 public final class HttpHandler extends AsyncHttpClientHandler {
+
+    private static final AttributeKey<Boolean> INTERIM_RESPONSE_END =
+            AttributeKey.valueOf(HttpHandler.class, "interim-response-end");
 
     public HttpHandler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
@@ -75,6 +80,17 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
         HttpHeaders responseHeaders = response.headers();
+        int statusCode = status.getStatusCode();
+
+        // RFC 9110 section 15.2: 1xx responses are interim, except 101 which switches protocols. Netty emits a
+        // synthetic LastHttpContent after each HTTP/1.1 interim response, so remember to ignore that terminator too.
+        // A deferred 100 Continue is the exception: its interceptor installs an OnLastHttpContentCallback that uses
+        // the terminator to send the request body.
+        if (statusCode > 100 && statusCode < 200
+                && statusCode != ResponseStatusCodes.SWITCHING_PROTOCOLS_101) {
+            channel.attr(INTERIM_RESPONSE_END).set(true);
+            return;
+        }
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
             boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status)
@@ -84,10 +100,18 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             if (abort && !future.isDone()) {
                 finishUpdate(future, channel, true);
             }
+        } else if (statusCode == ResponseStatusCodes.CONTINUE_100 && Channels.getAttribute(channel) == future) {
+            // An unsolicited 100 has no deferred request body and therefore no OnLastHttpContentCallback.
+            channel.attr(INTERIM_RESPONSE_END).set(true);
         }
     }
 
     private void handleChunk(HttpContent chunk, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
+        if (chunk instanceof LastHttpContent
+                && Boolean.TRUE.equals(channel.attr(INTERIM_RESPONSE_END).getAndSet(false))) {
+            return;
+        }
+
         boolean abort = false;
         boolean last = chunk instanceof LastHttpContent;
 
