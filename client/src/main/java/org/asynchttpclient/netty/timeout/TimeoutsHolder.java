@@ -169,6 +169,10 @@ public class TimeoutsHolder {
         return requestTimeoutMillisTime;
     }
 
+    boolean isRequestTimeoutDisabled() {
+        return requestTimeoutTask == null;
+    }
+
     /**
      * Moves this exchange's timeouts onto {@code executor}, the loop of the channel it turned out to run on. The
      * connect path arms the request timeout before there is a channel -- deliberately, since it bounds address
