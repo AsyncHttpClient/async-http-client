@@ -231,6 +231,25 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void fileInputStream307FailsPromptly() throws Exception {
+        Path bodyFile = Files.createTempFile("ahc-redirect-stream-", ".bin");
+        try {
+            Files.write(bodyFile, REDIRECT_BODY);
+            try (InputStream body = Files.newInputStream(bodyFile);
+                 AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class,
+                        () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
+
+                IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+                assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
+                        cause.getMessage());
+            }
+        } finally {
+            Files.deleteIfExists(bodyFile);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void file307KeepsBody() throws Exception {
         Path body = Files.createTempFile("ahc-redirect-body-", ".bin");
         try {
