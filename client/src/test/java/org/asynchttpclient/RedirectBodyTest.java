@@ -209,7 +209,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
     @RepeatedIfExceptionsTest(repeats = 5)
     public void nonResettableInputStream307FailsPromptly() throws Exception {
-        InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
             @Override
             public boolean markSupported() {
                 return false;
@@ -220,11 +220,13 @@ public class RedirectBodyTest extends AbstractBasicTest {
                 throw new IOException("reset not supported");
             }
         };
-        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             ExecutionException thrown = assertThrows(ExecutionException.class,
                     () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
 
-            assertInstanceOf(IOException.class, thrown.getCause());
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
+                    cause.getMessage());
         }
     }
 
