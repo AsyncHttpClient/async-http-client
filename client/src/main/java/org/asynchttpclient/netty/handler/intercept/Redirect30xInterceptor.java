@@ -226,9 +226,13 @@ public class Redirect30xInterceptor {
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
-        HttpHeaders headers = request.getHeaders().copy()
-                .remove(HOST)
-                .remove(CONTENT_LENGTH);
+        HttpHeaders headers = request.getHeaders().copy().remove(HOST);
+
+        // A raw InputStream has no intrinsic length from which NettyRequestFactory can rebuild this header.
+        // Preserve a caller-supplied value when the stream itself is replayed.
+        if (!keepBody || request.getStreamData() == null) {
+            headers.remove(CONTENT_LENGTH);
+        }
 
         if (!keepBody) {
             headers.remove(CONTENT_TYPE);

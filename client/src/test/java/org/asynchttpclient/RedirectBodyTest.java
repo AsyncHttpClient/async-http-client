@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -58,11 +59,13 @@ public class RedirectBodyTest extends AbstractBasicTest {
     private static final byte[] REDIRECT_BODY = "redirect body".getBytes(UTF_8);
     private static final String CONTENT_TYPE_VALUE = "application/octet-stream";
 
+    private static final List<String> receivedContentLengths = new CopyOnWriteArrayList<>();
     private static volatile boolean redirectAlreadyPerformed;
     private static volatile String receivedContentType;
 
     @BeforeEach
     public void setUp() {
+        receivedContentLengths.clear();
         redirectAlreadyPerformed = false;
         receivedContentType = null;
     }
@@ -74,6 +77,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
 
                 byte[] body = IOUtils.toByteArray(request.getInputStream());
+                receivedContentLengths.add(String.valueOf(httpRequest.getHeader(CONTENT_LENGTH.toString())));
                 String redirectHeader = httpRequest.getHeader("X-REDIRECT");
                 if (redirectHeader != null && !redirectAlreadyPerformed) {
                     redirectAlreadyPerformed = true;
@@ -204,6 +208,20 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = execute307(c.preparePost(getTargetUrl()).setBody(new ByteArrayInputStream(REDIRECT_BODY)));
 
             assertRedirectBody(response);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void inputStream307PreservesExplicitContentLength() throws Exception {
+        try (InputStream body = new ByteArrayInputStream(REDIRECT_BODY);
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = execute307(c.preparePost(getTargetUrl())
+                    .setHeader(CONTENT_LENGTH, REDIRECT_BODY.length)
+                    .setBody(body));
+
+            assertRedirectBody(response);
+            String expectedLength = Integer.toString(REDIRECT_BODY.length);
+            assertEquals(List.of(expectedLength, expectedLength), receivedContentLengths);
         }
     }
 
