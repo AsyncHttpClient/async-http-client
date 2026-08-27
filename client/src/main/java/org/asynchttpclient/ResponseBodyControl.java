@@ -20,6 +20,10 @@ package org.asynchttpclient;
  * <p>
  * The control is thread-safe and remains valid until its response completes. Calls made after completion have no
  * effect.
+ * <p>
+ * A control is also supplied when the final response headers end the response without a body. In that case,
+ * {@link #suspend()} cannot defer completion: the control becomes inactive when
+ * {@link AsyncHandler#onResponseBodyStart(ResponseBodyControl)} returns, and later calls have no effect.
  *
  * @since 3.0.14
  */
@@ -28,6 +32,7 @@ public interface ResponseBodyControl {
     /**
      * Stops requesting additional response bytes from the transport. Body parts that were already read may still be
      * delivered to the {@link AsyncHandler}.
+     * If the final response headers already ended the response, this call has no effect on completion.
      * <p>
      * While reads are suspended, the read timeout is paused but the request timeout remains active. If the request
      * timeout is disabled, failing to resume or cancel the response can retain its transport resources indefinitely.

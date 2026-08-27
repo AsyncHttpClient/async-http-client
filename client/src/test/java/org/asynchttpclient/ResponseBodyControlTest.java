@@ -360,11 +360,18 @@ public class ResponseBodyControlTest {
             ListenableFuture<RecordingHandler> request = client.prepareGet(url("/empty")).execute(handler);
             ResponseBodyControl control = handler.control.get(5, SECONDS);
 
+            assertSame(handler, request.get(5, SECONDS), "suspension cannot defer a bodyless response");
+            control.suspend();
             control.resume();
+            control.cancel();
 
-            assertSame(handler, request.get(5, SECONDS));
             assertTrue(handler.items.isEmpty());
+            assertEquals(1, handler.completionCount.get());
             assertNull(handler.throwable.get());
+
+            Response pooled = client.prepareGet(url("/pool")).execute().get(5, SECONDS);
+            assertEquals("1", pooled.getResponseBody());
+            assertEquals(1, connectionCount.get());
         }
     }
 

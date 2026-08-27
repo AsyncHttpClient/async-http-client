@@ -269,6 +269,28 @@ public class Http2ResponseBodyControlTest {
         }
     }
 
+    @Test
+    public void suspensionCannotDeferBodylessResponse() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            RecordingHandler handler = new RecordingHandler();
+            ListenableFuture<RecordingHandler> request = client.prepareGet(url("/empty")).execute(handler);
+            ResponseBodyControl control = handler.control.get(5, SECONDS);
+
+            assertSame(handler, request.get(5, SECONDS));
+            control.suspend();
+            control.resume();
+            control.cancel();
+
+            assertEquals(0, handler.bodyBytes.get());
+            assertEquals(1, handler.completionCount.get());
+            assertNull(handler.throwable.get());
+
+            Response sibling = client.prepareGet(url("/pool")).execute().get(5, SECONDS);
+            assertEquals("1", sibling.getResponseBody());
+            assertEquals(1, connectionCount.get());
+        }
+    }
+
     private AsyncHttpClient http2Client() {
         return asyncHttpClient(config()
                 .setUseInsecureTrustManager(true)
@@ -318,6 +340,10 @@ public class Http2ResponseBodyControlTest {
                 case "/large-sibling":
                     writeHeaders(ctx);
                     writeFrames(ctx, SIBLING_FRAME_COUNT);
+                    break;
+                case "/empty":
+                    ctx.writeAndFlush(new DefaultHttp2HeadersFrame(
+                            new DefaultHttp2Headers().status("200"), true));
                     break;
                 default:
                     writeHeaders(ctx);

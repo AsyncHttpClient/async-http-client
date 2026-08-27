@@ -85,6 +85,8 @@ public interface AsyncHandler<T> {
      * can suspend and resume transport reads, or cancel the response body. This callback is also invoked for responses
      * that have no body. Return {@link State#ABORT} to stop processing from this callback; retain the control and call
      * {@link ResponseBodyControl#cancel()} to stop processing asynchronously after this callback returns.
+     * If the final headers also end the response, suspending cannot defer completion: the control becomes inactive when
+     * this callback returns and later calls have no effect.
      *
      * @param control control for this response body.
      * @return a {@link State} telling to CONTINUE or ABORT the current processing.
