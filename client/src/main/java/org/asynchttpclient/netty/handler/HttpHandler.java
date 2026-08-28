@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.AttributeKey;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -33,6 +32,7 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
@@ -43,9 +43,6 @@ import java.net.InetSocketAddress;
 
 @Sharable
 public final class HttpHandler extends AsyncHttpClientHandler {
-
-    private static final AttributeKey<Boolean> INTERIM_RESPONSE_END =
-            AttributeKey.valueOf(HttpHandler.class, "interim-response-end");
 
     public HttpHandler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
@@ -70,6 +67,18 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return handler.onResponseBodyStart(control) == State.ABORT;
     }
 
+    private static void ignoreInterimResponseTerminator(Channel channel, NettyResponseFuture<?> future) {
+        // Bind the synthetic terminator to this exchange through the same callback mechanism used for deferred
+        // 100-continue bodies and response draining. The callback restores the future before a final response can be
+        // handled, and it cannot leave a channel marker behind for a later exchange.
+        Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
+            @Override
+            public void call() {
+                Channels.setAttribute(channel, future);
+            }
+        });
+    }
+
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         if (logger.isDebugEnabled()) {
@@ -83,12 +92,12 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         int statusCode = status.getStatusCode();
 
         // RFC 9110 section 15.2: 1xx responses are interim, except 101 which switches protocols. Netty emits a
-        // synthetic LastHttpContent after each HTTP/1.1 interim response, so remember to ignore that terminator too.
-        // A deferred 100 Continue is the exception: its interceptor installs an OnLastHttpContentCallback that uses
-        // the terminator to send the request body.
+        // synthetic LastHttpContent after each HTTP/1.1 interim response, so consume that terminator before accepting
+        // the final response. A deferred 100 Continue is the exception: its interceptor installs its own callback that
+        // uses the terminator to send the request body.
         if (statusCode > 100 && statusCode < 200
                 && statusCode != ResponseStatusCodes.SWITCHING_PROTOCOLS_101) {
-            channel.attr(INTERIM_RESPONSE_END).set(true);
+            ignoreInterimResponseTerminator(channel, future);
             return;
         }
 
@@ -101,17 +110,14 @@ public final class HttpHandler extends AsyncHttpClientHandler {
                 finishUpdate(future, channel, true);
             }
         } else if (statusCode == ResponseStatusCodes.CONTINUE_100 && Channels.getAttribute(channel) == future) {
-            // An unsolicited 100 has no deferred request body and therefore no OnLastHttpContentCallback.
-            channel.attr(INTERIM_RESPONSE_END).set(true);
+            // Continue100Interceptor replaces the future attribute with an OnLastHttpContentCallback only when this
+            // request actually deferred its body. If the attribute is still this future, the 100 was unsolicited and
+            // its synthetic terminator only needs to be consumed before waiting for the final response.
+            ignoreInterimResponseTerminator(channel, future);
         }
     }
 
     private void handleChunk(HttpContent chunk, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
-        if (chunk instanceof LastHttpContent
-                && Boolean.TRUE.equals(channel.attr(INTERIM_RESPONSE_END).getAndSet(false))) {
-            return;
-        }
-
         boolean abort = false;
         boolean last = chunk instanceof LastHttpContent;
 
