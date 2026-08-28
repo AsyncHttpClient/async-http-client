@@ -58,6 +58,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.NameResolver;
+import io.netty.util.AttributeKey;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Future;
@@ -125,6 +126,8 @@ public class ChannelManager {
     public static final String LOGGING_HANDLER = "logging";
     public static final String HTTP2_FRAME_CODEC = "http2-frame-codec";
     public static final String HTTP2_MULTIPLEX = "http2-multiplex";
+    // Set beside HTTP2_MULTIPLEX and nowhere else, so that isHttp2 can answer without a pipeline lookup.
+    private static final AttributeKey<Boolean> HTTP2_CONNECTION_ATTRIBUTE = AttributeKey.valueOf("http2Connection");
     public static final String AHC_HTTP2_HANDLER = "ahc-http2";
     private static final String TARGET_SSL_HANDLER = "target-ssl";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
@@ -1027,10 +1030,16 @@ public class ChannelManager {
     }
 
     /**
-     * Checks whether the given channel is an HTTP/2 connection (i.e. has the HTTP/2 multiplex handler installed).
+     * Checks whether the given channel is an HTTP/2 connection: the parent that multiplexes streams, not one of
+     * its stream children, whose own pipelines carry neither the multiplex handler nor this attribute.
+     * <p>
+     * Answered from an attribute rather than by looking {@link #HTTP2_MULTIPLEX} up in the pipeline. The two are
+     * set together and so always agree, but a pipeline lookup compares handler names down the chain, and an
+     * HTTP/1.1 connection, which has no such handler, is walked to the end to say no. The write path asks this
+     * of every request.
      */
     public static boolean isHttp2(Channel channel) {
-        return channel.pipeline().get(HTTP2_MULTIPLEX) != null;
+        return channel.hasAttr(HTTP2_CONNECTION_ATTRIBUTE);
     }
 
     /**
@@ -1096,6 +1105,7 @@ public class ChannelManager {
 
         pipeline.addLast(HTTP2_FRAME_CODEC, frameCodec);
         pipeline.addLast(HTTP2_MULTIPLEX, multiplexHandler);
+        pipeline.channel().attr(HTTP2_CONNECTION_ATTRIBUTE).set(Boolean.TRUE);
 
         // Attach HTTP/2 connection state for MAX_CONCURRENT_STREAMS tracking and GOAWAY draining
         Http2ConnectionState state = new Http2ConnectionState();
