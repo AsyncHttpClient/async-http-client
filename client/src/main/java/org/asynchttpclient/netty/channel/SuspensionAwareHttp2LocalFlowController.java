@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 /*
- * Portions adapted from Netty's DefaultHttp2LocalFlowController.
+ * Portions adapted from Netty 4.2.17.Final's DefaultHttp2LocalFlowController.
  * Copyright 2014 The Netty Project, licensed under Apache License 2.0.
  */
 package org.asynchttpclient.netty.channel;
@@ -51,9 +51,11 @@ import static java.lang.Math.min;
  * Netty's default local HTTP/2 flow controller adapted to refill connection credit only while at least one response
  * on the connection is suspended. Stream credit remains consumption-driven at all times.
  *
- * <p>The implementation intentionally follows Netty 4.2's {@code DefaultHttp2LocalFlowController}. Netty's
+ * <p>The implementation follows {@code DefaultHttp2LocalFlowController} as released in Netty 4.2.17.Final. Netty's
  * connection auto-refill state is private and fixed at construction time, so it cannot be enabled only for the
- * lifetime of a suspended response by composition or subclassing.</p>
+ * lifetime of a suspended response by composition or subclassing. Because AHC owns this package-private adaptation,
+ * Netty upgrades must compare it with the corresponding upstream implementation for correctness and security fixes.
+ * An upstream API for changing connection auto-refill at runtime would allow this class to be removed.</p>
  *
  * <p>This class is not thread safe. All methods are invoked on the HTTP/2 connection event loop.</p>
  */
