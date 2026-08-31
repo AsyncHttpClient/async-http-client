@@ -62,6 +62,7 @@ public class RedirectCredentialSecurityTest {
     private static final AtomicReference<String> authOnBounceBack = new AtomicReference<>();
     private static final AtomicReference<String> authOn307Target = new AtomicReference<>();
     private static final AtomicReference<String> bodyOn307Target = new AtomicReference<>();
+    private static final AtomicReference<String> cookieOn307Target = new AtomicReference<>();
     private static final AtomicReference<String> authOn308Target = new AtomicReference<>();
     private static final AtomicReference<String> bodyOn308Target = new AtomicReference<>();
     private static final AtomicReference<String> lastCookieHeaderOnA = new AtomicReference<>();
@@ -158,6 +159,7 @@ public class RedirectCredentialSecurityTest {
 
         // 307 Temporary Redirect: A → B (body preserved, auth stripped)
         serverA.createContext("/redirect-307-to-b", exchange -> {
+            lastCookieHeaderOnA.set(exchange.getRequestHeaders().getFirst("Cookie"));
             exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portB + "/target-307");
             exchange.sendResponseHeaders(307, -1);
             exchange.close();
@@ -165,6 +167,7 @@ public class RedirectCredentialSecurityTest {
 
         serverB.createContext("/target-307", exchange -> {
             authOn307Target.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            cookieOn307Target.set(exchange.getRequestHeaders().getFirst("Cookie"));
             bodyOn307Target.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(200, 0);
             exchange.getResponseBody().close();
@@ -542,15 +545,16 @@ public class RedirectCredentialSecurityTest {
                 .build();
         try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             lastCookieHeaderOnA.set(null);
-            lastCookieHeaderOnB.set(null);
+            cookieOn307Target.set(null);
 
-            client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+            client.preparePost("http://127.0.0.1:" + portA + "/redirect-307-to-b")
                     .addCookie(new DefaultCookie("session", "abc123"))
+                    .setBody("request-body-content")
                     .execute()
                     .get(5, TimeUnit.SECONDS);
 
             assertEquals("session=abc123", lastCookieHeaderOnA.get());
-            assertNull(lastCookieHeaderOnB.get(),
+            assertNull(cookieOn307Target.get(),
                     "Cookie objects must not be copied to a cross-domain redirect target");
         }
     }
