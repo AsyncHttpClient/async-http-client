@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -32,8 +33,8 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
 import org.asynchttpclient.netty.request.NettyRequestSender;
-import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
+import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
@@ -249,14 +250,7 @@ public class Redirect30xInterceptor {
     private static File selectedBodyFile(Request request) {
         // Keep this precedence aligned with NettyRequestFactory.body. A File can remain set alongside a
         // higher-priority representation, so only validate it when the original request actually sent it.
-        if (request.getByteData() != null
-                || request.getCompositeByteData() != null
-                || request.getStringData() != null
-                || request.getByteBufferData() != null
-                || request.getByteBufData() != null
-                || request.getStreamData() != null
-                || !request.getFormParams().isEmpty()
-                || !request.getBodyParts().isEmpty()) {
+        if (hasBodyBeforeFile(request)) {
             return null;
         }
         if (request.getFile() != null) {
@@ -267,12 +261,42 @@ public class Redirect30xInterceptor {
                 : null;
     }
 
+    private static boolean hasBodyBeforeFile(Request request) {
+        return hasBodyBeforeStream(request)
+                || request.getStreamData() != null
+                || !request.getFormParams().isEmpty()
+                || !request.getBodyParts().isEmpty();
+    }
+
+    private static boolean hasBodyBeforeStream(Request request) {
+        return request.getByteData() != null
+                || request.getCompositeByteData() != null
+                || request.getStringData() != null
+                || request.getByteBufferData() != null
+                || request.getByteBufData() != null;
+    }
+
+    private static boolean selectedBodyHasUnknownLength(Request request) {
+        if (hasBodyBeforeStream(request)) {
+            return false;
+        }
+        if (request.getStreamData() != null) {
+            return true;
+        }
+        if (!request.getFormParams().isEmpty()
+                || !request.getBodyParts().isEmpty()
+                || request.getFile() != null) {
+            return false;
+        }
+        return request.getBodyGenerator() instanceof InputStreamBodyGenerator
+                && ((InputStreamBodyGenerator) request.getBodyGenerator()).getContentLength() < 0;
+    }
+
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
         HttpHeaders headers = request.getHeaders().copy().remove(HOST);
 
-        // A raw InputStream has no intrinsic length from which NettyRequestFactory can rebuild this header.
-        // Preserve a caller-supplied value when the stream itself is replayed.
-        if (!keepBody || request.getStreamData() == null) {
+        // Preserve an explicit length when the selected stream representation cannot rebuild it.
+        if (!keepBody || !selectedBodyHasUnknownLength(request)) {
             headers.remove(CONTENT_LENGTH);
         }
 

@@ -23,6 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
@@ -224,6 +225,20 @@ public class RedirectBodyTest extends AbstractBasicTest {
             Response response = execute307(c.preparePost(getTargetUrl())
                     .setHeader(CONTENT_LENGTH, REDIRECT_BODY.length)
                     .setBody(body));
+
+            assertRedirectBody(response);
+            String expectedLength = Integer.toString(REDIRECT_BODY.length);
+            assertEquals(List.of(expectedLength, expectedLength), receivedContentLengths);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void inputStreamBodyGenerator307PreservesExplicitContentLength() throws Exception {
+        try (InputStream body = new ByteArrayInputStream(REDIRECT_BODY);
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = execute307(c.preparePost(getTargetUrl())
+                    .setHeader(CONTENT_LENGTH, REDIRECT_BODY.length)
+                    .setBody(new InputStreamBodyGenerator(body)));
 
             assertRedirectBody(response);
             String expectedLength = Integer.toString(REDIRECT_BODY.length);
