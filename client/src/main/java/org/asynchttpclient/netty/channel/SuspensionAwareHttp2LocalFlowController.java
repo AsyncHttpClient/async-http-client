@@ -276,7 +276,9 @@ final class SuspensionAwareHttp2LocalFlowController implements Http2LocalFlowCon
             // outstanding connection credit too, otherwise the pre-suspension bytes could still starve siblings.
             int unconsumedBytes = unconsumedBytes();
             if (unconsumedBytes > 0) {
-                super.consumeBytes(unconsumedBytes);
+                if (super.consumeBytes(unconsumedBytes)) {
+                    ctx.flush();
+                }
                 autoConsumedBytes += unconsumedBytes;
             }
         }
