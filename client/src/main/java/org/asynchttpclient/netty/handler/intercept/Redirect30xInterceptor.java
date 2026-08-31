@@ -288,8 +288,11 @@ public class Redirect30xInterceptor {
                 || request.getFile() != null) {
             return false;
         }
-        return request.getBodyGenerator() instanceof InputStreamBodyGenerator
-                && ((InputStreamBodyGenerator) request.getBodyGenerator()).getContentLength() < 0;
+        if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+            return ((InputStreamBodyGenerator) request.getBodyGenerator()).getContentLength() < 0;
+        }
+        return request.getBodyGenerator() != null
+                && !(request.getBodyGenerator() instanceof FileBodyGenerator);
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {

@@ -546,6 +546,7 @@ public class RedirectCredentialSecurityTest {
         try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
             lastCookieHeaderOnA.set(null);
             cookieOn307Target.set(null);
+            bodyOn307Target.set(null);
 
             client.preparePost("http://127.0.0.1:" + portA + "/redirect-307-to-b")
                     .addCookie(new DefaultCookie("session", "abc123"))
@@ -554,6 +555,7 @@ public class RedirectCredentialSecurityTest {
                     .get(5, TimeUnit.SECONDS);
 
             assertEquals("session=abc123", lastCookieHeaderOnA.get());
+            assertEquals("request-body-content", bodyOn307Target.get());
             assertNull(cookieOn307Target.get(),
                     "Cookie objects must not be copied to a cross-domain redirect target");
         }
