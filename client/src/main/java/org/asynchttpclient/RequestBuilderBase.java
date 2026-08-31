@@ -498,6 +498,20 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    /**
+     * Sets the request body from an {@link InputStream}.
+     * <p>
+     * <strong>Replay:</strong> the stream is read and closed by the first send, so any attempt that follows
+     * it — a redirect that keeps the body, an authentication replay or a retry — has to re-read it. That only
+     * works for a stream whose {@code close()} is a no-op and which supports {@link InputStream#mark} and
+     * {@link InputStream#reset()}, such as a {@link java.io.ByteArrayInputStream}. A stream that cannot be
+     * replayed, for instance one from {@link java.nio.file.Files#newInputStream}, completes the request future
+     * with an {@link java.io.IOException} instead of sending an empty body on the second attempt. Use
+     * {@link #setBody(File)} or a {@link BodyGenerator} when the body has to survive a replay.
+     *
+     * @param stream the request body; must be resettable to survive a redirect, auth replay or retry
+     * @return this builder
+     */
     public T setBody(InputStream stream) {
         resetBody();
         streamData = stream;
