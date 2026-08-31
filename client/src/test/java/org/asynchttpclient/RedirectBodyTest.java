@@ -185,6 +185,36 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void bodylessRedirectPreservesPerRequestSettings() throws Exception {
+        Duration readTimeout = Duration.ofSeconds(7);
+        long rangeOffset = 41L;
+        List<Duration> observedReadTimeouts = new CopyOnWriteArrayList<>();
+        List<Long> observedRangeOffsets = new CopyOnWriteArrayList<>();
+        ResponseFilter observer = new ResponseFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                observedReadTimeouts.add(ctx.getRequest().getReadTimeout());
+                observedRangeOffsets.add(ctx.getRequest().getRangeOffset());
+                return ctx;
+            }
+        };
+
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(observer))) {
+            Response response = c.preparePost(getTargetUrl())
+                    .setReadTimeout(readTimeout)
+                    .setRangeOffset(rangeOffset)
+                    .setBody(REDIRECT_BODY)
+                    .setHeader("X-REDIRECT", "303")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals("", response.getResponseBody());
+            assertEquals(List.of(readTimeout, readTimeout), observedReadTimeouts);
+            assertEquals(List.of(rangeOffset, rangeOffset), observedRangeOffsets);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void compositeByteArray307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             byte[] first = "redirect ".getBytes(UTF_8);
