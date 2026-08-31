@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,9 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class NettyAsyncResponseTest {
 
@@ -210,12 +211,17 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
-    public void testGetResponseBodyAsBytesViewDefaultImplementationDelegates() {
+    public void testGetResponseBodyAsBytesViewDefaultImplementationDelegates() throws Throwable {
         byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
-        Response response = mock(Response.class, CALLS_REAL_METHODS);
-        doReturn(expected).when(response).getResponseBodyAsBytes();
+        Response response = mock(Response.class);
+        when(response.getResponseBodyAsBytes()).thenReturn(expected);
 
-        assertSame(expected, response.getResponseBodyAsBytesView());
+        byte[] actual = (byte[]) MethodHandles.privateLookupIn(Response.class, MethodHandles.lookup())
+                .findSpecial(Response.class, "getResponseBodyAsBytesView", MethodType.methodType(byte[].class), Response.class)
+                .bindTo(response)
+                .invokeExact();
+
+        assertSame(expected, actual);
     }
 
     @Test
