@@ -56,6 +56,23 @@ public interface Response {
     byte[] getResponseBodyAsBytes();
 
     /**
+     * Returns the entire response body as a byte array that may share its storage with this response.
+     *
+     * <p>The returned array must be treated as read-only. Modifying it may change the content subsequently returned
+     * by this response's other body accessors.
+     *
+     * <p>The implementation is not required to return shared storage. Depending on the response representation, this
+     * method may still return a copy. No array identity is guaranteed between calls.
+     *
+     * <p>Use {@link #getResponseBodyAsBytes()} when an independently owned, mutable array is required.
+     *
+     * @return the entire response body as a possibly shared byte array
+     */
+    default byte[] getResponseBodyAsBytesView() {
+        return getResponseBodyAsBytes();
+    }
+
+    /**
      * Return the entire response body as a ByteBuffer.
      *
      * @return the entire response body as a ByteBuffer.

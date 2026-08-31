@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Response;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -32,9 +33,14 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 public class NettyAsyncResponseTest {
 
@@ -113,6 +119,8 @@ public class NettyAsyncResponseTest {
 
         assertEquals(expected, single.getResponseBody(StandardCharsets.UTF_8));
         assertEquals(expected, multiple.getResponseBody(StandardCharsets.UTF_8));
+        assertArrayEquals(utf8, single.getResponseBodyAsBytesView());
+        assertArrayEquals(utf8, multiple.getResponseBodyAsBytesView());
     }
 
     @Test
@@ -120,25 +128,94 @@ public class NettyAsyncResponseTest {
         // A Lazy part's getBodyPartBytes returns just the readable region, not the whole backing array, so a
         // single-part shortcut must go through it rather than reach for getBodyByteBuf().array().
         byte[] backing = "XXXHello WorldYYY".getBytes(StandardCharsets.UTF_8);
-        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
-        bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer(backing, 3, 11), true));
-        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+        ByteBuf slice = Unpooled.wrappedBuffer(backing).slice(3, 11);
+        int readerIndex = slice.readerIndex();
+        int writerIndex = slice.writerIndex();
+        int refCnt = slice.refCnt();
+        try {
+            List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+            bodyParts.add(new LazyResponseBodyPart(slice, true));
+            NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
 
-        assertEquals("Hello World", response.getResponseBody(StandardCharsets.UTF_8));
-        assertEquals("Hello World",
-                new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
+            assertArrayEquals("Hello World".getBytes(StandardCharsets.UTF_8), response.getResponseBodyAsBytesView());
+            assertEquals("Hello World", response.getResponseBody(StandardCharsets.UTF_8));
+            assertEquals("Hello World",
+                    new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
+            assertEquals(readerIndex, slice.readerIndex());
+            assertEquals(writerIndex, slice.writerIndex());
+            assertEquals(refCnt, slice.refCnt());
+        } finally {
+            slice.release();
+        }
     }
 
     @Test
-    public void testGetResponseBodyAsBytesDoesNotShareTheBodyPartArray() {
+    public void testGetResponseBodyAsBytesViewReadsDirectLazyPart() {
+        byte[] backing = "XXXHello WorldYYY".getBytes(StandardCharsets.UTF_8);
+        ByteBuf direct = Unpooled.directBuffer(backing.length);
+        direct.writeBytes(backing);
+        ByteBuf slice = direct.slice(3, 11);
+        int readerIndex = slice.readerIndex();
+        int writerIndex = slice.writerIndex();
+        int refCnt = slice.refCnt();
+        try {
+            List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+            bodyParts.add(new LazyResponseBodyPart(slice, true));
+            NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+            assertArrayEquals("Hello World".getBytes(StandardCharsets.UTF_8), response.getResponseBodyAsBytesView());
+            assertEquals(readerIndex, slice.readerIndex());
+            assertEquals(writerIndex, slice.writerIndex());
+            assertEquals(refCnt, slice.refCnt());
+        } finally {
+            direct.release();
+        }
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesViewSharesOneEagerPart() {
         List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
         bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello World".getBytes(StandardCharsets.UTF_8)), true));
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
 
+        byte[] view = response.getResponseBodyAsBytesView();
+        assertSame(bodyParts.get(0).getBodyPartBytes(), view);
+        assertSame(view, response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesDoesNotShareTheBodyPartArray() {
+        byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(expected), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
         // getResponseBody may decode a lone part in place, but getResponseBodyAsBytes hands the array to the
         // caller, so it must keep copying rather than expose the part's own array.
-        assertNotSame(response.getResponseBodyAsBytes(), response.getResponseBodyAsBytes());
-        assertNotSame(bodyParts.get(0).getBodyPartBytes(), response.getResponseBodyAsBytes());
+        byte[] firstCopy = response.getResponseBodyAsBytes();
+        byte[] secondCopy = response.getResponseBodyAsBytes();
+        assertNotSame(firstCopy, secondCopy);
+        assertNotSame(bodyParts.get(0).getBodyPartBytes(), firstCopy);
+
+        firstCopy[0] = 'X';
+        assertArrayEquals(expected, response.getResponseBodyAsBytes());
+        assertArrayEquals(expected, response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesViewReturnsEmptyArray() {
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>());
+
+        assertArrayEquals(new byte[0], response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesViewDefaultImplementationDelegates() {
+        byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
+        Response response = mock(Response.class, CALLS_REAL_METHODS);
+        doReturn(expected).when(response).getResponseBodyAsBytes();
+
+        assertSame(expected, response.getResponseBodyAsBytesView());
     }
 
     @Test
