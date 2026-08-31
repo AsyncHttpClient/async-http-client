@@ -229,6 +229,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return false;
         }
 
+        NettyResponseBodyControl.complete(this);
         releaseRequestIfNotHandedToChannel();
 
         final Channel ch = channel; //atomic read, so that it won't end up in TOCTOU
@@ -301,6 +302,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         tunnelEstablished = false;
         boolean alreadyTerminated = IS_DONE_FIELD.getAndSet(this, 1) != 0 || isCancelled != 0;
         if (!alreadyTerminated) {
+            NettyResponseBodyControl.complete(this);
             releaseRequestIfNotHandedToChannel();
         }
         return alreadyTerminated;
