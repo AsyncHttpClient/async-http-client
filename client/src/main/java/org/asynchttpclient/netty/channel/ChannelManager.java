@@ -40,7 +40,6 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketCl
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
@@ -1316,12 +1315,7 @@ public class ChannelManager {
      * Enables connection-window refill for the lifetime of a suspended HTTP/2 response.
      */
     public void suspendHttp2ResponseBody(Channel streamChannel) {
-        SuspensionAwareHttp2LocalFlowController controller = http2FlowController(streamChannel);
-        try {
-            controller.suspendResponse();
-        } catch (Http2Exception e) {
-            PlatformDependent.throwException(e);
-        }
+        http2FlowController(streamChannel).suspendResponse();
     }
 
     /**

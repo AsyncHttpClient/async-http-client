@@ -105,12 +105,49 @@ public class NettyResponseFutureTest {
 
     @Test
     public void abortDeactivatesResponseBodyControlBeforeOnThrowable() {
-        assertTerminalDeactivatesResponseBodyControl(future -> future.abort(new RuntimeException("abort")));
+        assertTerminalDeactivatesResponseBodyControl(future -> future.abort(new RuntimeException("abort")), true);
     }
 
     @Test
     public void cancelDeactivatesResponseBodyControlBeforeOnThrowable() {
-        assertTerminalDeactivatesResponseBodyControl(future -> assertTrue(future.cancel(false)));
+        assertTerminalDeactivatesResponseBodyControl(future -> assertTrue(future.cancel(false)), true);
+    }
+
+    @Test
+    public void abortEndsSuspensionWhenTheHandlerDoesNothing() {
+        assertTerminalDeactivatesResponseBodyControl(future -> future.abort(new RuntimeException("abort")), false);
+    }
+
+    @Test
+    public void cancelEndsSuspensionWhenTheHandlerDoesNothing() {
+        assertTerminalDeactivatesResponseBodyControl(future -> assertTrue(future.cancel(false)), false);
+    }
+
+    @Test
+    public void replacingASuspendedControlKeepsTheChannelReadable() {
+        AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(
+                null, asyncHandler, null, 3, null, null, null);
+        EmbeddedChannel channel = new EmbeddedChannel();
+        try {
+            NettyResponseBodyControl first = NettyResponseBodyControl.create(
+                    future, channel, () -> { }, ignored -> { });
+            first.suspend();
+            assertFalse(channel.config().isAutoRead(), "suspend must stop reads");
+
+            // The replacement must snapshot the read mode the channel had before the control it replaces
+            // suspended it, otherwise it records false and never restores reads on completion.
+            NettyResponseBodyControl second = NettyResponseBodyControl.create(
+                    future, channel, () -> { }, ignored -> { });
+            second.suspend();
+            NettyResponseBodyControl.complete(future);
+            channel.runPendingTasks();
+
+            assertTrue(channel.config().isAutoRead(),
+                    "completing the replacement control must restore the original read mode");
+        } finally {
+            channel.finishAndReleaseAll();
+        }
     }
 
     @Test
@@ -138,15 +175,24 @@ public class NettyResponseFutureTest {
                 "after setTargetRequest the key must match a fresh computation for the new target");
     }
 
-    private static void assertTerminalDeactivatesResponseBodyControl(Consumer<NettyResponseFuture<?>> terminate) {
+    /**
+     * @param cancelFromOnThrowable when {@code true} the handler cancels its retained control from
+     *                              {@code onThrowable}, which proves the control is already inactive by then.
+     *                              When {@code false} the handler does nothing, which is the case that leaves a
+     *                              suspension leaked unless termination itself deactivates the control.
+     */
+    private static void assertTerminalDeactivatesResponseBodyControl(Consumer<NettyResponseFuture<?>> terminate,
+                                                                     boolean cancelFromOnThrowable) {
         AtomicReference<NettyResponseBodyControl> retainedControl = new AtomicReference<>();
         AtomicInteger suspensionEnded = new AtomicInteger();
         AtomicInteger cancellationActions = new AtomicInteger();
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
-        doAnswer(ignored -> {
-            retainedControl.get().cancel();
-            return null;
-        }).when(asyncHandler).onThrowable(any());
+        if (cancelFromOnThrowable) {
+            doAnswer(ignored -> {
+                retainedControl.get().cancel();
+                return null;
+            }).when(asyncHandler).onThrowable(any());
+        }
 
         NettyResponseFuture<?> future = new NettyResponseFuture<>(
                 null, asyncHandler, null, 3, null, null, null);

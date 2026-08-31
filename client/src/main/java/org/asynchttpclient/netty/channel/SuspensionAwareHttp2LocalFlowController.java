@@ -110,10 +110,18 @@ final class SuspensionAwareHttp2LocalFlowController implements Http2LocalFlowCon
         });
     }
 
-    void suspendResponse() throws Http2Exception {
+    void suspendResponse() {
         assert ctx != null && ctx.executor().inEventLoop();
         if (suspendedResponses == 0) {
-            connectionState().startAutoRefill();
+            try {
+                connectionState().startAutoRefill();
+            } catch (Http2Exception e) {
+                // Returning the already accumulated connection credit failed, which is a connection-level fault.
+                // Sneaky-throwing it out of the event-loop task that runs suspend() would only reach Netty's
+                // task-failure log and leave the caller believing reads had stopped, so hand it to the codec.
+                // The suspension is still counted so the matching resume stays balanced.
+                ctx.pipeline().fireExceptionCaught(e);
+            }
         }
         suspendedResponses++;
     }
@@ -275,7 +283,7 @@ final class SuspensionAwareHttp2LocalFlowController implements Http2LocalFlowCon
             // DATA may already have reached a stream child channel before its handler calls suspend(). Return that
             // outstanding connection credit too, otherwise the pre-suspension bytes could still starve siblings.
             int unconsumedBytes = unconsumedBytes();
-            if (unconsumedBytes > 0) {
+            if (ctx != null && unconsumedBytes > 0) {
                 if (super.consumeBytes(unconsumedBytes)) {
                     ctx.flush();
                 }

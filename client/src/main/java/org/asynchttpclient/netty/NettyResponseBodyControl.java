@@ -56,12 +56,18 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
             throw new IllegalStateException("A response body control must be initialized on its channel event loop");
         }
 
-        NettyResponseBodyControl control = new NettyResponseBodyControl(
-                future, channel, suspensionStartedAction, suspensionEndedAction, resumeAction, cancelAction);
-        NettyResponseBodyControl previous = future.replaceResponseBodyControl(control);
+        // Deactivate the control being replaced BEFORE the new one snapshots the channel's read mode. A
+        // predecessor that is still suspended leaves autoRead off, and a snapshot taken then would record
+        // false, so the new control would never restore reads and could hand the channel back to the pool
+        // with reads disabled.
+        NettyResponseBodyControl previous = future.responseBodyControl();
         if (previous != null) {
             previous.deactivate(true);
         }
+
+        NettyResponseBodyControl control = new NettyResponseBodyControl(
+                future, channel, suspensionStartedAction, suspensionEndedAction, resumeAction, cancelAction);
+        future.replaceResponseBodyControl(control);
         return control;
     }
 
