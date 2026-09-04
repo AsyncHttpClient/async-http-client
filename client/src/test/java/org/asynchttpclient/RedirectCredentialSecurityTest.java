@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.basicAuthRealm;
+import static org.asynchttpclient.util.HttpConstants.Methods.QUERY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -65,6 +66,11 @@ public class RedirectCredentialSecurityTest {
     private static final AtomicReference<String> cookieOn307Target = new AtomicReference<>();
     private static final AtomicReference<String> authOn308Target = new AtomicReference<>();
     private static final AtomicReference<String> bodyOn308Target = new AtomicReference<>();
+    private static final AtomicReference<String> query301AuthOnTarget = new AtomicReference<>();
+    private static final AtomicReference<String> query301CookieOnTarget = new AtomicReference<>();
+    private static final AtomicReference<String> query301ContentTypeOnTarget = new AtomicReference<>();
+    private static final AtomicReference<String> query301MethodOnTarget = new AtomicReference<>();
+    private static final AtomicReference<String> query301BodyOnTarget = new AtomicReference<>();
     private static final AtomicReference<String> lastCookieHeaderOnA = new AtomicReference<>();
     private static final AtomicReference<String> lastCookieHeaderOnB = new AtomicReference<>();
     private static final AtomicReference<String> cookieAtChainStep2 = new AtomicReference<>();
@@ -184,6 +190,24 @@ public class RedirectCredentialSecurityTest {
         serverB.createContext("/target-308", exchange -> {
             authOn308Target.set(exchange.getRequestHeaders().getFirst("Authorization"));
             bodyOn308Target.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().close();
+            exchange.close();
+        });
+
+        serverA.createContext("/redirect-query-301-to-b", exchange -> {
+            exchange.getRequestBody().readAllBytes();
+            exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + portB + "/target-query-301");
+            exchange.sendResponseHeaders(301, -1);
+            exchange.close();
+        });
+
+        serverB.createContext("/target-query-301", exchange -> {
+            query301AuthOnTarget.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            query301CookieOnTarget.set(exchange.getRequestHeaders().getFirst("Cookie"));
+            query301ContentTypeOnTarget.set(exchange.getRequestHeaders().getFirst("Content-Type"));
+            query301MethodOnTarget.set(exchange.getRequestMethod());
+            query301BodyOnTarget.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(200, 0);
             exchange.getResponseBody().close();
             exchange.close();
@@ -508,6 +532,36 @@ public class RedirectCredentialSecurityTest {
                     "Authorization header must be stripped on cross-domain 308 redirect");
             assertEquals("request-body-content", bodyOn308Target.get(),
                     "Request body must be preserved on 308 redirect");
+        }
+    }
+
+    @Test
+    void query301CrossOriginStripsCredentialsAndPreservesRequest() throws Exception {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setFollowRedirect(true)
+                .build();
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+            query301AuthOnTarget.set(null);
+            query301CookieOnTarget.set(null);
+            query301ContentTypeOnTarget.set(null);
+            query301MethodOnTarget.set(null);
+            query301BodyOnTarget.set(null);
+
+            client.prepare(QUERY, "http://127.0.0.1:" + portA + "/redirect-query-301-to-b")
+                    .setHeader("Authorization", "Bearer secret-token")
+                    .setHeader("Cookie", "session=secret-session")
+                    .setHeader("Content-Type", "application/query")
+                    .setBody("sensitive-query")
+                    .execute()
+                    .get(5, TimeUnit.SECONDS);
+
+            assertNull(query301AuthOnTarget.get(),
+                    "Authorization must be stripped on a cross-origin QUERY redirect");
+            assertNull(query301CookieOnTarget.get(),
+                    "Cookie must be stripped on a cross-origin QUERY redirect");
+            assertEquals(QUERY, query301MethodOnTarget.get());
+            assertEquals("application/query", query301ContentTypeOnTarget.get());
+            assertEquals("sensitive-query", query301BodyOnTarget.get());
         }
     }
 
