@@ -240,66 +240,95 @@ public class Redirect30xInterceptor {
     }
 
     private static void ensureBodyReplayable(Request request) throws IOException {
-        for (Part part : request.getBodyParts()) {
-            if (part instanceof InputStreamPart) {
-                throw new IOException("Multipart InputStream body part '" + part.getName()
-                        + "' cannot be replayed after redirect");
+        BodyRepresentation bodyRepresentation = selectedBodyRepresentation(request);
+        if (bodyRepresentation == BodyRepresentation.BODY_PARTS) {
+            for (Part part : request.getBodyParts()) {
+                if (part instanceof InputStreamPart) {
+                    throw new IOException("Multipart InputStream body part '" + part.getName()
+                            + "' cannot be replayed after redirect");
+                }
             }
         }
 
-        File file = selectedBodyFile(request);
+        File file = null;
+        if (bodyRepresentation == BodyRepresentation.FILE) {
+            file = request.getFile();
+        } else if (bodyRepresentation == BodyRepresentation.FILE_BODY_GENERATOR) {
+            file = ((FileBodyGenerator) request.getBodyGenerator()).getFile();
+        }
         if (file != null && !file.isFile()) {
             throw new IOException("Redirect request body file " + file.getAbsolutePath()
                     + " is not a file or does not exist");
         }
     }
 
-    private static File selectedBodyFile(Request request) {
-        // Keep this precedence aligned with NettyRequestFactory.body. A File can remain set alongside a
-        // higher-priority representation, so only validate it when the original request actually sent it.
-        if (hasBodyBeforeFile(request)) {
-            return null;
+    private static BodyRepresentation selectedBodyRepresentation(Request request) {
+        // Keep this precedence aligned with NettyRequestFactory.body. Some setters leave lower-priority
+        // representations in place, so redirect validation must inspect only the body that was sent.
+        if (request.getByteData() != null) {
+            return BodyRepresentation.BYTE_DATA;
+        }
+        if (request.getCompositeByteData() != null) {
+            return BodyRepresentation.COMPOSITE_BYTE_DATA;
+        }
+        if (request.getStringData() != null) {
+            return BodyRepresentation.STRING_DATA;
+        }
+        if (request.getByteBufferData() != null) {
+            return BodyRepresentation.BYTE_BUFFER_DATA;
+        }
+        if (request.getByteBufData() != null) {
+            return BodyRepresentation.BYTE_BUF_DATA;
+        }
+        if (request.getStreamData() != null) {
+            return BodyRepresentation.STREAM_DATA;
+        }
+        if (!request.getFormParams().isEmpty()) {
+            return BodyRepresentation.FORM_PARAMS;
+        }
+        if (!request.getBodyParts().isEmpty()) {
+            return BodyRepresentation.BODY_PARTS;
         }
         if (request.getFile() != null) {
-            return request.getFile();
+            return BodyRepresentation.FILE;
         }
-        return request.getBodyGenerator() instanceof FileBodyGenerator
-                ? ((FileBodyGenerator) request.getBodyGenerator()).getFile()
-                : null;
-    }
-
-    private static boolean hasBodyBeforeFile(Request request) {
-        return hasBodyBeforeStream(request)
-                || request.getStreamData() != null
-                || !request.getFormParams().isEmpty()
-                || !request.getBodyParts().isEmpty();
-    }
-
-    private static boolean hasBodyBeforeStream(Request request) {
-        return request.getByteData() != null
-                || request.getCompositeByteData() != null
-                || request.getStringData() != null
-                || request.getByteBufferData() != null
-                || request.getByteBufData() != null;
+        if (request.getBodyGenerator() instanceof FileBodyGenerator) {
+            return BodyRepresentation.FILE_BODY_GENERATOR;
+        }
+        if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+            return BodyRepresentation.INPUT_STREAM_BODY_GENERATOR;
+        }
+        return request.getBodyGenerator() == null
+                ? BodyRepresentation.NONE
+                : BodyRepresentation.BODY_GENERATOR;
     }
 
     private static boolean selectedBodyHasUnknownLength(Request request) {
-        if (hasBodyBeforeStream(request)) {
-            return false;
-        }
-        if (request.getStreamData() != null) {
+        BodyRepresentation bodyRepresentation = selectedBodyRepresentation(request);
+        if (bodyRepresentation == BodyRepresentation.STREAM_DATA
+                || bodyRepresentation == BodyRepresentation.BODY_GENERATOR) {
             return true;
         }
-        if (!request.getFormParams().isEmpty()
-                || !request.getBodyParts().isEmpty()
-                || request.getFile() != null) {
-            return false;
-        }
-        if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+        if (bodyRepresentation == BodyRepresentation.INPUT_STREAM_BODY_GENERATOR) {
             return ((InputStreamBodyGenerator) request.getBodyGenerator()).getContentLength() < 0;
         }
-        return request.getBodyGenerator() != null
-                && !(request.getBodyGenerator() instanceof FileBodyGenerator);
+        return false;
+    }
+
+    private enum BodyRepresentation {
+        BYTE_DATA,
+        COMPOSITE_BYTE_DATA,
+        STRING_DATA,
+        BYTE_BUFFER_DATA,
+        BYTE_BUF_DATA,
+        STREAM_DATA,
+        FORM_PARAMS,
+        BODY_PARTS,
+        FILE,
+        FILE_BODY_GENERATOR,
+        INPUT_STREAM_BODY_GENERATOR,
+        BODY_GENERATOR,
+        NONE
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {

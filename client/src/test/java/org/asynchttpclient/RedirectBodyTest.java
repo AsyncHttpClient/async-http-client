@@ -591,6 +591,19 @@ public class RedirectBodyTest extends AbstractBasicTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void coexistingMultipartStreamAndByteArray307UsesByteArray() throws Exception {
+        try (InputStream unusedPart = new ByteArrayInputStream("unused part".getBytes(UTF_8));
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = execute307(c.preparePost(getTargetUrl())
+                    .setBody(REDIRECT_BODY)
+                    .setBodyParts(List.of(new InputStreamPart("file", unusedPart, "unused.bin",
+                            "unused part".length(), CONTENT_TYPE_VALUE))));
+
+            assertRedirectBody(response);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void formParams307KeepBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.preparePost(getTargetUrl())
