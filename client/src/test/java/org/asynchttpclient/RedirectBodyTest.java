@@ -52,6 +52,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.netty.handler.intercept.Redirect30xInterceptor.REDIRECT_STATUSES;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.Methods.POST;
 import static org.asynchttpclient.util.HttpConstants.Methods.QUERY;
@@ -69,6 +70,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
     private static final List<String> receivedContentLengths = new CopyOnWriteArrayList<>();
     private static volatile boolean redirectAlreadyPerformed;
+    private static volatile byte[] receivedBody;
     private static volatile String receivedContentType;
     private static volatile String receivedMethod;
     private static volatile Path fileToDeleteBeforeRedirect;
@@ -77,6 +79,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     public void setUp() {
         receivedContentLengths.clear();
         redirectAlreadyPerformed = false;
+        receivedBody = null;
         receivedContentType = null;
         receivedMethod = null;
         fileToDeleteBeforeRedirect = null;
@@ -101,6 +104,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
 
                 } else {
+                    receivedBody = body;
                     receivedContentType = request.getContentType();
                     receivedMethod = request.getMethod();
                     httpResponse.setStatus(200);
@@ -317,22 +321,52 @@ public class RedirectBodyTest extends AbstractBasicTest {
             "DELETE, 301",
             "DELETE, 302",
             "CUSTOM, 301",
-            "CUSTOM, 302"
+            "CUSTOM, 302",
+            "GET, 301",
+            "GET, 302",
+            "HEAD, 301",
+            "HEAD, 302",
+            "OPTIONS, 301",
+            "OPTIONS, 302"
     })
     public void nonPost301And302KeepMethodAndBody(String method, int statusCode) throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
 
-            Response response = c.prepare(method, getTargetUrl())
+            c.prepare(method, getTargetUrl())
                     .setHeader(CONTENT_TYPE, contentType)
                     .setBody(body)
                     .setHeader("X-REDIRECT", Integer.toString(statusCode))
                     .execute()
                     .get(TIMEOUT, TimeUnit.SECONDS);
-            assertEquals(body, response.getResponseBody());
+            assertArrayEquals(body.getBytes(UTF_8), receivedBody);
             assertEquals(method, receivedMethod);
             assertEquals(contentType, receivedContentType);
+        }
+    }
+
+    @ParameterizedTest(name = "{0} on caller-added 300 keeps its method and body")
+    @CsvSource({"POST", "PUT"})
+    public void callerAddedRedirectStatusKeepsMethodAndBody(String method) throws Exception {
+        boolean added = REDIRECT_STATUSES.add(300);
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
+
+            c.prepare(method, getTargetUrl())
+                    .setHeader(CONTENT_TYPE, contentType)
+                    .setBody(body)
+                    .setHeader("X-REDIRECT", "300")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+            assertArrayEquals(body.getBytes(UTF_8), receivedBody);
+            assertEquals(method, receivedMethod);
+            assertEquals(contentType, receivedContentType);
+        } finally {
+            if (added) {
+                REDIRECT_STATUSES.remove(300);
+            }
         }
     }
 

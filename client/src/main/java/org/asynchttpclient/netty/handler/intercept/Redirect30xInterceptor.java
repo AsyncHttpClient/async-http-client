@@ -118,18 +118,16 @@ public class Redirect30xInterceptor {
 
                 String originalMethod = request.getMethod();
                 boolean isPost = originalMethod.equals(POST);
-                boolean bodylessMethod = originalMethod.equals(GET) ||
+                boolean methodAlreadyPreserved = originalMethod.equals(GET) ||
                         originalMethod.equals(OPTIONS) || originalMethod.equals(HEAD);
                 boolean strict302 = statusCode == FOUND_302 && config.isStrict302Handling();
                 // RFC 9110 limits the historical 301/302 POST-to-GET rewrite to POST.
-                boolean switchToGet = !bodylessMethod &&
-                        (statusCode == SEE_OTHER_303 ||
-                                (isPost && (statusCode == MOVED_PERMANENTLY_301 ||
-                                        (statusCode == FOUND_302 && !strict302))));
-                boolean keepBody = (!bodylessMethod && !isPost &&
-                        (statusCode == MOVED_PERMANENTLY_301 || statusCode == FOUND_302)) ||
-                        statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 ||
-                        strict302;
+                // This also preserves QUERY as required by RFC 10008 section 2.5.
+                boolean legacyPostToGet = isPost && (statusCode == MOVED_PERMANENTLY_301 ||
+                        (statusCode == FOUND_302 && !strict302));
+                boolean switchToGet = !methodAlreadyPreserved &&
+                        (statusCode == SEE_OTHER_303 || legacyPostToGet);
+                boolean keepBody = statusCode != SEE_OTHER_303 && !switchToGet;
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(LOCATION);
