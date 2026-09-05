@@ -346,6 +346,25 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void put301AcrossDifferentHostsKeepsMethodAndBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
+            String originalUrl = getTargetUrl().replace("localhost", "127.0.0.1");
+
+            c.preparePut(originalUrl)
+                    .setHeader(CONTENT_TYPE, contentType)
+                    .setBody(body)
+                    .setHeader("X-REDIRECT", "301")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+            assertArrayEquals(body.getBytes(UTF_8), receivedBody);
+            assertEquals("PUT", receivedMethod);
+            assertEquals(contentType, receivedContentType);
+        }
+    }
+
     @ParameterizedTest(name = "{0} on caller-added 300 keeps its method and body")
     @CsvSource({"POST", "PUT"})
     public void callerAddedRedirectStatusKeepsMethodAndBody(String method) throws Exception {
