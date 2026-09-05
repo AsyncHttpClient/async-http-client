@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -259,6 +260,17 @@ public class Redirect30xInterceptor {
         if (file != null && !file.isFile()) {
             throw new IOException("Redirect request body file " + file.getAbsolutePath()
                     + " is not a file or does not exist");
+        }
+
+        InputStream inputStream = null;
+        if (bodyRepresentation == BodyRepresentation.STREAM_DATA) {
+            inputStream = request.getStreamData();
+        } else if (bodyRepresentation == BodyRepresentation.INPUT_STREAM_BODY_GENERATOR) {
+            inputStream = ((InputStreamBodyGenerator) request.getBodyGenerator()).getInputStream();
+        }
+        if (inputStream != null && !inputStream.markSupported()) {
+            throw new IOException("Redirect request body InputStream does not support mark/reset"
+                    + " and cannot be replayed");
         }
     }
 

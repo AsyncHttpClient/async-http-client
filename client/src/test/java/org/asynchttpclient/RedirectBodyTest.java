@@ -67,6 +67,8 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
     private static final byte[] REDIRECT_BODY = "redirect body".getBytes(UTF_8);
     private static final String CONTENT_TYPE_VALUE = "application/octet-stream";
+    private static final String NON_REPLAYABLE_STREAM_MESSAGE =
+            "Redirect request body InputStream does not support mark/reset and cannot be replayed";
 
     private static final List<String> receivedContentLengths = new CopyOnWriteArrayList<>();
     private static volatile boolean redirectAlreadyPerformed;
@@ -280,8 +282,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                             .get(TIMEOUT, TimeUnit.SECONDS));
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                    cause.getMessage());
+            assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
         }
     }
 
@@ -307,8 +308,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                             .get(TIMEOUT, TimeUnit.SECONDS));
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                    cause.getMessage());
+            assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
         }
     }
 
@@ -510,8 +510,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                    cause.getMessage());
+            assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
         }
     }
 
@@ -526,8 +525,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                         () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
 
                 IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-                assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                        cause.getMessage());
+                assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
             }
         } finally {
             Files.deleteIfExists(bodyFile);
