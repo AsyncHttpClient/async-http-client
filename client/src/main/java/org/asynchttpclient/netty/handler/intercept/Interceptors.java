@@ -111,7 +111,15 @@ public class Interceptors {
         // itself sets inside the tunnel arrive on a non-CONNECT exchange and are stored as before.
         if (cookieStore != null && !connectRequest) {
             for (String cookieStr : responseHeaders.getAll(SET_COOKIE)) {
-                Cookie c = cookieDecoder.decode(cookieStr);
+                Cookie c;
+                try {
+                    c = cookieDecoder.decode(cookieStr);
+                } catch (IllegalArgumentException e) {
+                    // The decoder throws, rather than returning null, on some input such as a non-ASCII
+                    // Domain. Drop the cookie as an unparseable one would be, not the whole exchange.
+                    LOGGER.debug("Ignoring malformed Set-Cookie header", e);
+                    continue;
+                }
                 if (c != null) {
                     // Set-Cookie header could be invalid/malformed
                     cookieStore.add(future.getCurrentRequest().getUri(), c);

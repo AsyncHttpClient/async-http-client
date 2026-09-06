@@ -22,6 +22,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
@@ -89,6 +90,15 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
                     case "/other-path":
                         redirect(response, HttpServletResponse.SC_FOUND, "SID=other; Path=/elsewhere", "/home");
                         break;
+                    case "/rotate-lower":
+                        redirect(response, HttpServletResponse.SC_FOUND, "sid=new; Path=/", "/home");
+                        break;
+                    case "/delete-lower":
+                        redirect(response, HttpServletResponse.SC_FOUND, "sid=; Path=/; Max-Age=0", "/home");
+                        break;
+                    case "/unparseable":
+                        redirect(response, HttpServletResponse.SC_FOUND, "x=y; Domain=ex\u00e4mple.com", "/home");
+                        break;
                     case "/see-other":
                         redirect(response, HttpServletResponse.SC_SEE_OTHER, null, "/home");
                         break;
@@ -130,6 +140,25 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
     void aPathScopedCookieDoesNotFollowARedirectOutOfItsPath() throws Exception {
         String received = afterSeeding(client -> client.prepareGet(url("/p/a")));
         assertFalse(received != null && received.contains("P="), "sent to /q/b: " + received);
+    }
+
+    /** The store folds cookie names, so a redirect naming SID as sid still replaces it. */
+    @Test
+    void aRedirectReplacesACookieItNamesInAnotherCase() throws Exception {
+        assertEquals(new HashSet<>(Arrays.asList("sid=new")),
+                cookiesSent(afterSeeding(client -> client.prepareGet(url("/rotate-lower")))));
+        assertNull(afterSeeding(client -> client.prepareGet(url("/delete-lower"))));
+    }
+
+    /** The decoder throws on a non-ASCII Domain; that drops the cookie, not the redirect. */
+    @Test
+    void aSetCookieTheDecoderRejectsDoesNotFailTheRedirect() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true))) {
+            client.prepareGet(url("/seed")).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            Response home = client.prepareGet(url("/unparseable")).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(200, home.getStatusCode());
+            assertEquals("SID=old", home.getHeader(RECEIVED_COOKIE));
+        }
     }
 
     // The next two already hold on main, where a redirect to GET is built from scratch; they keep it that way.

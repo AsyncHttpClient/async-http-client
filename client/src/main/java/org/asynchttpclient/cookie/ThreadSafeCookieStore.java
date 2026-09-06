@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,8 +135,23 @@ public final class ThreadSafeCookieStore implements CookieStore {
         return new HashMap<>(cookieJar);
     }
 
+    // Locale.ROOT, as PublicSuffixList folds: under Turkish "INFO" lowercases to a dotless i and the
+    // public-suffix check fails open.
     private static String requestDomain(Uri requestUri) {
-        return requestUri.getHost().toLowerCase();
+        return canonicalHost(requestUri.getHost());
+    }
+
+    /**
+     * One spelling per host. {@code 127.0.0.1.} resolves like {@code 127.0.0.1} but would slip past the
+     * public-suffix and IP checks, and a {@code Location} header lets an attacker pick the spelling.
+     */
+    private static String canonicalHost(String host) {
+        String lowered = host.toLowerCase(Locale.ROOT);
+        int end = lowered.length();
+        while (end > 0 && lowered.charAt(end - 1) == '.') {
+            end--;
+        }
+        return end == lowered.length() ? lowered : lowered.substring(0, end);
     }
 
     private static String requestPath(Uri requestUri) {
@@ -146,8 +162,8 @@ public final class ThreadSafeCookieStore implements CookieStore {
     // Let cookie-domain be the attribute-value without the leading %x2E (".") character.
     private static AbstractMap.SimpleEntry<String, Boolean> cookieDomain(@Nullable String cookieDomain, String requestDomain) {
         if (cookieDomain != null) {
-            String normalizedCookieDomain = cookieDomain.toLowerCase();
-            String domain = !cookieDomain.isEmpty() && cookieDomain.charAt(0) == '.' ?
+            String normalizedCookieDomain = canonicalHost(cookieDomain);
+            String domain = !normalizedCookieDomain.isEmpty() && normalizedCookieDomain.charAt(0) == '.' ?
                     normalizedCookieDomain.substring(1) :
                     normalizedCookieDomain;
             // Domain=. leaves nothing, and an empty domain makes the cookie host-only (RFC 6265 section 5.3 step 6).
@@ -193,7 +209,40 @@ public final class ThreadSafeCookieStore implements CookieStore {
 
     // rfc6265#section-5.1.3
     private static boolean domainsMatch(String cookieDomain, String requestDomain) {
-        return requestDomain.equals(cookieDomain) || requestDomain.endsWith('.' + cookieDomain);
+        if (requestDomain.equals(cookieDomain)) {
+            return true;
+        }
+        // RFC 6265 section 5.1.3: the suffix branch only applies to a host name, not an IP address. Otherwise
+        // Domain=1 from 198.51.100.1 reaches every address ending in .1.
+        return !isIpAddressLiteral(requestDomain) && requestDomain.endsWith('.' + cookieDomain);
+    }
+
+    /**
+     * Whether {@code host} could be an IP address. Not {@code NetUtil}: it rejects {@code 127.1},
+     * {@code 0177.0.0.1} and {@code 0x7f000001}, which the JDK still resolves through the system resolver,
+     * and a rejected host would be treated as a name. A last label that is all digits, or hex after
+     * {@code 0x}, is the test; no registrable name has one.
+     */
+    private static boolean isIpAddressLiteral(String host) {
+        if (host.isEmpty()) {
+            return false;
+        }
+        // Uri keeps the brackets on an IPv6 literal.
+        if (host.charAt(0) == '[' || host.indexOf(':') >= 0) {
+            return true;
+        }
+        int lastLabel = host.lastIndexOf('.') + 1;
+        if (lastLabel >= host.length()) {
+            return false;
+        }
+        boolean hex = host.startsWith("0x", lastLabel);
+        for (int i = hex ? lastLabel + 2 : lastLabel; i < host.length(); i++) {
+            char c = host.charAt(i);
+            if (!(c >= '0' && c <= '9' || hex && c >= 'a' && c <= 'f')) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // rfc6265#section-5.1.4
@@ -222,13 +271,19 @@ public final class ThreadSafeCookieStore implements CookieStore {
         // The step also says that when the Domain equals the request host the cookie is kept, as a
         // host-only cookie, rather than discarded. That case is not an attack and dropping it would break
         // ordinary single-label hosts: dev, app, box, cloud and a dozen more are ICANN suffixes as well as
-        // the short names Docker Compose and Kubernetes hand out.
-        if (!hostOnly && PublicSuffixList.isPublicSuffix(keyDomain) && !keyDomain.equals(requestDomain)) {
-            return;
+        // the short names Docker Compose and Kubernetes hand out. It is kept host-only, or a service reached
+        // as bare "app" would hand it to every *.app.
+        if (!hostOnly && PublicSuffixList.isPublicSuffix(keyDomain)) {
+            if (!keyDomain.equals(requestDomain)) {
+                return;
+            }
+            hostOnly = true;
         }
 
         String keyPath = cookiePath(cookie.path(), requestPath);
-        CookieKey key = new CookieKey(cookie.name().toLowerCase(), keyPath);
+        // Cookie names are case-sensitive; folding them is an old deviation, kept so existing applications
+        // send what they did. ROOT only stops a Turkish default locale missing the key.
+        CookieKey key = new CookieKey(cookie.name().toLowerCase(Locale.ROOT), keyPath);
 
         if (hasCookieExpired(cookie, 0)) {
             cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
@@ -282,6 +337,9 @@ public final class ThreadSafeCookieStore implements CookieStore {
         boolean exactDomainMatch = true;
         String subDomain = domain;
         List<Cookie> results = null;
+        // RFC 6265 section 5.4 selects by the same domain-match, so an IP takes only its own entry rather than
+        // walking 127.0.0.1 -> 0.0.1 -> 0.1 -> 1. Not redundant with storage: 0.1 may set Domain=0.1 legitimately.
+        boolean walkParents = !isIpAddressLiteral(domain);
 
         while (MiscUtils.isNonEmpty(subDomain)) {
             // Lazily allocate a single result list and append matches straight into it; an imperative
@@ -293,6 +351,9 @@ public final class ThreadSafeCookieStore implements CookieStore {
                 results = new ArrayList<>(4);
             }
             collectStoredCookies(subDomain, path, secure, exactDomainMatch, results);
+            if (!walkParents) {
+                break;
+            }
             subDomain = DomainUtils.getSubDomain(subDomain);
             exactDomainMatch = false;
         }

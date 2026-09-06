@@ -26,6 +26,7 @@ import org.asynchttpclient.uri.Uri;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
@@ -51,29 +52,36 @@ final class CallerCookies {
             return cookies;
         }
         // Only what the store took counts: a Set-Cookie it refused, or one for another path, leaves the
-        // caller's cookie of that name in place.
+        // caller's cookie of that name in place. Names folded as the store keys them, so a SID set here also
+        // replaces a request's sid.
         Set<String> setByResponse = new HashSet<>();
         List<Cookie> nextCookies = null;
         for (String header : response.headers().getAll(SET_COOKIE)) {
-            Cookie cookie = cookieDecoder.decode(header);
+            Cookie cookie;
+            try {
+                cookie = cookieDecoder.decode(header);
+            } catch (IllegalArgumentException e) {
+                // Interceptors dropped it too, so the store still holds the old value and holdsSameValue decides.
+                continue;
+            }
             if (cookie == null) {
                 continue;
             }
             if (cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE && cookie.maxAge() <= 0) {
-                setByResponse.add(cookie.name());
+                setByResponse.add(cookie.name().toLowerCase(Locale.ROOT));
                 continue;
             }
             if (nextCookies == null) {
                 nextCookies = cookieStore.get(next);
             }
             if (holdsSameValue(nextCookies, cookie)) {
-                setByResponse.add(cookie.name());
+                setByResponse.add(cookie.name().toLowerCase(Locale.ROOT));
             }
         }
         List<Cookie> stored = cookieStore.get(request.getUri());
         List<Cookie> callers = new ArrayList<>(cookies.size());
         for (Cookie cookie : cookies) {
-            if (!setByResponse.contains(cookie.name()) && !holdsSameValue(stored, cookie)) {
+            if (!setByResponse.contains(cookie.name().toLowerCase(Locale.ROOT)) && !holdsSameValue(stored, cookie)) {
                 callers.add(cookie);
             }
         }

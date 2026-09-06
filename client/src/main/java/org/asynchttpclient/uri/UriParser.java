@@ -18,6 +18,8 @@ package org.asynchttpclient.uri;
 import io.netty.util.concurrent.FastThreadLocal;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
+
 import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
@@ -113,7 +115,8 @@ final class UriParser {
             if (c == ':') {
                 String s = originalUrl.substring(currentIndex, i);
                 if (isValidProtocol(s)) {
-                    scheme = s.toLowerCase();
+                    // Locale.ROOT, as Uri normalises it; the default locale disagrees under Turkish.
+                    scheme = s.toLowerCase(Locale.ROOT);
                     currentIndex = i + 1;
                 }
                 break;
