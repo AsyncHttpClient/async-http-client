@@ -232,8 +232,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
         } else {
             // Same scoping as the pool poll: a connection authenticated by NTLM or Negotiate is filed
             // under the identity that authenticated it, so no other principal can draw it.
-            channelManager.tryToOfferChannelToPool(channel, future, true,
-                    PrincipalScopedPartitionKey.scope(future.getPartitionKey(), future.getRealm()));
+            channelManager.tryToOfferChannelToPool(channel, future, true, PrincipalScopedPartitionKey.scope(future));
         }
 
         try {

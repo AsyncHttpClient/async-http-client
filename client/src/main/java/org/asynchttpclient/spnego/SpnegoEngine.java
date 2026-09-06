@@ -57,8 +57,10 @@ import java.net.InetAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeMap;
 
 /**
  * SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) authentication scheme.
@@ -69,7 +71,8 @@ public class SpnegoEngine {
 
     private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
     private static final String KERBEROS_OID = "1.2.840.113554.1.2.2";
-    private static final Map<String, SpnegoEngine> instances = new HashMap<>();
+    // Concurrent: two racing puts can corrupt a HashMap, and here that could cross cached Kerberos logins.
+    private static final Map<String, SpnegoEngine> instances = new ConcurrentHashMap<>();
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final @Nullable SpnegoTokenGenerator spnegoGenerator;
     private final @Nullable String username;
@@ -98,41 +101,46 @@ public class SpnegoEngine {
         this(null, null, null, null, true, null, null, null);
     }
 
+    /** Appends one value to a cache key, length-prefixed so no value can imitate a delimiter. */
+    private static void appendKeyPart(StringBuilder key, @Nullable String value) {
+        if (value == null) {
+            key.append("-;");
+        } else {
+            key.append(value.length()).append(':').append(value).append(';');
+        }
+    }
+
     public static SpnegoEngine instance(final @Nullable String username, final @Nullable String password,
                                         final @Nullable String servicePrincipalName, final @Nullable String realmName,
                                         final boolean useCanonicalHostname, final @Nullable Map<String, String> customLoginConfig,
                                         final @Nullable String loginContextName) {
-        String key = "";
-        if (customLoginConfig != null && !customLoginConfig.isEmpty()) {
-            StringBuilder customLoginConfigKeyValues = new StringBuilder();
-            for (Map.Entry<String, String> entry : customLoginConfig.entrySet()) {
-                customLoginConfigKeyValues
-                        .append(entry.getKey())
-                        .append('=')
-                        .append(entry.getValue());
+        // Every value the engine is built from but the password: logins differing in any of them are
+        // different subjects, while a changed password replaces the engine below rather than adding one.
+        StringBuilder keyBuilder = new StringBuilder(64);
+        appendKeyPart(keyBuilder, username);
+        appendKeyPart(keyBuilder, servicePrincipalName);
+        appendKeyPart(keyBuilder, realmName);
+        appendKeyPart(keyBuilder, loginContextName);
+        keyBuilder.append(useCanonicalHostname).append(';');
+        if (customLoginConfig != null) {
+            // Sorted, so equal configurations built in a different order still agree.
+            for (Map.Entry<String, String> entry : new TreeMap<>(customLoginConfig).entrySet()) {
+                appendKeyPart(keyBuilder, entry.getKey());
+                appendKeyPart(keyBuilder, entry.getValue());
             }
-            key = customLoginConfigKeyValues.toString();
         }
+        String key = keyBuilder.toString();
 
-        if (username != null) {
-            key += username;
-        }
-
-        if (loginContextName != null) {
-            key += loginContextName;
-        }
-
-        if (!instances.containsKey(key)) {
-            instances.put(key, new SpnegoEngine(username,
-                    password,
-                    servicePrincipalName,
-                    realmName,
-                    useCanonicalHostname,
-                    customLoginConfig,
-                    loginContextName,
-                    null));
-        }
-        return instances.get(key);
+        return instances.compute(key, (ignored, cached) -> cached != null && Objects.equals(cached.password, password)
+                ? cached
+                : new SpnegoEngine(username,
+                password,
+                servicePrincipalName,
+                realmName,
+                useCanonicalHostname,
+                customLoginConfig,
+                loginContextName,
+                null));
     }
 
     public String generateToken(String host) throws SpnegoEngineException {

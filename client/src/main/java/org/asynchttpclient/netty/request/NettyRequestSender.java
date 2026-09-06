@@ -1315,7 +1315,7 @@ public final class NettyRequestSender {
         }
         // Nor a request whose realm authenticates the connection: see registerHttp2AndManageSemaphore.
         if (PrincipalScopedPartitionKey.authenticatesTheConnection(pooledIdentity(future, request),
-                pooledProxyIdentity(future, proxy))) {
+                pooledProxyIdentity(future, proxy), PrincipalScopedPartitionKey.proxyHopIsPerConnection(proxy, request.getUri()))) {
             return null;
         }
         // In round-robin mode, only multiplex onto the H2 connection for the IP this request is pinned to;
@@ -1479,7 +1479,7 @@ public final class NettyRequestSender {
      */
     private @Nullable Realm pooledProxyIdentity(@Nullable NettyResponseFuture<?> future, @Nullable ProxyServer proxy) {
         if (future != null) {
-            return future.getProxyRealm();
+            return PrincipalScopedPartitionKey.proxyLogin(future.getProxyRealm(), proxy);
         }
         return proxy != null ? proxy.getRealm() : null;
     }
@@ -1514,8 +1514,9 @@ public final class NettyRequestSender {
         // Round-robin mode: poll with the IP-aware key so reuse stays pinned to the chosen IP (both the
         // HTTP/2 registry and the HTTP/1.1 pool).
         Object override = future != null ? future.getPartitionKeyOverride() : null;
+        boolean proxyHopIsPerConnection = PrincipalScopedPartitionKey.proxyHopIsPerConnection(proxy, uri);
         boolean http2Shareable = !PrincipalScopedPartitionKey.authenticatesTheConnection(
-                pooledIdentity(future, request), pooledProxyIdentity(future, proxy));
+                pooledIdentity(future, request), pooledProxyIdentity(future, proxy), proxyHopIsPerConnection);
         if (override != null) {
             if (!uri.isWebSocket() && http2Shareable) {
                 Channel h2Channel = channelManager.pollHttp2Connection(override);
@@ -1528,7 +1529,8 @@ public final class NettyRequestSender {
                 }
             }
             Channel channel = channelManager.poll(
-                    PrincipalScopedPartitionKey.scope(override, pooledIdentity(future, request)));
+                    PrincipalScopedPartitionKey.scope(override, pooledIdentity(future, request),
+                            pooledProxyIdentity(future, proxy), proxyHopIsPerConnection));
             if (channel != null && LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(),
                         uri.toUrlWithoutUserInfo());
@@ -1566,7 +1568,8 @@ public final class NettyRequestSender {
         // connection semaphore, which stay keyed per host. A disagreement between this and the offer side
         // costs a pool miss, never a wrong reuse.
         final Channel channel = channelManager.poll(
-                PrincipalScopedPartitionKey.scope(partitionKey, pooledIdentity(future, request)));
+                PrincipalScopedPartitionKey.scope(partitionKey, pooledIdentity(future, request),
+                        pooledProxyIdentity(future, proxy), proxyHopIsPerConnection));
 
         if (channel != null && LOGGER.isDebugEnabled()) {
             LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(),
@@ -1614,8 +1617,7 @@ public final class NettyRequestSender {
         boolean schemeDowngrade = previousUri.isSecured() && !newUri.isSecured();
         // Sampled while the future still describes the old origin: that is the origin the channel being
         // drained is connected to, so that is the key it has to be filed under.
-        Object initialPartitionKey = PrincipalScopedPartitionKey.scope(
-                future.getPartitionKey(), future.getRealm());
+        Object initialPartitionKey = PrincipalScopedPartitionKey.scope(future);
 
         if (!sameBase || schemeDowngrade) {
             future.setRealm(newRequest.getRealm());
@@ -1662,8 +1664,7 @@ public final class NettyRequestSender {
                                     try {
                                         channelManager.upgradePipelineToHttp2AfterProxyConnect(
                                                 channel.pipeline(), future.getPartitionKey(),
-                                                !PrincipalScopedPartitionKey.authenticatesTheConnection(
-                                                        future.getRealm(), future.getProxyRealm()));
+                                                !PrincipalScopedPartitionKey.anyHopAuthenticatesTheConnection(future));
                                     } catch (Exception upgradeError) {
                                         // Thrown inside a future listener, which logs and discards it.
                                         // Fail the future instead, or the request waits for its timeout.

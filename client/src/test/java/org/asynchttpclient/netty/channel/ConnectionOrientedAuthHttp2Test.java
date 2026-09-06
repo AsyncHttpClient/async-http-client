@@ -92,14 +92,14 @@ class ConnectionOrientedAuthHttp2Test {
     @Test
     void anAuthenticatedProxyHopAlsoMakesTheConnectionUnshareable() {
         Realm ntlmProxy = realm(Realm.AuthScheme.NTLM, "alice");
-        assertTrue(PrincipalScopedPartitionKey.authenticatesTheConnection(null, ntlmProxy),
+        assertTrue(PrincipalScopedPartitionKey.authenticatesTheConnection(null, ntlmProxy, false),
                 "a tunnel the proxy authenticated must not be handed to another principal's request");
         assertTrue(PrincipalScopedPartitionKey.authenticatesTheConnection(
-                realm(Realm.AuthScheme.BASIC, "bob"), ntlmProxy));
+                realm(Realm.AuthScheme.BASIC, "bob"), ntlmProxy, false));
         assertFalse(PrincipalScopedPartitionKey.authenticatesTheConnection(
-                realm(Realm.AuthScheme.BASIC, "bob"), realm(Realm.AuthScheme.BASIC, "alice")),
+                realm(Realm.AuthScheme.BASIC, "bob"), realm(Realm.AuthScheme.BASIC, "alice"), false),
                 "request-scoped schemes on both hops keep multiplexing available");
-        assertFalse(PrincipalScopedPartitionKey.authenticatesTheConnection(null, null));
+        assertFalse(PrincipalScopedPartitionKey.authenticatesTheConnection(null, null, false));
     }
 
     /**

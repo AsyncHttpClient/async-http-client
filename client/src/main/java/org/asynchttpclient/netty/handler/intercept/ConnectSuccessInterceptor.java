@@ -57,7 +57,7 @@ public class ConnectSuccessInterceptor {
         
         final Future<Channel> whenHandshaked;
         
-        boolean http2Allowed = !PrincipalScopedPartitionKey.authenticatesTheConnection(future.getRealm(), future.getProxyRealm());
+        boolean http2Allowed = !PrincipalScopedPartitionKey.anyHopAuthenticatesTheConnection(future);
 
         // Special handling for HTTPS proxy tunneling
         if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {

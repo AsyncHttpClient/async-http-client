@@ -241,8 +241,7 @@ public class Redirect30xInterceptor {
 
                 // Sampled before stripAuth clears the realm: the channel being drained is authenticated to
                 // the previous origin, and reading it afterwards would file it unscoped.
-                final Object initialPartitionKey = PrincipalScopedPartitionKey.scope(
-                        future.getPartitionKey(), future.getRealm());
+                final Object initialPartitionKey = PrincipalScopedPartitionKey.scope(future);
 
                 if (stripAuth) {
                     future.setRealm(null);

@@ -1342,8 +1342,7 @@ public class ChannelManager {
     }
 
     public void drainChannelAndOffer(Channel channel, NettyResponseFuture<?> future) {
-        drainChannelAndOffer(channel, future, future.isKeepAlive(),
-                PrincipalScopedPartitionKey.scope(future.getPartitionKey(), future.getRealm()));
+        drainChannelAndOffer(channel, future, future.isKeepAlive(), PrincipalScopedPartitionKey.scope(future));
     }
 
     public void drainChannelAndOffer(Channel channel, NettyResponseFuture<?> future, boolean keepAlive, Object partitionKey) {
