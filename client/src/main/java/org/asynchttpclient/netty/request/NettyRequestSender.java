@@ -703,9 +703,12 @@ public final class NettyRequestSender {
             return;
         }
 
-        // Route to HTTP/2 path if the parent channel has the HTTP/2 multiplex handler installed
-        if (ChannelManager.isHttp2(channel)) {
-            writeHttp2Request(future, channel);
+        // Route to HTTP/2 when the connection carries HTTP/2 state, which is attached where the multiplex
+        // handler is. Read here rather than asked of ChannelManager.isHttp2, because the HTTP/2 path needs the
+        // state itself and would otherwise look up what this line has already found.
+        Http2ConnectionState http2State = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        if (http2State != null) {
+            writeHttp2Request(future, channel, http2State);
             return;
         }
 
@@ -772,10 +775,12 @@ public final class NettyRequestSender {
      * The stream child channel has the {@link org.asynchttpclient.netty.handler.Http2Handler} installed
      * and the {@link NettyResponseFuture} attached to it, mirroring the HTTP/1.1 channel model.
      */
-    private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel) {
-        Http2ConnectionState state = parentChannel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
-
-        if (state != null && !state.tryAcquireStream()) {
+    /**
+     * @param state the connection's HTTP/2 state, which is what identified it as an HTTP/2 connection in the
+     *              first place, so the caller has it in hand
+     */
+    private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel, Http2ConnectionState state) {
+        if (!state.tryAcquireStream()) {
             if (state.isDraining()) {
                 // Connection is draining from GOAWAY — fail the future so it retries on a new connection.
                 // Don't close the parent channel since it may still have active streams. sendHttp2Frames

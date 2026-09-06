@@ -15,10 +15,15 @@
  */
 package org.asynchttpclient.netty.channel;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,27 +34,45 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@link ChannelManager#isHttp2(io.netty.channel.Channel)} answers from an attribute, while the thing it stands
- * for is the multiplex handler in the pipeline. These pin the two together: either both say HTTP/2 or neither
- * does, whichever way a later change to the upgrade sets them.
+ * {@link ChannelManager#isHttp2(Channel)} answers from the {@link Http2ConnectionState} attached to a
+ * connection, while the thing it stands for is the multiplex handler in the pipeline. These pin the two
+ * together: either both say HTTP/2 or neither does, whichever way a later change to the upgrade attaches them.
  */
 class ChannelManagerHttp2MarkerTest {
 
-    private ChannelManager channelManager;
-    private Timer timer;
+    // One per class: the upgrade is what is under test and it needs a ChannelManager only to be called. Building
+    // one per test costs an SslContext and an event loop group each time, for state that lives on the channel.
+    private static ChannelManager channelManager;
+    private static Timer timer;
+
     private EmbeddedChannel channel;
+
+    @BeforeAll
+    static void startManager() {
+        timer = new HashedWheelTimer();
+        channelManager = new ChannelManager(config().build(), timer);
+    }
+
+    @AfterAll
+    static void stopManager() {
+        if (channelManager != null) {
+            channelManager.close();
+        }
+        if (timer != null) {
+            timer.stop();
+        }
+    }
 
     @BeforeEach
     void setUp() {
-        timer = new HashedWheelTimer();
-        channelManager = new ChannelManager(config().build(), timer);
         channel = new EmbeddedChannel();
     }
 
     @AfterEach
     void tearDown() {
-        channel.finishAndReleaseAll();
-        timer.stop();
+        if (channel != null) {
+            channel.finishAndReleaseAll();
+        }
     }
 
     @Test
@@ -69,16 +92,22 @@ class ChannelManagerHttp2MarkerTest {
     }
 
     @Test
-    void aStreamChannelIsNotItsParentsConnection() {
-        // Nothing marks a stream child, and its own pipeline carries no multiplex handler either, so the two
-        // agree here as well: a stream is not the connection that multiplexes it.
+    void aStreamOfAnHttp2ConnectionIsNotTheConnection() {
+        // A real stream child rather than a bare channel: what is worth pinning is that a stream does not
+        // inherit the connection state its parent carries, since that is now what identifies an HTTP/2
+        // connection. The stream is where a request is written, so mistaking it for its parent would loop.
         channelManager.upgradePipelineToHttp2(channel.pipeline());
-        EmbeddedChannel stream = new EmbeddedChannel();
+        channel.runPendingTasks();
+
+        Channel stream = new Http2StreamChannelBootstrap(channel)
+                .handler(new ChannelInboundHandlerAdapter())
+                .open().syncUninterruptibly().getNow();
         try {
-            assertNull(stream.pipeline().get(ChannelManager.HTTP2_MULTIPLEX));
-            assertFalse(ChannelManager.isHttp2(stream));
+            assertNull(stream.pipeline().get(ChannelManager.HTTP2_MULTIPLEX),
+                    "a stream child carries no multiplex handler of its own");
+            assertFalse(ChannelManager.isHttp2(stream), "and is not the connection that multiplexes it");
         } finally {
-            stream.finishAndReleaseAll();
+            stream.close().syncUninterruptibly();
         }
     }
 }
