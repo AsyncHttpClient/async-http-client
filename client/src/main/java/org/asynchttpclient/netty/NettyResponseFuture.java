@@ -31,6 +31,7 @@ import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.scram.ScramContext;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +89,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> TIMEOUTS_HOLDER_FIELD = AtomicReferenceFieldUpdater
             .newUpdater(NettyResponseFuture.class, TimeoutsHolder.class, "timeoutsHolder");
     @SuppressWarnings("rawtypes")
+    private static final AtomicReferenceFieldUpdater<NettyResponseFuture, NettyResponseBodyControl> RESPONSE_BODY_CONTROL_FIELD =
+            AtomicReferenceFieldUpdater.newUpdater(NettyResponseFuture.class, NettyResponseBodyControl.class, "responseBodyControl");
+    @SuppressWarnings("rawtypes")
     private static final AtomicReferenceFieldUpdater<NettyResponseFuture, Object> PARTITION_KEY_LOCK_FIELD = AtomicReferenceFieldUpdater
             .newUpdater(NettyResponseFuture.class, Object.class, "partitionKeyLock");
 
@@ -116,6 +120,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile int onThrowableCalled;
     @SuppressWarnings("unused")
     private volatile TimeoutsHolder timeoutsHolder;
+    @SuppressWarnings("unused")
+    private volatile @Nullable NettyResponseBodyControl responseBodyControl;
     // partition key, when != null used to release lock in ChannelManager
     private volatile Object partitionKeyLock;
     // volatile where we need CAS ops
@@ -223,6 +229,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return false;
         }
 
+        NettyResponseBodyControl.complete(this);
         releaseRequestIfNotHandedToChannel();
 
         final Channel ch = channel; //atomic read, so that it won't end up in TOCTOU
@@ -295,6 +302,7 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         tunnelEstablished = false;
         boolean alreadyTerminated = IS_DONE_FIELD.getAndSet(this, 1) != 0 || isCancelled != 0;
         if (!alreadyTerminated) {
+            NettyResponseBodyControl.complete(this);
             releaseRequestIfNotHandedToChannel();
         }
         return alreadyTerminated;
@@ -400,6 +408,18 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
         if (ref != null) {
             ref.cancel();
         }
+    }
+
+    @Nullable NettyResponseBodyControl responseBodyControl() {
+        return responseBodyControl;
+    }
+
+    @Nullable NettyResponseBodyControl replaceResponseBodyControl(NettyResponseBodyControl control) {
+        return RESPONSE_BODY_CONTROL_FIELD.getAndSet(this, control);
+    }
+
+    void clearResponseBodyControl(NettyResponseBodyControl control) {
+        RESPONSE_BODY_CONTROL_FIELD.compareAndSet(this, control, null);
     }
 
     public Request getTargetRequest() {

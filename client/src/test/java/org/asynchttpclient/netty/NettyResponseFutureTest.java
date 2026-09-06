@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.channel.embedded.EmbeddedChannel;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
@@ -23,15 +24,20 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static org.asynchttpclient.Dsl.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -98,6 +104,16 @@ public class NettyResponseFutureTest {
     }
 
     @Test
+    public void abortDeactivatesResponseBodyControlBeforeOnThrowable() {
+        assertTerminalDeactivatesResponseBodyControl(future -> future.abort(new RuntimeException("abort")));
+    }
+
+    @Test
+    public void cancelDeactivatesResponseBodyControlBeforeOnThrowable() {
+        assertTerminalDeactivatesResponseBodyControl(future -> assertTrue(future.cancel(false)));
+    }
+
+    @Test
     public void basePartitionKeyIsMemoizedAndInvalidatedOnTargetChange() {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         Request reqA = get("http://hosta.example/").build();
@@ -120,5 +136,43 @@ public class NettyResponseFutureTest {
         assertNotEquals(k1, k3, "changing the target host must invalidate the memo and yield a different key");
         assertEquals(partitioning.getPartitionKey(reqB.getUri(), reqB.getVirtualHost(), null), k3,
                 "after setTargetRequest the key must match a fresh computation for the new target");
+    }
+
+    private static void assertTerminalDeactivatesResponseBodyControl(Consumer<NettyResponseFuture<?>> terminate) {
+        AtomicReference<NettyResponseBodyControl> retainedControl = new AtomicReference<>();
+        AtomicInteger suspensionEnded = new AtomicInteger();
+        AtomicInteger cancellationActions = new AtomicInteger();
+        AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
+        doAnswer(ignored -> {
+            retainedControl.get().cancel();
+            return null;
+        }).when(asyncHandler).onThrowable(any());
+
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(
+                null, asyncHandler, null, 3, null, null, null);
+        EmbeddedChannel channel = new EmbeddedChannel();
+        try {
+            NettyResponseBodyControl control = NettyResponseBodyControl.create(
+                    future,
+                    channel,
+                    () -> { },
+                    suspensionEnded::incrementAndGet,
+                    () -> { },
+                    ignored -> cancellationActions.incrementAndGet());
+            retainedControl.set(control);
+            control.suspend();
+            assertTrue(NettyResponseBodyControl.isSuspended(future));
+
+            terminate.accept(future);
+            channel.runPendingTasks();
+
+            assertNull(future.responseBodyControl());
+            assertFalse(NettyResponseBodyControl.isSuspended(future));
+            assertEquals(1, suspensionEnded.get());
+            assertEquals(0, cancellationActions.get(),
+                    "a retained control must be inactive before onThrowable runs");
+        } finally {
+            channel.finishAndReleaseAll();
+        }
     }
 }

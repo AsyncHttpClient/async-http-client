@@ -37,8 +37,10 @@ import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
@@ -1079,9 +1081,10 @@ public class ChannelManager {
                 // Netty's default and a pushing server could trip a connection-level PROTOCOL_ERROR.
                 .pushEnabled(false);
 
-        Http2FrameCodec frameCodec = Http2FrameCodecBuilder.forClient()
-                .initialSettings(settings)
-                .build();
+        ClientHttp2FrameCodecBuilder frameCodecBuilder = new ClientHttp2FrameCodecBuilder();
+        Http2FrameCodec frameCodec = frameCodecBuilder.initialSettings(settings).build();
+        pipeline.channel().attr(SuspensionAwareHttp2LocalFlowController.CHANNEL_KEY)
+                .set(frameCodecBuilder.flowController());
 
         // Http2MultiplexHandler creates a child channel per HTTP/2 stream.
         // Server-push streams are rejected with RST_STREAM(REFUSED_STREAM).
@@ -1282,6 +1285,62 @@ public class ChannelManager {
 
         private long totalConnectionCount;
         private long idleConnectionCount;
+    }
+
+    private static final class ClientHttp2FrameCodecBuilder extends Http2FrameCodecBuilder {
+
+        private final SuspensionAwareHttp2LocalFlowController flowController;
+
+        private ClientHttp2FrameCodecBuilder() {
+            // Http2FrameCodecBuilder.forClient() sets this through its package-private constructor. This subclass must
+            // use the protected no-argument constructor, so set it explicitly to preserve the client factory behavior.
+            gracefulShutdownTimeoutMillis(0);
+
+            DefaultHttp2Connection connection = new DefaultHttp2Connection(false);
+            flowController = new SuspensionAwareHttp2LocalFlowController(connection);
+            connection.local().flowController(flowController);
+            connection(connection);
+        }
+
+        private SuspensionAwareHttp2LocalFlowController flowController() {
+            return flowController;
+        }
+
+        @Override
+        public boolean isServer() {
+            return false;
+        }
+    }
+
+    /**
+     * Enables connection-window refill for the lifetime of a suspended HTTP/2 response.
+     */
+    public void suspendHttp2ResponseBody(Channel streamChannel) {
+        SuspensionAwareHttp2LocalFlowController controller = http2FlowController(streamChannel);
+        try {
+            controller.suspendResponse();
+        } catch (Http2Exception e) {
+            PlatformDependent.throwException(e);
+        }
+    }
+
+    /**
+     * Restores normal connection-window accounting after an HTTP/2 response stops being suspended.
+     */
+    public void resumeHttp2ResponseBody(Channel streamChannel) {
+        http2FlowController(streamChannel).resumeResponse();
+    }
+
+    private static SuspensionAwareHttp2LocalFlowController http2FlowController(Channel streamChannel) {
+        Channel parentChannel = streamChannel instanceof Http2StreamChannel
+                ? ((Http2StreamChannel) streamChannel).parent()
+                : streamChannel;
+        SuspensionAwareHttp2LocalFlowController controller =
+                parentChannel.attr(SuspensionAwareHttp2LocalFlowController.CHANNEL_KEY).get();
+        if (controller == null) {
+            throw new IllegalStateException("HTTP/2 response body flow controller is not installed");
+        }
+        return controller;
     }
 
     public boolean isOpen() {

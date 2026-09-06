@@ -29,9 +29,12 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.HttpConstants.ResponseStatusCodes;
 
@@ -56,6 +59,26 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
+    private boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
+                                                   AsyncHandler<?> handler) throws Exception {
+        NettyResponseBodyControl control = NettyResponseBodyControl.create(
+                future, channel, future::touch,
+                bodyFullyRead -> finishUpdate(future, channel, !bodyFullyRead || !future.isKeepAlive()));
+        return handler.onResponseBodyStart(control) == State.ABORT;
+    }
+
+    private static void ignoreInterimResponseTerminator(Channel channel, NettyResponseFuture<?> future) {
+        // Bind the synthetic terminator to this exchange through the same callback mechanism used for deferred
+        // 100-continue bodies and response draining. The callback restores the future before a final response can be
+        // handled, and it cannot leave a channel marker behind for a later exchange.
+        Channels.setAttribute(channel, new OnLastHttpContentCallback(future) {
+            @Override
+            public void call() {
+                Channels.setAttribute(channel, future);
+            }
+        });
+    }
+
     private void handleHttpResponse(final HttpResponse response, final Channel channel, final NettyResponseFuture<?> future, AsyncHandler<?> handler) throws Exception {
         HttpRequest httpRequest = future.getNettyRequest().getHttpRequest();
         if (logger.isDebugEnabled()) {
@@ -66,12 +89,31 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         NettyResponseStatus status = new NettyResponseStatus(future.getUri(), response, channel);
         HttpHeaders responseHeaders = response.headers();
+        int statusCode = status.getStatusCode();
+
+        // RFC 9110 section 15.2: 1xx responses are interim, except 101 which switches protocols. Netty emits a
+        // synthetic LastHttpContent after each HTTP/1.1 interim response, so consume that terminator before accepting
+        // the final response. A deferred 100 Continue is the exception: its interceptor installs its own callback that
+        // uses the terminator to send the request body.
+        if (statusCode > 100 && statusCode < 200
+                && statusCode != ResponseStatusCodes.SWITCHING_PROTOCOLS_101) {
+            ignoreInterimResponseTerminator(channel, future);
+            return;
+        }
 
         if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-            boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status) || abortAfterHandlingHeaders(handler, responseHeaders);
-            if (abort) {
+            boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status)
+                    || abortAfterHandlingHeaders(handler, responseHeaders)
+                    || abortAfterStartingResponseBody(channel, future, handler);
+            // cancel() may have completed the future inline from onResponseBodyStart.
+            if (abort && !future.isDone()) {
                 finishUpdate(future, channel, true);
             }
+        } else if (statusCode == ResponseStatusCodes.CONTINUE_100 && Channels.getAttribute(channel) == future) {
+            // Continue100Interceptor replaces the future attribute with an OnLastHttpContentCallback only when this
+            // request actually deferred its body. If the attribute is still this future, the 100 was unsolicited and
+            // its synthetic terminator only needs to be consumed before waiting for the final response.
+            ignoreInterimResponseTerminator(channel, future);
         }
     }
 
@@ -81,10 +123,15 @@ public final class HttpHandler extends AsyncHttpClientHandler {
 
         // Netty 4: the last chunk is not empty
         if (last) {
+            NettyResponseBodyControl.markBodyFullyRead(future);
             LastHttpContent lastChunk = (LastHttpContent) chunk;
             HttpHeaders trailingHeaders = lastChunk.trailingHeaders();
             if (!trailingHeaders.isEmpty()) {
                 abort = handler.onTrailingHeadersReceived(trailingHeaders) == State.ABORT;
+                // cancel() may have completed the future inline from the trailer callback.
+                if (future.isDone()) {
+                    return;
+                }
             }
         }
 
@@ -92,6 +139,10 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         if (!abort && (buf.isReadable() || last)) {
             HttpResponseBodyPart bodyPart = config.getResponseBodyPartFactory().newResponseBodyPart(buf, last);
             abort = handler.onBodyPartReceived(bodyPart) == State.ABORT;
+            // cancel() may have completed the future inline from the handler callback.
+            if (future.isDone()) {
+                return;
+            }
         }
 
         if (abort || last) {

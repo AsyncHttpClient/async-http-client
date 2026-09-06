@@ -383,6 +383,10 @@ public interface AsyncHttpClientConfig {
     }
 
     /**
+     * This is also the per-stream flow-control bound for response data queued while a
+     * {@link ResponseBodyControl} is suspended. Aggregate queued data can scale with the number of concurrent suspended
+     * streams; use {@link #getHttp2MaxConcurrentStreams()} to bound that concurrency.
+     *
      * @return the HTTP/2 initial window size in bytes, defaults to 16777216 (16 MiB)
      */
     default int getHttp2InitialWindowSize() {
@@ -411,6 +415,9 @@ public interface AsyncHttpClientConfig {
     }
 
     /**
+     * This setting can be combined with {@link #getHttp2InitialWindowSize()} to bound response data queued for
+     * concurrently suspended HTTP/2 streams.
+     *
      * @return the HTTP/2 max concurrent streams per connection, -1 means unlimited (server-controlled)
      */
     default int getHttp2MaxConcurrentStreams() {

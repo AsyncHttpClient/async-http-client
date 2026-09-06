@@ -59,6 +59,7 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.TransferCompletionHandler;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.SimpleFutureListener;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -1585,6 +1586,7 @@ public final class NettyRequestSender {
         future.setProxyServer(getProxyServer(config, newRequest));
         future.setTargetRequest(newRequest);
 
+        NettyResponseBodyControl.complete(future);
         if (channel instanceof Http2StreamChannel) {
             Channels.setDiscard(channel);
             channelManager.closeChannel(channel);

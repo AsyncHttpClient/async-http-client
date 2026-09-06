@@ -17,14 +17,22 @@ package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.Timeout;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.StringBuilderPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 
 public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimeoutTimerTask.class);
+
     private final long readTimeout;
+    private final AtomicBoolean indefiniteSuspensionWarningLogged = new AtomicBoolean();
 
     ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder, long readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
@@ -51,6 +59,13 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
             return;
         }
 
+        if (NettyResponseBodyControl.isSuspended(nettyResponseFuture)) {
+            warnIfIndefinitelySuspended();
+            done.set(false);
+            timeoutsHolder.startReadTimeout(this);
+            return;
+        }
+
         long now = unpreciseMillisTime();
 
         long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
@@ -69,6 +84,15 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
         } else {
             done.set(false);
             timeoutsHolder.startReadTimeout(this);
+        }
+    }
+
+    void warnIfIndefinitelySuspended() {
+        if (timeoutsHolder.isRequestTimeoutDisabled()
+                && indefiniteSuspensionWarningLogged.compareAndSet(false, true)) {
+            LOGGER.warn("Response body reads for {} remain suspended while the request timeout is disabled; "
+                            + "the exchange retains its transport resources until it is resumed or canceled",
+                    nettyResponseFuture.getUri());
         }
     }
 }

@@ -47,8 +47,8 @@
         <netty.version>4.2.17.Final</netty.version>
         <brotli4j.version>1.23.0</brotli4j.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <zstd-jni.version>1.5.7-12</zstd-jni.version>
-        <logback.version>1.6.1</logback.version>
+        <zstd-jni.version>1.5.7-15</zstd-jni.version>
+        <logback.version>1.6.3</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <testcontainers.version>2.0.5</testcontainers.version>
 

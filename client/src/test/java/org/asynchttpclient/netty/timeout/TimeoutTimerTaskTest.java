@@ -15,16 +15,26 @@
  */
 package org.asynchttpclient.netty.timeout;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TimeoutTimerTaskTest {
@@ -83,5 +93,63 @@ public class TimeoutTimerTaskTest {
         StringBuilder sb = new StringBuilder();
         task.appendRemoteAddress(sb);
         assertTrue(sb.toString().contains(":8080"), sb.toString());
+    }
+
+    @Test
+    public void cancelledHolderCleansReschedulingReadTimeout() {
+        Request request = new RequestBuilder().setUrl("http://example.com").build();
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
+            @Override
+            public Object onCompleted(org.asynchttpclient.Response response) {
+                return null;
+            }
+        }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(
+                null, future, null, new DefaultAsyncHttpClientConfig.Builder().build(), null);
+        ReadTimeoutTimerTask task = new ReadTimeoutTimerTask(future, null, timeoutsHolder, 1_000);
+
+        // Model cancel() racing after run() marked the task done but before it tries to reschedule itself.
+        task.done.set(true);
+        timeoutsHolder.cancel();
+        task.done.set(false);
+        timeoutsHolder.startReadTimeout(task);
+
+        assertNull(task.nettyResponseFuture);
+        assertTrue(task.done.get());
+    }
+
+    @Test
+    public void indefiniteSuspensionLogsOneWarning() {
+        Request request = new RequestBuilder().setUrl("http://example.com").build();
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
+            @Override
+            public Object onCompleted(org.asynchttpclient.Response response) {
+                return null;
+            }
+        }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
+        AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setReadTimeout(Duration.ofSeconds(1))
+                .setRequestTimeout(Duration.ofMillis(-1))
+                .build();
+        TimeoutsHolder timeoutsHolder = new TimeoutsHolder(null, future, null, config, null);
+        ReadTimeoutTimerTask task = new ReadTimeoutTimerTask(future, null, timeoutsHolder, 1_000);
+
+        Logger logger = (Logger) LoggerFactory.getLogger(ReadTimeoutTimerTask.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            task.warnIfIndefinitelySuspended();
+            task.warnIfIndefinitelySuspended();
+
+            List<ILoggingEvent> warnings = appender.list.stream()
+                    .filter(event -> event.getLevel() == Level.WARN)
+                    .collect(java.util.stream.Collectors.toList());
+            assertEquals(1, warnings.size());
+            assertTrue(warnings.get(0).getFormattedMessage().contains("request timeout is disabled"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
 }

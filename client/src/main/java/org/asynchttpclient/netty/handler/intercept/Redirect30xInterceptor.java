@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http2.Http2StreamChannel;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -32,11 +33,16 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
 import org.asynchttpclient.netty.request.NettyRequestSender;
-import io.netty.handler.codec.http2.Http2StreamChannel;
+import org.asynchttpclient.request.body.generator.FileBodyGenerator;
+import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.asynchttpclient.request.body.multipart.InputStreamPart;
+import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,13 +56,13 @@ import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.Methods.HEAD;
 import static org.asynchttpclient.util.HttpConstants.Methods.OPTIONS;
+import static org.asynchttpclient.util.HttpConstants.Methods.QUERY;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.FOUND_302;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.MOVED_PERMANENTLY_301;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.PERMANENT_REDIRECT_308;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.SEE_OTHER_303;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.TEMPORARY_REDIRECT_307;
 import static org.asynchttpclient.util.HttpUtils.followRedirect;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 public class Redirect30xInterceptor {
@@ -111,11 +117,20 @@ public class Redirect30xInterceptor {
                 future.setScramContext(null);
 
                 String originalMethod = request.getMethod();
-                boolean switchToGet = !originalMethod.equals(GET) &&
-                        !originalMethod.equals(OPTIONS) &&
-                        !originalMethod.equals(HEAD) &&
-                        (statusCode == MOVED_PERMANENTLY_301 || statusCode == SEE_OTHER_303 || statusCode == FOUND_302 && !config.isStrict302Handling());
-                boolean keepBody = statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 || statusCode == FOUND_302 && config.isStrict302Handling();
+                boolean isQuery = QUERY.equals(originalMethod);
+                boolean methodAlreadyPreserved = originalMethod.equals(GET) ||
+                        originalMethod.equals(OPTIONS) || originalMethod.equals(HEAD);
+                boolean strict302 = statusCode == FOUND_302 && config.isStrict302Handling();
+                // RFC 10008 section 2.5 excludes QUERY from the legacy POST-to-GET behavior.
+                boolean queryRedirect = isQuery &&
+                        (statusCode == MOVED_PERMANENTLY_301 || statusCode == FOUND_302);
+                boolean legacyRedirectToGet = statusCode == MOVED_PERMANENTLY_301 ||
+                        (statusCode == FOUND_302 && !strict302);
+                boolean switchToGet = !methodAlreadyPreserved &&
+                        (statusCode == SEE_OTHER_303 || (!isQuery && legacyRedirectToGet));
+                boolean keepBody = queryRedirect ||
+                        statusCode == TEMPORARY_REDIRECT_307 || statusCode == PERMANENT_REDIRECT_308 ||
+                        strict302;
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(LOCATION);
@@ -132,13 +147,28 @@ public class Redirect30xInterceptor {
                     LOGGER.debug("Stripping credentials on redirect to {}", newUri);
                 }
 
-                final RequestBuilder requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
-                        .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
+                final RequestBuilder requestBuilder;
+                if (keepBody) {
+                    ensureBodyReplayable(request);
+                    requestBuilder = request.toBuilder();
+                    if (!sameBase) {
+                        // An explicitly resolved address and virtual host belong to the previous target.
+                        requestBuilder.setAddress(null);
+                        requestBuilder.setVirtualHost(null);
+                    }
+                } else {
+                    requestBuilder = new RequestBuilder(switchToGet ? GET : originalMethod)
+                            .setChannelPoolPartitioning(request.getChannelPoolPartitioning())
+                            .setLocalAddress(request.getLocalAddress())
+                            .setNameResolver(request.getNameResolver())
+                            .setProxyServer(request.getProxyServer())
+                            .setRangeOffset(request.getRangeOffset());
+                }
+
+                requestBuilder.setMethod(switchToGet ? GET : originalMethod)
                         .setFollowRedirect(true)
-                        .setLocalAddress(request.getLocalAddress())
-                        .setNameResolver(request.getNameResolver())
-                        .setProxyServer(request.getProxyServer())
                         .setRealm(stripAuth ? null : request.getRealm())
+                        .setHeaders(propagatedHeaders(request, realm, keepBody, stripAuth))
                         .setRequestTimeout(request.getRequestTimeout())
                         .setReadTimeout(request.getReadTimeout());
 
@@ -154,26 +184,9 @@ public class Redirect30xInterceptor {
                 if (stripAuth) {
                     future.setRealm(null);
                     future.setProxyRealm(null);
+                    // Request.toBuilder copies Cookie objects separately from the Cookie header.
+                    requestBuilder.resetCookies();
                 }
-
-                if (keepBody) {
-                    requestBuilder.setCharset(request.getCharset());
-                    if (isNonEmpty(request.getFormParams())) {
-                        requestBuilder.setFormParams(request.getFormParams());
-                    } else if (request.getStringData() != null) {
-                        requestBuilder.setBody(request.getStringData());
-                    } else if (request.getByteData() != null) {
-                        requestBuilder.setBody(request.getByteData());
-                    } else if (request.getByteBufferData() != null) {
-                        requestBuilder.setBody(request.getByteBufferData());
-                    } else if (request.getBodyGenerator() != null) {
-                        requestBuilder.setBody(request.getBodyGenerator());
-                    } else if (isNonEmpty(request.getBodyParts())) {
-                        requestBuilder.setBodyParts(request.getBodyParts());
-                    }
-                }
-
-                requestBuilder.setHeaders(propagatedHeaders(request, realm, keepBody, stripAuth));
 
                 // in case of a redirect from HTTP to HTTPS, future
                 // attributes might change
@@ -192,7 +205,7 @@ public class Redirect30xInterceptor {
                     }
                 }
 
-                if (sameBase) {
+                if (sameBase && !keepBody) {
                     // we can only assume the virtual host is still valid if the baseUrl is the same
                     requestBuilder.setVirtualHost(request.getVirtualHost());
                 }
@@ -229,10 +242,76 @@ public class Redirect30xInterceptor {
         return false;
     }
 
+    private static void ensureBodyReplayable(Request request) throws IOException {
+        for (Part part : request.getBodyParts()) {
+            if (part instanceof InputStreamPart) {
+                throw new IOException("Multipart InputStream body part '" + part.getName()
+                        + "' cannot be replayed after redirect");
+            }
+        }
+
+        File file = selectedBodyFile(request);
+        if (file != null && !file.isFile()) {
+            throw new IOException("Redirect request body file " + file.getAbsolutePath()
+                    + " is not a file or does not exist");
+        }
+    }
+
+    private static File selectedBodyFile(Request request) {
+        // Keep this precedence aligned with NettyRequestFactory.body. A File can remain set alongside a
+        // higher-priority representation, so only validate it when the original request actually sent it.
+        if (hasBodyBeforeFile(request)) {
+            return null;
+        }
+        if (request.getFile() != null) {
+            return request.getFile();
+        }
+        return request.getBodyGenerator() instanceof FileBodyGenerator
+                ? ((FileBodyGenerator) request.getBodyGenerator()).getFile()
+                : null;
+    }
+
+    private static boolean hasBodyBeforeFile(Request request) {
+        return hasBodyBeforeStream(request)
+                || request.getStreamData() != null
+                || !request.getFormParams().isEmpty()
+                || !request.getBodyParts().isEmpty();
+    }
+
+    private static boolean hasBodyBeforeStream(Request request) {
+        return request.getByteData() != null
+                || request.getCompositeByteData() != null
+                || request.getStringData() != null
+                || request.getByteBufferData() != null
+                || request.getByteBufData() != null;
+    }
+
+    private static boolean selectedBodyHasUnknownLength(Request request) {
+        if (hasBodyBeforeStream(request)) {
+            return false;
+        }
+        if (request.getStreamData() != null) {
+            return true;
+        }
+        if (!request.getFormParams().isEmpty()
+                || !request.getBodyParts().isEmpty()
+                || request.getFile() != null) {
+            return false;
+        }
+        if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+            return ((InputStreamBodyGenerator) request.getBodyGenerator()).getContentLength() < 0;
+        }
+        return request.getBodyGenerator() != null
+                && !(request.getBodyGenerator() instanceof FileBodyGenerator);
+    }
+
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
-        HttpHeaders headers = request.getHeaders()
-                .remove(HOST)
-                .remove(CONTENT_LENGTH);
+        HttpHeaders headers = request.getHeaders().copy().remove(HOST);
+
+        // Preserve an explicit length when the selected stream representation cannot rebuild it.
+        if (!keepBody || !selectedBodyHasUnknownLength(request)) {
+            headers.remove(CONTENT_LENGTH);
+        }
 
         if (!keepBody) {
             headers.remove(CONTENT_TYPE);

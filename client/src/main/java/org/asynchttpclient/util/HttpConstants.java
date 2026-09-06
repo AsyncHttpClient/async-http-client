@@ -33,6 +33,7 @@ public final class HttpConstants {
         public static final String PATCH = HttpMethod.PATCH.name();
         public static final String POST = HttpMethod.POST.name();
         public static final String PUT = HttpMethod.PUT.name();
+        public static final String QUERY = HttpMethod.QUERY.name();
         public static final String TRACE = HttpMethod.TRACE.name();
 
         private Methods() {

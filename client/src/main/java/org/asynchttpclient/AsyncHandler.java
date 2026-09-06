@@ -34,6 +34,7 @@ import java.util.concurrent.Future;
  * <ol>
  * <li>{@link #onStatusReceived(HttpResponseStatus)},</li>
  * <li>{@link #onHeadersReceived(HttpHeaders)},</li>
+ * <li>{@link #onResponseBodyStart(ResponseBodyControl)},</li>
  * <li>{@link #onBodyPartReceived(HttpResponseBodyPart)}, which could be invoked multiple times,</li>
  * <li>{@link #onTrailingHeadersReceived(HttpHeaders)}, which is only invoked if trailing HTTP headers are received</li>
  * <li>{@link #onCompleted()}, once the response has been fully read.</li>
@@ -78,6 +79,23 @@ public interface AsyncHandler<T> {
      * @throws Exception if something wrong happens
      */
     State onHeadersReceived(HttpHeaders headers) throws Exception;
+
+    /**
+     * Invoked after the final response headers and before any response body parts are delivered. The supplied control
+     * can suspend and resume transport reads, or cancel the response body. This callback is also invoked for responses
+     * that have no body. Return {@link State#ABORT} to stop processing from this callback; retain the control and call
+     * {@link ResponseBodyControl#cancel()} to stop processing asynchronously after this callback returns.
+     * If the final headers also end the response, suspending cannot defer completion: the control becomes inactive when
+     * this callback returns and later calls have no effect.
+     *
+     * @param control control for this response body.
+     * @return a {@link State} telling to CONTINUE or ABORT the current processing.
+     * @throws Exception if something wrong happens
+     * @since 3.0.14
+     */
+    default State onResponseBodyStart(ResponseBodyControl control) throws Exception {
+        return State.CONTINUE;
+    }
 
     /**
      * Invoked as soon as some response body part are received. Could be invoked many times.

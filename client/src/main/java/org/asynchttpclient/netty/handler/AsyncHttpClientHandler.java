@@ -24,6 +24,7 @@ import io.netty.util.ReferenceCountUtil;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.exception.ChannelClosedException;
 import org.asynchttpclient.netty.DiscardEvent;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.ChannelManager;
@@ -86,14 +87,19 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        Object attribute = Channels.getAttribute(channel);
+        NettyResponseFuture<?> controlFuture = responseFuture(attribute);
+        if (controlFuture != null) {
+            NettyResponseBodyControl.discardForChannelClose(controlFuture, channel);
+        }
+
         if (requestSender.isClosed()) {
             return;
         }
 
-        Channel channel = ctx.channel();
         channelManager.removeAll(channel);
 
-        Object attribute = Channels.getAttribute(channel);
         logger.debug("Channel Closed: {} with attribute {}", channel, attribute);
         if (attribute instanceof OnLastHttpContentCallback) {
             OnLastHttpContentCallback callback = (OnLastHttpContentCallback) attribute;
@@ -111,6 +117,16 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
             handleChannelInactive(future);
             requestSender.handleUnexpectedClosedChannel(channel, future);
         }
+    }
+
+    private static NettyResponseFuture<?> responseFuture(Object attribute) {
+        if (attribute instanceof NettyResponseFuture<?>) {
+            return (NettyResponseFuture<?>) attribute;
+        }
+        if (attribute instanceof OnLastHttpContentCallback) {
+            return ((OnLastHttpContentCallback) attribute).future();
+        }
+        return null;
     }
 
     @Override
@@ -138,6 +154,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
                     if (hasIOExceptionFilters) {
                         if (!requestSender.applyIoExceptionFiltersAndReplayRequest(future, ChannelClosedException.INSTANCE, channel)) {
                             // Close the channel so the recovering can occurs.
+                            NettyResponseBodyControl.discardForChannelClose(future, channel);
                             Channels.silentlyCloseChannel(channel);
                         }
                         return;
@@ -166,6 +183,9 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
             }
         }
 
+        if (future != null) {
+            NettyResponseBodyControl.discardForChannelClose(future, channel);
+        }
         channelManager.closeChannel(channel);
         // FIXME not really sure
         // ctx.fireChannelRead(e);
@@ -179,7 +199,15 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        readIfNeeded(ctx);
+        Channel channel = ctx.channel();
+        if (channel.config().isAutoRead()) {
+            return;
+        }
+        Object attribute = Channels.getAttribute(channel);
+        if (!(attribute instanceof NettyResponseFuture<?>)
+                || !NettyResponseBodyControl.isSuspended((NettyResponseFuture<?>) attribute, channel)) {
+            ctx.read();
+        }
     }
 
     /**
@@ -196,6 +224,7 @@ public abstract class AsyncHttpClientHandler extends ChannelInboundHandlerAdapte
     }
 
     void finishUpdate(NettyResponseFuture<?> future, Channel channel, boolean close) {
+        NettyResponseBodyControl.complete(future);
         future.cancelTimeouts();
 
         if (close) {
