@@ -18,17 +18,20 @@ package org.asynchttpclient.netty.handler.intercept;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.uri.Uri;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 
 /**
@@ -47,7 +50,7 @@ final class CallerCookies {
      */
     static List<Cookie> of(Request request, HttpResponse response, CookieStore cookieStore, Uri next,
                            ClientCookieDecoder cookieDecoder) {
-        List<Cookie> cookies = request.getCookies();
+        List<Cookie> cookies = withHeaderCookies(request);
         if (cookies.isEmpty()) {
             return cookies;
         }
@@ -94,9 +97,27 @@ final class CallerCookies {
     static void refresh(RequestBuilder retry, Request request, HttpResponse response, CookieStore cookieStore,
                         ClientCookieDecoder cookieDecoder) {
         retry.setCookies(of(request, response, cookieStore, request.getUri(), cookieDecoder));
+        retry.setHeader(COOKIE, Collections.emptyList());
         for (Cookie cookie : cookieStore.get(request.getUri())) {
             retry.addCookieIfUnset(cookie);
         }
+    }
+
+    /**
+     * The request's cookies plus the pairs of a Cookie header the caller set. A hop drops the raw header and
+     * sends these instead, reconciled against the response, or the header would outrank a cookie it rotated.
+     * Only the request the caller built sends the header as written.
+     */
+    private static List<Cookie> withHeaderCookies(Request request) {
+        List<String> headers = request.getHeaders().getAll(COOKIE);
+        if (headers.isEmpty()) {
+            return request.getCookies();
+        }
+        List<Cookie> cookies = new ArrayList<>(request.getCookies());
+        for (String header : headers) {
+            cookies.addAll(ServerCookieDecoder.LAX.decodeAll(header));
+        }
+        return cookies;
     }
 
     private static boolean holdsSameValue(List<Cookie> stored, Cookie cookie) {

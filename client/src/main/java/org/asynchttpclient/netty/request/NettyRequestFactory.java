@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.util.AsciiString;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -48,9 +49,13 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
@@ -155,6 +160,76 @@ public final class NettyRequestFactory {
                 }
             }
             target.add(name, entry.getValue());
+        }
+    }
+
+    /**
+     * Adds the request's cookies to any {@code Cookie} header the caller set, instead of replacing it. Where
+     * both name one cookie the caller's wins. The caller's text is kept verbatim: a decode and re-encode would
+     * drop values the strict decoder rejects. One field only, as RFC 6265 Section 5.4 requires.
+     */
+    private void mergeCookies(List<Cookie> cookies, HttpHeaders headers) {
+        List<String> callerHeaders = headers.getAll(COOKIE);
+        if (callerHeaders.isEmpty()) {
+            if (isNonEmpty(cookies)) {
+                headers.set(COOKIE, cookieEncoder.encode(cookies));
+            }
+            return;
+        }
+        if (callerHeaders.size() == 1 && !isNonEmpty(cookies)) {
+            // Nothing to merge: leave the caller's bytes alone, unless the field is blank.
+            if (callerHeaders.get(0).trim().isEmpty()) {
+                headers.remove(COOKIE);
+            }
+            return;
+        }
+
+        StringBuilder merged = new StringBuilder();
+        Set<String> callerNames = new HashSet<>(4);
+        for (String callerHeader : callerHeaders) {
+            // Appended as one run, trimming only the delimiters at the ends so the join cannot double them.
+            int start = 0;
+            int end = callerHeader.length();
+            while (start < end && (callerHeader.charAt(start) == ';' || callerHeader.charAt(start) <= ' ')) {
+                start++;
+            }
+            while (end > start && (callerHeader.charAt(end - 1) == ';' || callerHeader.charAt(end - 1) <= ' ')) {
+                end--;
+            }
+            if (start == end) {
+                continue;
+            }
+            if (merged.length() > 0) {
+                merged.append("; ");
+            }
+            merged.append(callerHeader, start, end);
+            for (String pair : callerHeader.split(";")) {
+                int eq = pair.indexOf('=');
+                // Case-sensitive, but trimmed: "a = 1" still names "a".
+                String name = (eq >= 0 ? pair.substring(0, eq) : pair).trim();
+                if (!name.isEmpty()) {
+                    callerNames.add(name);
+                }
+            }
+        }
+
+        List<Cookie> notSetByCaller = new ArrayList<>(cookies.size());
+        for (Cookie cookie : cookies) {
+            if (!callerNames.contains(cookie.name())) {
+                notSetByCaller.add(cookie);
+            }
+        }
+        if (!notSetByCaller.isEmpty()) {
+            if (merged.length() > 0) {
+                merged.append("; ");
+            }
+            merged.append(cookieEncoder.encode(notSetByCaller));
+        }
+
+        if (merged.length() == 0) {
+            headers.remove(COOKIE);
+        } else {
+            headers.set(COOKIE, merged.toString());
         }
     }
 
@@ -277,9 +352,8 @@ public final class NettyRequestFactory {
             // assign headers as configured on request
             copyInternedHeaders(request.getHeaders(), headers);
 
-            if (isNonEmpty(request.getCookies())) {
-                headers.set(COOKIE, cookieEncoder.encode(request.getCookies()));
-            }
+            // Unconditional: it also folds several caller-set Cookie fields into one.
+            mergeCookies(request.getCookies(), headers);
 
             String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
             if (userDefinedAcceptEncoding != null) {

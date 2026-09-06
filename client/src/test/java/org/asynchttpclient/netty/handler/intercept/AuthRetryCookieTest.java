@@ -75,6 +75,18 @@ public class AuthRetryCookieTest extends AbstractBasicTest {
         assertEquals(new HashSet<>(Arrays.asList("X=1", "SID=new")), cookiesOnRetry(new DefaultCookie("X", "1")));
     }
 
+    /** A caller-set Cookie header is the caller's too, but it must not outrank what the challenge rotated. */
+    @Test
+    void aCallerSetCookieHeaderDoesNotOutrankTheSessionTheChallengeSet() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            String header = client.prepareGet(url("/protected"))
+                    .setRealm(basicAuthRealm("user", "pass").setUsePreemptiveAuth(false))
+                    .setHeader("Cookie", "SID=old; X=1")
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS).getHeader(RECEIVED_COOKIE);
+            assertEquals(new HashSet<>(Arrays.asList("X=1", "SID=new")), new HashSet<>(Arrays.asList(header.split("; "))));
+        }
+    }
+
     private Set<String> cookiesOnRetry(DefaultCookie callerCookie) throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             client.prepareGet(url("/seed")).execute().get(TIMEOUT, TimeUnit.SECONDS);

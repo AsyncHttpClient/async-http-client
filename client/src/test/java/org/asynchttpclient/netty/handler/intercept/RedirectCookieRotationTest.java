@@ -194,6 +194,16 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
         assertEquals("SID=mine", withCallerCookie("SID", "mine", client -> client.prepareGet(url("/bounce"))));
     }
 
+    /** A caller-set Cookie header is the caller's too, but it must not outrank what the redirect rotated. */
+    @Test
+    void aCallerSetCookieHeaderDoesNotOutrankTheSessionTheRedirectRotated() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true))) {
+            String received = client.prepareGet(url("/login")).setHeader("Cookie", "SID=old; X=1")
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS).getHeader(RECEIVED_COOKIE);
+            assertEquals(new HashSet<>(Arrays.asList("X=1", "SID=new")), cookiesSent(received));
+        }
+    }
+
     /** A Set-Cookie the store refused, or filed for another path, does not replace the caller's cookie. */
     @Test
     void aSetCookieThatDoesNotReachTheNextHopLeavesTheCallersCookie() throws Exception {
