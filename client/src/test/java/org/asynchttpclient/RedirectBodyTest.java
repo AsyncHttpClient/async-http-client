@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
@@ -45,10 +46,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -76,6 +80,10 @@ public class RedirectBodyTest extends AbstractBasicTest {
     private static volatile String receivedContentType;
     private static volatile String receivedMethod;
     private static volatile Path fileToDeleteBeforeRedirect;
+    private static final AtomicInteger deferredStreamReads = new AtomicInteger();
+    private static volatile int streamReadsBeforeRedirect;
+    private static volatile long bodyBytesBeforeRedirect;
+    private static volatile boolean expectingContinueBeforeRedirect;
 
     @BeforeEach
     public void setUp() {
@@ -85,6 +93,10 @@ public class RedirectBodyTest extends AbstractBasicTest {
         receivedContentType = null;
         receivedMethod = null;
         fileToDeleteBeforeRedirect = null;
+        deferredStreamReads.set(0);
+        streamReadsBeforeRedirect = -1;
+        bodyBytesBeforeRedirect = -1;
+        expectingContinueBeforeRedirect = false;
     }
 
     @Override
@@ -92,6 +104,19 @@ public class RedirectBodyTest extends AbstractBasicTest {
         return new AbstractHandler() {
             @Override
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
+                if (pathInContext.endsWith("/deferred-redirect")) {
+                    streamReadsBeforeRedirect = deferredStreamReads.get();
+                    bodyBytesBeforeRedirect = request.getHttpInput().getContentReceived();
+                    expectingContinueBeforeRedirect = request.getHttpChannel().isExpecting100Continue();
+                    // Reading the request input here would trigger Jetty's automatic 100 Continue.
+                    httpResponse.setStatus(307);
+                    httpResponse.setContentLength(0);
+                    httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
+                    httpResponse.setHeader(CONNECTION.toString(), "close");
+                    request.setHandled(true);
+                    httpResponse.flushBuffer();
+                    return;
+                }
 
                 byte[] body = IOUtils.toByteArray(request.getInputStream());
                 receivedContentLengths.add(String.valueOf(httpRequest.getHeader(CONTENT_LENGTH.toString())));
@@ -309,6 +334,54 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
             assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
+        }
+    }
+
+    @ParameterizedTest(name = "307 before 100 Continue keeps an untouched stream (generator={0})")
+    @ValueSource(booleans = {false, true})
+    public void deferredInputStream307KeepsBody(boolean useBodyGenerator) throws Exception {
+        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public int read() throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read();
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read(bytes, offset, length);
+            }
+
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            BoundRequestBuilder builder = c.preparePut(getTargetUrl() + "/deferred-redirect")
+                    .setHeader(EXPECT, "100-continue")
+                    .setHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
+                    .setHeader(CONTENT_LENGTH, REDIRECT_BODY.length);
+            if (useBodyGenerator) {
+                builder.setBody(new InputStreamBodyGenerator(body));
+            } else {
+                builder.setBody(body);
+            }
+
+            Response response = builder.execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertTrue(expectingContinueBeforeRedirect);
+            assertEquals(0, streamReadsBeforeRedirect);
+            assertEquals(0, bodyBytesBeforeRedirect);
+            assertArrayEquals(REDIRECT_BODY, receivedBody);
+            assertEquals("PUT", receivedMethod);
+            assertRedirectBody(response);
         }
     }
 

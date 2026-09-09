@@ -147,7 +147,7 @@ public class Redirect30xInterceptor {
 
                 final RequestBuilder requestBuilder;
                 if (keepBody) {
-                    ensureBodyReplayable(request);
+                    ensureBodyReplayable(request, future.isStreamConsumed());
                     requestBuilder = request.toBuilder();
                     if (!sameBase) {
                         // An explicitly resolved address and virtual host belong to the previous target.
@@ -240,7 +240,7 @@ public class Redirect30xInterceptor {
         return false;
     }
 
-    private static void ensureBodyReplayable(Request request) throws IOException {
+    private static void ensureBodyReplayable(Request request, boolean streamConsumed) throws IOException {
         BodyRepresentation bodyRepresentation = selectedBodyRepresentation(request);
         if (bodyRepresentation == BodyRepresentation.BODY_PARTS) {
             for (Part part : request.getBodyParts()) {
@@ -268,7 +268,9 @@ public class Redirect30xInterceptor {
         } else if (bodyRepresentation == BodyRepresentation.INPUT_STREAM_BODY_GENERATOR) {
             inputStream = ((InputStreamBodyGenerator) request.getBodyGenerator()).getInputStream();
         }
-        if (inputStream != null && !inputStream.markSupported()) {
+        // NettyInputStreamBody alone tracks consumption; multipart must not use this flag.
+        // An early redirect before 100 Continue leaves the stream available for its first write.
+        if (streamConsumed && inputStream != null && !inputStream.markSupported()) {
             throw new IOException("Redirect request body InputStream does not support mark/reset"
                     + " and cannot be replayed");
         }
@@ -276,7 +278,7 @@ public class Redirect30xInterceptor {
 
     private static BodyRepresentation selectedBodyRepresentation(Request request) {
         // Keep this precedence aligned with NettyRequestFactory.body. Some setters leave lower-priority
-        // representations in place, so redirect validation must inspect only the body that was sent.
+        // representations in place, so validate only the body selected for transmission.
         if (request.getByteData() != null) {
             return BodyRepresentation.BYTE_DATA;
         }
