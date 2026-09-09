@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
@@ -45,13 +46,17 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.netty.handler.intercept.Redirect30xInterceptor.REDIRECT_STATUSES;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.Methods.POST;
 import static org.asynchttpclient.util.HttpConstants.Methods.QUERY;
@@ -66,20 +71,32 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
     private static final byte[] REDIRECT_BODY = "redirect body".getBytes(UTF_8);
     private static final String CONTENT_TYPE_VALUE = "application/octet-stream";
+    private static final String NON_REPLAYABLE_STREAM_MESSAGE =
+            "Redirect request body InputStream does not support mark/reset and cannot be replayed";
 
     private static final List<String> receivedContentLengths = new CopyOnWriteArrayList<>();
     private static volatile boolean redirectAlreadyPerformed;
+    private static volatile byte[] receivedBody;
     private static volatile String receivedContentType;
     private static volatile String receivedMethod;
     private static volatile Path fileToDeleteBeforeRedirect;
+    private static final AtomicInteger deferredStreamReads = new AtomicInteger();
+    private static volatile int streamReadsBeforeRedirect;
+    private static volatile long bodyBytesBeforeRedirect;
+    private static volatile boolean expectingContinueBeforeRedirect;
 
     @BeforeEach
     public void setUp() {
         receivedContentLengths.clear();
         redirectAlreadyPerformed = false;
+        receivedBody = null;
         receivedContentType = null;
         receivedMethod = null;
         fileToDeleteBeforeRedirect = null;
+        deferredStreamReads.set(0);
+        streamReadsBeforeRedirect = -1;
+        bodyBytesBeforeRedirect = -1;
+        expectingContinueBeforeRedirect = false;
     }
 
     @Override
@@ -87,6 +104,19 @@ public class RedirectBodyTest extends AbstractBasicTest {
         return new AbstractHandler() {
             @Override
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
+                if (pathInContext.endsWith("/deferred-redirect")) {
+                    streamReadsBeforeRedirect = deferredStreamReads.get();
+                    bodyBytesBeforeRedirect = request.getHttpInput().getContentReceived();
+                    expectingContinueBeforeRedirect = request.getHttpChannel().isExpecting100Continue();
+                    // Reading the request input here would trigger Jetty's automatic 100 Continue.
+                    httpResponse.setStatus(307);
+                    httpResponse.setContentLength(0);
+                    httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
+                    httpResponse.setHeader(CONNECTION.toString(), "close");
+                    request.setHandled(true);
+                    httpResponse.flushBuffer();
+                    return;
+                }
 
                 byte[] body = IOUtils.toByteArray(request.getInputStream());
                 receivedContentLengths.add(String.valueOf(httpRequest.getHeader(CONTENT_LENGTH.toString())));
@@ -101,6 +131,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
 
                 } else {
+                    receivedBody = body;
                     receivedContentType = request.getContentType();
                     receivedMethod = request.getMethod();
                     httpResponse.setStatus(200);
@@ -276,34 +307,158 @@ public class RedirectBodyTest extends AbstractBasicTest {
                             .get(TIMEOUT, TimeUnit.SECONDS));
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                    cause.getMessage());
+            assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
         }
     }
 
-    @ParameterizedTest(name = "{0} on {1} keeps the existing GET rewrite")
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void put301WithNonRepeatableBodyGeneratorFailsPromptly() throws Exception {
+        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            ExecutionException thrown = assertThrows(ExecutionException.class,
+                    () -> c.preparePut(getTargetUrl())
+                            .setBody(new InputStreamBodyGenerator(body))
+                            .setHeader("X-REDIRECT", "301")
+                            .execute()
+                            .get(TIMEOUT, TimeUnit.SECONDS));
+
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
+        }
+    }
+
+    @ParameterizedTest(name = "307 before 100 Continue keeps an untouched stream (generator={0})")
+    @ValueSource(booleans = {false, true})
+    public void deferredInputStream307KeepsBody(boolean useBodyGenerator) throws Exception {
+        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public int read() throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read();
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read(bytes, offset, length);
+            }
+
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            BoundRequestBuilder builder = c.preparePut(getTargetUrl() + "/deferred-redirect")
+                    .setHeader(EXPECT, "100-continue")
+                    .setHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
+                    .setHeader(CONTENT_LENGTH, REDIRECT_BODY.length);
+            if (useBodyGenerator) {
+                builder.setBody(new InputStreamBodyGenerator(body));
+            } else {
+                builder.setBody(body);
+            }
+
+            Response response = builder.execute().get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertTrue(expectingContinueBeforeRedirect);
+            assertEquals(0, streamReadsBeforeRedirect);
+            assertEquals(0, bodyBytesBeforeRedirect);
+            assertArrayEquals(REDIRECT_BODY, receivedBody);
+            assertEquals("PUT", receivedMethod);
+            assertRedirectBody(response);
+        }
+    }
+
+    @ParameterizedTest(name = "{0} on {1} keeps its method and body")
     @CsvSource({
             "PUT, 301",
             "PUT, 302",
             "PATCH, 301",
             "PATCH, 302",
             "DELETE, 301",
-            "DELETE, 302"
+            "DELETE, 302",
+            "CUSTOM, 301",
+            "CUSTOM, 302",
+            "GET, 301",
+            "GET, 302",
+            "HEAD, 301",
+            "HEAD, 302",
+            "OPTIONS, 301",
+            "OPTIONS, 302"
     })
-    public void putPatchAndDelete301And302KeepExistingBehavior(String method, int statusCode) throws Exception {
+    public void nonPost301And302KeepMethodAndBody(String method, int statusCode) throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
             String contentType = "text/plain; charset=UTF-8";
 
-            Response response = c.prepare(method, getTargetUrl())
+            c.prepare(method, getTargetUrl())
                     .setHeader(CONTENT_TYPE, contentType)
                     .setBody(body)
                     .setHeader("X-REDIRECT", Integer.toString(statusCode))
                     .execute()
                     .get(TIMEOUT, TimeUnit.SECONDS);
-            assertEquals("", response.getResponseBody());
-            assertEquals(GET, receivedMethod);
-            assertNull(receivedContentType);
+            assertArrayEquals(body.getBytes(UTF_8), receivedBody);
+            assertEquals(method, receivedMethod);
+            assertEquals(contentType, receivedContentType);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void put301AcrossDifferentHostsKeepsMethodAndBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
+            String originalUrl = getTargetUrl().replace("localhost", "127.0.0.1");
+
+            c.preparePut(originalUrl)
+                    .setHeader(CONTENT_TYPE, contentType)
+                    .setBody(body)
+                    .setHeader("X-REDIRECT", "301")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+            assertArrayEquals(body.getBytes(UTF_8), receivedBody);
+            assertEquals("PUT", receivedMethod);
+            assertEquals(contentType, receivedContentType);
+        }
+    }
+
+    @ParameterizedTest(name = "{0} on caller-added 300 keeps its method and body")
+    @CsvSource({"POST", "PUT"})
+    public void callerAddedRedirectStatusKeepsMethodAndBody(String method) throws Exception {
+        boolean added = REDIRECT_STATUSES.add(300);
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            String body = "hello there";
+            String contentType = "text/plain; charset=UTF-8";
+
+            c.prepare(method, getTargetUrl())
+                    .setHeader(CONTENT_TYPE, contentType)
+                    .setBody(body)
+                    .setHeader("X-REDIRECT", "300")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+            assertArrayEquals(body.getBytes(UTF_8), receivedBody);
+            assertEquals(method, receivedMethod);
+            assertEquals(contentType, receivedContentType);
+        } finally {
+            if (added) {
+                REDIRECT_STATUSES.remove(300);
+            }
         }
     }
 
@@ -447,8 +602,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-            assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                    cause.getMessage());
+            assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
         }
     }
 
@@ -463,8 +617,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
                         () -> execute307(c.preparePost(getTargetUrl()).setBody(body)));
 
                 IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-                assertEquals("HTTP/1 request body InputStream already consumed and cannot be reset for a retry",
-                        cause.getMessage());
+                assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
             }
         } finally {
             Files.deleteIfExists(bodyFile);
@@ -524,6 +677,19 @@ public class RedirectBodyTest extends AbstractBasicTest {
             }
         } finally {
             Files.deleteIfExists(file);
+        }
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void coexistingMultipartStreamAndByteArray307UsesByteArray() throws Exception {
+        try (InputStream unusedPart = new ByteArrayInputStream("unused part".getBytes(UTF_8));
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = execute307(c.preparePost(getTargetUrl())
+                    .setBody(REDIRECT_BODY)
+                    .setBodyParts(List.of(new InputStreamPart("file", unusedPart, "unused.bin",
+                            "unused part".length(), CONTENT_TYPE_VALUE))));
+
+            assertRedirectBody(response);
         }
     }
 
