@@ -252,7 +252,7 @@
                 <jdk>[17,)</jdk>
             </activation>
             <properties>
-                <tomcat.version>11.0.18</tomcat.version>
+                <tomcat.version>11.0.25</tomcat.version>
             </properties>
         </profile>
         <profile>
