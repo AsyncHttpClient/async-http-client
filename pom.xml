@@ -44,10 +44,10 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.2.17.Final</netty.version>
+        <netty.version>4.2.18.Final</netty.version>
         <brotli4j.version>1.23.0</brotli4j.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <zstd-jni.version>1.5.7-15</zstd-jni.version>
+        <zstd-jni.version>1.5.7-16</zstd-jni.version>
         <logback.version>1.6.3</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <testcontainers.version>2.0.5</testcontainers.version>
@@ -550,7 +550,7 @@
                 <jdk>[17,)</jdk>
             </activation>
             <properties>
-                <junit-bom.version>6.0.3</junit-bom.version>
+                <junit-bom.version>6.1.3</junit-bom.version>
             </properties>
         </profile>
 
