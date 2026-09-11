@@ -1029,10 +1029,17 @@ public class ChannelManager {
     }
 
     /**
-     * Checks whether the given channel is an HTTP/2 connection (i.e. has the HTTP/2 multiplex handler installed).
+     * Checks whether the given channel is an HTTP/2 connection: the parent that multiplexes streams, not one of
+     * its stream children, which carry neither the multiplex handler nor connection state of their own.
+     * <p>
+     * Answered from the {@link Http2ConnectionState} attached to the connection rather than by looking
+     * {@link #HTTP2_MULTIPLEX} up in the pipeline. The two are attached together, in
+     * {@link #upgradePipelineToHttp2}, and neither is ever taken away, so they say the same thing; but a
+     * pipeline lookup compares handler names down the chain, and an HTTP/1.1 connection, which has no such
+     * handler, is walked to the end to say no. The write path asks this of every request.
      */
     public static boolean isHttp2(Channel channel) {
-        return channel.pipeline().get(HTTP2_MULTIPLEX) != null;
+        return channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get() != null;
     }
 
     /**
@@ -1100,7 +1107,8 @@ public class ChannelManager {
         pipeline.addLast(HTTP2_FRAME_CODEC, frameCodec);
         pipeline.addLast(HTTP2_MULTIPLEX, multiplexHandler);
 
-        // Attach HTTP/2 connection state for MAX_CONCURRENT_STREAMS tracking and GOAWAY draining
+        // Attach HTTP/2 connection state for MAX_CONCURRENT_STREAMS tracking and GOAWAY draining. Its
+        // presence is also what marks the connection as HTTP/2; see isHttp2.
         Http2ConnectionState state = new Http2ConnectionState();
         int configMaxStreams = config.getHttp2MaxConcurrentStreams();
         if (configMaxStreams > 0) {
