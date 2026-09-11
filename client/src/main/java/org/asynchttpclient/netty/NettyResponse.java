@@ -51,6 +51,8 @@ import static org.asynchttpclient.util.MiscUtils.withDefault;
  */
 public class NettyResponse implements Response {
 
+    private static final byte[] EMPTY_BODY = new byte[0];
+
     private final List<HttpResponseBodyPart> bodyParts;
     private final HttpHeaders headers;
     private final HttpResponseStatus status;
@@ -193,6 +195,20 @@ public class NettyResponse implements Response {
         return getResponseBodyAsByteBuffer().array();
     }
 
+    /**
+     * Returns a lone body part's array; concatenates into one of its own when there are several, or an empty
+     * array when there are none. Which of those a given response takes is not a property of the body: see
+     * {@link Response#getResponseBodyAsBytesView()}, whose contract is deliberately weaker than this.
+     * <p>
+     * Whether a lone part hands over storage of its own is the part's business rather than this response's.
+     * {@link EagerResponseBodyPart} returns the array it holds; {@link LazyResponseBodyPart} copies out of its
+     * buffer on every call, so a response made of lazy parts never shares whatever this says.
+     */
+    @Override
+    public byte[] getResponseBodyAsBytesView() {
+        return sharedBodyBytes();
+    }
+
     @Override
     public ByteBuffer getResponseBodyAsByteBuffer() {
 
@@ -225,12 +241,25 @@ public class NettyResponse implements Response {
     }
 
     /**
-     * The body as bytes, for callers that keep the array to themselves. A lone part's own array is returned
-     * rather than a copy of it, so a caller that let it out would let the part's buffer be mutated through it;
-     * {@link #getResponseBodyAsBytes()} is the copying variant for those. Several parts are concatenated
-     * because a multi-byte character can straddle a part boundary.
+     * The body as bytes, without a copy where there is one part to take it from. Several parts are concatenated
+     * because a multi-byte character can straddle a part boundary, which is why the string accessors cannot
+     * simply decode the first part.
+     * <p>
+     * The array does leave the client, through {@link #getResponseBodyAsBytesView()}, which is why that method
+     * documents it as read-only and names the other holders. {@link #getResponseBodyAsBytes()} stays the
+     * copying accessor for callers who want an array of their own.
+     * <p>
+     * Private, and called directly by the accessors below rather than through
+     * {@link #getResponseBodyAsBytesView()}, so that overriding the view does not silently change what this
+     * response's text says as well.
      */
     private byte[] sharedBodyBytes() {
+        if (bodyParts.isEmpty()) {
+            // A HEAD, a 204 or a 304 otherwise walks the aggregating path to allocate an empty array and a
+            // buffer to wrap it, on every call. Nothing can be written through a zero-length array, so one
+            // shared instance serves every empty body.
+            return EMPTY_BODY;
+        }
         return bodyParts.size() == 1 ? bodyParts.get(0).getBodyPartBytes() : getResponseBodyAsBytes();
     }
 

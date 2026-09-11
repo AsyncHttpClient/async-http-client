@@ -56,6 +56,39 @@ public interface Response {
     byte[] getResponseBodyAsBytes();
 
     /**
+     * Returns the entire response body as a byte array whose storage the implementation may share with whatever
+     * else holds the body.
+     *
+     * <p>The returned array must be treated as read-only, and the response is not its only holder. Where it is a
+     * body part's own array, it is the array reachable from the part handed to
+     * {@link AsyncHandler#onBodyPartReceived}, the one each
+     * {@link org.asynchttpclient.handler.TransferListener} is given by a
+     * {@link org.asynchttpclient.handler.TransferCompletionHandler}, and the one
+     * {@link #getResponseBodyAsByteBuf()} wraps. Writing to it changes what all of those see, and a write
+     * through any of them changes what this returns.
+     *
+     * <p>Whether anything is shared at all is not something to rely on. It depends on how the body happened to
+     * arrive - how the origin chunked it, whether a proxy re-chunked it, whether it was compressed - and on the
+     * body parts the implementation was given, none of which is visible from here. The same body from the
+     * same server may be shared on one response and copied on the next. No array identity is guaranteed between
+     * calls either.
+     *
+     * <p>A caller that needs an array it may modify should copy what it receives. {@link
+     * #getResponseBodyAsBytes()} is the accessor to reach for first, but it is implemented by whoever implements
+     * this interface, so read its contract rather than assuming it hands over an array of its own.
+     *
+     * <p>Implementation note: the default implementation of this method returns
+     * {@link #getResponseBodyAsBytes()}. An implementation that leaves that default in place must not implement
+     * {@code getResponseBodyAsBytes()} in terms of this method, or the two call each other. Overriding both is
+     * fine.
+     *
+     * @return the entire response body, possibly sharing storage with the response
+     */
+    default byte[] getResponseBodyAsBytesView() {
+        return getResponseBodyAsBytes();
+    }
+
+    /**
      * Return the entire response body as a ByteBuffer.
      *
      * @return the entire response body as a ByteBuffer.
