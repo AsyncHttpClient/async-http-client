@@ -253,7 +253,9 @@ public interface Response {
          * @return a {@link Response} instance
          */
         public @Nullable Response build() {
-            return status == null ? null : new NettyResponse(status, headers, bodyParts);
+            // A copy: reset() clears this list, and a builder may build more than once, so a response that held
+            // the builder's own list would lose its body or take on the next response's.
+            return status == null ? null : new NettyResponse(status, headers, new ArrayList<>(bodyParts));
         }
 
         /**
