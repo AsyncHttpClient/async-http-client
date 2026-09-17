@@ -63,15 +63,19 @@ public interface Response {
      * body part's own array, it is the array reachable from the part handed to
      * {@link AsyncHandler#onBodyPartReceived}, the one each
      * {@link org.asynchttpclient.handler.TransferListener} is given by a
-     * {@link org.asynchttpclient.handler.TransferCompletionHandler}, and the one
+     * {@link org.asynchttpclient.handler.TransferCompletionHandler}, the one
+     * {@link HttpResponseBodyPart#getBodyByteBuffer()} wraps for a
+     * {@link org.asynchttpclient.handler.resumable.ResumableListener}, and the one
      * {@link #getResponseBodyAsByteBuf()} wraps. Writing to it changes what all of those see, and a write
      * through any of them changes what this returns.
      *
      * <p>Whether anything is shared at all is not something to rely on. It depends on how the body happened to
-     * arrive - how the origin chunked it, whether a proxy re-chunked it, whether it was compressed - and on the
-     * body parts the implementation was given, none of which is visible from here. The same body from the
-     * same server may be shared on one response and copied on the next. No array identity is guaranteed between
-     * calls either.
+     * arrive - how the origin chunked it, whether a proxy re-chunked it, whether it was compressed - on how the
+     * client happened to read it off the wire, which varies with connection age and client configuration, and on
+     * the body parts the implementation was given. The same body from the same server may be shared on one
+     * response and copied on the next. Which of the two a caller gets is the peer's choice rather than the
+     * caller's, so code that writes to the array can behave one way against a friendly server and another way
+     * against a hostile one. No array identity is guaranteed between calls either.
      *
      * <p>A caller that needs an array it may modify should copy what it receives. {@link
      * #getResponseBodyAsBytes()} is the accessor to reach for first, but it is implemented by whoever implements
