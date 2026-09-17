@@ -49,7 +49,11 @@ public interface ListenableFuture<V> extends Future<V> {
     void done();
 
     /**
-     * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler} or {@link Future}
+     * Abort the current processing, and propagate the {@link Throwable} to the {@link AsyncHandler}, then to this
+     * {@link Future}. {@link AsyncHandler#onThrowable(Throwable)} returns before the future completes, so a caller
+     * released by {@link #get()} and any listener added through
+     * {@link #addListener(Runnable, java.util.concurrent.Executor)} always observes a handler that has already been
+     * notified. A handler that blocks in {@code onThrowable} therefore holds the future open.
      *
      * @param t the exception
      */
