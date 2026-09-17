@@ -19,10 +19,13 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.Response;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -32,9 +35,13 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class NettyAsyncResponseTest {
 
@@ -113,6 +120,8 @@ public class NettyAsyncResponseTest {
 
         assertEquals(expected, single.getResponseBody(StandardCharsets.UTF_8));
         assertEquals(expected, multiple.getResponseBody(StandardCharsets.UTF_8));
+        assertArrayEquals(utf8, single.getResponseBodyAsBytesView());
+        assertArrayEquals(utf8, multiple.getResponseBodyAsBytesView());
     }
 
     @Test
@@ -130,15 +139,64 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
-    public void testGetResponseBodyAsBytesDoesNotShareTheBodyPartArray() {
+    public void testGetResponseBodyAsBytesViewSharesOneEagerPart() {
+        // NettyResponse's own behaviour, not the interface contract: Response#getResponseBodyAsBytesView
+        // guarantees no identity, deliberately, because whether a body arrives as one part is not up to it.
+        // What is worth pinning here is that when this response can share, it does, and does not copy instead.
         List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
         bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello World".getBytes(StandardCharsets.UTF_8)), true));
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
 
+        byte[] view = response.getResponseBodyAsBytesView();
+        assertArrayEquals("Hello World".getBytes(StandardCharsets.UTF_8), view);
+        assertSame(bodyParts.get(0).getBodyPartBytes(), view);
+        assertSame(view, response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesDoesNotShareTheBodyPartArray() {
+        byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        // A clone into the part, so that expected stays an oracle: handing the part this very array would make
+        // it the part's own storage the moment EagerResponseBodyPart stopped copying, and a corrupt response
+        // would then satisfy both assertions below.
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(expected.clone()), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
         // getResponseBody may decode a lone part in place, but getResponseBodyAsBytes hands the array to the
         // caller, so it must keep copying rather than expose the part's own array.
-        assertNotSame(response.getResponseBodyAsBytes(), response.getResponseBodyAsBytes());
-        assertNotSame(bodyParts.get(0).getBodyPartBytes(), response.getResponseBodyAsBytes());
+        byte[] firstCopy = response.getResponseBodyAsBytes();
+        byte[] secondCopy = response.getResponseBodyAsBytes();
+        assertArrayEquals(expected, firstCopy);
+        assertArrayEquals(expected, secondCopy);
+        assertNotSame(firstCopy, secondCopy);
+        assertNotSame(bodyParts.get(0).getBodyPartBytes(), firstCopy);
+        assertNotSame(bodyParts.get(0).getBodyPartBytes(), secondCopy);
+
+        firstCopy[0] = 'X';
+        assertArrayEquals(expected, response.getResponseBodyAsBytes());
+        assertArrayEquals(expected, response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesViewReturnsEmptyArray() {
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>());
+
+        assertArrayEquals(new byte[0], response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsBytesViewDefaultImplementationDelegates() throws Throwable {
+        byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
+        Response response = mock(Response.class);
+        when(response.getResponseBodyAsBytes()).thenReturn(expected);
+
+        byte[] actual = (byte[]) MethodHandles.privateLookupIn(Response.class, MethodHandles.lookup())
+                .findSpecial(Response.class, "getResponseBodyAsBytesView", MethodType.methodType(byte[].class), Response.class)
+                .bindTo(response)
+                .invokeExact();
+
+        assertSame(expected, actual);
     }
 
     @Test
