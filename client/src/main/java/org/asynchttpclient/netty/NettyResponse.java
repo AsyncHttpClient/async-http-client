@@ -228,7 +228,9 @@ public class NettyResponse implements Response {
 
     @Override
     public ByteBuf getResponseBodyAsByteBuf() {
-        CompositeByteBuf compositeByteBuf = ByteBufAllocator.DEFAULT.compositeBuffer(bodyParts.size());
+        // At least one component: CompositeByteBuf rejects a maxNumComponents of 0, so a bodyless response
+        // would otherwise throw here rather than return an empty buffer.
+        CompositeByteBuf compositeByteBuf = ByteBufAllocator.DEFAULT.compositeBuffer(Math.max(1, bodyParts.size()));
         for (HttpResponseBodyPart part : bodyParts) {
             compositeByteBuf.addComponent(true, part.getBodyByteBuf());
         }

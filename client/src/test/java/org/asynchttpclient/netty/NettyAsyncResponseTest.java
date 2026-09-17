@@ -186,6 +186,19 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
+    public void testBodylessResponseHasAnEmptyByteBuf() {
+        // A CompositeByteBuf rejects a maxNumComponents of 0, so a HEAD, a 204 or a 304 threw from here.
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>());
+
+        ByteBuf body = response.getResponseBodyAsByteBuf();
+        try {
+            assertEquals(0, body.readableBytes());
+        } finally {
+            body.release();
+        }
+    }
+
+    @Test
     public void testGetResponseBodyAsBytesViewDefaultImplementationDelegates() throws Throwable {
         byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
         Response response = mock(Response.class);
