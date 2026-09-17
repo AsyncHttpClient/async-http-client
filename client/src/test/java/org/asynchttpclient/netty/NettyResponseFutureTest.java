@@ -114,6 +114,24 @@ public class NettyResponseFutureTest {
     }
 
     @Test
+    public void abortNotifiesTheHandlerBeforeCompletingTheFuture() {
+        AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
+        AtomicReference<Boolean> doneWhenNotified = new AtomicReference<>();
+        doAnswer(ignored -> {
+            doneWhenNotified.set(future.toCompletableFuture().isDone());
+            return null;
+        }).when(asyncHandler).onThrowable(any());
+
+        RuntimeException cause = new RuntimeException("abort");
+        future.abort(cause);
+
+        assertEquals(Boolean.FALSE, doneWhenNotified.get(),
+                "onThrowable must run before the future completes, or a caller released by get() sees a handler that was never told");
+        assertSame(cause, assertThrows(ExecutionException.class, future::get).getCause());
+    }
+
+    @Test
     public void basePartitionKeyIsMemoizedAndInvalidatedOnTargetChange() {
         AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
         Request reqA = get("http://hosta.example/").build();

@@ -352,8 +352,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             return;
         }
 
-        future.completeExceptionally(t);
-
+        // onThrowable first, then completion: a caller released by get() -- or a listener, which runs on
+        // completion -- must not observe a handler that has not been told about the failure yet. This is the
+        // order the other terminal paths already use, loadContent() for a handler that threw and cancel().
         if (ON_THROWABLE_CALLED_FIELD.compareAndSet(this, 0, 1)) {
             try {
                 asyncHandler.onThrowable(t);
@@ -361,6 +362,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
                 LOGGER.debug("asyncHandler.onThrowable", te);
             }
         }
+
+        future.completeExceptionally(t);
     }
 
     @Override

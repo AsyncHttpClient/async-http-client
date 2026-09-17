@@ -274,8 +274,21 @@ public class ResponseBodyControlTest {
             };
 
             ListenableFuture<RecordingHandler> request = client.prepareGet(url("/cancel")).execute(handler);
+            // The listener runs while the future is completing, so it pins the order: by then the handler must
+            // already have been told about the failure. The latch is what makes the snapshot readable -- a
+            // blocked get() parks on the same completion stack as the listener, and that stack drains
+            // last-pushed-first, so get() can return before the listener has run.
+            AtomicReference<Throwable> seenWhenCompleted = new AtomicReference<>();
+            CountDownLatch listenerRan = new CountDownLatch(1);
+            request.addListener(() -> {
+                seenWhenCompleted.set(handler.throwable.get());
+                listenerRan.countDown();
+            }, null);
+
             ExecutionException failure = assertThrows(ExecutionException.class, () -> request.get(5, SECONDS));
             assertSame(expected, failure.getCause());
+            assertTrue(listenerRan.await(5, SECONDS), "the completion listener never ran");
+            assertSame(expected, seenWhenCompleted.get(), "onThrowable must run before the future completes");
             assertSame(expected, handler.throwable.get());
             assertEquals(0, handler.completionCount.get());
             assertTrue(cancelledConnectionClosed.await(5, SECONDS));
