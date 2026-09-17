@@ -16,11 +16,14 @@
 package org.asynchttpclient.cookie;
 
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.util.NetUtil;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.MiscUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,12 +73,13 @@ public final class ThreadSafeCookieStore implements CookieStore {
         String thisRequestDomain = requestDomain(uri);
         String thisRequestPath = requestPath(uri);
 
-        add(thisRequestDomain, thisRequestPath, cookie);
+        add(thisRequestDomain, thisRequestPath, uri.isSecured(), isSecureContext(uri, thisRequestDomain), cookie);
     }
 
     @Override
     public List<Cookie> get(Uri uri) {
-        return get(requestDomain(uri), requestPath(uri), uri.isSecured());
+        String domain = requestDomain(uri);
+        return get(domain, requestPath(uri), uri.isSecured(), isSecureContext(uri, domain));
     }
 
     @Override
@@ -251,7 +255,40 @@ public final class ThreadSafeCookieStore implements CookieStore {
                 requestPath.startsWith(cookiePath) && (cookiePath.charAt(cookiePath.length() - 1) == '/' || requestPath.charAt(cookiePath.length()) == '/');
     }
 
-    private void add(String requestDomain, String requestPath, Cookie cookie) {
+    /**
+     * https, wss, or plaintext to loopback, as rfc6265bis allows and curl does, so a development server on
+     * {@code http://localhost} gets back the Secure cookies it set. It never gets one that came over TLS; see
+     * {@link StoredCookie#overTls}.
+     */
+    private static boolean isSecureContext(Uri uri, String canonicalHost) {
+        return uri.isSecured() || isLoopbackHost(canonicalHost);
+    }
+
+    /**
+     * Exactly {@code localhost}, or a loopback address literal. Parsed, never looked up: {@code 127.0.0.256}
+     * is not a literal to the JDK, so it resolves as a name and may go anywhere. Unlike
+     * {@link #isIpAddressLiteral}, a strict parser fails closed here.
+     */
+    private static boolean isLoopbackHost(String host) {
+        if ("localhost".equals(host)) {
+            return true;
+        }
+        String literal = host.length() > 1 && host.charAt(0) == '[' && host.charAt(host.length() - 1) == ']'
+                ? host.substring(1, host.length() - 1) : host;
+        byte[] address = NetUtil.createByteArrayFromIpAddressString(literal);
+        try {
+            return address != null && InetAddress.getByAddress(address).isLoopbackAddress();
+        } catch (UnknownHostException e) {
+            return false;
+        }
+    }
+
+    private void add(String requestDomain, String requestPath, boolean requestTls, boolean requestSecure, Cookie cookie) {
+        // rfc6265bis section 5.7 step 13: a Secure cookie counts only from a secure context.
+        if (cookie.isSecure() && !requestSecure) {
+            return;
+        }
+
         AbstractMap.SimpleEntry<String, Boolean> pair = cookieDomain(cookie.domain(), requestDomain);
         String keyDomain = pair.getKey();
         boolean hostOnly = pair.getValue();
@@ -285,12 +322,18 @@ public final class ThreadSafeCookieStore implements CookieStore {
         // send what they did. ROOT only stops a Turkish default locale missing the key.
         CookieKey key = new CookieKey(cookie.name().toLowerCase(Locale.ROOT), keyPath);
 
+        // Step 16: a cookie from plaintext may not overlay a Secure one either; from loopback, only one that came
+        // over TLS. Before the expiry branch, so Max-Age=0 cannot delete it.
+        if (!requestTls && shadowsSecureCookie(keyDomain, key, requestSecure)) {
+            return;
+        }
+
         if (hasCookieExpired(cookie, 0)) {
             cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
         } else {
             final Map<CookieKey, StoredCookie> innerMap = cookieJar.computeIfAbsent(keyDomain, domain -> new ConcurrentHashMap<>());
             innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE, clock.getAsLong(),
-                    cookieSequence.getAndIncrement()));
+                    cookieSequence.getAndIncrement(), requestSecure, requestTls));
             if (innerMap.size() > MAX_COOKIES_PER_DOMAIN) {
                 evictExcessCookies(innerMap);
             }
@@ -302,7 +345,8 @@ public final class ThreadSafeCookieStore implements CookieStore {
      * per-domain cap; §5.3's "remove excess cookies" step evicts expired cookies first, then removes more
      * until under the limit. The RFC breaks that second tie by least-recently-accessed; we do not track
      * access time, so we deliberately deviate and evict in insertion order via the strict, tie-free
-     * {@link StoredCookie#seq} stamp.
+     * {@link StoredCookie#seq} stamp. Non-Secure cookies go first, as rfc6265bis section 5.7 requires: otherwise
+     * a plaintext response floods the bucket, evicts a Secure cookie and then overlays it past step 16.
      *
      * <p>Called from {@link #add} right after an insert pushes the bucket over the cap, so it normally
      * removes a single entry. A single pass drops expired entries and collects the survivors; only if those
@@ -326,17 +370,44 @@ public final class ThreadSafeCookieStore implements CookieStore {
         if (excess <= 0) {
             return;
         }
-        live.sort(Comparator.comparingLong(entry -> entry.getValue().seq));
+        live.sort(Comparator.<Map.Entry<CookieKey, StoredCookie>>comparingInt(entry -> entry.getValue().cookie.isSecure() ? 1 : 0)
+                .thenComparingLong(entry -> entry.getValue().seq));
         for (int i = 0; i < excess; i++) {
             Map.Entry<CookieKey, StoredCookie> victim = live.get(i);
             innerMap.remove(victim.getKey(), victim.getValue());
         }
     }
 
-    private List<Cookie> get(String domain, String path, boolean secure) {
+    /**
+     * rfc6265bis section 5.7 step 16. The path test is one-way, so a plaintext cookie for {@code /} can still sit
+     * beside a Secure one for {@code /account}; the order {@code get} returns them in keeps the Secure one first.
+     * Walks the whole jar, since subdomain entries cannot be reached by walking up.
+     */
+    private boolean shadowsSecureCookie(String cookieDomain, CookieKey newKey, boolean fromLoopback) {
+        for (Map.Entry<String, Map<CookieKey, StoredCookie>> domainEntry : cookieJar.entrySet()) {
+            String storedDomain = domainEntry.getKey();
+            if (!domainsMatch(cookieDomain, storedDomain) && !domainsMatch(storedDomain, cookieDomain)) {
+                continue;
+            }
+            for (Map.Entry<CookieKey, StoredCookie> entry : domainEntry.getValue().entrySet()) {
+                CookieKey storedKey = entry.getKey();
+                StoredCookie storedCookie = entry.getValue();
+                if (storedCookie.cookie.isSecure()
+                        && (!fromLoopback || storedCookie.overTls)
+                        && storedKey.name.equals(newKey.name)
+                        && pathsMatch(storedKey.path, newKey.path)
+                        && !hasCookieExpired(storedCookie.cookie, storedCookie.createdAt)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<Cookie> get(String domain, String path, boolean tls, boolean secure) {
         boolean exactDomainMatch = true;
         String subDomain = domain;
-        List<Cookie> results = null;
+        List<Map.Entry<CookieKey, StoredCookie>> results = null;
         // RFC 6265 section 5.4 selects by the same domain-match, so an IP takes only its own entry rather than
         // walking 127.0.0.1 -> 0.0.1 -> 0.1 -> 1. Not redundant with storage: 0.1 may set Domain=0.1 legitimately.
         boolean walkParents = !isIpAddressLiteral(domain);
@@ -345,12 +416,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
             // Lazily allocate a single result list and append matches straight into it; an imperative
             // scan avoids the per-sub-domain-level Stream pipeline (filter/map stages, two capturing
             // lambdas, a spliterator and the Collectors.toList intermediate list) that this ran on every
-            // cookie-enabled request. Cookie header order is re-sorted by Netty's ClientCookieEncoder,
-            // so the (preserved) entrySet iteration order is not observable on the wire.
+            // cookie-enabled request.
             if (results == null) {
                 results = new ArrayList<>(4);
             }
-            collectStoredCookies(subDomain, path, secure, exactDomainMatch, results);
+            int from = results.size();
+            collectStoredCookies(subDomain, path, tls, secure, exactDomainMatch, results);
+            if (results.size() - from > 1) {
+                results.subList(from, results.size()).sort(LONGER_PATH_FIRST);
+            }
             if (!walkParents) {
                 break;
             }
@@ -358,10 +432,40 @@ public final class ThreadSafeCookieStore implements CookieStore {
             exactDomainMatch = false;
         }
 
-        return results == null || results.isEmpty() ? Collections.emptyList() : results;
+        if (results == null || results.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (results.size() == 1) {
+            return Collections.singletonList(results.get(0).getValue().cookie);
+        }
+        // The order decides which cookie is sent, since addCookieIfUnset keeps only the first of each name:
+        // 1. on a secure request, cookies received in a secure context (provenance, not the Secure attribute);
+        // 2. the host's own bucket before its parents', so a cookie tossed up to a parent cannot displace a
+        //    subdomain's own. The apex's own host-only cookie shares the tossed one's key, so it can be replaced;
+        // 3. within a bucket, longer paths first (RFC 6265 section 5.4).
+        // One global path sort, as the RFC describes, would break rule 2.
+        if (secure) {
+            // Stable, so rules 2 and 3 hold within each group.
+            results.sort(SECURE_CONTEXT_FIRST);
+        }
+        List<Cookie> cookies = new ArrayList<>(results.size());
+        for (Map.Entry<CookieKey, StoredCookie> entry : results) {
+            cookies.add(entry.getValue().cookie);
+        }
+        return Collections.unmodifiableList(cookies);
     }
 
-    private void collectStoredCookies(String domain, String path, boolean secure, boolean isExactMatch, List<Cookie> out) {
+    private static final Comparator<Map.Entry<CookieKey, StoredCookie>> SECURE_CONTEXT_FIRST =
+            Comparator.comparingInt(entry -> entry.getValue().secureContext ? 0 : 1);
+
+    // By the key's path, which is the defaulted one; Cookie.path() is null when Set-Cookie had no Path.
+    private static final Comparator<Map.Entry<CookieKey, StoredCookie>> LONGER_PATH_FIRST =
+            Comparator.<Map.Entry<CookieKey, StoredCookie>>comparingInt(entry -> entry.getKey().path.length())
+                    .reversed()
+                    .thenComparingLong(entry -> entry.getValue().seq);
+
+    private void collectStoredCookies(String domain, String path, boolean tls, boolean secure, boolean isExactMatch,
+                                      List<Map.Entry<CookieKey, StoredCookie>> out) {
         final Map<CookieKey, StoredCookie> innerMap = cookieJar.get(domain);
         if (innerMap == null) {
             return;
@@ -373,8 +477,8 @@ public final class ThreadSafeCookieStore implements CookieStore {
             if (!hasCookieExpired(storedCookie.cookie, storedCookie.createdAt)
                     && (isExactMatch || !storedCookie.hostOnly)
                     && pathsMatch(key.path, path)
-                    && (secure || !storedCookie.cookie.isSecure())) {
-                out.add(storedCookie.cookie);
+                    && (tls || !storedCookie.cookie.isSecure() || (secure && !storedCookie.overTls))) {
+                out.add(entry);
             }
         }
     }
@@ -434,8 +538,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
         final long createdAt;
         // Strict, tie-free insertion order for eviction; see ThreadSafeCookieStore.cookieSequence.
         final long seq;
+        /** Received in a secure context, so it ranks first on a secure request. */
+        final boolean secureContext;
+        /** Arrived over TLS, so it is never sent in plaintext, loopback included. */
+        final boolean overTls;
 
-        StoredCookie(Cookie cookie, boolean hostOnly, boolean persistent, long createdAt, long seq) {
+        StoredCookie(Cookie cookie, boolean hostOnly, boolean persistent, long createdAt, long seq,
+                     boolean secureContext, boolean overTls) {
+            this.secureContext = secureContext;
+            this.overTls = overTls;
             this.cookie = cookie;
             this.hostOnly = hostOnly;
             this.persistent = persistent;
