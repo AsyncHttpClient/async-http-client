@@ -196,6 +196,8 @@ public class NettyResponse implements Response {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns a lone body part's array; concatenates into one of its own when there are several, or an empty
      * array when there are none. Which of those a given response takes is not a property of the body: see
      * {@link Response#getResponseBodyAsBytesView()}, whose contract is deliberately weaker than this.
@@ -228,7 +230,9 @@ public class NettyResponse implements Response {
 
     @Override
     public ByteBuf getResponseBodyAsByteBuf() {
-        CompositeByteBuf compositeByteBuf = ByteBufAllocator.DEFAULT.compositeBuffer(bodyParts.size());
+        // At least one component: CompositeByteBuf rejects a maxNumComponents of 0, so a bodyless response
+        // would otherwise throw here rather than return an empty buffer.
+        CompositeByteBuf compositeByteBuf = ByteBufAllocator.DEFAULT.compositeBuffer(Math.max(1, bodyParts.size()));
         for (HttpResponseBodyPart part : bodyParts) {
             compositeByteBuf.addComponent(true, part.getBodyByteBuf());
         }
@@ -249,15 +253,15 @@ public class NettyResponse implements Response {
      * documents it as read-only and names the other holders. {@link #getResponseBodyAsBytes()} stays the
      * copying accessor for callers who want an array of their own.
      * <p>
-     * Private, and called directly by the accessors below rather than through
+     * Private, and called directly by the string accessors rather than through
      * {@link #getResponseBodyAsBytesView()}, so that overriding the view does not silently change what this
      * response's text says as well.
      */
     private byte[] sharedBodyBytes() {
         if (bodyParts.isEmpty()) {
-            // A HEAD, a 204 or a 304 otherwise walks the aggregating path to allocate an empty array and a
-            // buffer to wrap it, on every call. Nothing can be written through a zero-length array, so one
-            // shared instance serves every empty body.
+            // A response with no body - a HEAD, a 204, a 304, a discarded CONNECT failure, one aborted from a
+            // handler - otherwise walks the aggregating path to allocate an empty array and a buffer to wrap it,
+            // on every call. Nothing can be written through a zero-length array, so one instance serves them all.
             return EMPTY_BODY;
         }
         return bodyParts.size() == 1 ? bodyParts.get(0).getBodyPartBytes() : getResponseBodyAsBytes();

@@ -109,13 +109,15 @@ public class NettyAsyncResponseTest {
         // 0xC3 0xA9 encodes U+00E9; split between its two bytes so neither half decodes on its own
         int split = 4;
 
+        // Clones onto the wire, so that utf8 stays an oracle rather than becoming a part's own storage.
         List<HttpResponseBodyPart> onePart = new LinkedList<>();
-        onePart.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(utf8), true));
+        onePart.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(utf8.clone()), true));
         NettyResponse single = new NettyResponse(new NettyResponseStatus(null, null, null), null, onePart);
 
+        byte[] wire = utf8.clone();
         List<HttpResponseBodyPart> splitParts = new LinkedList<>();
-        splitParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(utf8, 0, split), false));
-        splitParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(utf8, split, utf8.length - split), true));
+        splitParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(wire, 0, split), false));
+        splitParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer(wire, split, wire.length - split), true));
         NettyResponse multiple = new NettyResponse(new NettyResponseStatus(null, null, null), null, splitParts);
 
         assertEquals(expected, single.getResponseBody(StandardCharsets.UTF_8));
@@ -182,7 +184,39 @@ public class NettyAsyncResponseTest {
     public void testGetResponseBodyAsBytesViewReturnsEmptyArray() {
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>());
 
-        assertArrayEquals(new byte[0], response.getResponseBodyAsBytesView());
+        byte[] view = response.getResponseBodyAsBytesView();
+        assertArrayEquals(new byte[0], view);
+        // One shared instance rather than an allocation per call, which is the whole point of the branch.
+        assertSame(view, response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testBodylessResponseHasAnEmptyByteBuf() {
+        // A CompositeByteBuf rejects a maxNumComponents of 0, so a HEAD, a 204 or a 304 threw from here.
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>());
+
+        ByteBuf body = response.getResponseBodyAsByteBuf();
+        try {
+            assertEquals(0, body.readableBytes());
+        } finally {
+            body.release();
+        }
+    }
+
+    @Test
+    public void testOverridingTheViewLeavesTheResponseTextAlone() {
+        // The string accessors go through a private helper rather than the overridable view, so a subclass that
+        // hardens the view cannot silently change what this response's text says.
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts) {
+            @Override
+            public byte[] getResponseBodyAsBytesView() {
+                return "Goodbye".getBytes(StandardCharsets.UTF_8);
+            }
+        };
+
+        assertEquals("Hello World", response.getResponseBody(StandardCharsets.UTF_8));
     }
 
     @Test
