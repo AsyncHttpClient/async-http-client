@@ -41,9 +41,9 @@ class Continue100Interceptor {
 
         if (channel instanceof Http2StreamChannel) {
             // HTTP/2: the HEADERS frame was already sent with endStream=false; now send the deferred body
-            // as DATA frame(s). writeRequest() can't be reused here — its isHttp2() check looks for the
-            // parent connection's multiplex handler, which a stream child channel doesn't have, so it would
-            // mis-route to the HTTP/1.1 writer (UnsupportedMessageTypeException + use-after-free).
+            // as DATA frame(s). writeRequest() can't be reused here — it routes on the parent connection's
+            // HTTP/2 state, which a stream child channel doesn't carry, so it would mis-route to the
+            // HTTP/1.1 writer (UnsupportedMessageTypeException + use-after-free).
             //
             // Only resume when the body was genuinely deferred. For a request WITHOUT Expect: 100-continue
             // the body was already written with endStream=true, so writing DATA now would be a frame after

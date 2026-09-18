@@ -774,8 +774,7 @@ public final class NettyRequestSender {
      * as HTTP/2 frames ({@link DefaultHttp2HeadersFrame} + optional {@link DefaultHttp2DataFrame}).
      * The stream child channel has the {@link org.asynchttpclient.netty.handler.Http2Handler} installed
      * and the {@link NettyResponseFuture} attached to it, mirroring the HTTP/1.1 channel model.
-     */
-    /**
+     *
      * @param state the connection's HTTP/2 state, which is what identified it as an HTTP/2 connection in the
      *              first place, so the caller has it in hand
      */
@@ -855,14 +854,12 @@ public final class NettyRequestSender {
                             if (openedRequest != null) {
                                 openedRequest.release();
                             }
-                            if (state != null) {
-                                state.releaseStream();
-                                // Close the parent once it has no active streams AND it is either draining
-                                // (GOAWAY) or a redundant duplicate (#10 thundering-herd loser) — neither
-                                // will serve further requests, so it must not linger open.
-                                if ((state.isDraining() || state.isRedundant()) && state.getActiveStreams() <= 0) {
-                                    channelManager.closeChannel(parentChannel);
-                                }
+                            state.releaseStream();
+                            // Close the parent once it has no active streams AND it is either draining
+                            // (GOAWAY) or a redundant duplicate (#10 thundering-herd loser) — neither
+                            // will serve further requests, so it must not linger open.
+                            if ((state.isDraining() || state.isRedundant()) && state.getActiveStreams() <= 0) {
+                                channelManager.closeChannel(parentChannel);
                             }
                         });
 
@@ -901,9 +898,7 @@ public final class NettyRequestSender {
                     } else {
                         // Stream channel was never opened — no closeFuture will fire, so release the
                         // acquired slot and the unsent request body inline.
-                        if (state != null) {
-                            state.releaseStream();
-                        }
+                        state.releaseStream();
                         releaseHttp2Request(future);
                         // Fail ONLY this future (future.abort, not abort(parentChannel, ...)): opening one stream
                         // can fail for a stream-local reason (e.g. Netty rejecting it as the outbound max-streams
