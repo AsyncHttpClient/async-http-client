@@ -1039,8 +1039,9 @@ public class ChannelManager {
      * walked to the end to say no.
      * <p>
      * They part on close, where Netty's own teardown strips the pipeline and leaves the attribute: a closed
-     * connection answers yes here and would have answered no to a lookup. Callers reach this while deciding
-     * what to do with a channel they have just taken from the pool, having checked it is active.
+     * connection answers yes here and would have answered no to a lookup. That divergence is harmless at the
+     * one internal call site, where a true answer only skips storing the per-request future on the parent,
+     * and the next statement re-checks liveness and routes a closed channel to handleUnexpectedClosedChannel.
      */
     public static boolean isHttp2(Channel channel) {
         return channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get() != null;
@@ -1067,34 +1068,11 @@ public class ChannelManager {
      * The per-stream {@link Http2Handler} is added separately on each stream child channel.
      */
     public void upgradePipelineToHttp2(ChannelPipeline pipeline) {
-        // Remove HTTP/1.1 specific handlers
-        if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
-            pipeline.remove(HTTP_CLIENT_CODEC);
-        }
-        if (pipeline.get(INFLATER_HANDLER) != null) {
-            pipeline.remove(INFLATER_HANDLER);
-        }
-        if (pipeline.get(CHUNKED_WRITER_HANDLER) != null) {
-            pipeline.remove(CHUNKED_WRITER_HANDLER);
-        }
-        if (pipeline.get(AHC_HTTP_HANDLER) != null) {
-            pipeline.remove(AHC_HTTP_HANDLER);
-        }
-
-        // Attach HTTP/2 connection state for MAX_CONCURRENT_STREAMS tracking and GOAWAY draining. Its
-        // presence is also what marks the connection as HTTP/2; see isHttp2. Attached before the handlers
-        // rather than after them, so that there is no instant at which the pipeline speaks HTTP/2 and the
-        // connection does not yet say so -- a write landing there would take the HTTP/1.1 branch onto an
-        // HTTP/2 pipeline. Nothing can reach this channel that early today; the ordering is what keeps that
-        // from being something each new caller has to know.
-        Http2ConnectionState state = new Http2ConnectionState();
-        int configMaxStreams = config.getHttp2MaxConcurrentStreams();
-        if (configMaxStreams > 0) {
-            // Client's own cap; the server-advertised value (applied by the http2-settings-listener below)
-            // can only lower the effective limit, never raise it above this.
-            state.setClientMaxConcurrentStreams(configMaxStreams);
-        }
-        pipeline.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
+        // Everything that can fail is built first, while the channel is still an intact HTTP/1.1 connection.
+        // Http2Settings validates each value and throws on one out of range, and every caller of this method
+        // is a Netty future listener, which swallows the exception and logs it: a throw after the pipeline
+        // has been touched leaves a half-upgraded connection behind and the request hangs to its timeout
+        // with no diagnosable cause. Nothing below the removes can throw, so that state is unreachable.
 
         // Add HTTP/2 frame codec (handles connection preface, SETTINGS, PING, flow control, etc.)
         Http2Settings settings = new Http2Settings()
@@ -1109,8 +1087,6 @@ public class ChannelManager {
 
         ClientHttp2FrameCodecBuilder frameCodecBuilder = new ClientHttp2FrameCodecBuilder();
         Http2FrameCodec frameCodec = frameCodecBuilder.initialSettings(settings).build();
-        pipeline.channel().attr(SuspensionAwareHttp2LocalFlowController.CHANNEL_KEY)
-                .set(frameCodecBuilder.flowController());
 
         // Http2MultiplexHandler creates a child channel per HTTP/2 stream.
         // Server-push streams are rejected with RST_STREAM(REFUSED_STREAM).
@@ -1122,6 +1098,39 @@ public class ChannelManager {
                         .addListener(f -> ch.close());
             }
         });
+
+        // HTTP/2 connection state for MAX_CONCURRENT_STREAMS tracking and GOAWAY draining. Its presence on
+        // the channel is also what marks the connection as HTTP/2; see isHttp2.
+        Http2ConnectionState state = new Http2ConnectionState();
+        int configMaxStreams = config.getHttp2MaxConcurrentStreams();
+        if (configMaxStreams > 0) {
+            // Client's own cap; the server-advertised value (applied by the http2-settings-listener below)
+            // can only lower the effective limit, never raise it above this.
+            state.setClientMaxConcurrentStreams(configMaxStreams);
+        }
+
+        // Remove HTTP/1.1 specific handlers
+        if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
+            pipeline.remove(HTTP_CLIENT_CODEC);
+        }
+        if (pipeline.get(INFLATER_HANDLER) != null) {
+            pipeline.remove(INFLATER_HANDLER);
+        }
+        if (pipeline.get(CHUNKED_WRITER_HANDLER) != null) {
+            pipeline.remove(CHUNKED_WRITER_HANDLER);
+        }
+        if (pipeline.get(AHC_HTTP_HANDLER) != null) {
+            pipeline.remove(AHC_HTTP_HANDLER);
+        }
+
+        pipeline.channel().attr(SuspensionAwareHttp2LocalFlowController.CHANNEL_KEY)
+                .set(frameCodecBuilder.flowController());
+
+        // Marked before the handlers rather than after them, so there is no instant at which the pipeline
+        // speaks HTTP/2 and the connection does not yet say so: a write landing there would take the
+        // HTTP/1.1 branch onto an HTTP/2 pipeline. Nothing can reach this channel that early today, since
+        // it is registered and pooled only once this method returns.
+        pipeline.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
 
         pipeline.addLast(HTTP2_FRAME_CODEC, frameCodec);
         pipeline.addLast(HTTP2_MULTIPLEX, multiplexHandler);
