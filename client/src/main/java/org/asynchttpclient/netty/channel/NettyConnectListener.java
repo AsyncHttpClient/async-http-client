@@ -236,7 +236,14 @@ public final class NettyConnectListener<T> {
                                 + "(RFC 8441) is not supported — continuing on HTTP/1.1", uri);
                     }
                     if (http2Negotiated && !uri.isWebSocket()) {
-                        channelManager.upgradePipelineToHttp2(channel.pipeline());
+                        try {
+                            channelManager.upgradePipelineToHttp2(channel.pipeline());
+                        } catch (Exception upgradeError) {
+                            // This runs inside a future listener, which logs and discards anything thrown.
+                            // Fail the connection instead, or the request waits for its timeout.
+                            NettyConnectListener.this.onFailure(channel, upgradeError);
+                            return;
+                        }
                         registerHttp2AndManageSemaphore(channel, semaphore, permit);
                     }
                     writeRequest(channel);
@@ -259,7 +266,12 @@ public final class NettyConnectListener<T> {
             // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS. WebSocket (ws://) is
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
             if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
-                channelManager.upgradePipelineToHttp2(channel.pipeline());
+                try {
+                    channelManager.upgradePipelineToHttp2(channel.pipeline());
+                } catch (Exception upgradeError) {
+                    onFailure(channel, upgradeError);
+                    return;
+                }
                 registerHttp2AndManageSemaphore(channel, semaphore, permit);
             }
             writeRequest(channel);

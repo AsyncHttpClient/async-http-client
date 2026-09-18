@@ -454,6 +454,19 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             throw new IllegalArgumentException("HTTP/2 initial window size must be non-negative");
         }
 
+        if (http2HeaderTableSize < 0) {
+            throw new IllegalArgumentException("HTTP/2 header table size must be non-negative");
+        }
+
+        // Netty's Http2Settings accepts 0, but the HPACK decoder built from it rejects anything below 1.
+        if (http2MaxHeaderListSize < 1) {
+            throw new IllegalArgumentException("HTTP/2 max header list size must be positive");
+        }
+
+        if (http2PingInterval == null) {
+            throw new IllegalArgumentException("HTTP/2 ping interval must not be null");
+        }
+
         this.allocator = allocator;
         this.nettyTimer = nettyTimer;
         this.threadFactory = threadFactory;
