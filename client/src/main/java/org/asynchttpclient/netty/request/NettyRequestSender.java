@@ -1616,8 +1616,15 @@ public final class NettyRequestSender {
                 whenHandshaked.addListener(f -> {
                             if (f.isSuccess()) {
                                 if (!nextRequest.getUri().isWebSocket()) {
-                                    channelManager.upgradePipelineToHttp2AfterProxyConnect(
-                                            channel.pipeline(), future.getPartitionKey());
+                                    try {
+                                        channelManager.upgradePipelineToHttp2AfterProxyConnect(
+                                                channel.pipeline(), future.getPartitionKey());
+                                    } catch (Exception upgradeError) {
+                                        // Thrown inside a future listener, which logs and discards it.
+                                        // Fail the future instead, or the request waits for its timeout.
+                                        abort(channel, future, upgradeError);
+                                        return;
+                                    }
                                 }
                                 sendNextRequest(nextRequest, future);
                             } else {
