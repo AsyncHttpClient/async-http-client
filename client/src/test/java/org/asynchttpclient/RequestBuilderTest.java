@@ -35,6 +35,7 @@ import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.Dsl.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RequestBuilderTest {
@@ -431,5 +432,40 @@ public class RequestBuilderTest {
         assertTrue(value.contains("Proxy-Authorization: <redacted>"));
         assertTrue(value.contains("Cookie: <redacted>"));
         assertTrue(value.contains("request-id"));
+    }
+
+    @Test
+    public void testRedirectRefusalOverridesSurviveToBuilder() {
+        Request original = new RequestBuilder("PUT")
+                .setUrl("https://example.com/upload")
+                .setRefuseSchemeDowngradeOnRedirect(true)
+                .setRefuseCrossOriginBodyOnRedirect(false)
+                .build();
+
+        // Deliberately one of each, so a swapped argument list cannot pass.
+        Request derived = original.toBuilder().build();
+        assertEquals(Boolean.TRUE, derived.getRefuseSchemeDowngradeOnRedirect());
+        assertEquals(Boolean.FALSE, derived.getRefuseCrossOriginBodyOnRedirect());
+    }
+
+    @Test
+    public void testRedirectRefusalOverridesSurviveASignatureCalculator() {
+        Request request = new RequestBuilder("PUT")
+                .setUrl("https://example.com/upload")
+                .setRefuseSchemeDowngradeOnRedirect(true)
+                .setRefuseCrossOriginBodyOnRedirect(false)
+                .setSignatureCalculator((toSign, builder) -> builder.addHeader("X-Signature", "computed"))
+                .build();
+
+        assertEquals("computed", request.getHeaders().get("X-Signature"));
+        assertEquals(Boolean.TRUE, request.getRefuseSchemeDowngradeOnRedirect());
+        assertEquals(Boolean.FALSE, request.getRefuseCrossOriginBodyOnRedirect());
+    }
+
+    @Test
+    public void testRedirectRefusalOverridesDefaultToNull() {
+        Request request = new RequestBuilder("GET").setUrl("https://example.com/").build();
+        assertNull(request.getRefuseSchemeDowngradeOnRedirect());
+        assertNull(request.getRefuseCrossOriginBodyOnRedirect());
     }
 }

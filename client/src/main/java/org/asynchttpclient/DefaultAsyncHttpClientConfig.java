@@ -95,6 +95,8 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSo
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoSndBuf;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionCacheSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRefuseCrossOriginBodyOnRedirect;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRefuseSchemeDowngradeOnRedirect;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultStrict302Handling;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTcpNoDelay;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultThreadPoolName;
@@ -131,6 +133,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean followRedirect;
     private final int maxRedirects;
     private final boolean strict302Handling;
+    private final boolean refuseSchemeDowngradeOnRedirect;
+    private final boolean refuseCrossOriginBodyOnRedirect;
     private final boolean compressionEnforced;
 
     private final boolean enableAutomaticDecompression;
@@ -239,6 +243,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          boolean followRedirect,
                                          int maxRedirects,
                                          boolean strict302Handling,
+                                         boolean refuseSchemeDowngradeOnRedirect,
+                                         boolean refuseCrossOriginBodyOnRedirect,
                                          boolean compressionEnforced,
                                          boolean enableAutomaticDecompression,
                                          long maxDecompressedResponseSize,
@@ -346,6 +352,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.followRedirect = followRedirect;
         this.maxRedirects = maxRedirects;
         this.strict302Handling = strict302Handling;
+        this.refuseSchemeDowngradeOnRedirect = refuseSchemeDowngradeOnRedirect;
+        this.refuseCrossOriginBodyOnRedirect = refuseCrossOriginBodyOnRedirect;
         this.compressionEnforced = compressionEnforced;
         this.enableAutomaticDecompression = enableAutomaticDecompression;
         this.maxDecompressedResponseSize = maxDecompressedResponseSize;
@@ -497,6 +505,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public boolean isStrict302Handling() {
         return strict302Handling;
+    }
+
+    @Override
+    public boolean isRefuseSchemeDowngradeOnRedirect() {
+        return refuseSchemeDowngradeOnRedirect;
+    }
+
+    @Override
+    public boolean isRefuseCrossOriginBodyOnRedirect() {
+        return refuseCrossOriginBodyOnRedirect;
     }
 
     @Override
@@ -960,6 +978,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean followRedirect = defaultFollowRedirect();
         private int maxRedirects = defaultMaxRedirects();
         private boolean strict302Handling = defaultStrict302Handling();
+        private boolean refuseSchemeDowngradeOnRedirect = defaultRefuseSchemeDowngradeOnRedirect();
+        private boolean refuseCrossOriginBodyOnRedirect = defaultRefuseCrossOriginBodyOnRedirect();
         private boolean compressionEnforced = defaultCompressionEnforced();
         private boolean enableAutomaticDecompression = defaultEnableAutomaticDecompression();
         private long maxDecompressedResponseSize = defaultMaxDecompressedResponseSize();
@@ -1070,6 +1090,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             followRedirect = config.isFollowRedirect();
             maxRedirects = config.getMaxRedirects();
             strict302Handling = config.isStrict302Handling();
+            refuseSchemeDowngradeOnRedirect = config.isRefuseSchemeDowngradeOnRedirect();
+            refuseCrossOriginBodyOnRedirect = config.isRefuseCrossOriginBodyOnRedirect();
             compressionEnforced = config.isCompressionEnforced();
             enableAutomaticDecompression = config.isEnableAutomaticDecompression();
             maxDecompressedResponseSize = config.getMaxDecompressedResponseSize();
@@ -1190,6 +1212,16 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setStrict302Handling(final boolean strict302Handling) {
             this.strict302Handling = strict302Handling;
+            return this;
+        }
+
+        public Builder setRefuseSchemeDowngradeOnRedirect(final boolean refuseSchemeDowngradeOnRedirect) {
+            this.refuseSchemeDowngradeOnRedirect = refuseSchemeDowngradeOnRedirect;
+            return this;
+        }
+
+        public Builder setRefuseCrossOriginBodyOnRedirect(final boolean refuseCrossOriginBodyOnRedirect) {
+            this.refuseCrossOriginBodyOnRedirect = refuseCrossOriginBodyOnRedirect;
             return this;
         }
 
@@ -1800,6 +1832,8 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     followRedirect,
                     maxRedirects,
                     strict302Handling,
+                    refuseSchemeDowngradeOnRedirect,
+                    refuseCrossOriginBodyOnRedirect,
                     compressionEnforced,
                     enableAutomaticDecompression,
                     maxDecompressedResponseSize,

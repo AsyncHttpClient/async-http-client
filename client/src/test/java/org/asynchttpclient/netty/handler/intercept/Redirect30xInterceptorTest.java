@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
+import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,6 +27,72 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * redirect is rejected just like a non-3xx status.
  */
 public class Redirect30xInterceptorTest {
+
+    private static Uri host(String scheme, String host, int port) {
+        return new Uri(scheme, null, host, port, "/", null, null);
+    }
+
+    @Test
+    public void sameOriginFoldsHostCaseButOnlyInAscii() {
+        assertTrue(Redirect30xInterceptor.sameOrigin(host("https", "example.com", 443),
+                host("https", "EXAMPLE.com", 443)));
+
+        // The one case an integration test cannot reach, because Netty decodes header values byte per char:
+        // a non-ASCII host on the caller's own request URI. String.equalsIgnoreCase would call these equal,
+        // and \\u0130.example punycodes to xn--i-9bb.example, a different host.
+        assertFalse(Redirect30xInterceptor.sameOrigin(host("https", "i.example", 443),
+                host("https", "\u0130.example", 443)));
+    }
+
+    @Test
+    public void sameOriginResolvesTheDefaultPort() {
+        assertTrue(Redirect30xInterceptor.sameOrigin(host("https", "example.com", -1),
+                host("https", "example.com", 443)));
+        assertTrue(Redirect30xInterceptor.sameOrigin(host("ws", "example.com", -1),
+                host("ws", "example.com", 80)));
+    }
+
+    @Test
+    public void secureUpgradeCoversTheDefaultPortPair() {
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
+                host("https", "example.com", -1)));
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("ws", "example.com", -1),
+                host("wss", "example.com", -1)));
+        // RFC 6797 section 8.3 preserves an explicit port rather than inventing one.
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 8080),
+                host("https", "example.com", 8080)));
+        // Both spellings of the default pair, since getExplicitPort resolves -1 through the scheme default.
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 80),
+                host("https", "example.com", -1)));
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
+                host("https", "example.com", 443)));
+        // Deliberately looser than RFC 6797 section 8.3, which would map an explicit 80 to 443. Keeping the
+        // port means the hop lands on the endpoint the redirect was served from, so it reaches nobody new.
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 80),
+                host("https", "example.com", 80)));
+        assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
+                host("https", "example.com", 80)));
+    }
+
+    @Test
+    public void secureUpgradeRefusesAnythingButTheSameHostGoingSecure() {
+        assertFalse(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 8080),
+                host("https", "example.com", 9999)), "a port change is not an upgrade");
+        assertFalse(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
+                host("https", "other.example", -1)), "the host has to match");
+        assertFalse(Redirect30xInterceptor.secureUpgrade(host("https", "example.com", -1),
+                host("http", "example.com", -1)), "a downgrade is not an upgrade");
+        assertFalse(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
+                host("wss", "example.com", -1)), "only http to https and ws to wss count");
+    }
+
+    @Test
+    public void sameOriginSeparatesSchemeAndPort() {
+        assertFalse(Redirect30xInterceptor.sameOrigin(host("https", "example.com", 443),
+                host("http", "example.com", 443)));
+        assertFalse(Redirect30xInterceptor.sameOrigin(host("https", "example.com", 443),
+                host("https", "example.com", 8443)));
+    }
 
     @Test
     public void acceptsTheFollowedRedirectStatuses() {

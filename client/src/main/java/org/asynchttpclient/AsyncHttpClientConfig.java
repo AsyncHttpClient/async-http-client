@@ -185,6 +185,48 @@ public interface AsyncHttpClientConfig {
     int getMaxRedirects();
 
     /**
+     * Whether to refuse a redirect that leaves an {@code https} or {@code wss} exchange for a target whose
+     * scheme is not secured, instead of following it. The redirected request is never sent and the exchange
+     * fails with a {@link org.asynchttpclient.handler.RedirectRefusedException}.
+     * <p>
+     * Applies to every hop, bodies or not, and only once {@link #isFollowRedirect()} and
+     * {@link #getMaxRedirects()} have already let the hop through. It says nothing about an exchange that
+     * began in cleartext: there is no downgrade to refuse there.
+     * <p>
+     * {@link org.asynchttpclient.Request#getRefuseSchemeDowngradeOnRedirect()} can refuse a hop this allows,
+     * but cannot permit one this refuses.
+     *
+     * @return true to refuse such a hop, false to follow it
+     */
+    default boolean isRefuseSchemeDowngradeOnRedirect() {
+        return false;
+    }
+
+    /**
+     * Whether to refuse a redirect that would resend this request's content to a different origin, instead of
+     * following it. It applies only to a hop that keeps the body and only when the request actually carries
+     * content, so an ordinary bodyless redirect across origins is untouched, as is a same-origin hop. A
+     * {@code GET} that does carry content is not untouched: it will be refused.
+     * <p>
+     * Moving the same host onto TLS is exempt, so {@code http://host/x} to {@code https://host/x} is followed
+     * even though RFC 6454 counts it as a different origin. The exemption needs the host to match and the port
+     * to be unchanged or both at their scheme's default, so {@code :8080} to {@code :9999} is still refused.
+     * The hop is still not same-base, so credentials are stripped from it as they always were.
+     * <p>
+     * Refusing rather than dropping the body is deliberate: a {@code PUT} that arrived empty would overwrite
+     * the target with nothing. Weigh that against what it blocks: an upload answered with a redirect to
+     * another host, which some storage services use to route a request to its home region, stops working.
+     * <p>
+     * {@link org.asynchttpclient.Request#getRefuseCrossOriginBodyOnRedirect()} can refuse a hop this allows,
+     * but cannot permit one this refuses.
+     *
+     * @return true to refuse such a hop, false to follow it
+     */
+    default boolean isRefuseCrossOriginBodyOnRedirect() {
+        return false;
+    }
+
+    /**
      * Is the {@link ChannelPool} support enabled.
      *
      * @return true if keep-alive is enabled

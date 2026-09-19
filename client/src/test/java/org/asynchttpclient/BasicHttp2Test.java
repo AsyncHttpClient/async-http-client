@@ -50,6 +50,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.test.EventCollectingHandler;
@@ -215,6 +216,18 @@ public class BasicHttp2Test {
                 } else {
                     responseHeaders.status("200");
                 }
+                ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
+                ctx.flush();
+            } else if (routePath.equals("/downgrade")) {
+                ReferenceCountUtil.safeRelease(body);
+                Http2Headers responseHeaders = new DefaultHttp2Headers().status("302");
+                responseHeaders.add("location", "http://127.0.0.1:1/target");
+                ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
+                ctx.flush();
+            } else if (routePath.equals("/cross-origin")) {
+                ReferenceCountUtil.safeRelease(body);
+                Http2Headers responseHeaders = new DefaultHttp2Headers().status("307");
+                responseHeaders.add("location", "https://127.0.0.1:1/target");
                 ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
                 ctx.flush();
             } else if (routePath.equals("/head")) {
@@ -1573,4 +1586,32 @@ public class BasicHttp2Test {
             }
         }
     }
+
+    /**
+     * The refusal has to terminate an HTTP/2 stream as cleanly as an HTTP/1.1 connection, and Http2Handler
+     * gates its own IOExceptionFilter replay on the exception type, so both arms are worth pinning here.
+     */
+    @Test
+    public void schemeDowngradeRefusalAppliesOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(builder -> builder
+                .setFollowRedirect(true)
+                .setRefuseSchemeDowngradeOnRedirect(true))) {
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                    () -> client.prepareGet(httpsUrl("/downgrade")).execute().get(10, TimeUnit.SECONDS));
+            assertInstanceOf(RedirectRefusedException.class, failure.getCause());
+        }
+    }
+
+    @Test
+    public void crossOriginBodyRefusalAppliesOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(builder -> builder
+                .setFollowRedirect(true)
+                .setRefuseCrossOriginBodyOnRedirect(true))) {
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                    () -> client.preparePut(httpsUrl("/cross-origin")).setBody("payload")
+                            .execute().get(10, TimeUnit.SECONDS));
+            assertInstanceOf(RedirectRefusedException.class, failure.getCause());
+        }
+    }
+
 }

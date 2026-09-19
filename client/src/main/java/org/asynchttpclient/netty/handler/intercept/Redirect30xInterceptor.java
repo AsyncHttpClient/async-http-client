@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.util.AsciiString;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
@@ -29,6 +30,7 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
+import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
@@ -54,6 +56,10 @@ import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
+import static org.asynchttpclient.uri.Uri.HTTP;
+import static org.asynchttpclient.uri.Uri.HTTPS;
+import static org.asynchttpclient.uri.Uri.WS;
+import static org.asynchttpclient.uri.Uri.WSS;
 import static org.asynchttpclient.util.HttpConstants.Methods.GET;
 import static org.asynchttpclient.util.HttpConstants.Methods.HEAD;
 import static org.asynchttpclient.util.HttpConstants.Methods.OPTIONS;
@@ -94,12 +100,16 @@ public class Redirect30xInterceptor {
     private final NettyRequestSender requestSender;
     private final MaxRedirectException maxRedirectException;
     private final boolean stripAuthorizationOnRedirect;
+    private final boolean refuseSchemeDowngradeOnRedirect;
+    private final boolean refuseCrossOriginBodyOnRedirect;
 
     Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
         this.config = config;
         this.requestSender = requestSender;
         stripAuthorizationOnRedirect = config.isStripAuthorizationOnRedirect(); // New flag
+        refuseSchemeDowngradeOnRedirect = config.isRefuseSchemeDowngradeOnRedirect();
+        refuseCrossOriginBodyOnRedirect = config.isRefuseCrossOriginBodyOnRedirect();
         maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()),
                 Redirect30xInterceptor.class, "exitAfterHandlingRedirect");
     }
@@ -132,22 +142,45 @@ public class Redirect30xInterceptor {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(LOCATION);
-                Uri newUri = Uri.create(future.getUri(), location);
-                LOGGER.debug("Redirecting to {}", newUri);
+                // The gates below must judge the same URI this hop resolves against, so both come from the
+                // request actually sent on this leg (RFC 9110 section 15.4 item 1). A 401 or 407 retry
+                // rebuilds that request without touching the future's own, so the two agree by each
+                // interceptor's care rather than by construction.
+                Uri currentUri = request.getUri();
+                Uri newUri = Uri.create(currentUri, location);
 
-                boolean sameBase = request.getUri().isSameBase(newUri);
-                boolean schemeDowngrade = request.getUri().isSecured() && !newUri.isSecured();
+                boolean sameBase = currentUri.isSameBase(newUri);
+                boolean schemeDowngrade = currentUri.isSecured() && !newUri.isSecured();
+
+                // Refuse here, before the next request is built and before ensureBodyReplayable can throw an
+                // IOException that an IOExceptionFilter would replay.
+                if (schemeDowngrade && refuseSchemeDowngrade(request)) {
+                    throw refused(statusCode, currentUri, newUri, "the target scheme is not secured");
+                }
+                BodyRepresentation bodyRepresentation =
+                        keepBody ? selectedBodyRepresentation(request) : BodyRepresentation.NONE;
+                if (keepBody && refuseCrossOriginBody(request)
+                        && !sameOrigin(currentUri, newUri) && !secureUpgrade(currentUri, newUri)
+                        && bodyRepresentation != BodyRepresentation.NONE) {
+                    throw refused(statusCode, currentUri, newUri,
+                            "it would resend the request content to another origin");
+                }
+
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Redirecting to {}", newUri.toUrlWithoutUserInfo());
+                }
+
                 boolean stripAuth = !sameBase || schemeDowngrade || stripAuthorizationOnRedirect;
 
-                if (stripAuth && (request.getRealm() != null
+                if (LOGGER.isDebugEnabled() && stripAuth && (request.getRealm() != null
                         || request.getHeaders().contains(AUTHORIZATION)
                         || request.getHeaders().contains(COOKIE))) {
-                    LOGGER.debug("Stripping credentials on redirect to {}", newUri);
+                    LOGGER.debug("Stripping credentials on redirect to {}", newUri.toUrlWithoutUserInfo());
                 }
 
                 final RequestBuilder requestBuilder;
                 if (keepBody) {
-                    ensureBodyReplayable(request, future.isStreamConsumed());
+                    ensureBodyReplayable(request, bodyRepresentation, future.isStreamConsumed());
                     requestBuilder = request.toBuilder();
                     if (!sameBase) {
                         // An explicitly resolved address and virtual host belong to the previous target.
@@ -177,6 +210,17 @@ public class Redirect30xInterceptor {
                 Boolean useAbsoluteRequestDeadline = request.getUseAbsoluteRequestDeadline();
                 if (useAbsoluteRequestDeadline != null) {
                     requestBuilder.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline);
+                }
+
+                // The gate reads these off the request each hop, and the !keepBody branch starts from an
+                // empty builder, so without this the caller's choice lapses from the second hop on.
+                Boolean refuseSchemeDowngrade = request.getRefuseSchemeDowngradeOnRedirect();
+                if (refuseSchemeDowngrade != null) {
+                    requestBuilder.setRefuseSchemeDowngradeOnRedirect(refuseSchemeDowngrade);
+                }
+                Boolean refuseCrossOriginBody = request.getRefuseCrossOriginBodyOnRedirect();
+                if (refuseCrossOriginBody != null) {
+                    requestBuilder.setRefuseCrossOriginBodyOnRedirect(refuseCrossOriginBody);
                 }
 
                 if (stripAuth) {
@@ -211,7 +255,9 @@ public class Redirect30xInterceptor {
                 final Request nextRequest = requestBuilder.setUri(newUri).build();
                 future.setTargetRequest(nextRequest);
 
-                LOGGER.debug("Sending redirect to {}", newUri);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Sending redirect to {}", newUri.toUrlWithoutUserInfo());
+                }
 
                 if (channel instanceof Http2StreamChannel) {
                     // HTTP/2 stream channels are single-use and close immediately after the response.
@@ -240,8 +286,79 @@ public class Redirect30xInterceptor {
         return false;
     }
 
-    private static void ensureBodyReplayable(Request request, boolean streamConsumed) throws IOException {
-        BodyRepresentation bodyRepresentation = selectedBodyRepresentation(request);
+    // Tightening only, unlike followRedirect: these are security switches, and a framework layer that builds
+    // the Request should not be able to void a posture the operator set on the client.
+    private boolean refuseSchemeDowngrade(Request request) {
+        return refuseSchemeDowngradeOnRedirect || Boolean.TRUE.equals(request.getRefuseSchemeDowngradeOnRedirect());
+    }
+
+    private boolean refuseCrossOriginBody(Request request) {
+        return refuseCrossOriginBodyOnRedirect || Boolean.TRUE.equals(request.getRefuseCrossOriginBodyOnRedirect());
+    }
+
+    private static RedirectRefusedException refused(int statusCode, Uri from, Uri to, String reason) {
+        // getBaseUrl() on both sides: toBaseUrl() keeps the path and toString() keeps userinfo, neither of
+        // which belongs in a message headed for a log.
+        return new RedirectRefusedException("Refusing to follow the " + statusCode + " redirect from "
+                + from.getBaseUrl() + " to " + to.getBaseUrl() + ": " + reason, statusCode, to);
+    }
+
+    /**
+     * Same scheme, host and effective port, per RFC 6454 section 4.
+     * <p>
+     * Not {@link Uri#isSameBase(Uri)}, which compares hosts with {@link String#equals}: a host differing only
+     * in case is still the same origin, and refusing there would break a legitimate upload. The fold is
+     * ASCII-only because that is the {@code i;ascii-casemap} collation section 4 step 5 asks for;
+     * {@link String#equalsIgnoreCase} folds Unicode and would call {@code i.example} equal to a host starting
+     * with {@code \\u0130}, which punycodes to a different host. Nothing here does IDNA
+     * either, so a Unicode host and its A-label spelling read as different origins, erring towards refusal.
+     *
+     * @param from the URI this hop is leaving
+     * @param to   the redirect target
+     * @return whether the two are the same origin
+     */
+    static boolean sameOrigin(Uri from, Uri to) {
+        return from.getScheme().equals(to.getScheme())
+                && AsciiString.contentEqualsIgnoreCase(from.getHost(), to.getHost())
+                && from.getExplicitPort() == to.getExplicitPort();
+    }
+
+    /**
+     * Whether this hop only swaps the same host onto TLS. This is a deliberate exemption from the origin
+     * rule, not something RFC 6454 allows: section 4 puts the scheme and port in the triple, so an upgrade is
+     * a different origin. It is our own policy, because refusing a move onto TLS would cost confidentiality
+     * rather than protect it.
+     * <p>
+     * The host is compared, not trusted: a {@code Location} naming anything else stays cross-origin. The port
+     * rule is modelled on the upgrade mapping in RFC 6797 section 8.3, which is not binding here (that
+     * section is scoped to a Known HSTS Host, and we keep no HSTS state): the same port, or both at their
+     * scheme's default. So {@code :8080} to {@code :9999} is not an upgrade, while an explicit {@code :80} to
+     * {@code :80} is, which section 8.3 would have mapped to {@code :443}. That last case keeps the very
+     * endpoint the redirect was served from, so it reaches no party the request was not already aimed at.
+     * <p>
+     * Only the content arm consults this. The hop is still not {@code isSameBase}, so {@code Authorization},
+     * {@code Proxy-Authorization} and {@code Cookie} are stripped and the realm is dropped, as on any
+     * cross-base hop; cookies are then re-derived from the {@link org.asynchttpclient.cookie.CookieStore}
+     * against the new URI, which on an upgraded hop includes the host's {@code Secure} ones.
+     *
+     * @param from the URI this hop is leaving
+     * @param to   the redirect target
+     * @return whether this is the same host moving to its secured scheme
+     */
+    static boolean secureUpgrade(Uri from, Uri to) {
+        // Named pairs, not isSecured(), which would also admit http to wss. Schemes compare exactly because
+        // the Uri constructor lowercases them on every construction path.
+        boolean upgraded = HTTP.equals(from.getScheme()) && HTTPS.equals(to.getScheme())
+                || WS.equals(from.getScheme()) && WSS.equals(to.getScheme());
+        return upgraded
+                && AsciiString.contentEqualsIgnoreCase(from.getHost(), to.getHost())
+                && (from.getExplicitPort() == to.getExplicitPort()
+                        || from.getExplicitPort() == from.getSchemeDefaultPort()
+                                && to.getExplicitPort() == to.getSchemeDefaultPort());
+    }
+
+    private static void ensureBodyReplayable(Request request, BodyRepresentation bodyRepresentation,
+                                             boolean streamConsumed) throws IOException {
         if (bodyRepresentation == BodyRepresentation.BODY_PARTS) {
             for (Part part : request.getBodyParts()) {
                 if (part instanceof InputStreamPart) {

@@ -88,6 +88,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected @Nullable File file;
     protected @Nullable Boolean followRedirect;
     protected @Nullable Boolean useAbsoluteRequestDeadline;
+    protected @Nullable Boolean refuseSchemeDowngradeOnRedirect;
+    protected @Nullable Boolean refuseCrossOriginBodyOnRedirect;
     protected @Nullable Duration requestTimeout;
     protected @Nullable Duration readTimeout;
     protected long rangeOffset;
@@ -167,6 +169,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         file = prototype.getFile();
         followRedirect = prototype.getFollowRedirect();
         useAbsoluteRequestDeadline = prototype.getUseAbsoluteRequestDeadline();
+        refuseSchemeDowngradeOnRedirect = prototype.getRefuseSchemeDowngradeOnRedirect();
+        refuseCrossOriginBodyOnRedirect = prototype.getRefuseCrossOriginBodyOnRedirect();
         requestTimeout = prototype.getRequestTimeout();
         readTimeout = prototype.getReadTimeout();
         rangeOffset = prototype.getRangeOffset();
@@ -611,6 +615,34 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    /**
+     * Refuses a scheme downgrade on this request even when the client allows it.
+     *
+     * @param refuseSchemeDowngradeOnRedirect true to refuse a redirect off this request that leaves a secured
+     *                                        scheme for one that is not; false leaves
+     *                                        {@link AsyncHttpClientConfig#isRefuseSchemeDowngradeOnRedirect()}
+     *                                        in charge and cannot relax it
+     * @return {@code this}
+     */
+    public T setRefuseSchemeDowngradeOnRedirect(boolean refuseSchemeDowngradeOnRedirect) {
+        this.refuseSchemeDowngradeOnRedirect = refuseSchemeDowngradeOnRedirect;
+        return asDerivedType();
+    }
+
+    /**
+     * Refuses a cross-origin body replay on this request even when the client allows it.
+     *
+     * @param refuseCrossOriginBodyOnRedirect true to refuse a redirect off this request that would resend its
+     *                                        content to another origin; false leaves
+     *                                        {@link AsyncHttpClientConfig#isRefuseCrossOriginBodyOnRedirect()}
+     *                                        in charge and cannot relax it
+     * @return {@code this}
+     */
+    public T setRefuseCrossOriginBodyOnRedirect(boolean refuseCrossOriginBodyOnRedirect) {
+        this.refuseCrossOriginBodyOnRedirect = refuseCrossOriginBodyOnRedirect;
+        return asDerivedType();
+    }
+
     public T setFollowRedirect(boolean followRedirect) {
         this.followRedirect = followRedirect;
         return asDerivedType();
@@ -699,6 +731,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.file = file;
         rb.followRedirect = followRedirect;
         rb.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
+        rb.refuseSchemeDowngradeOnRedirect = refuseSchemeDowngradeOnRedirect;
+        rb.refuseCrossOriginBodyOnRedirect = refuseCrossOriginBodyOnRedirect;
         rb.requestTimeout = requestTimeout;
         rb.readTimeout = readTimeout;
         rb.rangeOffset = rangeOffset;
@@ -771,6 +805,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.charset,
                 rb.channelPoolPartitioning,
                 rb.nameResolver,
-                rb.useAbsoluteRequestDeadline);
+                rb.useAbsoluteRequestDeadline,
+                rb.refuseSchemeDowngradeOnRedirect,
+                rb.refuseCrossOriginBodyOnRedirect);
     }
 }

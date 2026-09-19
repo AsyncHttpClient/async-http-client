@@ -133,6 +133,18 @@ public class AsyncHttpClientDefaultsTest {
     }
 
     @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultRefuseSchemeDowngradeOnRedirect() {
+        assertFalse(AsyncHttpClientConfigDefaults.defaultRefuseSchemeDowngradeOnRedirect());
+        testBooleanSystemProperty("refuseSchemeDowngradeOnRedirect", "defaultRefuseSchemeDowngradeOnRedirect", "true");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultRefuseCrossOriginBodyOnRedirect() {
+        assertFalse(AsyncHttpClientConfigDefaults.defaultRefuseCrossOriginBodyOnRedirect());
+        testBooleanSystemProperty("refuseCrossOriginBodyOnRedirect", "defaultRefuseCrossOriginBodyOnRedirect", "true");
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
     public void testDefaultAllowPoolingConnection() {
         assertTrue(AsyncHttpClientConfigDefaults.defaultKeepAlive());
         testBooleanSystemProperty("keepAlive", "defaultKeepAlive", "false");
