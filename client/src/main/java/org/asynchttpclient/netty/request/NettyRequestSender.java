@@ -1303,8 +1303,8 @@ public final class NettyRequestSender {
      * rather than waiting out the deadline for its own pinned IP.
      *
      * @return the (pending) future when the request was reused or deferred; {@code null} if it should be
-     *         failed with {@code semaphoreException} (a WebSocket request, or on the event loop with no
-     *         connection available)
+     *         failed with {@code semaphoreException} (a WebSocket request, an origin that could never carry
+     *         an HTTP/2 connection, or on the event loop with no connection available)
      */
     private <T> ListenableFuture<T> reuseOrDeferHttp2Connection(Request request, ProxyServer proxy,
             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, IOException semaphoreException) {
@@ -1324,6 +1324,14 @@ public final class NettyRequestSender {
             return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
         }
         if (isOnEventLoop()) {
+            return null;
+        }
+        // Only defer for a connection that could ever exist. An HTTP/2 connection is registered either from
+        // ALPN on a secured origin (directly or through a CONNECT tunnel) or, on a cleartext origin, from an
+        // h2c prior-knowledge upgrade -- see NettyConnectListener. With neither in play nothing will ever
+        // register for this key, so arming the waiter would only hold the request for connectTimeout before
+        // failing it with the permit exception it already has, silently overriding acquireFreeChannelTimeout.
+        if (!request.getUri().isSecured() && !channelManager.isHttp2CleartextEnabled()) {
             return null;
         }
         new Http2ConnectionWaiter<>(request, proxy, future, asyncHandler, override, semaphoreException).arm();
