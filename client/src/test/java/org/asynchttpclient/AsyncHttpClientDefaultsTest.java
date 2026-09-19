@@ -235,4 +235,9 @@ public class AsyncHttpClientDefaultsTest {
             System.clearProperty(ASYNC_CLIENT_CONFIG_ROOT + propertyName);
         }
     }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testDefaultRedirectPolicy() {
+        assertEquals(AsyncHttpClientConfigDefaults.defaultRedirectPolicy(), RedirectPolicy.ALLOW_ALL);
+    }
 }

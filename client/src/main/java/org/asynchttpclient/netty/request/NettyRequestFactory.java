@@ -220,20 +220,23 @@ public final class NettyRequestFactory {
         String requestUri = requestUri(uri, proxyServer, connect);
 
         NettyBody body = connect ? null : body(request);
+        // Recorded because the direct branch below stores a null NettyBody even though the bytes go out,
+        // so getBody() cannot answer "was there content" for callers that need to know.
+        boolean hasContent = body != null;
 
         NettyRequest nettyRequest;
         if (body == null) {
             HttpRequest httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, Unpooled.EMPTY_BUFFER);
-            nettyRequest = new NettyRequest(httpRequest, null);
+            nettyRequest = new NettyRequest(httpRequest, null, hasContent);
 
         } else if (body instanceof NettyDirectBody) {
             ByteBuf buf = ((NettyDirectBody) body).byteBuf();
             HttpRequest httpRequest = new DefaultFullHttpRequest(httpVersion, method, requestUri, buf);
             // body is passed as null as it's written directly with the request
-            nettyRequest = new NettyRequest(httpRequest, null);
+            nettyRequest = new NettyRequest(httpRequest, null, hasContent);
         } else {
             HttpRequest httpRequest = new DefaultHttpRequest(httpVersion, method, requestUri);
-            nettyRequest = new NettyRequest(httpRequest, body);
+            nettyRequest = new NettyRequest(httpRequest, body, hasContent);
         }
 
         HttpHeaders headers = nettyRequest.getHttpRequest().headers();

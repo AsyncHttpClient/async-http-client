@@ -26,6 +26,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.KeepAliveStrategy;
+import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -174,6 +175,7 @@ public interface AsyncHttpClientConfig {
      * Is HTTP redirect enabled
      *
      * @return true if enabled.
+     * @see #getRedirectPolicy()
      */
     boolean isFollowRedirect();
 
@@ -181,8 +183,26 @@ public interface AsyncHttpClientConfig {
      * Get the maximum number of HTTP redirect
      *
      * @return the maximum number of HTTP redirect
+     * @see #getRedirectPolicy()
      */
     int getMaxRedirects();
+
+    /**
+     * Extra restrictions on a redirect this client would otherwise follow. Needs {@link #isFollowRedirect()},
+     * and {@link #getMaxRedirects()} is checked first.
+     * <p>
+     * Unlike {@link #getLoadBalance()} this default body resolves the value instead of returning a constant,
+     * so an implementation that does not override it still honours {@code org.asynchttpclient.redirectPolicy}.
+     * That reads a system property, then any {@code org/asynchttpclient/config/ahc.properties} on the
+     * classpath, then {@code ahc-default.properties} - so a dependency can set the posture for every client in
+     * the JVM that does not choose one.
+     *
+     * @return the redirect policy applied to every hop, never {@code null}
+     * @see RedirectPolicy
+     */
+    default RedirectPolicy getRedirectPolicy() {
+        return AsyncHttpClientConfigDefaults.defaultRedirectPolicy();
+    }
 
     /**
      * Is the {@link ChannelPool} support enabled.
@@ -575,8 +595,12 @@ public interface AsyncHttpClientConfig {
 
     /**
      * Indicates whether the Authorization header should be stripped during redirects to a different domain.
+     * <p>
+     * {@link #getRedirectPolicy()} never relaxes this: it can only refuse hops, not change what is stripped on
+     * a hop that is followed.
      *
      * @return true if the Authorization header should be stripped, false otherwise.
+     * @see #getRedirectPolicy()
      */
     default boolean isStripAuthorizationOnRedirect() {
         // By default, we throw, so that existing implementations don't break.

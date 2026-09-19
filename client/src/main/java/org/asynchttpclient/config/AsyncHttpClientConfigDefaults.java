@@ -16,6 +16,7 @@
 package org.asynchttpclient.config;
 
 import org.asynchttpclient.LoadBalance;
+import org.asynchttpclient.RedirectPolicy;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,7 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String KEEP_ALIVE_CONFIG = "keepAlive";
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
     public static final String LOAD_BALANCE_CONFIG = "loadBalance";
+    public static final String REDIRECT_POLICY_CONFIG = "redirectPolicy";
     public static final String FAILED_IP_COOLDOWN_ENABLED_CONFIG = "failedIpCooldownEnabled";
     public static final String USE_ABSOLUTE_REQUEST_DEADLINE_CONFIG = "useAbsoluteRequestDeadline";
     public static final String FAILED_IP_COOLDOWN_PERIOD_CONFIG = "failedIpCooldownPeriod";
@@ -406,6 +408,33 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultHttp2CleartextEnabled() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_CLEARTEXT_ENABLED_CONFIG);
+    }
+
+    // Keep in step with ahc-default.properties; RedirectPolicyConfigTest pins that they agree.
+    private static final RedirectPolicy BUILT_IN_REDIRECT_POLICY = RedirectPolicy.ALLOW_ALL;
+
+    /**
+     * Never throws: this runs from a {@code Builder} field initialiser, so a typo'd property would otherwise
+     * make every client unconstructable with no way to override it in code.
+     *
+     * @return the configured redirect policy, or the compiled-in default when the property is absent, blank or
+     *         not a constant name
+     */
+    public static RedirectPolicy defaultRedirectPolicy() {
+        String value = AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getString(ASYNC_CLIENT_CONFIG_ROOT + REDIRECT_POLICY_CONFIG);
+        if (value == null || value.trim().isEmpty()) {
+            return BUILT_IN_REDIRECT_POLICY;
+        }
+        // Locale.ROOT is load-bearing, not decoration: a Turkish or Azeri default locale breaks the fold.
+        String normalized = value.trim().replace('-', '_').replace(' ', '_').toUpperCase(Locale.ROOT);
+        try {
+            return RedirectPolicy.valueOf(normalized);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid value '{}' for {}{}, falling back to {}. Valid values: {}",
+                    value, ASYNC_CLIENT_CONFIG_ROOT, REDIRECT_POLICY_CONFIG,
+                    BUILT_IN_REDIRECT_POLICY, Arrays.toString(RedirectPolicy.values()));
+            return BUILT_IN_REDIRECT_POLICY;
+        }
     }
 
     public static LoadBalance defaultLoadBalance() {

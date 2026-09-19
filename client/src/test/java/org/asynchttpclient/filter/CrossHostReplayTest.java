@@ -14,8 +14,10 @@ package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Dsl;
+import org.asynchttpclient.RedirectPolicy;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.junit.jupiter.api.Test;
 
@@ -237,6 +239,33 @@ public class CrossHostReplayTest {
             assertTrue(proxy.seen.stream().noneMatch(r -> r.contains("/admin")),
                     "a request addressed directly to the origin was served over the pooled proxy connection: "
                             + proxy.seen);
+        }
+    }
+
+    /**
+     * A filter replay is deliberately not governed by {@code RedirectPolicy}: the difference is who picked the
+     * target. A redirect target comes from the server, which is the policy's whole premise; a replay target
+     * comes from the application's own code. Without this test the next auditor reads that as a bypass, or
+     * "fixes" it and breaks the failover this class documents. Credential stripping on replay is unaffected.
+     */
+    @Test
+    public void crossHostReplayIsNotGovernedByRedirectPolicy() throws Exception {
+        try (Recorder a = new Recorder(503); Recorder b = new Recorder(200)) {
+            String urlB = "http://localhost:" + b.port() + "/on-b";
+            try (AsyncHttpClient client = Dsl.asyncHttpClient(Dsl.config()
+                    .setMaxRequestRetry(0)
+                    .setFollowRedirect(true)
+                    // If replays were governed, the strictest policy would refuse this one.
+                    .setRedirectPolicy(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE_AND_CROSS_ORIGIN_BODY)
+                    .addResponseFilter(failoverTo(urlB)))) {
+
+                Response response = client.prepareGet("http://localhost:" + a.port() + "/on-a")
+                        .execute().get(10, TimeUnit.SECONDS);
+
+                assertEquals(200, response.getStatusCode(), "the application's own failover must still work");
+                assertTrue(b.seen.stream().anyMatch(line -> line.startsWith("/on-b")),
+                        "the replay target must have been reached, got " + b.seen);
+            }
         }
     }
 }

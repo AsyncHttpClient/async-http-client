@@ -58,6 +58,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.asynchttpclient.handler.RedirectRefusedException;
 import org.junit.jupiter.api.Test;
 
 import java.net.URLDecoder;
@@ -206,6 +207,14 @@ public class BasicHttp2Test {
                         sendSimpleResponse(ctx, "200", Unpooled.EMPTY_BUFFER, null);
                     }
                 }, millis, TimeUnit.MILLISECONDS);
+            } else if (routePath.equals("/redirect-insecure")) {
+                // An https-to-http downgrade. Port 1 is unroutable on purpose: ALLOW_ALL tries and fails at
+                // the transport, REFUSE_INSECURE_DOWNGRADE never connects, and that difference is the test.
+                ReferenceCountUtil.safeRelease(body);
+                Http2Headers downgradeHeaders = new DefaultHttp2Headers().status("302")
+                        .add("location", "http://127.0.0.1:1/hello");
+                ctx.write(new DefaultHttp2HeadersFrame(downgradeHeaders, true));
+                ctx.flush();
             } else if (routePath.startsWith("/redirect/")) {
                 int count = Integer.parseInt(routePath.substring("/redirect/".length()));
                 ReferenceCountUtil.safeRelease(body);
@@ -1382,6 +1391,86 @@ public class BasicHttp2Test {
     // -------------------------------------------------------------------------
     // Redirects and methods tests
     // -------------------------------------------------------------------------
+
+    /**
+     * A refusal fails one stream through the handler's stream-scoped path, so the shared parent connection has
+     * to survive it. No onConnectionOffer count here - that fires for the parent on the way in too, so it
+     * cannot discriminate; the second request is the real invariant.
+     */
+    @Test
+    public void refusedDowngradeOverHttp2LeavesTheConnectionUsable() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b
+                .setFollowRedirect(true)
+                .setRedirectPolicy(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE))) {
+
+            AtomicReference<Throwable> thrown = new AtomicReference<>();
+
+            ExecutionException e = assertThrows(ExecutionException.class,
+                    () -> client.prepareGet(httpsUrl("/redirect-insecure"))
+                            .execute(new AsyncCompletionHandlerAdapter() {
+                                @Override
+                                public void onThrowable(Throwable t) {
+                                    thrown.set(t);
+                                }
+                            }).get(30, SECONDS));
+
+            assertInstanceOf(RedirectRefusedException.class, e.getCause(), "cause was " + e.getCause());
+            assertInstanceOf(RedirectRefusedException.class, thrown.get());
+
+            // A 200 alone would not prove the connection survived - the client would just open a fresh one.
+            // onConnectionPooled fires only for a send onto an already-open channel, so it discriminates.
+            AtomicInteger pooled = new AtomicInteger();
+            Response afterwards = client.prepareGet(httpsUrl("/hello"))
+                    .execute(new AsyncCompletionHandlerAdapter() {
+                        @Override
+                        public void onConnectionPooled(io.netty.channel.Channel connection) {
+                            pooled.incrementAndGet();
+                        }
+                    }).get(30, SECONDS);
+            assertEquals(200, afterwards.getStatusCode());
+            assertEquals(1, pooled.get(),
+                    "the second request must reuse the surviving parent connection, not open a new one");
+        }
+    }
+
+    /**
+     * ALLOW_ALL must not refuse the hop. The target is unroutable, so what happens after the attempt is not
+     * this test's business - only that the attempt was made at all.
+     */
+    @Test
+    public void downgradeOverHttp2IsAttemptedUnderAllowAll() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b
+                .setFollowRedirect(true)
+                .setRedirectPolicy(RedirectPolicy.ALLOW_ALL))) {
+
+            AtomicReference<Throwable> thrown = new AtomicReference<>();
+            AtomicBoolean attemptedPlaintextTarget = new AtomicBoolean();
+
+            try {
+                client.prepareGet(httpsUrl("/redirect-insecure"))
+                        .execute(new AsyncCompletionHandlerAdapter() {
+                            @Override
+                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
+                                if (remoteAddress.getPort() == 1) {
+                                    attemptedPlaintextTarget.set(true);
+                                }
+                            }
+
+                            @Override
+                            public void onThrowable(Throwable t) {
+                                thrown.set(t);
+                            }
+                        }).get(30, SECONDS);
+            } catch (ExecutionException e) {
+                thrown.set(e.getCause());
+            }
+
+            assertFalse(thrown.get() instanceof RedirectRefusedException,
+                    "ALLOW_ALL must not refuse the downgrade, got " + thrown.get());
+            assertTrue(attemptedPlaintextTarget.get(),
+                    "ALLOW_ALL must actually attempt the plaintext target");
+        }
+    }
 
     @Test
     public void reachingMaxRedirectThrowsMaxRedirectExceptionOverHttp2() throws Exception {

@@ -40,12 +40,14 @@ public final class NettyRequest {
 
     private final HttpRequest httpRequest;
     private final NettyBody body;
+    private final boolean hasContent;
     @SuppressWarnings("unused")
     private volatile int state;
 
-    NettyRequest(HttpRequest httpRequest, NettyBody body) {
+    NettyRequest(HttpRequest httpRequest, NettyBody body, boolean hasContent) {
         this.httpRequest = httpRequest;
         this.body = body;
+        this.hasContent = hasContent;
     }
 
     public HttpRequest getHttpRequest() {
@@ -54,6 +56,21 @@ public final class NettyRequest {
 
     public NettyBody getBody() {
         return body;
+    }
+
+    /**
+     * Whether {@link NettyRequestFactory} picked a body for this request - "would content be sent", which is
+     * what a replay decision needs. With {@code Expect: 100-continue} content can be picked and never written.
+     * <p>
+     * Not the same as {@code getBody() != null}: a {@code NettyDirectBody} is inlined into the
+     * {@code FullHttpRequest} and its {@code NettyBody} stored as {@code null}, so that is null for
+     * {@code byte[]}, {@code String}, {@code ByteBuffer}, {@code ByteBuf} and form params. Nor can you read it
+     * back off {@code getHttpRequest().content()} - Netty's encoder has released it by then.
+     *
+     * @return {@code true} when a request body was selected for transmission
+     */
+    public boolean hasContent() {
+        return hasContent;
     }
 
     /**

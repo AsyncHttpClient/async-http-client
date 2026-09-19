@@ -88,6 +88,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     protected @Nullable File file;
     protected @Nullable Boolean followRedirect;
     protected @Nullable Boolean useAbsoluteRequestDeadline;
+    protected @Nullable RedirectPolicy redirectPolicy;
     protected @Nullable Duration requestTimeout;
     protected @Nullable Duration readTimeout;
     protected long rangeOffset;
@@ -167,6 +168,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         file = prototype.getFile();
         followRedirect = prototype.getFollowRedirect();
         useAbsoluteRequestDeadline = prototype.getUseAbsoluteRequestDeadline();
+        redirectPolicy = prototype.getRedirectPolicy();
         requestTimeout = prototype.getRequestTimeout();
         readTimeout = prototype.getReadTimeout();
         rangeOffset = prototype.getRangeOffset();
@@ -616,6 +618,17 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         return asDerivedType();
     }
 
+    /**
+     * @param redirectPolicy additional restrictions on a redirect this request would otherwise follow,
+     *                       overriding {@link AsyncHttpClientConfig#getRedirectPolicy()}. Only a stricter
+     *                       value than the client's takes effect; {@code null} defers to the client entirely
+     * @return {@code this}
+     */
+    public T setRedirectPolicy(@Nullable RedirectPolicy redirectPolicy) {
+        this.redirectPolicy = redirectPolicy;
+        return asDerivedType();
+    }
+
     public T setRequestTimeout(Duration requestTimeout) {
         this.requestTimeout = requestTimeout;
         return asDerivedType();
@@ -699,6 +712,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
         rb.file = file;
         rb.followRedirect = followRedirect;
         rb.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
+        rb.redirectPolicy = redirectPolicy;
         rb.requestTimeout = requestTimeout;
         rb.readTimeout = readTimeout;
         rb.rangeOffset = rangeOffset;
@@ -771,6 +785,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
                 rb.charset,
                 rb.channelPoolPartitioning,
                 rb.nameResolver,
-                rb.useAbsoluteRequestDeadline);
+                rb.useAbsoluteRequestDeadline,
+                rb.redirectPolicy);
     }
 }
