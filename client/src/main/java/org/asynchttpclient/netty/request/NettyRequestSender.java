@@ -50,6 +50,7 @@ import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
+import org.asynchttpclient.RedirectPolicy;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.LoadBalance;
 import org.asynchttpclient.exception.FilterException;
@@ -133,6 +134,12 @@ public final class NettyRequestSender {
     // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
     // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
     private final FailedIpCooldownHolder ipCooldown;
+    // Read once per client, not per exchange: a third-party AsyncHttpClientConfig resolves this from a
+    // property, so reading it per request would repeat that lookup on the hot path and repeat any
+    // misconfiguration warning. Guarded here, while the client is being constructed, rather than on an event
+    // loop: a null is only reachable from an override that deliberately returns one, and silently choosing a
+    // posture for a security control is worse than failing where the failure names the config.
+    private final RedirectPolicy clientRedirectPolicy;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
         this.config = config;
@@ -143,6 +150,7 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
+        clientRedirectPolicy = requireNonNull(config.getRedirectPolicy(), "config.getRedirectPolicy()");
         // Guard the period against a custom AsyncHttpClientConfig that enables the cooldown but returns a
         // null period: leave the cooldown off rather than NPE while constructing the client.
         Duration cooldownPeriod = config.getFailedIpCooldownPeriod();
@@ -641,12 +649,45 @@ public final class NettyRequestSender {
                 proxyServer);
 
         future.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline(config, request));
+        // The two restrictions are resolved independently and combined as a union, so a per-request policy can
+        // only ever refuse MORE hops than the client's. Never compare RedirectPolicy constants, by ordinal(),
+        // compareTo() or otherwise: constants must be appended to stay compatible, so a constant added later
+        // that carries one restriction and not the other would make any such ordering invert the arm it does
+        // not carry - turning the override back into a way to weaken the client policy.
+        RedirectPolicy requestRedirectPolicy = request.getRedirectPolicy();
+        future.setRedirectRestrictions(
+                refusesInsecureDowngrade(clientRedirectPolicy, requestRedirectPolicy),
+                refusesCrossOriginBodyReplay(clientRedirectPolicy, requestRedirectPolicy));
 
         String expectHeader = request.getHeaders().get(EXPECT);
         if (HttpHeaderValues.CONTINUE.contentEqualsIgnoreCase(expectHeader)) {
             future.setDontWriteBodyBecauseExpectContinue(true);
         }
         return future;
+    }
+
+    /**
+     * The union of the client's and the request's downgrade restriction.
+     *
+     * @param clientPolicy  the client-wide policy, never null
+     * @param requestPolicy the per-request override, or null when the request defers to the client
+     * @return whether a hop leaving a secured scheme is refused for this exchange
+     */
+    static boolean refusesInsecureDowngrade(RedirectPolicy clientPolicy, @Nullable RedirectPolicy requestPolicy) {
+        return clientPolicy.refusesInsecureDowngrade()
+                || requestPolicy != null && requestPolicy.refusesInsecureDowngrade();
+    }
+
+    /**
+     * The union of the client's and the request's cross-origin-content restriction.
+     *
+     * @param clientPolicy  the client-wide policy, never null
+     * @param requestPolicy the per-request override, or null when the request defers to the client
+     * @return whether a hop replaying content to another origin is refused for this exchange
+     */
+    static boolean refusesCrossOriginBodyReplay(RedirectPolicy clientPolicy, @Nullable RedirectPolicy requestPolicy) {
+        return clientPolicy.refusesCrossOriginBodyReplay()
+                || requestPolicy != null && requestPolicy.refusesCrossOriginBodyReplay();
     }
 
     /**

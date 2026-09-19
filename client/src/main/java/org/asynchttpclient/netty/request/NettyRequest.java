@@ -40,12 +40,14 @@ public final class NettyRequest {
 
     private final HttpRequest httpRequest;
     private final NettyBody body;
+    private final boolean hasContent;
     @SuppressWarnings("unused")
     private volatile int state;
 
-    NettyRequest(HttpRequest httpRequest, NettyBody body) {
+    NettyRequest(HttpRequest httpRequest, NettyBody body, boolean hasContent) {
         this.httpRequest = httpRequest;
         this.body = body;
+        this.hasContent = hasContent;
     }
 
     public HttpRequest getHttpRequest() {
@@ -54,6 +56,26 @@ public final class NettyRequest {
 
     public NettyBody getBody() {
         return body;
+    }
+
+    /**
+     * Whether this request put content on the wire, as {@link NettyRequestFactory} selected it.
+     * <p>
+     * Deliberately not derived from {@link #getBody()}: a {@code NettyDirectBody}'s buffer is inlined into the
+     * {@code DefaultFullHttpRequest} and the {@code NettyBody} is then stored as {@code null}, so
+     * {@link #getBody()} is {@code null} for {@code byte[]}, {@code List<byte[]>}, {@code String},
+     * {@code ByteBuffer}, {@code ByteBuf} and form parameters - the commonest bodies there are. Nor can it be
+     * recovered from {@code getHttpRequest().content()}: on the HTTP/1.1 path Netty's encoder takes ownership
+     * of that buffer and releases it.
+     * <p>
+     * Recording it here means a body representation added to {@code NettyRequestFactory.body} is covered with
+     * no edit at the read sites, and a missed one is reported as "no content" only if the factory also
+     * declined to send it.
+     *
+     * @return {@code true} when a request body was selected for transmission
+     */
+    public boolean hasContent() {
+        return hasContent;
     }
 
     /**

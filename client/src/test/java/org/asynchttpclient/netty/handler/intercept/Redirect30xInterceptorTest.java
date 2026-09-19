@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
+import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,5 +49,58 @@ public class Redirect30xInterceptorTest {
         for (int statusCode : new int[]{100, 200, 204, 299, 400, 404, 500}) {
             assertFalse(Redirect30xInterceptor.isRedirect(statusCode), statusCode + " should not be a redirect");
         }
+    }
+
+    private static Uri uri(String scheme, String host, int port) {
+        return new Uri(scheme, null, host, port, "/", null, null);
+    }
+
+    @Test
+    public void sameOriginIgnoresHostCase() {
+        // RFC 3986 section 3.2.2: a host is case-insensitive, so these denote one origin. Uri lower-cases the
+        // scheme in its constructor but leaves the host verbatim, so Uri.isSameBase would call this
+        // cross-origin and the cross-origin arm would hard-fail a legitimate same-origin upload.
+        assertTrue(Redirect30xInterceptor.sameOrigin(uri("https", "example.com", -1),
+                uri("https", "EXAMPLE.com", -1)));
+        assertTrue(Redirect30xInterceptor.sameOrigin(uri("https", "EXAMPLE.COM", 8443),
+                uri("https", "example.com", 8443)));
+    }
+
+    /**
+     * The pin on the ASCII-only fold, and the only place it can be pinned: a non-ASCII host cannot be reached
+     * through an integration test, because a received Location header cannot carry a non-ASCII code point
+     * (Netty decodes header values one byte per char) and the host would have to resolve.
+     * <p>
+     * U+0130 (LATIN CAPITAL LETTER I WITH DOT ABOVE) folds to ASCII 'i' under the Unicode-aware
+     * String.equalsIgnoreCase, while IDN.toASCII("\\u0130.example") is "xn--i-9bb.example" - an unrelated host.
+     * Folding them together would replay the request content to it, which is the very leak this arm exists to
+     * prevent. This test fails the moment the comparison is swapped for String.equalsIgnoreCase.
+     */
+    @Test
+    public void sameOriginDoesNotFoldOutsideAscii() {
+        Uri dotted = uri("https", "\u0130.example", -1);
+        Uri ascii = uri("https", "i.example", -1);
+
+        assertTrue(dotted.getHost().equalsIgnoreCase(ascii.getHost()),
+                "precondition: String.equalsIgnoreCase folds these together, which is why AsciiString is used");
+        assertFalse(Redirect30xInterceptor.sameOrigin(dotted, ascii),
+                "a non-ASCII host must not be folded onto an ASCII one");
+        assertFalse(Redirect30xInterceptor.sameOrigin(ascii, dotted));
+    }
+
+    @Test
+    public void sameOriginComparesSchemeAndEffectivePort() {
+        assertFalse(Redirect30xInterceptor.sameOrigin(uri("https", "example.com", -1),
+                uri("http", "example.com", -1)), "scheme is part of the origin");
+        assertFalse(Redirect30xInterceptor.sameOrigin(uri("https", "example.com", -1),
+                uri("https", "other.example", -1)), "host is part of the origin");
+        assertFalse(Redirect30xInterceptor.sameOrigin(uri("https", "example.com", 8443),
+                uri("https", "example.com", 9443)), "port is part of the origin");
+
+        // -1 means "the scheme's default port", so these are the same origin.
+        assertTrue(Redirect30xInterceptor.sameOrigin(uri("https", "example.com", -1),
+                uri("https", "example.com", 443)));
+        assertTrue(Redirect30xInterceptor.sameOrigin(uri("http", "example.com", 80),
+                uri("http", "example.com", -1)));
     }
 }

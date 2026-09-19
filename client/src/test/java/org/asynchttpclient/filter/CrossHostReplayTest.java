@@ -14,8 +14,10 @@ package org.asynchttpclient.filter;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Dsl;
+import org.asynchttpclient.RedirectPolicy;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.junit.jupiter.api.Test;
 
@@ -237,6 +239,38 @@ public class CrossHostReplayTest {
             assertTrue(proxy.seen.stream().noneMatch(r -> r.contains("/admin")),
                     "a request addressed directly to the origin was served over the pooled proxy connection: "
                             + proxy.seen);
+        }
+    }
+
+    /**
+     * A filter replay is deliberately NOT governed by {@code RedirectPolicy}, and that boundary needs a test or
+     * the next auditor either reads it as a bypass or "fixes" it and breaks the failover this class documents.
+     * <p>
+     * The distinction is who chose the target. A redirect target is chosen by the server answering the request,
+     * which is the whole premise of the policy; a replay target is chosen by the application's own filter code,
+     * and a server-directed policy must not override an explicit instruction from the caller. Note that
+     * {@code NettyRequestSender.replayRequest} keeps its own {@code sameBase}/{@code schemeDowngrade} pair for
+     * credential stripping, which continues to apply.
+     */
+    @Test
+    public void crossHostReplayIsNotGovernedByRedirectPolicy() throws Exception {
+        try (Recorder a = new Recorder(503); Recorder b = new Recorder(200)) {
+            String urlB = "http://localhost:" + b.port() + "/on-b";
+            try (AsyncHttpClient client = Dsl.asyncHttpClient(Dsl.config()
+                    .setMaxRequestRetry(0)
+                    .setFollowRedirect(true)
+                    // The strictest policy: if replays were governed, this replay onto another origin would be
+                    // refused instead of performed.
+                    .setRedirectPolicy(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE_AND_CROSS_ORIGIN_BODY)
+                    .addResponseFilter(failoverTo(urlB)))) {
+
+                Response response = client.prepareGet("http://localhost:" + a.port() + "/on-a")
+                        .execute().get(10, TimeUnit.SECONDS);
+
+                assertEquals(200, response.getStatusCode(), "the application's own failover must still work");
+                assertTrue(b.seen.stream().anyMatch(line -> line.startsWith("/on-b")),
+                        "the replay target must have been reached, got " + b.seen);
+            }
         }
     }
 }

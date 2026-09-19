@@ -26,6 +26,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.channel.KeepAliveStrategy;
+import org.asynchttpclient.config.AsyncHttpClientConfigDefaults;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.RequestFilter;
@@ -174,6 +175,7 @@ public interface AsyncHttpClientConfig {
      * Is HTTP redirect enabled
      *
      * @return true if enabled.
+     * @see #getRedirectPolicy()
      */
     boolean isFollowRedirect();
 
@@ -181,8 +183,29 @@ public interface AsyncHttpClientConfig {
      * Get the maximum number of HTTP redirect
      *
      * @return the maximum number of HTTP redirect
+     * @see #getRedirectPolicy()
      */
     int getMaxRedirects();
+
+    /**
+     * Additional restrictions on a redirect this client would otherwise follow. Has no effect unless
+     * {@link #isFollowRedirect()} is enabled, and is evaluated once per hop. {@link #getMaxRedirects()} is
+     * checked first, so a hop that is both over budget and refusable is reported as a
+     * {@link org.asynchttpclient.handler.MaxRedirectException}.
+     * <p>
+     * Unlike {@link #getLoadBalance()}, this default body resolves the value rather than returning a constant,
+     * so an implementation that does not override it still honours {@code org.asynchttpclient.redirectPolicy}
+     * and there is one fewer copy of the shipped posture to keep in step. That resolution reads a system
+     * property, then an {@code org/asynchttpclient/config/ahc.properties} resource any jar on the classpath
+     * may supply, then {@code ahc-default.properties} - so a dependency can change the posture for every
+     * client in the JVM that does not set it explicitly.
+     *
+     * @return the redirect policy applied to every hop, never {@code null}
+     * @see RedirectPolicy
+     */
+    default RedirectPolicy getRedirectPolicy() {
+        return AsyncHttpClientConfigDefaults.defaultRedirectPolicy();
+    }
 
     /**
      * Is the {@link ChannelPool} support enabled.
@@ -575,8 +598,12 @@ public interface AsyncHttpClientConfig {
 
     /**
      * Indicates whether the Authorization header should be stripped during redirects to a different domain.
+     * <p>
+     * {@link #getRedirectPolicy()} never relaxes this: it can only refuse hops, not change what is stripped on
+     * a hop that is followed.
      *
      * @return true if the Authorization header should be stripped, false otherwise.
+     * @see #getRedirectPolicy()
      */
     default boolean isStripAuthorizationOnRedirect() {
         // By default, we throw, so that existing implementations don't break.

@@ -23,6 +23,8 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -431,5 +433,33 @@ public class RequestBuilderTest {
         assertTrue(value.contains("Proxy-Authorization: <redacted>"));
         assertTrue(value.contains("Cookie: <redacted>"));
         assertTrue(value.contains("request-id"));
+    }
+
+    @Test
+    public void redirectPolicySurvivesToBuilder() {
+        Request request = get("https://example.com/")
+                .setRedirectPolicy(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE_AND_CROSS_ORIGIN_BODY)
+                .build();
+        assertEquals(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE_AND_CROSS_ORIGIN_BODY,
+                request.toBuilder().build().getRedirectPolicy());
+    }
+
+    @Test
+    public void redirectPolicyDefaultsToDeferringToTheConfig() {
+        assertNull(get("https://example.com/").build().getRedirectPolicy());
+    }
+
+    /**
+     * {@code executeSignatureCalculator} copies the builder field by field by hand, so a field omitted there
+     * is dropped for every request that carries a SignatureCalculator - with no compile error to catch it.
+     */
+    @Test
+    public void redirectPolicySurvivesASignatureCalculator() {
+        Request request = get("https://example.com/")
+                .setRedirectPolicy(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE)
+                .setSignatureCalculator((baseRequest, requestBuilder) -> requestBuilder.addHeader("X-Signed", "yes"))
+                .build();
+        assertEquals(RedirectPolicy.REFUSE_INSECURE_DOWNGRADE, request.getRedirectPolicy());
+        assertEquals("yes", request.getHeaders().get("X-Signed"), "precondition: the calculator ran");
     }
 }

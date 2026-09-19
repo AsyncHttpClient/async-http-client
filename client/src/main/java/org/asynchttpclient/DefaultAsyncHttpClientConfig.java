@@ -85,6 +85,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultLoadBalance;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRedirectPolicy;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownTimeout;
@@ -139,6 +140,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final @Nullable Realm realm;
     private final int maxRequestRetry;
     private final LoadBalance loadBalance;
+    private final RedirectPolicy redirectPolicy;
     private final boolean failedIpCooldownEnabled;
     private final boolean useAbsoluteRequestDeadline;
     private final Duration failedIpCooldownPeriod;
@@ -246,6 +248,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          @Nullable Realm realm,
                                          int maxRequestRetry,
                                          LoadBalance loadBalance,
+                                         RedirectPolicy redirectPolicy,
                                          boolean failedIpCooldownEnabled,
                                          boolean useAbsoluteRequestDeadline,
                                          Duration failedIpCooldownPeriod,
@@ -353,6 +356,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.realm = realm;
         this.maxRequestRetry = maxRequestRetry;
         this.loadBalance = loadBalance;
+        this.redirectPolicy = redirectPolicy;
         this.failedIpCooldownEnabled = failedIpCooldownEnabled;
         this.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
         this.failedIpCooldownPeriod = failedIpCooldownPeriod;
@@ -532,6 +536,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public LoadBalance getLoadBalance() {
         return loadBalance;
+    }
+
+    @Override
+    public RedirectPolicy getRedirectPolicy() {
+        return redirectPolicy;
     }
 
     @Override
@@ -967,6 +976,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private @Nullable Realm realm;
         private int maxRequestRetry = defaultMaxRequestRetry();
         private LoadBalance loadBalance = defaultLoadBalance();
+        private RedirectPolicy redirectPolicy = defaultRedirectPolicy();
         private boolean failedIpCooldownEnabled = defaultFailedIpCooldownEnabled();
         private boolean useAbsoluteRequestDeadline = defaultUseAbsoluteRequestDeadline();
         private Duration failedIpCooldownPeriod = defaultFailedIpCooldownPeriod();
@@ -1077,6 +1087,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             realm = config.getRealm();
             maxRequestRetry = config.getMaxRequestRetry();
             loadBalance = config.getLoadBalance();
+            redirectPolicy = config.getRedirectPolicy();
             failedIpCooldownEnabled = config.isFailedIpCooldownEnabled();
             useAbsoluteRequestDeadline = config.isUseAbsoluteRequestDeadline();
             failedIpCooldownPeriod = config.getFailedIpCooldownPeriod();
@@ -1262,6 +1273,22 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          */
         public Builder setLoadBalance(LoadBalance loadBalance) {
             this.loadBalance = loadBalance == null ? LoadBalance.DEFAULT : loadBalance;
+            return this;
+        }
+
+        /**
+         * Additional restrictions on a redirect this client would otherwise follow. Has no effect unless
+         * {@link #setFollowRedirect(boolean)} is enabled.
+         *
+         * <p>Unlike {@link #setLoadBalance(LoadBalance)}, which resets to a constant, {@code null} here
+         * re-reads the configured default: {@link RedirectPolicy} has no {@code DEFAULT} constant, and the
+         * configured posture is the only sensible thing to return to.
+         *
+         * @param redirectPolicy the policy; {@code null} resets to the configured default
+         * @return this
+         */
+        public Builder setRedirectPolicy(RedirectPolicy redirectPolicy) {
+            this.redirectPolicy = redirectPolicy == null ? defaultRedirectPolicy() : redirectPolicy;
             return this;
         }
 
@@ -1807,6 +1834,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     realm,
                     maxRequestRetry,
                     loadBalance,
+                    redirectPolicy,
                     failedIpCooldownEnabled,
                     useAbsoluteRequestDeadline,
                     failedIpCooldownPeriod,
