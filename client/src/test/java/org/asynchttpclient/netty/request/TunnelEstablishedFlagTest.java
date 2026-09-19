@@ -66,6 +66,6 @@ public class TunnelEstablishedFlagTest {
 
     private static NettyRequest nettyRequest(HttpMethod method) {
         return new NettyRequest(
-                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, "localhost:443"), null);
+                new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, "localhost:443"), null, false);
     }
 }

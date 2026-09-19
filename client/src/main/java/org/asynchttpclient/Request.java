@@ -184,6 +184,21 @@ public interface Request {
     }
 
     /**
+     * Tightens {@link AsyncHttpClientConfig#getRedirectPolicy()} for this request and every hop it leads to.
+     * The two are combined, so a request can refuse more than the client does, never fewer.
+     * <p>
+     * As with any per-request setting, a {@link org.asynchttpclient.filter.RequestFilter} that rebuilds the
+     * request from scratch instead of from {@link #toBuilder()} loses it; the client-wide value comes from the
+     * configuration and stays the floor.
+     *
+     * @return the override, or null to use the client configuration's policy
+     */
+    @Nullable
+    default RedirectPolicy getRedirectPolicy() {
+        return null;
+    }
+
+    /**
      * @return the request timeout. Non zero values means "override config value".
      */
     Duration getRequestTimeout();

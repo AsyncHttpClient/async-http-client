@@ -40,7 +40,7 @@ public class NettyRequestTest {
     @Test
     public void releaseFreesTheRequestBodyExactlyOnce() {
         ByteBuf content = Unpooled.buffer().writeBytes("payload".getBytes(StandardCharsets.UTF_8));
-        NettyRequest request = new NettyRequest(postWithBody(content), null);
+        NettyRequest request = new NettyRequest(postWithBody(content), null, true);
 
         assertEquals(1, content.refCnt(), "precondition: body buffer is live");
 
@@ -51,7 +51,7 @@ public class NettyRequestTest {
     @Test
     public void releaseIsIdempotent() {
         ByteBuf content = Unpooled.buffer().writeBytes("payload".getBytes(StandardCharsets.UTF_8));
-        NettyRequest request = new NettyRequest(postWithBody(content), null);
+        NettyRequest request = new NettyRequest(postWithBody(content), null, true);
 
         request.release();
         // A second (or third) release must be a no-op — NOT an IllegalReferenceCountException — because
@@ -66,7 +66,7 @@ public class NettyRequestTest {
     @Test
     public void releaseOfBodylessRequestIsSafe() {
         // GETs / bodyless requests carry Unpooled.EMPTY_BUFFER — releasing must not blow up.
-        NettyRequest request = new NettyRequest(postWithBody(Unpooled.EMPTY_BUFFER), null);
+        NettyRequest request = new NettyRequest(postWithBody(Unpooled.EMPTY_BUFFER), null, false);
         request.release();
         request.release();
     }

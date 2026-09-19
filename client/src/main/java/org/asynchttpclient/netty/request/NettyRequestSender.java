@@ -50,6 +50,7 @@ import org.asynchttpclient.AsyncHttpClientState;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
+import org.asynchttpclient.RedirectPolicy;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.LoadBalance;
 import org.asynchttpclient.exception.FilterException;
@@ -133,6 +134,10 @@ public final class NettyRequestSender {
     // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
     // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
     private final FailedIpCooldownHolder ipCooldown;
+    // Once per client: a third-party config may resolve this from a property, and that lookup (plus any
+    // warning it logs) has no business on the per-request path. Null-checked at construction rather than on an
+    // event loop - better to fail naming the config than to pick a posture for it.
+    private final RedirectPolicy clientRedirectPolicy;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
         this.config = config;
@@ -143,6 +148,7 @@ public final class NettyRequestSender {
         this.nettyTimer = nettyTimer;
         this.clientState = clientState;
         requestFactory = new NettyRequestFactory(config);
+        clientRedirectPolicy = requireNonNull(config.getRedirectPolicy(), "config.getRedirectPolicy()");
         // Guard the period against a custom AsyncHttpClientConfig that enables the cooldown but returns a
         // null period: leave the cooldown off rather than NPE while constructing the client.
         Duration cooldownPeriod = config.getFailedIpCooldownPeriod();
@@ -641,12 +647,43 @@ public final class NettyRequestSender {
                 proxyServer);
 
         future.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline(config, request));
+        // Union of the two, so a request can only ever refuse more than the client does. Never order the
+        // constants: they have to be appended, and one added later carrying fewer restrictions than its
+        // predecessor would turn any ordinal comparison into a way to weaken the client policy.
+        RedirectPolicy requestRedirectPolicy = request.getRedirectPolicy();
+        future.setRedirectRestrictions(
+                refusesInsecureDowngrade(clientRedirectPolicy, requestRedirectPolicy),
+                refusesCrossOriginBodyReplay(clientRedirectPolicy, requestRedirectPolicy));
 
         String expectHeader = request.getHeaders().get(EXPECT);
         if (HttpHeaderValues.CONTINUE.contentEqualsIgnoreCase(expectHeader)) {
             future.setDontWriteBodyBecauseExpectContinue(true);
         }
         return future;
+    }
+
+    /**
+     * The union of the client's and the request's downgrade restriction.
+     *
+     * @param clientPolicy  the client-wide policy, never null
+     * @param requestPolicy the per-request override, or null when the request defers to the client
+     * @return whether a hop leaving a secured scheme is refused for this exchange
+     */
+    static boolean refusesInsecureDowngrade(RedirectPolicy clientPolicy, @Nullable RedirectPolicy requestPolicy) {
+        return clientPolicy.refusesInsecureDowngrade()
+                || requestPolicy != null && requestPolicy.refusesInsecureDowngrade();
+    }
+
+    /**
+     * The union of the client's and the request's cross-origin-content restriction.
+     *
+     * @param clientPolicy  the client-wide policy, never null
+     * @param requestPolicy the per-request override, or null when the request defers to the client
+     * @return whether a hop replaying content to another origin is refused for this exchange
+     */
+    static boolean refusesCrossOriginBodyReplay(RedirectPolicy clientPolicy, @Nullable RedirectPolicy requestPolicy) {
+        return clientPolicy.refusesCrossOriginBodyReplay()
+                || requestPolicy != null && requestPolicy.refusesCrossOriginBodyReplay();
     }
 
     /**

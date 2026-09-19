@@ -22,16 +22,20 @@ import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.util.AsciiString;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
+import org.asynchttpclient.RedirectPolicy;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
+import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
@@ -132,11 +136,28 @@ public class Redirect30xInterceptor {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(LOCATION);
-                Uri newUri = Uri.create(future.getUri(), location);
+                // One base for both resolving the target and judging the origin, so the two can never drift.
+                Uri base = request.getUri();
+                Uri newUri = Uri.create(base, location);
+
+                boolean sameBase = base.isSameBase(newUri);
+                boolean schemeDowngrade = base.isSecured() && !newUri.isSecured();
+
+                // Refuse before anything is rebuilt or replayed, and before ensureBodyReplayable throws an
+                // IOException an IOExceptionFilter could act on. Flag first in each test: ALLOW_ALL then costs
+                // two volatile reads.
+                if (future.isRefusingInsecureDowngradeRedirect() && schemeDowngrade) {
+                    throw redirectRefused(statusCode, base, newUri, "the redirect target's scheme is not secured");
+                }
+                if (future.isRefusingCrossOriginBodyRedirect() && keepBody
+                        && !sameOrigin(base, newUri) && requestHasContent(future, request)) {
+                    throw redirectRefused(statusCode, base, newUri,
+                            "it would replay the request content to another origin");
+                }
+
+                // Below the gate: a refused hop should not first announce a redirect we then decline.
                 LOGGER.debug("Redirecting to {}", newUri);
 
-                boolean sameBase = request.getUri().isSameBase(newUri);
-                boolean schemeDowngrade = request.getUri().isSecured() && !newUri.isSecured();
                 boolean stripAuth = !sameBase || schemeDowngrade || stripAuthorizationOnRedirect;
 
                 if (stripAuth && (request.getRealm() != null
@@ -177,6 +198,13 @@ public class Redirect30xInterceptor {
                 Boolean useAbsoluteRequestDeadline = request.getUseAbsoluteRequestDeadline();
                 if (useAbsoluteRequestDeadline != null) {
                     requestBuilder.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline);
+                }
+
+                // Cosmetic only - the gate reads the future - but the !keepBody branch above builds a fresh
+                // builder, so without this the request stops describing its own policy from hop 2 on.
+                RedirectPolicy requestRedirectPolicy = request.getRedirectPolicy();
+                if (requestRedirectPolicy != null) {
+                    requestBuilder.setRedirectPolicy(requestRedirectPolicy);
                 }
 
                 if (stripAuth) {
@@ -238,6 +266,46 @@ public class Redirect30xInterceptor {
             }
         }
         return false;
+    }
+
+    private static RedirectRefusedException redirectRefused(int statusCode, Uri from, Uri to, String reason) {
+        // getBaseUrl() only: toBaseUrl() keeps the path and toString() keeps userinfo, and neither the
+        // caller's query nor the server's belongs in a message that gets logged.
+        return new RedirectRefusedException("Refusing to follow the " + statusCode + " redirect from "
+                + from.getBaseUrl() + " to " + to.getBaseUrl() + ": " + reason, statusCode, to);
+    }
+
+    /**
+     * Same scheme, host and effective port, per RFC 6454 sections 4 and 5.
+     * <p>
+     * Not {@link Uri#isSameBase(Uri)}, which compares hosts with {@link String#equals}: a host differing only
+     * in case is the same origin, and refusing there would fail a legitimate same-origin upload.
+     * {@code isSameBase} is left alone so credential stripping stays at least as strict as this.
+     * <p>
+     * Keep the fold ASCII-only (RFC 6454 section 4 step 5). {@link String#equalsIgnoreCase} folds Unicode, and
+     * {@code "i.example"} equals-ignore-case a host starting with {@code \\u0130} that punycodes
+     * to {@code xn--i-9bb.example} - a different host we would then hand the content to.
+     * {@code toLowerCase()} without {@link java.util.Locale#ROOT} is the same trap from the other side: a
+     * Turkish locale folds {@code I} outside ASCII.
+     *
+     * @param from the URI this hop is leaving
+     * @param to   the redirect target
+     * @return whether the two are the same origin
+     */
+    static boolean sameOrigin(Uri from, Uri to) {
+        return from.getScheme().equals(to.getScheme())
+                && AsciiString.contentEqualsIgnoreCase(from.getHost(), to.getHost())
+                && from.getExplicitPort() == to.getExplicitPort();
+    }
+
+    /**
+     * {@link NettyRequest#hasContent()} is the factory's own answer, so a body representation added there is
+     * covered here for free. {@link #selectedBodyRepresentation} is OR-ed in as a belt-and-braces check, not
+     * as a substitute - if the two ever disagree, we want the stricter one.
+     */
+    private static boolean requestHasContent(NettyResponseFuture<?> future, Request request) {
+        return future.getNettyRequest().hasContent()
+                || selectedBodyRepresentation(request) != BodyRepresentation.NONE;
     }
 
     private static void ensureBodyReplayable(Request request, boolean streamConsumed) throws IOException {

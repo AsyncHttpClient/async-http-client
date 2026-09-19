@@ -167,6 +167,11 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     // Read when a TimeoutsHolder is built, which happens on the caller thread, an event loop or the timer
     // thread depending on the path, so it is published rather than plain.
     private volatile boolean useAbsoluteRequestDeadline;
+    // Resolved once when the exchange is created, not per hop: a filter replay installs a Request the filter
+    // built, and a rebuilt Request has lost its per-request policy - re-reading it would quietly drop the
+    // restriction the caller asked for. Volatile for the same reason as the flag above.
+    private volatile boolean refuseInsecureDowngradeRedirect;
+    private volatile boolean refuseCrossOriginBodyRedirect;
 
     public NettyResponseFuture(Request originalRequest,
                                AsyncHandler<V> asyncHandler,
@@ -782,6 +787,36 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setUseAbsoluteRequestDeadline(boolean useAbsoluteRequestDeadline) {
         this.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
+    }
+
+    /**
+     * Records the redirect restrictions this exchange enforces, resolved once when it is created.
+     *
+     * @param refuseInsecureDowngradeRedirect whether a hop leaving a secured scheme is refused
+     * @param refuseCrossOriginBodyRedirect   whether a hop replaying content to another origin is refused
+     */
+    public void setRedirectRestrictions(boolean refuseInsecureDowngradeRedirect,
+                                        boolean refuseCrossOriginBodyRedirect) {
+        this.refuseInsecureDowngradeRedirect = refuseInsecureDowngradeRedirect;
+        this.refuseCrossOriginBodyRedirect = refuseCrossOriginBodyRedirect;
+    }
+
+    /**
+     * Whether this exchange refuses a redirect that leaves a secured scheme for an unsecured one.
+     *
+     * @return whether such a hop is refused
+     */
+    public boolean isRefusingInsecureDowngradeRedirect() {
+        return refuseInsecureDowngradeRedirect;
+    }
+
+    /**
+     * Whether this exchange refuses a redirect that would replay the request content to another origin.
+     *
+     * @return whether such a hop is refused
+     */
+    public boolean isRefusingCrossOriginBodyRedirect() {
+        return refuseCrossOriginBodyRedirect;
     }
 
     public Realm getRealm() {
