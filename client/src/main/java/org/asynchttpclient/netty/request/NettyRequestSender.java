@@ -1303,8 +1303,8 @@ public final class NettyRequestSender {
      * rather than waiting out the deadline for its own pinned IP.
      *
      * @return the (pending) future when the request was reused or deferred; {@code null} if it should be
-     *         failed with {@code semaphoreException} (a WebSocket request, or on the event loop with no
-     *         connection available)
+     *         failed with {@code semaphoreException} (a WebSocket request, an origin that could never carry
+     *         an HTTP/2 connection, or on the event loop with no connection available)
      */
     private <T> ListenableFuture<T> reuseOrDeferHttp2Connection(Request request, ProxyServer proxy,
             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, IOException semaphoreException) {
@@ -1324,6 +1324,18 @@ public final class NettyRequestSender {
             return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
         }
         if (isOnEventLoop()) {
+            return null;
+        }
+        // Only wait for a connection that could actually turn up. HTTP/2 gets registered from ALPN on a
+        // secured origin, or on a cleartext one from an h2c prior-knowledge upgrade, and nothing else (see
+        // NettyConnectListener). With neither in play nobody will ever register for this key, so the waiter
+        // could only expire: we would hold the request for connectTimeout and then fail it with the permit
+        // exception we already have, ignoring the acquireFreeChannelTimeout the caller asked for.
+        //
+        // This rests on every hop we open for a cleartext origin being cleartext itself. We never negotiate
+        // h2 with a proxy, and an h2 connection to one would be registered under this cleartext key, so
+        // revisit here if that ever changes.
+        if (!request.getUri().isSecured() && !channelManager.isHttp2CleartextEnabled()) {
             return null;
         }
         new Http2ConnectionWaiter<>(request, proxy, future, asyncHandler, override, semaphoreException).arm();
