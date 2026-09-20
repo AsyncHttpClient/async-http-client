@@ -37,6 +37,7 @@ import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -45,6 +46,7 @@ import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.pkitesting.CertificateBuilder;
@@ -57,6 +59,7 @@ import org.asynchttpclient.test.EventCollectingHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -393,13 +396,21 @@ public class BasicHttp2Test {
                         serverChildChannels.add(ch);
                         ch.pipeline()
                                 .addLast("ssl", serverSslCtx.newHandler(ch.alloc()))
-                                .addLast(Http2FrameCodecBuilder.forServer().build())
-                                .addLast(new Http2MultiplexHandler(new ChannelInitializer<Http2StreamChannel>() {
+                                .addLast(new ApplicationProtocolNegotiationHandler(ApplicationProtocolNames.HTTP_2) {
                                     @Override
-                                    protected void initChannel(Http2StreamChannel streamCh) {
-                                        streamCh.pipeline().addLast(new Http2TestServerHandler());
+                                    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+                                        ctx.pipeline()
+                                                .addLast(Http2FrameCodecBuilder.forServer().build())
+                                                .addLast(new Http2MultiplexHandler(
+                                                        new ChannelInitializer<Http2StreamChannel>() {
+                                                            @Override
+                                                            protected void initChannel(Http2StreamChannel streamCh) {
+                                                                streamCh.pipeline()
+                                                                        .addLast(new Http2TestServerHandler());
+                                                            }
+                                                        }));
                                     }
-                                }));
+                                });
                     }
                 });
 
@@ -419,6 +430,15 @@ public class BasicHttp2Test {
             serverGroup.shutdownGracefully(0, 100, TimeUnit.MILLISECONDS).sync();
         }
         ReferenceCountUtil.release(serverSslCtx);
+    }
+
+    private @Nullable Channel negotiatedHttp2Channel() {
+        for (Channel child : serverChildChannels) {
+            if (child.pipeline().get(Http2FrameCodec.class) != null) {
+                return child;
+            }
+        }
+        return null;
     }
 
     private String httpsUrl(String path) {
@@ -703,17 +723,18 @@ public class BasicHttp2Test {
             // Long-running stream that keeps its connection (and, before the fix, the only permit) busy.
             client.executeRequest(org.asynchttpclient.Dsl.get(httpsUrl("/delay/30000")).setNameResolver(resolver));
 
-            // Wait until the server has accepted the connection.
+            // Wait for a connection that has settled on HTTP/2; one that has only been accepted has no
+            // codec yet and cannot encode the GOAWAY below.
             long deadline = System.currentTimeMillis() + 5000;
-            while (serverChildChannels.size() < 1 && System.currentTimeMillis() < deadline) {
+            Channel parent = negotiatedHttp2Channel();
+            while (parent == null && System.currentTimeMillis() < deadline) {
                 Thread.sleep(20);
+                parent = negotiatedHttp2Channel();
             }
-            assertEquals(1, serverChildChannels.size(), "exactly one HTTP/2 connection should be established");
-            Thread.sleep(300);
+            assertNotNull(parent, "exactly one HTTP/2 connection should be established");
 
             // GOAWAY with a high lastStreamId leaves the in-flight stream running, so the connection
             // stays open and draining.
-            Channel parent = serverChildChannels.iterator().next();
             parent.writeAndFlush(new io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)
                     .setExtraStreamIds(1000)).sync();
             Thread.sleep(300);
