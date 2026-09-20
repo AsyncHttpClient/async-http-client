@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.cookie;
 
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ public class PublicSuffixCookieTest {
         cookie.setPath("/");
         store.add(Uri.create("http://" + setterHost + "/"), cookie);
 
-        List<io.netty.handler.codec.http.cookie.Cookie> got = store.get(Uri.create("http://" + victimHost + "/"));
+        List<Cookie> got = store.get(Uri.create("http://" + victimHost + "/"));
         return got.stream().anyMatch(c -> "SID".equals(c.name()));
     }
 

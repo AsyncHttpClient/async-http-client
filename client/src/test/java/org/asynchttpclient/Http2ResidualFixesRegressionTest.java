@@ -52,14 +52,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -150,7 +155,7 @@ public class Http2ResidualFixesRegressionTest {
                 });
 
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
     @FunctionalInterface
@@ -218,15 +223,15 @@ public class Http2ResidualFixesRegressionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static java.util.Collection<Channel> http2Connections(AsyncHttpClient client) throws Exception {
+    private static Collection<Channel> http2Connections(AsyncHttpClient client) throws Exception {
         ChannelManager cm = ((DefaultAsyncHttpClient) client).channelManager();
-        java.lang.reflect.Field f = ChannelManager.class.getDeclaredField("http2Connections");
+        Field f = ChannelManager.class.getDeclaredField("http2Connections");
         f.setAccessible(true);
         // The registry is grouped by per-host base key (issue #2214): Map<baseKey, Map<fullKey, Channel>>.
         // Flatten the inner maps to recover the flat collection of connections this test expects.
-        return ((java.util.Map<Object, ? extends java.util.Map<Object, Channel>>) f.get(cm)).values().stream()
+        return ((Map<Object, ? extends Map<Object, Channel>>) f.get(cm)).values().stream()
                 .flatMap(inner -> inner.values().stream())
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     private static int activeStreams(AsyncHttpClient client) throws Exception {

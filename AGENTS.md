@@ -74,6 +74,8 @@ Common commands:
 * Error Prone and NullAway run during compilation. Nullability violations in production code under `org.asynchttpclient` fail the build.
 * Respect the JetBrains `@Nullable` and `@NotNull` annotations. Test sources are excluded from NullAway checks.
 * Revapi runs during the `verify` phase and compares the public API against the latest release on Maven Central. Treat API compatibility failures as intentional feedback, not build noise.
+* Error Prone fails the build on fully qualified class names and wildcard imports. Test sources are compiled with only those two checks enabled.
+* Do not use fully qualified class names. Import the type instead. A fully qualified name is only accepted when its simple name is already taken in that file by another type.
 
 ## Repository Layout
 

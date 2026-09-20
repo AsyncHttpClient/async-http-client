@@ -52,6 +52,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,13 +61,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Regression tests for the HTTP/2 multiplexing bugs reported in Issue #2160.
@@ -159,7 +166,7 @@ public class Http2MultiplexBugRegressionTest {
                 });
 
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
     @FunctionalInterface
@@ -557,7 +564,7 @@ public class Http2MultiplexBugRegressionTest {
                 // The exception should be an IOException, not a TimeoutException
                 Throwable cause = e.getCause();
                 assertNotNull(cause);
-                assertFalse(cause instanceof java.util.concurrent.TimeoutException,
+                assertFalse(cause instanceof TimeoutException,
                         "Should NOT fail with TimeoutException — should get IOException from channel close");
             }
         }
@@ -772,7 +779,7 @@ public class Http2MultiplexBugRegressionTest {
                 });
 
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
 
         try (AsyncHttpClient client = asyncHttpClient(config()
                 .setUseInsecureTrustManager(true)

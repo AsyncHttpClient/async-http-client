@@ -9,10 +9,10 @@ updates:
         patterns:
           - "*"
     ignore:
+      # Both are capped by the JDK baseline: Error Prone 2.32 and NullAway 0.13 dropped
+      # JDK 11, so any bump breaks the build. Newer JDKs pick up newer versions via profile.
       - dependency-name: "com.google.errorprone:error_prone_core"
-        update-types: ["version-update:semver-major"]
       - dependency-name: "com.uber.nullaway:nullaway"
-        update-types: ["version-update:semver-major"]
       - dependency-name: "org.junit:junit-bom"
         update-types: ["version-update:semver-major"]
       - dependency-name: "org.apache.tomcat.embed:tomcat-embed-core"

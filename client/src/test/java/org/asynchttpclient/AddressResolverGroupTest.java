@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -144,7 +143,7 @@ public class AddressResolverGroupTest extends HttpTest {
                 DnsServerAddressStreamProviders.platformDefault());
 
         try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
-            Response response = client.prepareGet(GOOGLE_URL).execute().get(20, TimeUnit.SECONDS);
+            Response response = client.prepareGet(GOOGLE_URL).execute().get(20, SECONDS);
             assertNotNull(response);
             assertTrue(response.getStatusCode() >= 200 && response.getStatusCode() < 400,
                     "Expected successful HTTP status but got " + response.getStatusCode());
@@ -161,12 +160,12 @@ public class AddressResolverGroupTest extends HttpTest {
                 DnsServerAddressStreamProviders.platformDefault());
 
         try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
-            Response response1 = client.prepareGet(GOOGLE_URL).execute().get(20, TimeUnit.SECONDS);
+            Response response1 = client.prepareGet(GOOGLE_URL).execute().get(20, SECONDS);
             assertNotNull(response1);
             assertTrue(response1.getStatusCode() >= 200 && response1.getStatusCode() < 400,
                     "Expected successful HTTP status for google.com but got " + response1.getStatusCode());
 
-            Response response2 = client.prepareGet(EXAMPLE_URL).execute().get(20, TimeUnit.SECONDS);
+            Response response2 = client.prepareGet(EXAMPLE_URL).execute().get(20, SECONDS);
             assertNotNull(response2);
             assertTrue(response2.getStatusCode() >= 200 && response2.getStatusCode() < 400,
                     "Expected successful HTTP status for example.com but got " + response2.getStatusCode());

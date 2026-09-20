@@ -28,6 +28,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
@@ -403,7 +404,7 @@ public class Http2ResponseBodyControlTest {
         }
 
         @Override
-        public State onHeadersReceived(io.netty.handler.codec.http.HttpHeaders headers) {
+        public State onHeadersReceived(HttpHeaders headers) {
             return State.CONTINUE;
         }
 

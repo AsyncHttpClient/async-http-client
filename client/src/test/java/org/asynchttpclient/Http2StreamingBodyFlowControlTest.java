@@ -55,6 +55,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
@@ -169,7 +170,7 @@ public class Http2StreamingBodyFlowControlTest {
                 });
 
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
     /**
@@ -463,7 +464,7 @@ public class Http2StreamingBodyFlowControlTest {
                 }
 
                 @Override
-                public BodyState transferTo(io.netty.buffer.ByteBuf target) {
+                public BodyState transferTo(ByteBuf target) {
                     int pos = (int) position.get();
                     if (pos >= data.length) {
                         return BodyState.STOP;

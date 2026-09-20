@@ -35,6 +35,7 @@ import org.junit.jupiter.api.TestInstance;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -254,7 +255,7 @@ public class RoundRobinSendTypeTest {
             NameResolver<InetAddress> resolver = fixedResolver("127.0.0.1");
             try (AsyncHttpClient client = asyncHttpClient(config()
                     .setLoadBalance(LoadBalance.ROUND_ROBIN)
-                    .setRequestTimeout(java.time.Duration.ofMillis(500))
+                    .setRequestTimeout(Duration.ofMillis(500))
                     .setMaxRequestRetry(0).build())) {
                 ExecutionException thrown = assertThrows(ExecutionException.class, () ->
                         client.executeRequest(get("http://roundrobin.test:" + slowPort + "/").setNameResolver(resolver))

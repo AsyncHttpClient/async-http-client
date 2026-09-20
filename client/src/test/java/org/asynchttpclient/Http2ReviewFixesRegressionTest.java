@@ -26,6 +26,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
@@ -51,11 +52,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -147,7 +153,7 @@ public class Http2ReviewFixesRegressionTest {
                 });
 
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
     @FunctionalInterface
@@ -218,19 +224,19 @@ public class Http2ReviewFixesRegressionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static java.util.Collection<Channel> http2Connections(AsyncHttpClient client) throws Exception {
+    private static Collection<Channel> http2Connections(AsyncHttpClient client) throws Exception {
         ChannelManager cm = ((DefaultAsyncHttpClient) client).channelManager();
-        java.lang.reflect.Field f = ChannelManager.class.getDeclaredField("http2Connections");
+        Field f = ChannelManager.class.getDeclaredField("http2Connections");
         f.setAccessible(true);
         // The registry is grouped by per-host base key (issue #2214): Map<baseKey, Map<fullKey, Channel>>.
         // Flatten the inner maps to recover the flat collection of connections this test expects.
-        return ((java.util.Map<Object, ? extends java.util.Map<Object, Channel>>) f.get(cm)).values().stream()
+        return ((Map<Object, ? extends Map<Object, Channel>>) f.get(cm)).values().stream()
                 .flatMap(inner -> inner.values().stream())
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     private static Channel singleHttp2Connection(AsyncHttpClient client) throws Exception {
-        java.util.Collection<Channel> conns = http2Connections(client);
+        Collection<Channel> conns = http2Connections(client);
         assertEquals(1, conns.size(), "expected exactly one pooled HTTP/2 connection, found: " + conns);
         return conns.iterator().next();
     }
@@ -299,7 +305,7 @@ public class Http2ReviewFixesRegressionTest {
                 }
 
                 @Override
-                public State onHeadersReceived(io.netty.handler.codec.http.HttpHeaders headers) {
+                public State onHeadersReceived(HttpHeaders headers) {
                     return State.CONTINUE;
                 }
 
@@ -355,7 +361,7 @@ public class Http2ReviewFixesRegressionTest {
                 // Replay ONLY for our synthetic IOException — not for the benign ChannelClosedException that
                 // every completed single-use H2 stream fires on close (which would otherwise consume this
                 // one-shot replay before the synthetic exception arrives).
-                java.io.IOException io = ctx.getIOException();
+                IOException io = ctx.getIOException();
                 if (io != null && io.getMessage() != null && io.getMessage().contains("synthetic")
                         && replayed.compareAndSet(false, true)) {
                     return new FilterContext.FilterContextBuilder<>(ctx.getAsyncHandler(), ctx.getRequest())
@@ -395,7 +401,7 @@ public class Http2ReviewFixesRegressionTest {
                 }
 
                 @Override
-                public State onHeadersReceived(io.netty.handler.codec.http.HttpHeaders headers) {
+                public State onHeadersReceived(HttpHeaders headers) {
                     return State.CONTINUE;
                 }
 

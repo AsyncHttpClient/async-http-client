@@ -32,6 +32,7 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -339,7 +340,7 @@ public class ResponseBodyControlTest {
                 }
 
                 @Override
-                public State onTrailingHeadersReceived(io.netty.handler.codec.http.HttpHeaders headers) {
+                public State onTrailingHeadersReceived(HttpHeaders headers) {
                     trailerSeen.set(true);
                     callbackControl.get().cancel();
                     return State.CONTINUE;
@@ -405,7 +406,7 @@ public class ResponseBodyControlTest {
                 }
 
                 @Override
-                public State onHeadersReceived(io.netty.handler.codec.http.HttpHeaders responseHeaders) {
+                public State onHeadersReceived(HttpHeaders responseHeaders) {
                     headers.incrementAndGet();
                     assertEquals("present", responseHeaders.get("final-header"));
                     assertNull(responseHeaders.get("link"));
@@ -662,7 +663,7 @@ public class ResponseBodyControlTest {
         }
 
         @Override
-        public State onHeadersReceived(io.netty.handler.codec.http.HttpHeaders headers) {
+        public State onHeadersReceived(HttpHeaders headers) {
             return State.CONTINUE;
         }
 

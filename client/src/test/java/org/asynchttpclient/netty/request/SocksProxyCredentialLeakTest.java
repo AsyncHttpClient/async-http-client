@@ -48,7 +48,7 @@ public class SocksProxyCredentialLeakTest {
         return proxyServer("proxy.example.com", 1080).setProxyType(type).setRealm(proxyRealm).build();
     }
 
-    private static boolean hasProxyAuthorization(org.asynchttpclient.netty.request.NettyRequest nettyRequest) {
+    private static boolean hasProxyAuthorization(NettyRequest nettyRequest) {
         return nettyRequest.getHttpRequest().headers().contains(HttpHeaderNames.PROXY_AUTHORIZATION);
     }
 

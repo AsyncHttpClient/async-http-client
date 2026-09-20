@@ -22,6 +22,7 @@ import io.netty.util.AsciiString;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -119,7 +120,7 @@ public class NettyRequestFactoryHeaderInterningTest {
         // The two known names are interned, the custom one is not.
         boolean hostInterned = false;
         boolean acceptInterned = false;
-        java.util.Iterator<Map.Entry<CharSequence, CharSequence>> it = target.iteratorCharSequence();
+        Iterator<Map.Entry<CharSequence, CharSequence>> it = target.iteratorCharSequence();
         while (it.hasNext()) {
             Map.Entry<CharSequence, CharSequence> e = it.next();
             if (e.getKey() == HttpHeaderNames.HOST) {

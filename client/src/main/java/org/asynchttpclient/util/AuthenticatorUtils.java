@@ -323,7 +323,7 @@ public final class AuthenticatorUtils {
      */
     private static String calculateHA1(Realm realm, String algorithm, @Nullable String realmName,
                                        @Nullable String nonce, @Nullable String cnonce) {
-        Charset wireCs = realm.getCharset() != null ? realm.getCharset() : StandardCharsets.ISO_8859_1;
+        Charset wireCs = realm.getCharset() != null ? realm.getCharset() : ISO_8859_1;
         String a1Base = realm.getPrincipal() + ':' + realmName + ':' + realm.getPassword();
         String hashAlgorithm = hashAlgorithm(algorithm);
 
@@ -337,7 +337,7 @@ public final class AuthenticatorUtils {
                 // For -sess: HA1 = H(H(username:realm:password):nonce:cnonce)
                 String sessInput = ha1 + ":" + nonce + ":" + cnonce;
                 md.reset();
-                md.update(sessInput.getBytes(StandardCharsets.ISO_8859_1));
+                md.update(sessInput.getBytes(ISO_8859_1));
                 ha1 = MessageDigestUtils.bytesToHex(md.digest());
             }
 
@@ -445,7 +445,7 @@ public final class AuthenticatorUtils {
             return cs;
         }
         cs = realm.getCharset();
-        return (cs != null) ? cs : StandardCharsets.ISO_8859_1;
+        return (cs != null) ? cs : ISO_8859_1;
     }
 
     /**
