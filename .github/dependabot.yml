@@ -28,3 +28,13 @@ updates:
       actions:
         patterns:
           - "*"
+
+  # "/" only covers .github/workflows, so the composite action needs its own entry.
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/setup-maven"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns:
+          - "*"

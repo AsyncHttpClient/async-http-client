@@ -27,8 +27,10 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
-      - name: Grant Permission
-        run: chmod +x ./mvnw
+          cache-jdk: true
+      - uses: ./.github/actions/setup-maven
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Compile and API compatibility check
         run: ./mvnw -B -ntp clean verify -DskipTests -Dgpg.skip=true
 
@@ -55,9 +57,10 @@ jobs:
         with:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.jdk }}
-      - name: Grant Permission
-        if: runner.os != 'Windows'
-        run: chmod +x ./mvnw
+          cache-jdk: true
+      - uses: ./.github/actions/setup-maven
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Run Tests (Linux)
         if: runner.os == 'Linux'
         run: ./mvnw -B -ntp clean test -Ddocker.tests=true

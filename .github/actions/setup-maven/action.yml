@@ -1,0 +1,67 @@
+name: 'Set up Maven'
+description: 'Restores the Maven caches and installs the wrapper-pinned distribution.'
+
+inputs:
+  cache-read-only:
+    description: 'Restore the dependency cache without writing a branch-scoped copy of it.'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    # Keyed on the pinned Maven version alone, so dependency updates never evict
+    # it. It is small enough to always write back, which keeps pull requests from
+    # re-fetching the distribution from repo.maven.apache.org.
+    - uses: actions/cache@v6.1.0
+      with:
+        path: ~/.m2/wrapper/dists
+        key: maven-dist-${{ runner.os }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
+    # The restore keys matter more than the exact hit: a dependency bump then
+    # resolves against the previous repository and only fetches what changed,
+    # instead of pulling the whole tree from Maven Central again.
+    - if: inputs.cache-read-only != 'true'
+      uses: actions/cache@v6.1.0
+      with:
+        path: ~/.m2/repository
+        key: maven-repo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/pom.xml') }}
+        restore-keys: maven-repo-${{ runner.os }}-${{ runner.arch }}-
+
+    - if: inputs.cache-read-only == 'true'
+      uses: actions/cache/restore@v6.1.0
+      with:
+        path: ~/.m2/repository
+        key: maven-repo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/pom.xml') }}
+        restore-keys: maven-repo-${{ runner.os }}-${{ runner.arch }}-
+
+    # A cold cache is the only time this reaches the network, but a single
+    # failed fetch would otherwise take the whole job down with it.
+    - if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        for attempt in 1 2 3; do
+          if ./mvnw -v; then
+            exit 0
+          fi
+          echo "Maven distribution download failed (attempt ${attempt} of 3)"
+          rm -rf ~/.m2/wrapper/dists
+          sleep $((attempt * 15))
+        done
+        echo "::error::Could not install the Maven distribution pinned in .mvn/wrapper/maven-wrapper.properties"
+        exit 1
+
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        foreach ($attempt in 1..3) {
+          ./mvnw.cmd -v
+          if ($LASTEXITCODE -eq 0) {
+            exit 0
+          }
+          Write-Host "Maven distribution download failed (attempt $attempt of 3)"
+          Remove-Item -Recurse -Force "$HOME/.m2/wrapper/dists" -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds (15 * $attempt)
+        }
+        Write-Host "::error::Could not install the Maven distribution pinned in .mvn/wrapper/maven-wrapper.properties"
+        exit 1

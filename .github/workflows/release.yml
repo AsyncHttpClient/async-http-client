@@ -35,9 +35,11 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
+          cache-jdk: true
 
-      - name: Grant Permission
-        run: chmod +x ./mvnw
+      - uses: ./.github/actions/setup-maven
+        with:
+          cache-read-only: true
 
       - name: Configure Git User
         if: inputs.release == true
