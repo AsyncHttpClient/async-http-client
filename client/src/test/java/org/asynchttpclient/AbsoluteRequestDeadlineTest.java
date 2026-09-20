@@ -17,7 +17,11 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
+import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import org.asynchttpclient.netty.timeout.RequestTimeoutTimerTask;
 import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.jetbrains.annotations.Nullable;
@@ -27,10 +31,14 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.config;
@@ -46,20 +54,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * future, so with the deadline anchored on the holder each hop gets a budget of its own, and with it anchored
  * on the future a later hop gets only what is left.
  * <p>
- * Timing-based, so repeated: the margins are wide (a 600 ms budget against hops of 400 ms) but a loaded CI box
- * can still miss one.
+ * The tests read the budget each attempt is armed with, through {@link BudgetRecordingTimer}, instead of racing
+ * a server delay against the budget: connect and JVM warm-up also come out of the budget, so that race was lost
+ * on a cold JVM.
  */
 public class AbsoluteRequestDeadlineTest extends HttpTest {
 
     private static final Duration BUDGET = Duration.ofMillis(600);
+    // Too large to run out, so the second hop is always sent. Nothing is timed against it.
+    private static final Duration UNSPENDABLE_BUDGET = Duration.ofSeconds(20);
     private static final long HOP_DELAY_MS = 400;
     private static final String FIRST_HOP = "/foo/bar";
     private static final String SECOND_HOP = "/foo/bar2";
 
     private HttpServer server;
-    // Coarse on purpose, for the one case that needs the request timeout not to fire: a wheel answers a
+    // Coarse on purpose, for the cases that need the request timeout not to fire: a wheel answers a
     // deadline on its first tick at or after it, so at this granularity nothing expires inside a test.
     private HashedWheelTimer stalledTimer;
+    private BudgetRecordingTimer budgetTimer;
+    // Read just before execute(), so never later than the future's own start.
+    private long executeNanos;
+    // The server's own measurement of its last delayed hop. Written on a Jetty thread, read here.
+    private final AtomicLong hopEnteredNanos = new AtomicLong();
+    private final AtomicLong hopAnsweredNanos = new AtomicLong();
 
     @BeforeEach
     public void start() throws Throwable {
@@ -77,50 +94,76 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
 
     @Test
     public void byDefaultEachHopGetsItsOwnBudget() throws Throwable {
-        // Two hops of 400 ms against a 600 ms budget. Each hop on its own fits, the pair does not, so with a
-        // per-attempt timeout the exchange completes.
+        // Two 400 ms hops do not fit in 600 ms, so the second one must have got a budget of its own.
         enqueueTwoDelayedHops();
 
-        Outcome outcome = runAndAwait(baseConfig(), null);
+        Outcome outcome = runAndAwait(recordingConfig(stalledTimer), null);
 
         outcome.assertReachedTheSecondHop();
+        assertSecondHopGotAFreshBudget();
     }
 
     @Test
-    public void withAnAbsoluteDeadlineTheChainCannotOutrunTheBudget() throws Throwable {
-        enqueueTwoDelayedHops();
+    public void anAbsoluteDeadlineLeavesTheSecondHopOnlyWhatIsLeft() throws Throwable {
+        // The upper bounds below are the only checks that fail if the full timeout is armed instead of the
+        // remainder. Not BUDGET: at 600 ms the second hop is only sent when the first round trip is fast.
+        enqueueDelayed(HOP_DELAY_MS, 302, SECOND_HOP);
+        server.enqueueOk();
 
-        Outcome outcome = runAndAwait(baseConfig().setUseAbsoluteRequestDeadline(true), null);
+        Outcome outcome = runAndAwait(recordingConfig(stalledTimer)
+                .setRequestTimeout(UNSPENDABLE_BUDGET)
+                .setUseAbsoluteRequestDeadline(true), null);
 
-        outcome.assertTimedOut();
+        outcome.assertReachedTheSecondHop();
+        assertEquals(2, budgetTimer.armedAttempts(), "expected one armed attempt per hop");
+        long budget = UNSPENDABLE_BUDGET.toMillis();
+        long first = budgetTimer.budgetOfAttempt(0);
+        long armed = budgetTimer.budgetOfAttempt(1);
+        assertTrue(armed < first, "the second hop was armed with " + armed + " ms, no less than the "
+                + first + " ms the first hop got, so nothing was netted off");
+        // The server's measured delay, not HOP_DELAY_MS: Thread.sleep accuracy must not decide this.
+        long served = TimeUnit.NANOSECONDS.toMillis(hopAnsweredNanos.get() - hopEnteredNanos.get());
+        assertTrue(armed <= budget - served, "the second hop was armed with " + armed + " ms, more than the "
+                + (budget - served) + " ms left after a first hop the server took " + served + " ms over");
+        long spendable = TimeUnit.NANOSECONDS.toMillis(budgetTimer.armedAtNanos(1) - executeNanos);
+        assertTrue(armed >= budget - spendable, "the second hop was armed with " + armed + " ms of "
+                + budget + " ms, the exchange having spent at most " + spendable + " ms");
     }
 
     @Test
     public void aRequestCanAskForAnAbsoluteDeadlineOnAPerAttemptClient() throws Throwable {
-        enqueueTwoDelayedHops();
+        enqueueTheWholeBudgetThenAPromptHop();
 
-        Outcome outcome = runAndAwait(baseConfig(), Boolean.TRUE);
+        Outcome outcome = runAndAwait(recordingConfig(stalledTimer), Boolean.TRUE);
 
-        outcome.assertTimedOut();
+        outcome.assertTimedOutBeforeSending();
     }
 
     @Test
     public void aRequestCanOptOutOfAnAbsoluteDeadlineClient() throws Throwable {
         enqueueTwoDelayedHops();
 
-        Outcome outcome = runAndAwait(baseConfig().setUseAbsoluteRequestDeadline(true), Boolean.FALSE);
+        Outcome outcome = runAndAwait(recordingConfig(stalledTimer).setUseAbsoluteRequestDeadline(true),
+                Boolean.FALSE);
 
         outcome.assertReachedTheSecondHop();
+        assertSecondHopGotAFreshBudget();
     }
 
     @Test
     public void aSingleHopStillGetsTheWholeBudget() throws Throwable {
         // Guards the other direction: with a deadline, the first hop must not be handed a shortened budget.
-        enqueueDelayed(HOP_DELAY_MS, 200, null);
+        server.enqueueOk();
 
-        Outcome outcome = runAndAwait(baseConfig().setUseAbsoluteRequestDeadline(true), null);
+        Outcome outcome = runAndAwait(recordingConfig(stalledTimer).setUseAbsoluteRequestDeadline(true), null);
 
         outcome.assertCompletedAt(FIRST_HOP);
+        long armed = budgetTimer.budgetOfAttempt(0);
+        long spendable = TimeUnit.NANOSECONDS.toMillis(budgetTimer.armedAtNanos(0) - executeNanos);
+        assertTrue(armed >= BUDGET.toMillis() - spendable, "the first hop was armed with " + armed
+                + " ms of a " + BUDGET.toMillis() + " ms budget, having spent at most " + spendable + " ms");
+        assertTrue(armed <= BUDGET.toMillis(),
+                "the first hop was armed with " + armed + " ms, more than the configured budget");
     }
 
     @Test
@@ -136,12 +179,12 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
             response.setStatus(200);
         });
 
-        Outcome outcome = runAndAwait(baseConfig()
-                .setNettyTimer(stalledTimer)
-                .setUseAbsoluteRequestDeadline(true), null);
+        Outcome outcome = runAndAwait(recordingConfig(stalledTimer).setUseAbsoluteRequestDeadline(true), null);
 
         outcome.assertTimedOutBeforeSending();
         assertFalse(secondHopServed.get(), "the redirect target was sent a request with no budget left");
+        assertEquals(1, budgetTimer.armedAttempts(),
+                "a hop with nothing left to spend was armed a budget of its own");
     }
 
     private DefaultAsyncHttpClientConfig.Builder baseConfig() {
@@ -151,6 +194,83 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
     private void enqueueTwoDelayedHops() {
         enqueueDelayed(HOP_DELAY_MS, 302, SECOND_HOP);
         enqueueDelayed(HOP_DELAY_MS, 200, null);
+    }
+
+    /**
+     * The first hop outlasts the whole budget, so the redirect is refused however fast the box is.
+     */
+    private void enqueueTheWholeBudgetThenAPromptHop() {
+        enqueueDelayed(BUDGET.toMillis() + HOP_DELAY_MS, 302, SECOND_HOP);
+        server.enqueueOk();
+    }
+
+    /**
+     * Event-loop timeouts are pinned off because the recorder only sees timeouts armed through the {@link Timer}.
+     */
+    private DefaultAsyncHttpClientConfig.Builder recordingConfig(Timer wheel) {
+        budgetTimer = new BudgetRecordingTimer(wheel);
+        return baseConfig().setNettyTimer(budgetTimer).setUseEventLoopTimeouts(false);
+    }
+
+    private void assertSecondHopGotAFreshBudget() {
+        assertEquals(BUDGET.toMillis(), budgetTimer.budgetOfAttempt(1),
+                "the second hop was not armed the whole budget over again");
+    }
+
+    /**
+     * Records the delay each request timeout is armed with. Delegates to the stalled wheel, so nothing fires.
+     */
+    private static final class BudgetRecordingTimer implements Timer {
+
+        private final Timer delegate;
+        private final List<Arming> armings = new CopyOnWriteArrayList<>();
+
+        private BudgetRecordingTimer(Timer delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Timeout newTimeout(TimerTask task, long delay, TimeUnit unit) {
+            // The cookie evictor and the pool cleaner use this timer too.
+            if (task instanceof RequestTimeoutTimerTask) {
+                armings.add(new Arming(unit.toMillis(delay), System.nanoTime()));
+            }
+            return delegate.newTimeout(task, delay, unit);
+        }
+
+        @Override
+        public Set<Timeout> stop() {
+            return delegate.stop();
+        }
+
+        long budgetOfAttempt(int index) {
+            return arming(index).budgetMillis;
+        }
+
+        long armedAtNanos(int index) {
+            return arming(index).nanos;
+        }
+
+        int armedAttempts() {
+            return armings.size();
+        }
+
+        private Arming arming(int index) {
+            assertTrue(armings.size() > index, "attempt " + (index + 1)
+                    + " armed no request timeout, only " + armings.size() + " did");
+            return armings.get(index);
+        }
+
+        private static final class Arming {
+
+            private final long budgetMillis;
+            private final long nanos;
+
+            private Arming(long budgetMillis, long nanos) {
+                this.budgetMillis = budgetMillis;
+                this.nanos = nanos;
+            }
+        }
     }
 
     /**
@@ -201,12 +321,15 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
      */
     private void enqueueDelayed(long delayMs, int status, @Nullable String location) {
         server.enqueueResponse(response -> {
+            hopEnteredNanos.set(System.nanoTime());
             try {
                 Thread.sleep(delayMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IOException(e);
             }
+            // Stamped before the status is set, while the client is still waiting on this hop.
+            hopAnsweredNanos.set(System.nanoTime());
             response.setStatus(status);
             if (location != null) {
                 response.setHeader(HttpHeaderNames.LOCATION.toString(), location);
@@ -225,6 +348,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
             if (perRequestOverride != null) {
                 request.setUseAbsoluteRequestDeadline(perRequestOverride);
             }
+            executeNanos = System.nanoTime();
             request.execute(new AsyncCompletionHandler<Void>() {
                 @Override
                 public Void onCompleted(Response response) {
