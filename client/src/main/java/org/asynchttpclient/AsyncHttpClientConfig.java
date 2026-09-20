@@ -335,6 +335,9 @@ public interface AsyncHttpClientConfig {
     /**
      * Return the number of time the library will retry when an {@link IOException} is throw by the remote server
      *
+     * <p>A refused TCP connect is retried too. A connect timeout is not retried on the first attempt, but
+     * once a request is being retried any failure is. Retries are immediate and re-resolve the host.
+     *
      * @return the number of time the library will retry when an {@link IOException} is throw by the remote server
      */
     int getMaxRequestRetry();

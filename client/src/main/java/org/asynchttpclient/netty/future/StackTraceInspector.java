@@ -15,7 +15,10 @@
  */
 package org.asynchttpclient.netty.future;
 
+import io.netty.channel.ConnectTimeoutException;
+
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 
 public final class StackTraceInspector {
@@ -38,7 +41,15 @@ public final class StackTraceInspector {
 
     private static boolean recoverOnConnectCloseException(Throwable t) {
         while (true) {
-            if (exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")) {
+            // Also a ConnectException, but retrying it would multiply the connect timeout.
+            if (t instanceof ConnectTimeoutException) {
+                return false;
+            }
+            // The type covers every transport. The frames (checkConnect up to JDK 12, pollConnect after)
+            // still matter: NIO reports an unreachable peer as NoRouteToHostException, not a ConnectException.
+            if (t instanceof ConnectException
+                    || exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
+                    || exceptionInMethod(t, "sun.nio.ch.Net", "pollConnect")) {
                 return true;
             }
             if (t.getCause() == null) {
@@ -49,6 +60,7 @@ public final class StackTraceInspector {
     }
 
     public static boolean recoverOnNettyDisconnectException(Throwable t) {
+        // Start at the cause: NettyChannelConnector wraps every failure in a ConnectException.
         return t instanceof ClosedChannelException
                 || exceptionInMethod(t, "io.netty.handler.ssl.SslHandler", "disconnect")
                 || t.getCause() != null && recoverOnConnectCloseException(t.getCause());
