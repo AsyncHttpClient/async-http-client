@@ -16,13 +16,19 @@
 package org.asynchttpclient;
 
 import io.github.artsok.RepeatedIfExceptionsTest;
+import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollIoHandler;
+import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.uring.IoUring;
+import io.netty.channel.uring.IoUringIoHandler;
 import io.netty.util.Timer;
 import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
@@ -41,7 +47,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -73,6 +81,62 @@ public class DefaultAsyncHttpClientTest {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true)
                 .setSslEngineFactory(createSslEngineFactory()).build();
         assertRequestSucceedsAndEventLoopGroupIs(config, KQueueEventLoopGroup.class);
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testExternalNioEventLoopGroup() throws Exception {
+        assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testExternalDeprecatedNioEventLoopGroup() throws Exception {
+        assertRequestSucceedsWith(new NioEventLoopGroup(1));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testExternalEpollEventLoopGroup() throws Exception {
+        assumeTrue(Epoll.isAvailable(), "epoll is not available");
+        assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, EpollIoHandler.newFactory()));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.LINUX)
+    public void testExternalIoUringEventLoopGroup() throws Exception {
+        assumeTrue(IoUring.isAvailable(), "io_uring is not available");
+        assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, IoUringIoHandler.newFactory()));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    @EnabledOnOs(OS.MAC)
+    public void testExternalKQueueEventLoopGroup() throws Exception {
+        assumeTrue(KQueue.isAvailable(), "kqueue is not available");
+        assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, KQueueIoHandler.newFactory()));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testExternalEventLoopGroupOfUnknownTransportIsRejected() throws Exception {
+        EventLoopGroup eventLoopGroup = new DefaultEventLoopGroup(1);
+        try {
+            AsyncHttpClientConfig config = config().setEventLoopGroup(eventLoopGroup).build();
+            assertThrows(IllegalArgumentException.class, () -> asyncHttpClient(config));
+        } finally {
+            eventLoopGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS).await();
+        }
+    }
+
+    private static void assertRequestSucceedsWith(EventLoopGroup eventLoopGroup) throws Exception {
+        try (HttpServer server = new HttpServer()) {
+            server.start();
+            server.enqueueOk();
+            AsyncHttpClientConfig config = config().setEventLoopGroup(eventLoopGroup).build();
+            try (DefaultAsyncHttpClient client = (DefaultAsyncHttpClient) asyncHttpClient(config)) {
+                assertDoesNotThrow(() -> client.prepareGet(server.getHttpUrl()).execute().get());
+                assertSame(eventLoopGroup, client.channelManager().getEventLoopGroup());
+            }
+        } finally {
+            eventLoopGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS).await();
+        }
     }
 
     private static void assertRequestSucceedsAndEventLoopGroupIs(AsyncHttpClientConfig config, Class<?> expectedEventLoopGroupType) throws Exception {

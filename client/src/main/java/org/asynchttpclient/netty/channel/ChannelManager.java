@@ -27,10 +27,11 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.IoEventLoopGroup;
+import io.netty.channel.IoHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -172,14 +173,15 @@ public class ChannelManager {
     private AsyncHttpClientHandler wsHandler;
     private Http2Handler http2Handler;
 
-    private boolean isInstanceof(Object object, String name) {
+    // Handler classes are looked up by name, and not initialized, because the native transports are optional deps.
+    private boolean isIoType(IoEventLoopGroup eventLoopGroup, String ioHandlerClassName) {
         final Class<?> clazz;
         try {
-            clazz = Class.forName(name, false, getClass().getClassLoader());
+            clazz = Class.forName(ioHandlerClassName, false, getClass().getClassLoader());
         } catch (ClassNotFoundException ignored) {
             return false;
         }
-        return clazz.isInstance(object);
+        return IoHandler.class.isAssignableFrom(clazz) && eventLoopGroup.isIoType(clazz.asSubclass(IoHandler.class));
     }
 
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
@@ -207,11 +209,12 @@ public class ChannelManager {
 
         // check if external EventLoopGroup is defined
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
-        allowReleaseEventLoopGroup = config.getEventLoopGroup() == null;
+        EventLoopGroup configuredEventLoopGroup = config.getEventLoopGroup();
+        allowReleaseEventLoopGroup = configuredEventLoopGroup == null;
         TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactory;
         EventLoopGroup localEventLoopGroup;
 
-        if (allowReleaseEventLoopGroup) {
+        if (configuredEventLoopGroup == null) {
             if (config.isUseNativeTransport()) {
                 transportFactory = getNativeTransportFactory(config);
             } else {
@@ -234,19 +237,8 @@ public class ChannelManager {
                 }
             }
         } else {
-            localEventLoopGroup = config.getEventLoopGroup();
-
-            if (localEventLoopGroup instanceof NioEventLoopGroup) {
-                transportFactory = NioTransportFactory.INSTANCE;
-            } else if (isInstanceof(localEventLoopGroup, "io.netty.channel.epoll.EpollEventLoopGroup")) {
-                transportFactory = new EpollTransportFactory();
-            } else if (isInstanceof(localEventLoopGroup, "io.netty.channel.kqueue.KQueueEventLoopGroup")) {
-                transportFactory = new KQueueTransportFactory();
-            } else if (isInstanceof(localEventLoopGroup, "io.netty.channel.uring.IOUringEventLoopGroup")) {
-                transportFactory = new IoUringTransportFactory();
-            } else {
-                throw new IllegalArgumentException("Unknown event loop group " + localEventLoopGroup.getClass().getSimpleName());
-            }
+            localEventLoopGroup = configuredEventLoopGroup;
+            transportFactory = transportFactoryOf(configuredEventLoopGroup);
         }
 
         this.eventLoopGroup = localEventLoopGroup;
@@ -256,6 +248,29 @@ public class ChannelManager {
 
         // Use the address resolver group from config if provided; otherwise null (legacy per-request resolution)
         addressResolverGroup = config.getAddressResolverGroup();
+    }
+
+    // Since Netty 4.2 a group is a MultiThreadIoEventLoopGroup parameterized with an IoHandler, so its class no
+    // longer tells the transport apart: the per-transport group types are deprecated and io_uring never had one
+    // (issue #2121). Ask the group which handler it runs, as our channels must be registrable on it.
+    private TransportFactory<? extends Channel, ? extends EventLoopGroup> transportFactoryOf(EventLoopGroup eventLoopGroup) {
+        if (eventLoopGroup instanceof IoEventLoopGroup) {
+            IoEventLoopGroup ioEventLoopGroup = (IoEventLoopGroup) eventLoopGroup;
+            if (isIoType(ioEventLoopGroup, "io.netty.channel.nio.NioIoHandler")) {
+                return NioTransportFactory.INSTANCE;
+            }
+            if (isIoType(ioEventLoopGroup, "io.netty.channel.epoll.EpollIoHandler")) {
+                return new EpollTransportFactory();
+            }
+            if (isIoType(ioEventLoopGroup, "io.netty.channel.kqueue.KQueueIoHandler")) {
+                return new KQueueTransportFactory();
+            }
+            if (isIoType(ioEventLoopGroup, "io.netty.channel.uring.IoUringIoHandler")) {
+                return new IoUringTransportFactory();
+            }
+        }
+        throw new IllegalArgumentException("Unsupported event loop group " + eventLoopGroup.getClass().getName()
+                + ": it runs no known IoHandler (NIO, epoll, kqueue or io_uring)");
     }
 
     private static TransportFactory<? extends Channel, ? extends EventLoopGroup> getNativeTransportFactory(AsyncHttpClientConfig config) {
