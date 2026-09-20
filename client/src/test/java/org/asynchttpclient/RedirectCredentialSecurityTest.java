@@ -117,6 +117,12 @@ public class RedirectCredentialSecurityTest {
             exchange.close();
         });
 
+        serverA.createContext("/redirect-case-differing-host", exchange -> {
+            exchange.getResponseHeaders().add("Location", "http://LOCALHOST:" + portA + "/final");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
+
         serverA.createContext("/final", exchange -> {
             lastAuthHeaderOnA.set(exchange.getRequestHeaders().getFirst("Authorization"));
             lastCookieHeaderOnA.set(exchange.getRequestHeaders().getFirst("Cookie"));
@@ -859,6 +865,31 @@ public class RedirectCredentialSecurityTest {
                     "Authorization must be stripped when only the port differs (origin includes port)");
             assertNull(lastCookieHeaderOnB.get(),
                     "Cookie must be stripped when only the port differs (origin includes port)");
+        }
+    }
+
+    /**
+     * A host differing only in ASCII case is the same origin, so credentials are kept. The cookie store is
+     * off because it lowercases the host itself and would return the cookie either way.
+     */
+    @Test
+    void caseDifferingHostKeepsCredentials() throws Exception {
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setFollowRedirect(true)
+                .setCookieStore(null)
+                .build();
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+            lastAuthHeaderOnA.set(null);
+            lastCookieHeaderOnA.set(null);
+
+            client.prepareGet("http://localhost:" + portA + "/redirect-case-differing-host")
+                    .setHeader("Authorization", "Bearer case-differing-token")
+                    .setHeader("Cookie", "session=case-differing-cookie")
+                    .execute()
+                    .get(5, TimeUnit.SECONDS);
+
+            assertEquals("Bearer case-differing-token", lastAuthHeaderOnA.get());
+            assertEquals("session=case-differing-cookie", lastCookieHeaderOnA.get());
         }
     }
 

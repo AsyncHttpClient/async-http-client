@@ -71,6 +71,7 @@ import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.PERMANE
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.SEE_OTHER_303;
 import static org.asynchttpclient.util.HttpConstants.ResponseStatusCodes.TEMPORARY_REDIRECT_307;
 import static org.asynchttpclient.util.HttpUtils.followRedirect;
+import static org.asynchttpclient.util.MiscUtils.isEmpty;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 
 public class Redirect30xInterceptor {
@@ -119,6 +120,12 @@ public class Redirect30xInterceptor {
                                              int statusCode, Realm realm) throws Exception {
 
         if (followRedirect(config, request)) {
+            String location = response.headers().get(LOCATION);
+            if (isEmpty(location)) {
+                // RFC 9110 section 15.4 only redirects when a Location is provided, and an empty one
+                // resolves back to the current URI.
+                return false;
+            }
             if (future.incrementAndGetCurrentRedirectCount() >= config.getMaxRedirects()) {
                 throw maxRedirectException;
 
@@ -127,6 +134,7 @@ public class Redirect30xInterceptor {
                 future.setInAuth(false);
                 future.setInProxyAuth(false);
                 future.setScramContext(null);
+                future.tightenRedirectRefusals(request);
 
                 String originalMethod = request.getMethod();
                 boolean isPost = originalMethod.equals(POST);
@@ -141,8 +149,6 @@ public class Redirect30xInterceptor {
                         (statusCode == SEE_OTHER_303 || legacyPostToGet);
                 boolean keepBody = statusCode != SEE_OTHER_303 && !switchToGet;
 
-                HttpHeaders responseHeaders = response.headers();
-                String location = responseHeaders.get(LOCATION);
                 // Location resolves against the target URI of the request actually sent on this leg
                 // (RFC 9110 section 15.4, modification 1), and the gates below must judge that same URI.
                 // A 401 or 407 retry leaves the future's own target behind, so do not read it here.
@@ -153,12 +159,12 @@ public class Redirect30xInterceptor {
                 boolean schemeDowngrade = currentUri.isSecured() && !newUri.isSecured();
 
                 // Refuse before ensureBodyReplayable, whose IOException an IOExceptionFilter would replay.
-                if (schemeDowngrade && refuseSchemeDowngrade(request)) {
+                if (schemeDowngrade && refuseSchemeDowngrade(future)) {
                     throw new RedirectRefusedException(Reason.SCHEME_DOWNGRADE, statusCode, currentUri, newUri);
                 }
                 BodyRepresentation bodyRepresentation =
                         keepBody ? selectedBodyRepresentation(request) : BodyRepresentation.NONE;
-                if (keepBody && refuseCrossOriginBody(request)
+                if (keepBody && refuseCrossOriginBody(future)
                         && !sameOrigin(currentUri, newUri) && !secureUpgrade(currentUri, newUri)
                         && bodyRepresentation != BodyRepresentation.NONE) {
                     throw new RedirectRefusedException(Reason.CROSS_ORIGIN_BODY, statusCode, currentUri, newUri);
@@ -285,22 +291,24 @@ public class Redirect30xInterceptor {
     }
 
     // Tightening only, unlike followRedirect: these are security switches, and a framework layer that builds
-    // the Request should not be able to void a posture the operator set on the client.
-    private boolean refuseSchemeDowngrade(Request request) {
-        return refuseSchemeDowngradeOnRedirect || Boolean.TRUE.equals(request.getRefuseSchemeDowngradeOnRedirect());
+    // the Request should not be able to void a posture the operator set on the client or on an earlier hop.
+    private boolean refuseSchemeDowngrade(NettyResponseFuture<?> future) {
+        return refuseSchemeDowngradeOnRedirect || future.isRefuseSchemeDowngradeLatched();
     }
 
-    private boolean refuseCrossOriginBody(Request request) {
-        return refuseCrossOriginBodyOnRedirect || Boolean.TRUE.equals(request.getRefuseCrossOriginBodyOnRedirect());
+    private boolean refuseCrossOriginBody(NettyResponseFuture<?> future) {
+        return refuseCrossOriginBodyOnRedirect || future.isRefuseCrossOriginBodyLatched();
     }
 
     /**
-     * Same scheme, host and effective port, per RFC 6454 section 4. Not {@link Uri#isSameBase(Uri)}, which
-     * compares hosts with {@link String#equals}. Hosts fold ASCII-only, the {@code i;ascii-casemap} collation
-     * that step 5 of that section asks for: {@link String#equalsIgnoreCase}
+     * Same scheme, host and effective port, per RFC 6454 section 4. Hosts fold ASCII-only, the
+     * {@code i;ascii-casemap} collation that step 5 of that section asks for: {@link String#equalsIgnoreCase}
      * folds Unicode and would call {@code i.example} equal to a host starting {@code U+0130}, a different
      * host. Nothing here does IDNA either, so a Unicode host and its A-label read as different origins,
      * erring towards refusal.
+     * <p>
+     * Equivalent to {@link Uri#isSameBase(Uri)} today. That one also gates credential stripping and must
+     * stay at least as strict as this, so tighten this only by tightening that first.
      */
     static boolean sameOrigin(Uri from, Uri to) {
         return from.getScheme().equals(to.getScheme())

@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.uri.Uri;
@@ -75,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RedirectRefusalTest extends AbstractBasicTest {
 
     private final AtomicBoolean targetHit = new AtomicBoolean();
+    private final AtomicBoolean retried = new AtomicBoolean();
     private final AtomicReference<String> methodOnTarget = new AtomicReference<>();
     private final AtomicReference<String> bodyOnTarget = new AtomicReference<>();
 
@@ -93,6 +95,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
     @BeforeEach
     public void resetCaptures() {
         targetHit.set(false);
+        retried.set(false);
         methodOnTarget.set(null);
         bodyOnTarget.set(null);
     }
@@ -396,6 +399,15 @@ public class RedirectRefusalTest extends AbstractBasicTest {
         assertTrue(message.contains("http://127.0.0.1:8080"), message);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"/no-location", "/empty-location"})
+    public void aRedirectWithNoUsableLocationIsDeliveredAsAResponse(String path) throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(followingConfig())) {
+            Response response = client.prepareGet(plain(path)).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            assertEquals(302, response.getStatusCode());
+        }
+    }
+
     // ---------------------------------------------------------------- per-request override
 
     @Test
@@ -429,6 +441,58 @@ public class RedirectRefusalTest extends AbstractBasicTest {
             expectRefusal(client.preparePut(plain("/cross-origin")).setBody("payload")
                     .setRefuseCrossOriginBodyOnRedirect(false));
             assertFalse(targetHit.get(), "a request must not be able to relax the client's posture");
+        }
+    }
+
+    @Test
+    public void aFilterThatRebuildsTheRequestCannotRelaxTheOverride() throws Exception {
+        DefaultAsyncHttpClientConfig.Builder builder = followingConfig()
+                .addResponseFilter(new ResponseFilter() {
+                    @Override
+                    public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                        if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 503) {
+                            return new FilterContext.FilterContextBuilder<>(ctx)
+                                    .request(new RequestBuilder("PUT").setUrl(plain("/cross-origin"))
+                                            .setBody("payload").build())
+                                    .replayRequest(true)
+                                    .build();
+                        }
+                        return ctx;
+                    }
+                });
+
+        try (AsyncHttpClient client = asyncHttpClient(builder)) {
+            expectRefusal(client.preparePut(plain("/retry-once")).setBody("payload")
+                    .setRefuseCrossOriginBodyOnRedirect(true));
+            assertFalse(targetHit.get(), "a rebuilt request must not drop the caller's refusal");
+        }
+    }
+
+    /**
+     * The mirror of the test above. The fold is one-way, not a copy, so a rebuilt request can still add a
+     * refusal the caller never asked for.
+     */
+    @Test
+    public void aFilterThatRebuildsTheRequestCanStillTightenTheOverride() throws Exception {
+        DefaultAsyncHttpClientConfig.Builder builder = followingConfig()
+                .addResponseFilter(new ResponseFilter() {
+                    @Override
+                    public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                        if (ctx.getResponseStatus() != null && ctx.getResponseStatus().getStatusCode() == 503) {
+                            return new FilterContext.FilterContextBuilder<>(ctx)
+                                    .request(new RequestBuilder("PUT").setUrl(plain("/cross-origin"))
+                                            .setBody("payload")
+                                            .setRefuseCrossOriginBodyOnRedirect(true).build())
+                                    .replayRequest(true)
+                                    .build();
+                        }
+                        return ctx;
+                    }
+                });
+
+        try (AsyncHttpClient client = asyncHttpClient(builder)) {
+            expectRefusal(client.preparePut(plain("/retry-once")).setBody("payload"));
+            assertFalse(targetHit.get(), "a refusal set on the rebuilt request must reach the exchange");
         }
     }
 
@@ -500,6 +564,16 @@ public class RedirectRefusalTest extends AbstractBasicTest {
                     return;
                 case "/cross-origin-308":
                     redirect(response, 308, "http://127.0.0.1:" + port1 + "/target");
+                    return;
+                case "/retry-once":
+                    response.setStatus(retried.compareAndSet(false, true) ? 503 : 200);
+                    return;
+                case "/no-location":
+                    response.setStatus(302);
+                    return;
+                case "/empty-location":
+                    response.setStatus(302);
+                    response.setHeader("Location", "");
                     return;
                 case "/cross-origin":
                     redirect(response, 307, "http://127.0.0.1:" + port1 + "/target");

@@ -167,6 +167,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     // Read when a TimeoutsHolder is built, which happens on the caller thread, an event loop or the timer
     // thread depending on the path, so it is published rather than plain.
     private volatile boolean useAbsoluteRequestDeadline;
+    private volatile boolean refuseSchemeDowngradeLatched;
+    private volatile boolean refuseCrossOriginBodyLatched;
 
     public NettyResponseFuture(Request originalRequest,
                                AsyncHandler<V> asyncHandler,
@@ -782,6 +784,27 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setUseAbsoluteRequestDeadline(boolean useAbsoluteRequestDeadline) {
         this.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
+    }
+
+    /**
+     * Folds a request's redirect refusals into the exchange. Monotonic, and never reset: a filter can still
+     * tighten on a later hop, but rebuilding the request can no longer drop what the caller asked for.
+     */
+    public void tightenRedirectRefusals(Request request) {
+        if (Boolean.TRUE.equals(request.getRefuseSchemeDowngradeOnRedirect())) {
+            refuseSchemeDowngradeLatched = true;
+        }
+        if (Boolean.TRUE.equals(request.getRefuseCrossOriginBodyOnRedirect())) {
+            refuseCrossOriginBodyLatched = true;
+        }
+    }
+
+    public boolean isRefuseSchemeDowngradeLatched() {
+        return refuseSchemeDowngradeLatched;
+    }
+
+    public boolean isRefuseCrossOriginBodyLatched() {
+        return refuseCrossOriginBodyLatched;
     }
 
     public Realm getRealm() {

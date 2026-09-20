@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.uri;
 
+import io.netty.util.AsciiString;
 import org.asynchttpclient.util.StringBuilderPool;
 import org.jetbrains.annotations.Nullable;
 
@@ -214,9 +215,13 @@ public class Uri {
         return host + ':' + getExplicitPort();
     }
 
+    /**
+     * Same scheme, host and effective port. The host folds ASCII-only, the comparison RFC 9110 section 4.2.3
+     * asks for; a Unicode fold would make {@code k.example} and a host spelled with U+212A the same base.
+     */
     public boolean isSameBase(Uri other) {
         return scheme.equals(other.getScheme())
-                && host.equals(other.getHost())
+                && AsciiString.contentEqualsIgnoreCase(host, other.getHost())
                 && getExplicitPort() == other.getExplicitPort();
     }
 

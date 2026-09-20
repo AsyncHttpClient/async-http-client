@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -213,6 +214,95 @@ public class ChannelManagerHttp2WaiterTest {
 
             assertTrue(waiterMap(cm).isEmpty(),
                     "removing the last waiter for a key must prune the empty set, not retain it for the client's lifetime");
+        } finally {
+            cm.close();
+            timer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void http2UnavailableWakesWaitersWithNull() {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        try {
+            AtomicReference<Channel> woken = new AtomicReference<>();
+            AtomicBoolean called = new AtomicBoolean();
+            cm.addHttp2ConnectionWaiter(KEY, c -> {
+                woken.set(c);
+                called.set(true);
+            });
+
+            cm.http2Unavailable(KEY);
+
+            assertTrue(called.get(), "a handshake that settled on HTTP/1.1 must release the waiter");
+            assertNull(woken.get(), "the waiter must be failed, not handed a connection");
+        } finally {
+            cm.close();
+            timer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void http2UnavailableIsStickyUntilHttp2Registers() {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        Channel channel = new EmbeddedChannel();
+        try {
+            assertFalse(cm.isHttp2KnownUnavailable(KEY));
+
+            cm.http2Unavailable(KEY);
+            assertTrue(cm.isHttp2KnownUnavailable(KEY),
+                    "the mark must outlive the handshake that set it, or a later waiter arms into an empty set");
+
+            cm.registerHttp2Connection(KEY, channel);
+            assertFalse(cm.isHttp2KnownUnavailable(KEY), "a registration must clear the mark");
+        } finally {
+            channel.close();
+            cm.close();
+            timer.stop();
+        }
+    }
+
+    /**
+     * ALPN is per-connection, so one IP of a host settling on HTTP/1.1 says nothing about the others. The
+     * mark is keyed by host, so it must not be set while a sibling that did negotiate HTTP/2 is registered.
+     */
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void http2UnavailableDefersToARegisteredSibling() throws Exception {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        Channel sibling = new EmbeddedChannel();
+        try {
+            cm.registerHttp2Connection(new RoundRobinPartitionKey(KEY, InetAddress.getByName("127.0.0.1")), sibling);
+            AtomicBoolean called = new AtomicBoolean();
+            cm.addHttp2ConnectionWaiter(KEY, c -> called.set(true));
+
+            cm.http2Unavailable(new RoundRobinPartitionKey(KEY, InetAddress.getByName("127.0.0.2")));
+
+            assertFalse(cm.isHttp2KnownUnavailable(KEY), "a live sibling must keep the host usable");
+            assertFalse(called.get(), "the waiter can still multiplex onto the sibling, so it must stay parked");
+        } finally {
+            sibling.close();
+            cm.close();
+            timer.stop();
+        }
+    }
+
+    /**
+     * The mark is stored under the base key, so a per-IP key marks the host. Without that collapse a waiter
+     * parked on the host key would never see it.
+     */
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 30)
+    public void http2UnavailableOnOneIpMarksTheWholeHost() throws Exception {
+        Timer timer = new HashedWheelTimer();
+        ChannelManager cm = newChannelManager(timer);
+        try {
+            cm.http2Unavailable(new RoundRobinPartitionKey(KEY, InetAddress.getByName("127.0.0.1")));
+            assertTrue(cm.isHttp2KnownUnavailable(KEY));
         } finally {
             cm.close();
             timer.stop();

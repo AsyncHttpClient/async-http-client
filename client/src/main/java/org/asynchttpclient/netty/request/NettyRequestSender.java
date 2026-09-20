@@ -641,6 +641,7 @@ public final class NettyRequestSender {
                 proxyServer);
 
         future.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline(config, request));
+        future.tightenRedirectRefusals(request);
 
         String expectHeader = request.getHeaders().get(EXPECT);
         if (HttpHeaderValues.CONTINUE.contentEqualsIgnoreCase(expectHeader)) {
@@ -1338,6 +1339,10 @@ public final class NettyRequestSender {
         if (!request.getUri().isSecured() && !channelManager.isHttp2CleartextEnabled()) {
             return null;
         }
+        // A secured origin can still turn out to speak HTTP/1.1, which the scheme cannot tell us.
+        if (!config.isHttp2Enabled() || channelManager.isHttp2KnownUnavailable(h2Key)) {
+            return null;
+        }
         new Http2ConnectionWaiter<>(request, proxy, future, asyncHandler, override, semaphoreException).arm();
         return future;
     }
@@ -1406,6 +1411,8 @@ public final class NettyRequestSender {
             Channel raced = pollHttp2(h2Key);
             if (raced != null) {
                 accept(raced);
+            } else if (channelManager.isHttp2KnownUnavailable(h2Key)) {
+                accept(null);
             }
         }
 
