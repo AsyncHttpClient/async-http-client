@@ -118,6 +118,25 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
+    // Joining the future first guarantees the body failure is recorded before getResponse() is called.
+    @Test
+    public void deferredResponseIsReturnedWhenTheBodyFailsFirst() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
+            BoundRequestBuilder requestBuilder = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
+
+            CountingOutputStream cos = new CountingOutputStream();
+            BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
+            Future<Response> f = requestBuilder.execute(bdah);
+
+            assertThrows(ExecutionException.class, f::get);
+
+            Response resp = bdah.getResponse();
+            assertNotNull(resp);
+            assertEquals(HttpServletResponse.SC_OK, resp.getStatusCode());
+            assertEquals(String.valueOf(CONTENT_LENGTH_VALUE), resp.getHeader(CONTENT_LENGTH));
+        }
+    }
+
     @Test
     public void deferredInputStreamTrick() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
