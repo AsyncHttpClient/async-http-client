@@ -111,6 +111,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUs
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultUserAgent;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultValidateResponseHeaders;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxBufferSize;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultWebSocketMaxDecompressedFrameSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2CleartextEnabled;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2HeaderTableSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultHttp2InitialWindowSize;
@@ -158,6 +159,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     private final boolean aggregateWebSocketFrameFragments;
     private final boolean enablewebSocketCompression;
     private final int webSocketMaxBufferSize;
+    private final int webSocketMaxDecompressedFrameSize;
     private final int webSocketMaxFrameSize;
 
     // timeouts
@@ -332,6 +334,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                                          int httpClientCodecInitialBufferSize,
                                          int chunkedFileChunkSize,
                                          int webSocketMaxBufferSize,
+                                         int webSocketMaxDecompressedFrameSize,
                                          int webSocketMaxFrameSize,
                                          Map<ChannelOption<Object>, Object> channelOptions,
                                          @Nullable EventLoopGroup eventLoopGroup,
@@ -376,6 +379,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         this.aggregateWebSocketFrameFragments = aggregateWebSocketFrameFragments;
         this.enablewebSocketCompression = enablewebSocketCompression;
         this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+        this.webSocketMaxDecompressedFrameSize = webSocketMaxDecompressedFrameSize;
         this.webSocketMaxFrameSize = webSocketMaxFrameSize;
 
         // timeouts
@@ -606,6 +610,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
     @Override
     public int getWebSocketMaxBufferSize() {
         return webSocketMaxBufferSize;
+    }
+
+    @Override
+    public int getWebSocketMaxDecompressedFrameSize() {
+        return webSocketMaxDecompressedFrameSize;
     }
 
     @Override
@@ -1004,6 +1013,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         private boolean aggregateWebSocketFrameFragments = defaultAggregateWebSocketFrameFragments();
         private boolean enablewebSocketCompression = defaultEnableWebSocketCompression();
         private int webSocketMaxBufferSize = defaultWebSocketMaxBufferSize();
+        private int webSocketMaxDecompressedFrameSize = defaultWebSocketMaxDecompressedFrameSize();
         private int webSocketMaxFrameSize = defaultWebSocketMaxFrameSize();
 
         // timeouts
@@ -1114,6 +1124,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
             aggregateWebSocketFrameFragments = config.isAggregateWebSocketFrameFragments();
             enablewebSocketCompression = config.isEnableWebSocketCompression();
             webSocketMaxBufferSize = config.getWebSocketMaxBufferSize();
+            webSocketMaxDecompressedFrameSize = config.getWebSocketMaxDecompressedFrameSize();
             webSocketMaxFrameSize = config.getWebSocketMaxFrameSize();
 
             // timeouts
@@ -1409,6 +1420,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
 
         public Builder setWebSocketMaxBufferSize(int webSocketMaxBufferSize) {
             this.webSocketMaxBufferSize = webSocketMaxBufferSize;
+            return this;
+        }
+
+        public Builder setWebSocketMaxDecompressedFrameSize(int webSocketMaxDecompressedFrameSize) {
+            this.webSocketMaxDecompressedFrameSize = webSocketMaxDecompressedFrameSize;
             return this;
         }
 
@@ -1907,6 +1923,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
                     httpClientCodecInitialBufferSize,
                     chunkedFileChunkSize,
                     webSocketMaxBufferSize,
+                    webSocketMaxDecompressedFrameSize,
                     webSocketMaxFrameSize,
                     channelOptions.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(channelOptions),
                     eventLoopGroup,

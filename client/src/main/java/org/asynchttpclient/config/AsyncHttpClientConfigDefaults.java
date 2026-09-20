@@ -49,6 +49,7 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static final String ENABLE_AUTOMATIC_DECOMPRESSION_CONFIG = "enableAutomaticDecompression";
     public static final String MAX_DECOMPRESSED_RESPONSE_SIZE_CONFIG = "maxDecompressedResponseSize";
+    public static final String WEBSOCKET_MAX_DECOMPRESSED_FRAME_SIZE_CONFIG = "webSocketMaxDecompressedFrameSize";
     public static final String USER_AGENT_CONFIG = "userAgent";
     public static final String ENABLED_PROTOCOLS_CONFIG = "enabledProtocols";
     public static final String ENABLED_CIPHER_SUITES_CONFIG = "enabledCipherSuites";
@@ -180,6 +181,10 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultEnableAutomaticDecompression() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + ENABLE_AUTOMATIC_DECOMPRESSION_CONFIG);
+    }
+
+    public static int defaultWebSocketMaxDecompressedFrameSize() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getInt(ASYNC_CLIENT_CONFIG_ROOT + WEBSOCKET_MAX_DECOMPRESSED_FRAME_SIZE_CONFIG);
     }
 
     public static long defaultMaxDecompressedResponseSize() {

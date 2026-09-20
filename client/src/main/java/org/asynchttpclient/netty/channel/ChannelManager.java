@@ -149,6 +149,9 @@ public class ChannelManager {
     private final @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
 
     private final ChannelPool channelPool;
+    // Bounded, unlike WebSocketClientCompressionHandler.INSTANCE, since the frame and buffer limits only
+    // bound compressed bytes. @Sharable, so one instance serves every channel.
+    private final WebSocketClientCompressionHandler webSocketCompressionHandler;
     private final ChannelGroup openChannels;
     // HTTP/2 registry, grouped by per-host base key so a permit-starved round-robin request can find a
     // sibling-IP connection (issue #2214). Outer key: the per-host base partition key. Inner key: the full
@@ -193,6 +196,7 @@ public class ChannelManager {
 
     public ChannelManager(final AsyncHttpClientConfig config, Timer nettyTimer) {
         this.config = config;
+        webSocketCompressionHandler = new WebSocketClientCompressionHandler(config.getWebSocketMaxDecompressedFrameSize());
 
         sslEngineFactory = config.getSslEngineFactory() != null ? config.getSslEngineFactory() : new DefaultSslEngineFactory();
         try {
@@ -448,7 +452,7 @@ public class ChannelManager {
                         .addLast(AHC_WS_HANDLER, wsHandler);
 
                 if (config.isEnableWebSocketCompression()) {
-                    pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+                    pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, webSocketCompressionHandler);
                 }
 
                 if (LOGGER.isTraceEnabled()) {
@@ -925,7 +929,7 @@ public class ChannelManager {
             pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
 
             if (config.isEnableWebSocketCompression()) {
-                pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+                pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, webSocketCompressionHandler);
             }
 
             pipeline.remove(AHC_HTTP_HANDLER);
@@ -981,7 +985,7 @@ public class ChannelManager {
             pipeline.addAfter(AHC_HTTP_HANDLER, AHC_WS_HANDLER, wsHandler);
 
             if (config.isEnableWebSocketCompression()) {
-                pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, WebSocketClientCompressionHandler.INSTANCE);
+                pipeline.addBefore(AHC_WS_HANDLER, WS_COMPRESSOR_HANDLER, webSocketCompressionHandler);
             }
 
             pipeline.remove(AHC_HTTP_HANDLER);

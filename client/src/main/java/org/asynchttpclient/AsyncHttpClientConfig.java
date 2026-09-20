@@ -522,6 +522,15 @@ public interface AsyncHttpClientConfig {
 
     int getWebSocketMaxBufferSize();
 
+    /**
+     * @return the most bytes one {@code permessage-deflate} message may inflate to before the connection is
+     *         failed, or {@code 0} for no limit; each frame, if fragments are not aggregated. The frame and
+     *         buffer limits only bound compressed bytes.
+     */
+    default int getWebSocketMaxDecompressedFrameSize() {
+        return getWebSocketMaxBufferSize();
+    }
+
     int getWebSocketMaxFrameSize();
 
     boolean isKeepEncodingHeader();

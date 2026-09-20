@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
@@ -45,6 +46,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_KEY;
 import static io.netty.handler.codec.http.HttpHeaderNames.UPGRADE;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
+import static org.asynchttpclient.netty.channel.ChannelManager.WS_DECODER_HANDLER;
 import static org.asynchttpclient.netty.channel.ChannelManager.WS_FRAME_AGGREGATOR;
 import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
@@ -161,8 +163,11 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) {
-        // RFC 6455 section 7.4.1: 1009 for a message too big to process. Queued before the close below.
-        if (getCause(e) instanceof TooLongFrameException && ctx.pipeline().get(WS_FRAME_AGGREGATOR) != null) {
+        // RFC 6455 section 7.4.1: 1009 for a message too big to process, whether the aggregator refused it or the
+        // inflater did. Queued before the close below.
+        Throwable cause = getCause(e);
+        if ((cause instanceof TooLongFrameException && ctx.pipeline().get(WS_FRAME_AGGREGATOR) != null)
+                || (cause instanceof DecompressionException && ctx.pipeline().get(WS_DECODER_HANDLER) != null)) {
             ctx.writeAndFlush(new CloseWebSocketFrame(WebSocketCloseStatus.MESSAGE_TOO_BIG));
         }
         super.exceptionCaught(ctx, e);
