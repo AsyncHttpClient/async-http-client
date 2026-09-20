@@ -59,6 +59,8 @@ public class RC1KTest extends AbstractBasicTest {
         for (int i = 0; i < SRV_COUNT; i++) {
             Server server = new Server();
             ServerConnector connector = addHttpConnector(server);
+            // The default backlog of 50 overflows under this burst, and Windows then refuses connections.
+            connector.setAcceptQueueSize(C1K);
             server.setHandler(configureHandler());
             server.start();
             servers[i] = server;
