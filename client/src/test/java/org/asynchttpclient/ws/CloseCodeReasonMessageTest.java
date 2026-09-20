@@ -188,6 +188,7 @@ public class CloseCodeReasonMessageTest extends AbstractBasicWebSocketTest {
         @Override
         public void onError(Throwable t) {
             t.printStackTrace();
+            text.set("onError-" + t);
             latch.countDown();
         }
     }

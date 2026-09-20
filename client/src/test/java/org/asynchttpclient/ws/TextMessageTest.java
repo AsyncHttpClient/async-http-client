@@ -250,6 +250,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -287,6 +288,7 @@ public class TextMessageTest extends AbstractBasicWebSocketTest {
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoFragments() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);

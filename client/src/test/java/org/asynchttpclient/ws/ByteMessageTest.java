@@ -14,9 +14,11 @@ package org.asynchttpclient.ws;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -65,16 +67,19 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoByte() throws Exception {
         echoByte0(false);
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoByteCompressed() throws Exception {
         echoByte0(true);
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoTwoMessagesTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -121,6 +126,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoOnOpenMessagesTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(2);
@@ -166,6 +172,7 @@ public class ByteMessageTest extends AbstractBasicWebSocketTest {
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoFragments() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             final CountDownLatch latch = new CountDownLatch(1);
