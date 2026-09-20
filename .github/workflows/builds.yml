@@ -9,12 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Grant Permission
-        run: chmod +x ./mvnw
       - uses: actions/setup-java@v6.0.0
         with:
           distribution: 'corretto'
           java-version: '11'
+          cache-jdk: true
+      - uses: ./.github/actions/setup-maven
       - name: Verify
         run: ./mvnw -B -ntp clean verify -DskipTests -Dgpg.skip=true
 
@@ -23,12 +23,12 @@ jobs:
     needs: Verify
     steps:
       - uses: actions/checkout@v7
-      - name: Grant Permission
-        run: chmod +x ./mvnw
       - uses: actions/setup-java@v6.0.0
         with:
           distribution: 'corretto'
           java-version: '11'
+          cache-jdk: true
+      - uses: ./.github/actions/setup-maven
       - name: Run Tests
         run: ./mvnw -B -ntp test -Ddocker.tests=true -Dexternal.tests=true
 
@@ -37,12 +37,12 @@ jobs:
     needs: Verify
     steps:
       - uses: actions/checkout@v7
-      - name: Grant Permission
-        run: chmod +x ./mvnw
       - uses: actions/setup-java@v6.0.0
         with:
           distribution: 'corretto'
           java-version: '11'
+          cache-jdk: true
+      - uses: ./.github/actions/setup-maven
       - name: Run Tests
         run: ./mvnw -B -ntp test -Dexternal.tests=true
 
@@ -55,5 +55,7 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
+          cache-jdk: true
+      - uses: ./.github/actions/setup-maven
       - name: Run Tests
         run: ./mvnw.cmd -B -ntp test "-Dexternal.tests=true"
