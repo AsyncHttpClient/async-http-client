@@ -15,9 +15,11 @@
  */
 package org.asynchttpclient;
 
+import org.asynchttpclient.config.AsyncHttpClientConfigHelper;
 import org.junit.jupiter.api.Test;
 
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,8 +44,27 @@ public class RedirectRefusalConfigTest {
     }
 
     /**
-     * The copy constructor is how a framework layer usually derives a client.
+     * The Builder's field initialisers are the only wiring between the properties and a built config, and
+     * nothing else here would notice losing them: an uninitialised boolean is false, which is the default.
      */
+    @Test
+    public void thePropertiesReachABuiltConfig() {
+        String downgrade = ASYNC_CLIENT_CONFIG_ROOT + "refuseSchemeDowngradeOnRedirect";
+        String crossOrigin = ASYNC_CLIENT_CONFIG_ROOT + "refuseCrossOriginBodyOnRedirect";
+        System.setProperty(downgrade, "true");
+        System.setProperty(crossOrigin, "true");
+        AsyncHttpClientConfigHelper.reloadProperties();
+        try {
+            AsyncHttpClientConfig built = config().build();
+            assertTrue(built.isRefuseSchemeDowngradeOnRedirect());
+            assertTrue(built.isRefuseCrossOriginBodyOnRedirect());
+        } finally {
+            System.clearProperty(downgrade);
+            System.clearProperty(crossOrigin);
+            AsyncHttpClientConfigHelper.reloadProperties();
+        }
+    }
+
     @Test
     public void theCopyConstructorKeepsBoth() {
         AsyncHttpClientConfig original = config()

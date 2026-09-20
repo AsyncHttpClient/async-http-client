@@ -143,18 +143,16 @@ public class Redirect30xInterceptor {
 
                 HttpHeaders responseHeaders = response.headers();
                 String location = responseHeaders.get(LOCATION);
-                // The gates below must judge the same URI this hop resolves against, so both come from the
-                // request actually sent on this leg (RFC 9110 section 15.4 item 1). A 401 or 407 retry
-                // rebuilds that request without touching the future's own, so the two agree by each
-                // interceptor's care rather than by construction.
+                // Location resolves against the target URI of the request actually sent on this leg
+                // (RFC 9110 section 15.4, modification 1), and the gates below must judge that same URI.
+                // A 401 or 407 retry leaves the future's own target behind, so do not read it here.
                 Uri currentUri = request.getUri();
                 Uri newUri = Uri.create(currentUri, location);
 
                 boolean sameBase = currentUri.isSameBase(newUri);
                 boolean schemeDowngrade = currentUri.isSecured() && !newUri.isSecured();
 
-                // Refuse here, before the next request is built and before ensureBodyReplayable can throw an
-                // IOException that an IOExceptionFilter would replay.
+                // Refuse before ensureBodyReplayable, whose IOException an IOExceptionFilter would replay.
                 if (schemeDowngrade && refuseSchemeDowngrade(request)) {
                     throw new RedirectRefusedException(Reason.SCHEME_DOWNGRADE, statusCode, currentUri, newUri);
                 }
@@ -212,8 +210,8 @@ public class Redirect30xInterceptor {
                     requestBuilder.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline);
                 }
 
-                // The gate reads these off the request each hop, and the !keepBody branch starts from an
-                // empty builder, so without this the caller's choice lapses from the second hop on.
+                // The !keepBody branch builds from an empty builder, so carry these forward or the caller's
+                // choice lapses from the second hop on.
                 Boolean refuseSchemeDowngrade = request.getRefuseSchemeDowngradeOnRedirect();
                 if (refuseSchemeDowngrade != null) {
                     requestBuilder.setRefuseSchemeDowngradeOnRedirect(refuseSchemeDowngrade);
@@ -297,18 +295,12 @@ public class Redirect30xInterceptor {
     }
 
     /**
-     * Same scheme, host and effective port, per RFC 6454 section 4.
-     * <p>
-     * Not {@link Uri#isSameBase(Uri)}, which compares hosts with {@link String#equals}: a host differing only
-     * in case is still the same origin, and refusing there would break a legitimate upload. The fold is
-     * ASCII-only because that is the {@code i;ascii-casemap} collation section 4 step 5 asks for;
-     * {@link String#equalsIgnoreCase} folds Unicode and would call {@code i.example} equal to a host starting
-     * with {@code \\u0130}, which punycodes to a different host. Nothing here does IDNA
-     * either, so a Unicode host and its A-label spelling read as different origins, erring towards refusal.
-     *
-     * @param from the URI this hop is leaving
-     * @param to   the redirect target
-     * @return whether the two are the same origin
+     * Same scheme, host and effective port, per RFC 6454 section 4. Not {@link Uri#isSameBase(Uri)}, which
+     * compares hosts with {@link String#equals}. Hosts fold ASCII-only, the {@code i;ascii-casemap} collation
+     * that step 5 of that section asks for: {@link String#equalsIgnoreCase}
+     * folds Unicode and would call {@code i.example} equal to a host starting {@code U+0130}, a different
+     * host. Nothing here does IDNA either, so a Unicode host and its A-label read as different origins,
+     * erring towards refusal.
      */
     static boolean sameOrigin(Uri from, Uri to) {
         return from.getScheme().equals(to.getScheme())
@@ -317,26 +309,19 @@ public class Redirect30xInterceptor {
     }
 
     /**
-     * Whether this hop only swaps the same host onto TLS. This is a deliberate exemption from the origin
-     * rule, not something RFC 6454 allows: section 4 puts the scheme and port in the triple, so an upgrade is
-     * a different origin. It is our own policy, because refusing a move onto TLS would cost confidentiality
-     * rather than protect it.
+     * Whether this hop only swaps the same host onto TLS. A deliberate exemption from the origin rule rather
+     * than something RFC 6454 allows, because refusing a move onto TLS would cost confidentiality rather than
+     * protect it. The host is compared, not trusted; the path and query are not compared at all, so the
+     * content lands wherever the redirect says on that host. The port must be unchanged or both sides at
+     * their scheme's default, so {@code :8080} to {@code :9999} is a different endpoint and stays refused.
+     * That is modelled on the port mapping in RFC 6797 section 8.3 but looser than it: 8.3 is scoped to a
+     * Known HSTS Host and we keep no HSTS state, and it would have mapped an explicit {@code :80} to
+     * {@code :443} where this accepts {@code :80} to {@code :80}, which is the endpoint the redirect was
+     * served from.
      * <p>
-     * The host is compared, not trusted: a {@code Location} naming anything else stays cross-origin. The port
-     * rule is modelled on the upgrade mapping in RFC 6797 section 8.3, which is not binding here (that
-     * section is scoped to a Known HSTS Host, and we keep no HSTS state): the same port, or both at their
-     * scheme's default. So {@code :8080} to {@code :9999} is not an upgrade, while an explicit {@code :80} to
-     * {@code :80} is, which section 8.3 would have mapped to {@code :443}. That last case keeps the very
-     * endpoint the redirect was served from, so it reaches no party the request was not already aimed at.
-     * <p>
-     * Only the content arm consults this. The hop is still not {@code isSameBase}, so {@code Authorization},
-     * {@code Proxy-Authorization} and {@code Cookie} are stripped and the realm is dropped, as on any
-     * cross-base hop; cookies are then re-derived from the {@link org.asynchttpclient.cookie.CookieStore}
-     * against the new URI, which on an upgraded hop includes the host's {@code Secure} ones.
-     *
-     * @param from the URI this hop is leaving
-     * @param to   the redirect target
-     * @return whether this is the same host moving to its secured scheme
+     * Only the content arm consults this; the hop is still cross-base, so credentials are stripped as usual
+     * and cookies are re-derived from the {@link org.asynchttpclient.cookie.CookieStore} against the new URI
+     * - which on an upgraded hop includes the host's {@code Secure} ones.
      */
     static boolean secureUpgrade(Uri from, Uri to) {
         // Named pairs, not isSecured(), which would also admit http to wss. Schemes compare exactly because

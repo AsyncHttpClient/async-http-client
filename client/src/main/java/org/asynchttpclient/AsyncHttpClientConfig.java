@@ -185,16 +185,16 @@ public interface AsyncHttpClientConfig {
     int getMaxRedirects();
 
     /**
-     * Whether to refuse a redirect that leaves an {@code https} or {@code wss} exchange for a target whose
-     * scheme is not secured, instead of following it. The redirected request is never sent and the exchange
-     * fails with a {@link org.asynchttpclient.handler.RedirectRefusedException}.
+     * Whether to refuse a redirect that leaves an {@code https} or {@code wss} exchange for an unsecured
+     * scheme. The redirected request is never sent; the exchange fails with a
+     * {@link org.asynchttpclient.handler.RedirectRefusedException}.
      * <p>
-     * Applies to every hop, bodies or not, and only once {@link #isFollowRedirect()} and
-     * {@link #getMaxRedirects()} have already let the hop through. It says nothing about an exchange that
-     * began in cleartext: there is no downgrade to refuse there.
+     * Applies to every hop, bodies or not, and is judged against the scheme of the request sent on that hop,
+     * so a cleartext hop has no downgrade to refuse but a later secured one in the same exchange still does.
      * <p>
      * {@link org.asynchttpclient.Request#getRefuseSchemeDowngradeOnRedirect()} can refuse a hop this allows,
-     * but cannot permit one this refuses.
+     * but cannot permit one this refuses. An implementation that wraps another configuration has to forward
+     * this, or the operator's setting on the wrapped one is lost to the {@code false} default here.
      *
      * @return true to refuse such a hop, false to follow it
      */
@@ -203,22 +203,22 @@ public interface AsyncHttpClientConfig {
     }
 
     /**
-     * Whether to refuse a redirect that would resend this request's content to a different origin, instead of
-     * following it. It applies only to a hop that keeps the body and only when the request actually carries
-     * content, so an ordinary bodyless redirect across origins is untouched, as is a same-origin hop. A
-     * {@code GET} that does carry content is not untouched: it will be refused.
+     * Whether to refuse a redirect that would resend this request's content to a different origin. It applies
+     * only to a hop that keeps the body and only when the request carries content, so a bodyless cross-origin
+     * hop and a same-origin hop are untouched, while a {@code GET} carrying content is refused like any
+     * other. Moving the same host onto TLS is exempt, keeping the port or moving between the two scheme
+     * defaults. The exempted hop keeps the host, not the path: the target path and query are the server's
+     * choice.
      * <p>
-     * Moving the same host onto TLS is exempt, so {@code http://host/x} to {@code https://host/x} is followed
-     * even though RFC 6454 counts it as a different origin. The exemption needs the host to match and the port
-     * to be unchanged or both at their scheme's default, so {@code :8080} to {@code :9999} is still refused.
+     * The hop is refused rather than stripped of its body, because a {@code PUT} arriving empty would
+     * overwrite the target with nothing. Weigh that against what it blocks: an upload answered with a
+     * redirect to another host stops working.
+     * <p>
      * The hop is still not same-base, so credentials are stripped from it as they always were.
      * <p>
-     * Refusing rather than dropping the body is deliberate: a {@code PUT} that arrived empty would overwrite
-     * the target with nothing. Weigh that against what it blocks: an upload answered with a redirect to
-     * another host, which some storage services use to route a request to its home region, stops working.
-     * <p>
      * {@link org.asynchttpclient.Request#getRefuseCrossOriginBodyOnRedirect()} can refuse a hop this allows,
-     * but cannot permit one this refuses.
+     * but cannot permit one this refuses. An implementation that wraps another configuration has to forward
+     * this, or the operator's setting on the wrapped one is lost to the {@code false} default here.
      *
      * @return true to refuse such a hop, false to follow it
      */

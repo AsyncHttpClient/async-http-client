@@ -32,12 +32,11 @@ import org.jetbrains.annotations.Nullable;
  * replay on that type, so a refusal that was one would come back as several more attempts to send the content
  * the caller asked to send once. {@link MaxRedirectException} avoids it for the same reason.
  *
- * <p>Whether re-sending by hand is safe depends on {@link #getStatusCode()}. Every refusal except a 303, and
- * except a 301 or non-strict 302 on a {@code POST}, preserved both the method and the content, so the same
- * request can be aimed somewhere else unchanged. A 303 is defined as an indirect response to the original
- * request, typically the output of a {@code POST} that has already run, so the origin has very likely applied
- * it (RFC 9110 section 15.4.4). No status proves it did not, though, so a non-idempotent method still needs
- * the caller's judgement (section 9.2.2).
+ * <p>Whether re-sending by hand is safe depends on {@link #getStatusCode()}. Every refusal except a 303,
+ * and except a 301 or non-strict 302 on a {@code POST}, preserved both the method and the content, so the
+ * same request can be aimed somewhere else unchanged. A 303 is intended as an indirect response to a
+ * request the origin has very likely already applied (RFC 9110 section 15.4.4), and no status proves
+ * otherwise, so a non-idempotent method still needs the caller's judgement (section 9.2.2).
  */
 public final class RedirectRefusedException extends Exception {
 
@@ -49,17 +48,13 @@ public final class RedirectRefusedException extends Exception {
      */
     public enum Reason {
 
-        /**
-         * The hop left a secured scheme for one that is not.
-         */
+        /** The hop left a secured scheme for one that is not. */
         SCHEME_DOWNGRADE("the target scheme is not secured"),
 
-        /**
-         * The hop would have resent the request content to an origin the caller never addressed.
-         */
+        /** The hop would have resent the request content to an origin the caller never addressed. */
         CROSS_ORIGIN_BODY("it would resend the request content to another origin");
 
-        // Carried as a field rather than switched on, so a constant added later cannot compile without one.
+        // A field, not a switch: a constant added later cannot compile without a description.
         private final String description;
 
         Reason(String description) {
@@ -90,8 +85,8 @@ public final class RedirectRefusedException extends Exception {
     }
 
     // getBaseUrl() on both sides: toBaseUrl() keeps the path and toString() keeps userinfo, neither of which
-    // belongs in a message headed for a log. Built here rather than by the caller so a second refusal site
-    // cannot reintroduce that, and eagerly rather than from getMessage() so it survives serialization.
+    // belongs in a log. Built here rather than by the caller so a second refusal site cannot reintroduce
+    // that, and eagerly rather than in getMessage() so it survives serialization.
     private static String message(Reason reason, int statusCode, Uri sourceUri, Uri targetUri) {
         return "Refusing to follow the " + statusCode + " redirect from " + sourceUri.getBaseUrl()
                 + " to " + targetUri.getBaseUrl() + ": " + reason.description;

@@ -186,11 +186,9 @@ public interface Request {
     /**
      * Refuses a scheme downgrade on this request and the hops it leads to, even when
      * {@link AsyncHttpClientConfig#isRefuseSchemeDowngradeOnRedirect()} is off. Tightening only, so
-     * {@code false} behaves as null and cannot re-enable a hop the client configuration refuses.
-     * <p>
-     * Like any per-request setting, a filter that builds a fresh {@link Request} rather than deriving one from
-     * {@link #toBuilder()} replaces this along with everything else; the client-wide option is what holds a
-     * posture across replays.
+     * {@code false} behaves as null and cannot re-enable a hop the client configuration refuses. A filter
+     * that builds a fresh request rather than deriving one from {@link #toBuilder()} drops it, so the
+     * client-wide option is what holds a posture across replays.
      *
      * @return true to refuse, or null or false to use the config value
      */
@@ -202,11 +200,9 @@ public interface Request {
     /**
      * Refuses a cross-origin body replay on this request and the hops it leads to, even when
      * {@link AsyncHttpClientConfig#isRefuseCrossOriginBodyOnRedirect()} is off. Tightening only, so
-     * {@code false} behaves as null and cannot re-enable a hop the client configuration refuses.
-     * <p>
-     * Like any per-request setting, a filter that builds a fresh {@link Request} rather than deriving one from
-     * {@link #toBuilder()} replaces this along with everything else; the client-wide option is what holds a
-     * posture across replays.
+     * {@code false} behaves as null and cannot re-enable a hop the client configuration refuses. A filter
+     * that builds a fresh request rather than deriving one from {@link #toBuilder()} drops it, so the
+     * client-wide option is what holds a posture across replays.
      *
      * @return true to refuse, or null or false to use the config value
      */

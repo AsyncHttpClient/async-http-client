@@ -84,6 +84,8 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMa
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultMaxRequestRetry;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultPooledConnectionIdleTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultReadTimeout;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRefuseCrossOriginBodyOnRedirect;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRefuseSchemeDowngradeOnRedirect;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultLoadBalance;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultShutdownQuietPeriod;
@@ -95,8 +97,6 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSo
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSoSndBuf;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionCacheSize;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultSslSessionTimeout;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRefuseCrossOriginBodyOnRedirect;
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRefuseSchemeDowngradeOnRedirect;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultStrict302Handling;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultTcpNoDelay;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultThreadPoolName;

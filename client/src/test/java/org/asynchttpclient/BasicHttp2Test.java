@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -62,6 +63,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 
 import java.net.URLDecoder;
@@ -113,6 +115,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>Falls back to HTTP/1.1 when HTTP/2 is disabled</li>
  * </ul>
  */
+@ExtendWith(NettyLeakDetectorExtension.class)
 public class BasicHttp2Test {
 
     // Event constants (from HttpTest/EventCollectingHandler)
@@ -396,9 +399,12 @@ public class BasicHttp2Test {
                         serverChildChannels.add(ch);
                         ch.pipeline()
                                 .addLast("ssl", serverSslCtx.newHandler(ch.alloc()))
-                                .addLast(new ApplicationProtocolNegotiationHandler(ApplicationProtocolNames.HTTP_2) {
+                                .addLast(new ApplicationProtocolNegotiationHandler(ApplicationProtocolNames.HTTP_1_1) {
                                     @Override
                                     protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+                                        if (!ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                                            throw new IllegalStateException("unexpected ALPN protocol: " + protocol);
+                                        }
                                         ctx.pipeline()
                                                 .addLast(Http2FrameCodecBuilder.forServer().build())
                                                 .addLast(new Http2MultiplexHandler(
@@ -731,7 +737,8 @@ public class BasicHttp2Test {
                 Thread.sleep(20);
                 parent = negotiatedHttp2Channel();
             }
-            assertNotNull(parent, "exactly one HTTP/2 connection should be established");
+            assertNotNull(parent, "no HTTP/2 connection settled within 5s");
+            assertEquals(1, serverChildChannels.size(), "exactly one HTTP/2 connection should be established");
 
             // GOAWAY with a high lastStreamId leaves the in-flight stream running, so the connection
             // stays open and draining.
@@ -1609,8 +1616,7 @@ public class BasicHttp2Test {
     }
 
     /**
-     * The refusal has to terminate an HTTP/2 stream as cleanly as an HTTP/1.1 connection, and Http2Handler
-     * gates its own IOExceptionFilter replay on the exception type, so both arms are worth pinning here.
+     * Http2Handler gates its own IOExceptionFilter replay on the exception type, so both arms are pinned.
      */
     @Test
     public void schemeDowngradeRefusalAppliesOverHttp2() throws Exception {
@@ -1634,5 +1640,4 @@ public class BasicHttp2Test {
             assertInstanceOf(RedirectRefusedException.class, failure.getCause());
         }
     }
-
 }

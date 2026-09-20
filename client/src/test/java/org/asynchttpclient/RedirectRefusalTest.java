@@ -24,6 +24,7 @@ import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.uri.Uri;
+import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
@@ -70,9 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The redirect refusal gate in {@code Redirect30xInterceptor}.
- * <p>
- * {@code setUpGlobal()} stays on {@link BeforeAll} so one server serves the class and the inherited
- * {@code @AfterAll} stops it.
  */
 public class RedirectRefusalTest extends AbstractBasicTest {
 
@@ -158,10 +156,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
         }
     }
 
-    /**
-     * The exemption wants the same port or both scheme defaults, and the two test connectors are on unrelated
-     * ephemeral ports, so this hop is a port change rather than an upgrade and stays refused.
-     */
+    // The two connectors are on unrelated ephemeral ports, so this is a port change, not an upgrade.
     @Test
     public void anUpgradeThatAlsoChangesThePortIsStillRefused() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(followingConfig().setRefuseCrossOriginBodyOnRedirect(true))) {
@@ -207,8 +202,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
     }
 
     /**
-     * The arm has to hold for every status that keeps method and content, not just the 307 the other tests
-     * use. 301 and 302 keep both here because the legacy rewrite is limited to POST.
+     * 301 and 302 keep method and content here, because the legacy rewrite is limited to POST.
      */
     @ParameterizedTest
     @ValueSource(ints = {301, 302, 308})
@@ -222,8 +216,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
     }
 
     /**
-     * hasContent reads the request rather than the wire, so every representation the factory can write has to
-     * be recognised. A representation added there without a row here fails open.
+     * The gate reads the request rather than the wire, so each body representation has to be recognised.
      */
     @ParameterizedTest(name = "{0}")
     @MethodSource("bodyRepresentations")
@@ -238,9 +231,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
     }
 
     /**
-     * The gate sits above ensureBodyReplayable, which would throw an IOException for a stream that cannot be
-     * replayed. Getting the refusal rather than that IOException is what proves the order, and the filter
-     * count proves the IOException path was never entered.
+     * Getting the refusal rather than ensureBodyReplayable's IOException is what proves the gate runs first.
      */
     @Test
     public void aConsumedStreamIsRefusedRatherThanFailingReplayable() throws Exception {
@@ -277,6 +268,10 @@ public class RedirectRefusalTest extends AbstractBasicTest {
                 Arguments.of("file", (Consumer<BoundRequestBuilder>) rb -> rb.setBody(file)),
                 Arguments.of("formParams", (Consumer<BoundRequestBuilder>) rb -> rb.setFormParams(singletonList(new Param("k", "v")))),
                 Arguments.of("bodyParts", (Consumer<BoundRequestBuilder>) rb -> rb.addBodyPart(new StringPart("k", "v"))),
+                Arguments.of("compositeByteData", (Consumer<BoundRequestBuilder>) rb ->
+                        rb.setBody(singletonList(payload))),
+                Arguments.of("fileBodyGenerator", (Consumer<BoundRequestBuilder>) rb ->
+                        rb.setBody(new FileBodyGenerator(file))),
                 Arguments.of("bodyGenerator", (Consumer<BoundRequestBuilder>) rb ->
                         rb.setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(payload)))));
     }
@@ -336,8 +331,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
     // ---------------------------------------------------------------- how the refusal terminates
 
     /**
-     * Both handlers gate their {@code IOExceptionFilter} replay on {@link IOException}, so a refusal that was
-     * one would come back as further attempts to send the content.
+     * A refusal that was an IOException would come back as further attempts to send the content.
      */
     @Test
     public void refusalIsNotAnIOExceptionAndIsNotReplayed() throws Exception {
@@ -429,10 +423,18 @@ public class RedirectRefusalTest extends AbstractBasicTest {
         }
     }
 
+    @Test
+    public void aRequestCannotAllowTheCrossOriginBodyHopWhereTheClientRefuses() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(followingConfig().setRefuseCrossOriginBodyOnRedirect(true))) {
+            expectRefusal(client.preparePut(plain("/cross-origin")).setBody("payload")
+                    .setRefuseCrossOriginBodyOnRedirect(false));
+            assertFalse(targetHit.get(), "a request must not be able to relax the client's posture");
+        }
+    }
+
     /**
-     * A 303 drops the body and rebuilds from an empty builder rather than from the request, which is the only
-     * branch where the override has to be copied across by hand. The client leaves both arms off, so the
-     * refusal on the second hop can only come from the override surviving the rebuild.
+     * A 303 rebuilds from an empty builder, the only branch where the override is copied across by hand.
+     * Both client arms are off, so a refusal can only come from the override surviving that rebuild.
      */
     @Test
     public void anOverrideSurvivesTheRebuildOnABodylessHop() throws Exception {

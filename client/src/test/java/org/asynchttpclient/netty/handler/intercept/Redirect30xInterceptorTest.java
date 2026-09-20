@@ -37,9 +37,9 @@ public class Redirect30xInterceptorTest {
         assertTrue(Redirect30xInterceptor.sameOrigin(host("https", "example.com", 443),
                 host("https", "EXAMPLE.com", 443)));
 
-        // The one case an integration test cannot reach, because Netty decodes header values byte per char:
-        // a non-ASCII host on the caller's own request URI. String.equalsIgnoreCase would call these equal,
-        // and \\u0130.example punycodes to xn--i-9bb.example, a different host.
+        // Not reachable from an integration test: Netty decodes header values byte per char, so a non-ASCII
+        // host can only come from the caller's own URI. String.equalsIgnoreCase would call these two equal;
+        // U+0130.example punycodes to xn--i-9bb.example, a different host.
         assertFalse(Redirect30xInterceptor.sameOrigin(host("https", "i.example", 443),
                 host("https", "\u0130.example", 443)));
     }
@@ -58,7 +58,6 @@ public class Redirect30xInterceptorTest {
                 host("https", "example.com", -1)));
         assertTrue(Redirect30xInterceptor.secureUpgrade(host("ws", "example.com", -1),
                 host("wss", "example.com", -1)));
-        // RFC 6797 section 8.3 preserves an explicit port rather than inventing one.
         assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 8080),
                 host("https", "example.com", 8080)));
         // Both spellings of the default pair, since getExplicitPort resolves -1 through the scheme default.
@@ -66,8 +65,8 @@ public class Redirect30xInterceptorTest {
                 host("https", "example.com", -1)));
         assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
                 host("https", "example.com", 443)));
-        // Deliberately looser than RFC 6797 section 8.3, which would map an explicit 80 to 443. Keeping the
-        // port means the hop lands on the endpoint the redirect was served from, so it reaches nobody new.
+        // Deliberately looser than RFC 6797 section 8.3: keeping the port lands on the endpoint the redirect
+        // was served from, so it reaches nobody new.
         assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 80),
                 host("https", "example.com", 80)));
         assertTrue(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
@@ -78,6 +77,8 @@ public class Redirect30xInterceptorTest {
     public void secureUpgradeRefusesAnythingButTheSameHostGoingSecure() {
         assertFalse(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", 8080),
                 host("https", "example.com", 9999)), "a port change is not an upgrade");
+        assertFalse(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
+                host("https", "example.com", 8443)), "a default port moving to a non-default one is not");
         assertFalse(Redirect30xInterceptor.secureUpgrade(host("http", "example.com", -1),
                 host("https", "other.example", -1)), "the host has to match");
         assertFalse(Redirect30xInterceptor.secureUpgrade(host("https", "example.com", -1),

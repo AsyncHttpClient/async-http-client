@@ -45,13 +45,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@code wss} to {@code ws} is a cleartext downgrade that AsyncHttpClient follows by default, and RFC 6455
- * section 4.1 leaves a client free not to. The WebSocket path reaches the same interceptor as HTTP, via
- * {@code WebSocketHandler}, so both arms apply there too.
+ * {@code wss} to {@code ws} is a cleartext downgrade, and RFC 6455 section 4.1 leaves a client free not to
+ * follow it. The WebSocket path reaches the same interceptor as HTTP.
  * <p>
- * Both fixture methods are re-annotated here. The base class drops the annotation when it overrides
- * {@code tearDownGlobal}, which stops JUnit treating it as a lifecycle method, so declaring only half the
- * pair starts a server per test and stops none.
+ * Both fixture methods are re-annotated because the base class drops the annotation when it overrides
+ * {@code tearDownGlobal}, so declaring only half the pair starts a server per test and stops none.
  */
 public class WebSocketRedirectRefusalTest extends AbstractBasicWebSocketTest {
 
