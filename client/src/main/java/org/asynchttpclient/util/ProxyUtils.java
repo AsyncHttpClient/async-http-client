@@ -174,7 +174,8 @@ public final class ProxyUtils {
                 }
                 return null;
             } catch (URISyntaxException e) {
-                logger.warn(uri + " couldn't be turned into a java.net.URI", e);
+                logger.warn("{} couldn't be turned into a java.net.URI: {}", uri.toUrlWithoutUserInfo(),
+                        e.getReason());
                 return null;
             }
         };

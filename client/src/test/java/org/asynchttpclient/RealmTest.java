@@ -353,4 +353,22 @@ public class RealmTest {
         byte[] hash = md.digest();
         return StringUtils.toHexString(hash);
     }
+    /**
+     * Realm reaches logs through exception messages and through anything that renders a future, so its
+     * toString is a credential sink rather than a debugging convenience.
+     */
+    @Test
+    public void toStringRedactsTheSecretsAndTheUserInfo() {
+        Realm realm = digestAuthRealm("user", "hunter2")
+                .setUri(Uri.create("https://user:hunter2@example.com/protected"))
+                .setResponse("d41d8cd98f00b204e9800998ecf8427e")
+                .build();
+
+        String rendered = realm.toString();
+        assertFalse(rendered.contains("hunter2"), rendered);
+        assertFalse(rendered.contains("d41d8cd98f00b204e9800998ecf8427e"), rendered);
+        assertTrue(rendered.contains("principal='user'"), rendered);
+        assertTrue(rendered.contains("https://example.com/protected"), rendered);
+    }
+
 }

@@ -236,8 +236,8 @@ public class Interceptors {
                 // RFC 7616 §3.5: a present-but-invalid rspauth means the server failed to prove knowledge of
                 // the shared secret, so the client must not treat the response as an authenticated success.
                 // Mirror the SCRAM ServerSignature handling (#2235): abort the request.
-                LOGGER.warn("Server rspauth mismatch in {} (expected={}, got={}) — aborting request "
-                        + "(RFC 7616 §3.5: server failed mutual authentication)", headerName, expectedRspauth, rspauth);
+                LOGGER.warn("Server rspauth mismatch in {}, aborting request "
+                        + "(RFC 7616 section 3.5: server failed mutual authentication)", headerName);
                 requestSender.abort(channel, future, new IOException("Digest rspauth verification failed"));
                 return true;
             }

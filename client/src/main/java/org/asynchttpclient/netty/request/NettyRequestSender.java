@@ -1497,7 +1497,8 @@ public final class NettyRequestSender {
                 Channel h2Channel = channelManager.pollHttp2Connection(override);
                 if (h2Channel != null) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                        LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(),
+                                uri.toUrlWithoutUserInfo());
                     }
                     return h2Channel;
                 }
@@ -1505,7 +1506,8 @@ public final class NettyRequestSender {
             Channel channel = channelManager.poll(
                     PrincipalScopedPartitionKey.scope(override, pooledIdentity(future, request)));
             if (channel != null && LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
+                LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(),
+                        uri.toUrlWithoutUserInfo());
             }
             return channel;
         }
@@ -1526,7 +1528,8 @@ public final class NettyRequestSender {
             Channel h2Channel = channelManager.pollHttp2Connection(partitionKey);
             if (h2Channel != null) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(), uri);
+                    LOGGER.debug("Using HTTP/2 multiplexed Channel '{}' for '{}' to '{}'", h2Channel, request.getMethod(),
+                                uri.toUrlWithoutUserInfo());
                 }
                 return h2Channel;
             }
@@ -1542,7 +1545,8 @@ public final class NettyRequestSender {
                 PrincipalScopedPartitionKey.scope(partitionKey, pooledIdentity(future, request)));
 
         if (channel != null && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(), uri);
+            LOGGER.debug("Using pooled Channel '{}' for '{}' to '{}'", channel, request.getMethod(),
+                        uri.toUrlWithoutUserInfo());
         }
         return channel;
     }
@@ -1554,7 +1558,10 @@ public final class NettyRequestSender {
         future.setChannelState(ChannelState.NEW);
         future.touch();
 
-        LOGGER.debug("\n\nReplaying request '{}' to '{}'\n for Future {}\n", newRequest.getMethod(), newRequest.getUri(), future);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("\n\nReplaying request '{}' to '{}'\n for Future {}\n", newRequest.getMethod(),
+                    newRequest.getUri().toUrlWithoutUserInfo(), future);
+        }
         try {
             future.getAsyncHandler().onRetry();
         } catch (Exception e) {

@@ -92,7 +92,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
                 && indefiniteSuspensionWarningLogged.compareAndSet(false, true)) {
             LOGGER.warn("Response body reads for {} remain suspended while the request timeout is disabled; "
                             + "the exchange retains its transport resources until it is resumed or canceled",
-                    nettyResponseFuture.getUri());
+                    nettyResponseFuture.getUri().toUrlWithoutUserInfo());
         }
     }
 }

@@ -193,4 +193,18 @@ public class NettyResponseFutureTest {
             channel.finishAndReleaseAll();
         }
     }
+    /**
+     * abort() logs the whole future, so this rendering is where a credential in the URL would surface.
+     */
+    @Test
+    void toStringDoesNotRenderUserInfo() {
+        Request request = get("https://user:pw@example.com:8443/secret?token=abc").build();
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(request, mock(AsyncHandler.class), null, 3,
+                ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
+
+        String rendered = future.toString();
+        assertFalse(rendered.contains("user:pw"), rendered);
+        assertTrue(rendered.contains("https://example.com:8443/secret?token=abc"), rendered);
+    }
+
 }

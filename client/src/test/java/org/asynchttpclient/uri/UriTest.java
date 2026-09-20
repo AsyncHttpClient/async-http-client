@@ -22,6 +22,7 @@ import java.net.URI;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -396,4 +397,17 @@ public class UriTest {
                     "toRelativeUrl() must equal the legacy :path concatenation for " + url);
         }
     }
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testToUrlWithoutUserInfoDropsOnlyTheUserInfo() {
+        Uri uri = Uri.create("https://user:pw@example.com:8443/secret/path?token=abc");
+        assertEquals("https://example.com:8443/secret/path?token=abc", uri.toUrlWithoutUserInfo());
+        assertTrue(uri.toUrl().contains("user:pw"));
+    }
+
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testToUrlWithoutUserInfoReturnsTheMemoisedUrlWhenThereIsNone() {
+        Uri uri = Uri.create("https://example.com/path?q=1");
+        assertSame(uri.toUrl(), uri.toUrlWithoutUserInfo());
+    }
+
 }
