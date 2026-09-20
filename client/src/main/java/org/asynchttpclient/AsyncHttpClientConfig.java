@@ -185,6 +185,48 @@ public interface AsyncHttpClientConfig {
     int getMaxRedirects();
 
     /**
+     * Whether to refuse a redirect that leaves an {@code https} or {@code wss} exchange for an unsecured
+     * scheme. The redirected request is never sent; the exchange fails with a
+     * {@link org.asynchttpclient.handler.RedirectRefusedException}.
+     * <p>
+     * Applies to every hop, bodies or not, and is judged against the scheme of the request sent on that hop,
+     * so a cleartext hop has no downgrade to refuse but a later secured one in the same exchange still does.
+     * <p>
+     * {@link org.asynchttpclient.Request#getRefuseSchemeDowngradeOnRedirect()} can refuse a hop this allows,
+     * but cannot permit one this refuses. An implementation that wraps another configuration has to forward
+     * this, or the operator's setting on the wrapped one is lost to the {@code false} default here.
+     *
+     * @return true to refuse such a hop, false to follow it
+     */
+    default boolean isRefuseSchemeDowngradeOnRedirect() {
+        return false;
+    }
+
+    /**
+     * Whether to refuse a redirect that would resend this request's content to a different origin. It applies
+     * only to a hop that keeps the body and only when the request carries content, so a bodyless cross-origin
+     * hop and a same-origin hop are untouched, while a {@code GET} carrying content is refused like any
+     * other. Moving the same host onto TLS is exempt, keeping the port or moving between the two scheme
+     * defaults. The exempted hop keeps the host, not the path: the target path and query are the server's
+     * choice.
+     * <p>
+     * The hop is refused rather than stripped of its body, because a {@code PUT} arriving empty would
+     * overwrite the target with nothing. Weigh that against what it blocks: an upload answered with a
+     * redirect to another host stops working.
+     * <p>
+     * The hop is still not same-base, so credentials are stripped from it as they always were.
+     * <p>
+     * {@link org.asynchttpclient.Request#getRefuseCrossOriginBodyOnRedirect()} can refuse a hop this allows,
+     * but cannot permit one this refuses. An implementation that wraps another configuration has to forward
+     * this, or the operator's setting on the wrapped one is lost to the {@code false} default here.
+     *
+     * @return true to refuse such a hop, false to follow it
+     */
+    default boolean isRefuseCrossOriginBodyOnRedirect() {
+        return false;
+    }
+
+    /**
      * Is the {@link ChannelPool} support enabled.
      *
      * @return true if keep-alive is enabled

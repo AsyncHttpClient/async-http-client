@@ -16,6 +16,7 @@
 package org.asynchttpclient;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -37,6 +38,7 @@ import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -45,19 +47,23 @@ import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 
 import java.net.URLDecoder;
@@ -109,6 +115,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>Falls back to HTTP/1.1 when HTTP/2 is disabled</li>
  * </ul>
  */
+@ExtendWith(NettyLeakDetectorExtension.class)
 public class BasicHttp2Test {
 
     // Event constants (from HttpTest/EventCollectingHandler)
@@ -215,6 +222,18 @@ public class BasicHttp2Test {
                 } else {
                     responseHeaders.status("200");
                 }
+                ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
+                ctx.flush();
+            } else if (routePath.equals("/downgrade")) {
+                ReferenceCountUtil.safeRelease(body);
+                Http2Headers responseHeaders = new DefaultHttp2Headers().status("302");
+                responseHeaders.add("location", "http://127.0.0.1:1/target");
+                ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
+                ctx.flush();
+            } else if (routePath.equals("/cross-origin")) {
+                ReferenceCountUtil.safeRelease(body);
+                Http2Headers responseHeaders = new DefaultHttp2Headers().status("307");
+                responseHeaders.add("location", "https://127.0.0.1:1/target");
                 ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
                 ctx.flush();
             } else if (routePath.equals("/head")) {
@@ -380,13 +399,24 @@ public class BasicHttp2Test {
                         serverChildChannels.add(ch);
                         ch.pipeline()
                                 .addLast("ssl", serverSslCtx.newHandler(ch.alloc()))
-                                .addLast(Http2FrameCodecBuilder.forServer().build())
-                                .addLast(new Http2MultiplexHandler(new ChannelInitializer<Http2StreamChannel>() {
+                                .addLast(new ApplicationProtocolNegotiationHandler(ApplicationProtocolNames.HTTP_1_1) {
                                     @Override
-                                    protected void initChannel(Http2StreamChannel streamCh) {
-                                        streamCh.pipeline().addLast(new Http2TestServerHandler());
+                                    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+                                        if (!ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                                            throw new IllegalStateException("unexpected ALPN protocol: " + protocol);
+                                        }
+                                        ctx.pipeline()
+                                                .addLast(Http2FrameCodecBuilder.forServer().build())
+                                                .addLast(new Http2MultiplexHandler(
+                                                        new ChannelInitializer<Http2StreamChannel>() {
+                                                            @Override
+                                                            protected void initChannel(Http2StreamChannel streamCh) {
+                                                                streamCh.pipeline()
+                                                                        .addLast(new Http2TestServerHandler());
+                                                            }
+                                                        }));
                                     }
-                                }));
+                                });
                     }
                 });
 
@@ -406,6 +436,15 @@ public class BasicHttp2Test {
             serverGroup.shutdownGracefully(0, 100, TimeUnit.MILLISECONDS).sync();
         }
         ReferenceCountUtil.release(serverSslCtx);
+    }
+
+    private @Nullable Channel negotiatedHttp2Channel() {
+        for (Channel child : serverChildChannels) {
+            if (child.pipeline().get(Http2FrameCodec.class) != null) {
+                return child;
+            }
+        }
+        return null;
     }
 
     private String httpsUrl(String path) {
@@ -690,17 +729,19 @@ public class BasicHttp2Test {
             // Long-running stream that keeps its connection (and, before the fix, the only permit) busy.
             client.executeRequest(org.asynchttpclient.Dsl.get(httpsUrl("/delay/30000")).setNameResolver(resolver));
 
-            // Wait until the server has accepted the connection.
+            // Wait for a connection that has settled on HTTP/2; one that has only been accepted has no
+            // codec yet and cannot encode the GOAWAY below.
             long deadline = System.currentTimeMillis() + 5000;
-            while (serverChildChannels.size() < 1 && System.currentTimeMillis() < deadline) {
+            Channel parent = negotiatedHttp2Channel();
+            while (parent == null && System.currentTimeMillis() < deadline) {
                 Thread.sleep(20);
+                parent = negotiatedHttp2Channel();
             }
+            assertNotNull(parent, "no HTTP/2 connection settled within 5s");
             assertEquals(1, serverChildChannels.size(), "exactly one HTTP/2 connection should be established");
-            Thread.sleep(300);
 
             // GOAWAY with a high lastStreamId leaves the in-flight stream running, so the connection
             // stays open and draining.
-            Channel parent = serverChildChannels.iterator().next();
             parent.writeAndFlush(new io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)
                     .setExtraStreamIds(1000)).sync();
             Thread.sleep(300);
@@ -1571,6 +1612,32 @@ public class BasicHttp2Test {
                 Response response = client.prepareGet(httpsUrl("/ok")).execute().get(30, SECONDS);
                 assertEquals(200, response.getStatusCode());
             }
+        }
+    }
+
+    /**
+     * Http2Handler gates its own IOExceptionFilter replay on the exception type, so both arms are pinned.
+     */
+    @Test
+    public void schemeDowngradeRefusalAppliesOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(builder -> builder
+                .setFollowRedirect(true)
+                .setRefuseSchemeDowngradeOnRedirect(true))) {
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                    () -> client.prepareGet(httpsUrl("/downgrade")).execute().get(10, TimeUnit.SECONDS));
+            assertInstanceOf(RedirectRefusedException.class, failure.getCause());
+        }
+    }
+
+    @Test
+    public void crossOriginBodyRefusalAppliesOverHttp2() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(builder -> builder
+                .setFollowRedirect(true)
+                .setRefuseCrossOriginBodyOnRedirect(true))) {
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                    () -> client.preparePut(httpsUrl("/cross-origin")).setBody("payload")
+                            .execute().get(10, TimeUnit.SECONDS));
+            assertInstanceOf(RedirectRefusedException.class, failure.getCause());
         }
     }
 }

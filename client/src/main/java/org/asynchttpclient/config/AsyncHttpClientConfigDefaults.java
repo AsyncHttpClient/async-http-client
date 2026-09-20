@@ -62,6 +62,8 @@ public final class AsyncHttpClientConfigDefaults {
     public static final String KEEP_ALIVE_CONFIG = "keepAlive";
     public static final String MAX_REQUEST_RETRY_CONFIG = "maxRequestRetry";
     public static final String LOAD_BALANCE_CONFIG = "loadBalance";
+    public static final String REFUSE_SCHEME_DOWNGRADE_ON_REDIRECT_CONFIG = "refuseSchemeDowngradeOnRedirect";
+    public static final String REFUSE_CROSS_ORIGIN_BODY_ON_REDIRECT_CONFIG = "refuseCrossOriginBodyOnRedirect";
     public static final String FAILED_IP_COOLDOWN_ENABLED_CONFIG = "failedIpCooldownEnabled";
     public static final String USE_ABSOLUTE_REQUEST_DEADLINE_CONFIG = "useAbsoluteRequestDeadline";
     public static final String FAILED_IP_COOLDOWN_PERIOD_CONFIG = "failedIpCooldownPeriod";
@@ -406,6 +408,14 @@ public final class AsyncHttpClientConfigDefaults {
 
     public static boolean defaultHttp2CleartextEnabled() {
         return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + HTTP2_CLEARTEXT_ENABLED_CONFIG);
+    }
+
+    public static boolean defaultRefuseSchemeDowngradeOnRedirect() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + REFUSE_SCHEME_DOWNGRADE_ON_REDIRECT_CONFIG);
+    }
+
+    public static boolean defaultRefuseCrossOriginBodyOnRedirect() {
+        return AsyncHttpClientConfigHelper.getAsyncHttpClientConfig().getBoolean(ASYNC_CLIENT_CONFIG_ROOT + REFUSE_CROSS_ORIGIN_BODY_ON_REDIRECT_CONFIG);
     }
 
     public static LoadBalance defaultLoadBalance() {

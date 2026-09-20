@@ -64,6 +64,8 @@ public class DefaultRequest implements Request {
     private final @Nullable File file;
     private final @Nullable Boolean followRedirect;
     private final @Nullable Boolean useAbsoluteRequestDeadline;
+    private final @Nullable Boolean refuseSchemeDowngradeOnRedirect;
+    private final @Nullable Boolean refuseCrossOriginBodyOnRedirect;
     private final Duration requestTimeout;
     private final Duration readTimeout;
     private final long rangeOffset;
@@ -103,7 +105,7 @@ public class DefaultRequest implements Request {
         this(method, uri, address, localAddress, headers, cookies, byteData, compositeByteData, stringData,
                 byteBufferData, byteBufData, streamData, bodyGenerator, formParams, bodyParts, virtualHost,
                 proxyServer, realm, file, followRedirect, requestTimeout, readTimeout, rangeOffset, charset,
-                channelPoolPartitioning, nameResolver, null);
+                channelPoolPartitioning, nameResolver, null, null, null);
     }
 
     /**
@@ -114,6 +116,10 @@ public class DefaultRequest implements Request {
      *
      * @param useAbsoluteRequestDeadline whether {@code requestTimeout} bounds the whole exchange rather than
      *                                   each attempt within it, or null to defer to the client config
+     * @param refuseSchemeDowngradeOnRedirect whether to refuse a redirect to an unsecured scheme, or null to
+     *                                        defer to the client config
+     * @param refuseCrossOriginBodyOnRedirect whether to refuse a redirect that resends the content to another
+     *                                        origin, or null to defer to the client config
      */
     DefaultRequest(String method,
                    Uri uri,
@@ -141,7 +147,9 @@ public class DefaultRequest implements Request {
                    @Nullable Charset charset,
                    ChannelPoolPartitioning channelPoolPartitioning,
                    NameResolver<InetAddress> nameResolver,
-                   @Nullable Boolean useAbsoluteRequestDeadline) {
+                   @Nullable Boolean useAbsoluteRequestDeadline,
+                   @Nullable Boolean refuseSchemeDowngradeOnRedirect,
+                   @Nullable Boolean refuseCrossOriginBodyOnRedirect) {
         this.method = method;
         this.uri = uri;
         this.address = address;
@@ -163,6 +171,8 @@ public class DefaultRequest implements Request {
         this.file = file;
         this.followRedirect = followRedirect;
         this.useAbsoluteRequestDeadline = useAbsoluteRequestDeadline;
+        this.refuseSchemeDowngradeOnRedirect = refuseSchemeDowngradeOnRedirect;
+        this.refuseCrossOriginBodyOnRedirect = refuseCrossOriginBodyOnRedirect;
         this.requestTimeout = requestTimeout == null ? Duration.ZERO : requestTimeout;
         this.readTimeout = readTimeout == null ? Duration.ZERO : readTimeout;
         this.rangeOffset = rangeOffset;
@@ -279,6 +289,16 @@ public class DefaultRequest implements Request {
     @Override
     public @Nullable Boolean getUseAbsoluteRequestDeadline() {
         return useAbsoluteRequestDeadline;
+    }
+
+    @Override
+    public @Nullable Boolean getRefuseSchemeDowngradeOnRedirect() {
+        return refuseSchemeDowngradeOnRedirect;
+    }
+
+    @Override
+    public @Nullable Boolean getRefuseCrossOriginBodyOnRedirect() {
+        return refuseCrossOriginBodyOnRedirect;
     }
 
     @Override
