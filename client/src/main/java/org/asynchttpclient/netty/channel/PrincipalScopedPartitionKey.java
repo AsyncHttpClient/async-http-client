@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.Realm;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -57,6 +58,22 @@ public final class PrincipalScopedPartitionKey {
             return baseKey;
         }
         return new PrincipalScopedPartitionKey(baseKey, realm.getScheme(), realm.getPrincipal());
+    }
+
+    /**
+     * Whether the scheme authenticates the connection rather than the request. Unlike
+     * {@link #scope(Object, Realm)} this needs no principal: an ambient Kerberos login carries none and still
+     * binds the socket.
+     */
+    public static boolean authenticatesTheConnection(@Nullable Realm realm) {
+        return realm != null && authenticatesTheConnection(realm.getScheme());
+    }
+
+    /**
+     * Either hop, since a CONNECT tunnel is one socket.
+     */
+    public static boolean authenticatesTheConnection(@Nullable Realm realm, @Nullable Realm proxyRealm) {
+        return authenticatesTheConnection(realm) || authenticatesTheConnection(proxyRealm);
     }
 
     private static boolean authenticatesTheConnection(Realm.AuthScheme scheme) {
