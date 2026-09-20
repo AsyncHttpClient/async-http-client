@@ -46,7 +46,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Hubert Iwaniuk
  */
 public class AsyncStreamLifecycleTest extends AbstractBasicTest {
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
+    // One thread, so the two parts are written in order.
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    // Counted down by the client on its first body part. The server writes the second part only after that.
+    private volatile CountDownLatch firstPartReceived = new CountDownLatch(1);
 
     @Override
     @AfterAll
@@ -66,24 +70,21 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 final PrintWriter writer = resp.getWriter();
                 executorService.submit(() -> {
                     try {
-                        Thread.sleep(100);
+                        logger.info("Delivering part1.");
+                        writer.write("part1");
+                        writer.flush();
+                        if (!firstPartReceived.await(TIMEOUT, TimeUnit.SECONDS)) {
+                            logger.error("Client never received part1.");
+                        }
+                        logger.info("Delivering part2.");
+                        writer.write("part2");
+                        writer.flush();
                     } catch (InterruptedException e) {
-                        logger.error("Failed to sleep for 100 ms.", e);
+                        Thread.currentThread().interrupt();
+                        logger.error("Interrupted while waiting for part1 to be received.", e);
+                    } finally {
+                        asyncContext.complete();
                     }
-                    logger.info("Delivering part1.");
-                    writer.write("part1");
-                    writer.flush();
-                });
-                executorService.submit(() -> {
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        logger.error("Failed to sleep for 200 ms.", e);
-                    }
-                    logger.info("Delivering part2.");
-                    writer.write("part2");
-                    writer.flush();
-                    asyncContext.complete();
                 });
                 request.setHandled(true);
             }
@@ -92,6 +93,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     @Test
     public void testStream() throws Exception {
+        firstPartReceived = new CountDownLatch(1);
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicBoolean err = new AtomicBoolean(false);
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
@@ -111,6 +113,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                         String s = new String(e.getBodyPartBytes());
                         logger.info("got part: {}", s);
                         queue.put(s);
+                        firstPartReceived.countDown();
                     }
                     return State.CONTINUE;
                 }
@@ -138,11 +141,11 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
             assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
             assertFalse(err.get());
-            assertEquals(queue.size(), 2);
-            assertTrue(queue.contains("part1"));
-            assertTrue(queue.contains("part2"));
+            assertEquals(2, queue.size());
+            assertEquals("part1", queue.poll());
+            assertEquals("part2", queue.poll());
             assertTrue(status.get());
-            assertEquals(headers.get(), 1);
+            assertEquals(1, headers.get());
         }
     }
 }
