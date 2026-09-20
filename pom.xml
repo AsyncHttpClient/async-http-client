@@ -46,8 +46,8 @@
 
         <netty.version>4.2.18.Final</netty.version>
         <brotli4j.version>1.23.0</brotli4j.version>
-        <slf4j.version>2.0.18</slf4j.version>
-        <zstd-jni.version>1.5.7-16</zstd-jni.version>
+        <slf4j.version>2.0.19</slf4j.version>
+        <zstd-jni.version>1.5.7-17</zstd-jni.version>
         <logback.version>1.6.3</logback.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <testcontainers.version>2.0.5</testcontainers.version>
@@ -304,7 +304,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.15.0</version>
+                <version>3.16.0</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -347,7 +347,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.6</version>
+                <version>3.6.0</version>
                 <configuration>
                     <argLine>
                         @{argLine} --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
