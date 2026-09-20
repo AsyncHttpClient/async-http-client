@@ -934,14 +934,13 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer) {
-        return updatePipelineForHttpsTunneling(pipeline, requestUri, proxyServer, true);
+        return updatePipelineForHttpsTunneling(pipeline, requestUri, true);
     }
 
     /**
      * @param http2Allowed false when the realm authenticates the socket the tunnel runs over.
      */
-    public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer,
-                                                           boolean http2Allowed) {
+    public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, boolean http2Allowed) {
         Future<Channel> whenHandshaked = null;
 
         // Remove HTTP codec as tunnel is established

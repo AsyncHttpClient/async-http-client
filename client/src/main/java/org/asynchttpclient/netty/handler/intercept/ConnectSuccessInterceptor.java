@@ -62,8 +62,7 @@ public class ConnectSuccessInterceptor {
         // Special handling for HTTPS proxy tunneling
         if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {
             // For HTTPS proxy, we need special tunnel pipeline management
-            whenHandshaked = channelManager.updatePipelineForHttpsTunneling(channel.pipeline(), requestUri, proxyServer,
-                    http2Allowed);
+            whenHandshaked = channelManager.updatePipelineForHttpsTunneling(channel.pipeline(), requestUri, http2Allowed);
         } else {
             // Standard HTTP proxy or SOCKS proxy tunneling
             whenHandshaked = channelManager.updatePipelineForHttpTunneling(channel.pipeline(), requestUri, http2Allowed);
