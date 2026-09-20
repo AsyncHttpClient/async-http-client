@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsServerAddressStreamProviders;
@@ -25,6 +24,7 @@ import org.asynchttpclient.testserver.HttpTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -64,7 +64,7 @@ public class AddressResolverGroupTest extends HttpTest {
         return server.getHttpUrl() + "/foo/bar";
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void requestWithDnsAddressResolverGroupSucceeds() throws Throwable {
         DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
                 NioDatagramChannel.class,
@@ -78,7 +78,7 @@ public class AddressResolverGroupTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void dnsResolverGroupFiresHostnameResolutionEvents() throws Throwable {
         DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
                 NioDatagramChannel.class,
@@ -110,14 +110,14 @@ public class AddressResolverGroupTest extends HttpTest {
                 }));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void defaultConfigDoesNotSetAddressResolverGroup() {
         DefaultAsyncHttpClientConfig config = config().build();
         assertNull(config.getAddressResolverGroup(),
                 "Default config should not have an AddressResolverGroup");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void unknownHostWithDnsResolverGroupFails() throws Throwable {
         DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
                 NioDatagramChannel.class,
@@ -134,7 +134,7 @@ public class AddressResolverGroupTest extends HttpTest {
     }
 
     @Tag("external")
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void resolveRealDomainWithDnsResolverGroup() throws Throwable {
         assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
 
@@ -151,7 +151,7 @@ public class AddressResolverGroupTest extends HttpTest {
     }
 
     @Tag("external")
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void resolveMultipleRealDomainsWithDnsResolverGroup() throws Throwable {
         assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
 

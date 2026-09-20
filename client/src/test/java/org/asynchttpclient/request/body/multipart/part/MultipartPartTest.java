@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.request.body.multipart.part;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -28,6 +27,7 @@ import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.asynchttpclient.request.body.multipart.part.PartVisitor.CounterPartVisitor;
 import org.asynchttpclient.test.TestUtils;
+import org.junit.jupiter.api.Test;
 
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
@@ -41,7 +41,7 @@ public class MultipartPartTest {
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitStart() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, new byte[10])) {
@@ -51,7 +51,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitStartZeroSizedByteArray() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -61,7 +61,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitDispositionHeaderWithoutFileName() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -72,7 +72,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitDispositionHeaderWithFileName() {
         TestFileLikePart fileLikePart = new TestFileLikePart("baPart", null, null, null, null, "fileName");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -83,7 +83,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitDispositionHeaderWithoutName() {
         // with fileName
         TestFileLikePart fileLikePart = new TestFileLikePart(null, null, null, null, null, "fileName");
@@ -95,7 +95,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitDispositionHeaderEscapesNameAndFileName() {
         TestFileLikePart fileLikePart = new TestFileLikePart("na\"me\r\nX-Injected: 1", null, null, null, null, "ev\"il\r\nfilename");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -112,7 +112,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitContentTypeHeaderWithCharset() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, "application/test", UTF_8, null, null);
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -123,7 +123,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitContentTypeHeaderWithoutCharset() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, "application/test");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -134,7 +134,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitTransferEncodingHeader() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, null, null, null, "transferEncoding");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -145,7 +145,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitContentIdHeader() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null, null, null, "contentId");
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -156,7 +156,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitCustomHeadersWhenNoCustomHeaders() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -167,7 +167,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitCustomHeaders() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
         fileLikePart.addCustomHeader("custom-header", "header-value");
@@ -178,7 +178,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitEndOfHeaders() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -188,7 +188,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitPreContent() {
         TestFileLikePart fileLikePart = new TestFileLikePart("Name", "application/test", UTF_8, "contentId", "transferEncoding", "fileName");
         fileLikePart.addCustomHeader("custom-header", "header-value");
@@ -199,7 +199,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testVisitPostContents() {
         TestFileLikePart fileLikePart = new TestFileLikePart(null);
         try (TestMultipartPart multipartPart = new TestMultipartPart(fileLikePart, EMPTY_BYTE_ARRAY)) {
@@ -209,7 +209,7 @@ public class MultipartPartTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void transferToShouldWriteStringPart() throws Exception {
         String text = FileUtils.readFileToString(TestUtils.resourceAsFile("test_sample_message.eml"), UTF_8);
 

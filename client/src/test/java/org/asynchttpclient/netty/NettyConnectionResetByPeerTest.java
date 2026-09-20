@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.netty;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class NettyConnectionResetByPeerTest {
         resettingServerAddress = createResettingServer();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testAsyncHttpClientConnectionResetByPeer() throws InterruptedException {
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setRequestTimeout(Duration.ofMillis(1500))

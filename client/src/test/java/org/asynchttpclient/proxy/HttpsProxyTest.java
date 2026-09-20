@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +33,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -272,7 +272,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testHttpsProxyType() throws Exception {
         // Test that HTTPS proxy type can be configured and behaves correctly
         ProxyServer.Builder builder = proxyServer("localhost", port1)
@@ -286,7 +286,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         assertEquals(443, proxy.getSecuredPort());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testHttpsProxyWithSecuredPortOnly() throws Exception {
         // Test HTTPS proxy using only secured port (typical configuration)
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {
@@ -300,7 +300,7 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testHttpsProxyWithAuthentication() throws Exception {
         // Test HTTPS proxy with custom headers (simulating authentication)
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true).setUseInsecureTrustManager(true))) {

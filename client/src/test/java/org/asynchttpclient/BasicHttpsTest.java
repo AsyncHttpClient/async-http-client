@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.test.EventCollectingHandler;
@@ -23,6 +22,7 @@ import org.asynchttpclient.testserver.HttpServer;
 import org.asynchttpclient.testserver.HttpTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -64,7 +64,7 @@ public class BasicHttpsTest extends HttpTest {
         return server.getHttpsUrl() + "/foo/bar";
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void postFileOverHttps() throws Throwable {
         logger.debug(">>> postBodyOverHttps");
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
@@ -79,7 +79,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< postBodyOverHttps");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void postLargeFileOverHttps() throws Throwable {
         logger.debug(">>> postLargeFileOverHttps");
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
@@ -94,7 +94,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< postLargeFileOverHttps");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void multipleSequentialPostRequestsOverHttps() throws Throwable {
         logger.debug(">>> multipleSequentialPostRequestsOverHttps");
         withClient(config().setSslEngineFactory(createSslEngineFactory())).run(client ->
@@ -112,7 +112,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< multipleSequentialPostRequestsOverHttps");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy() throws Throwable {
         logger.debug(">>> multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
 
@@ -136,7 +136,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< multipleConcurrentPostRequestsOverHttpsWithDisabledKeepAliveStrategy");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void reconnectAfterFailedCertificationPath() throws Throwable {
         logger.debug(">>> reconnectAfterFailedCertificationPath");
 
@@ -167,7 +167,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< reconnectAfterFailedCertificationPath");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 2000)
     public void failInstantlyIfNotAllowedSelfSignedCertificate() throws Throwable {
         logger.debug(">>> failInstantlyIfNotAllowedSelfSignedCertificate");
@@ -185,7 +185,7 @@ public class BasicHttpsTest extends HttpTest {
         logger.debug("<<< failInstantlyIfNotAllowedSelfSignedCertificate");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testNormalEventsFired() throws Throwable {
         logger.debug(">>> testNormalEventsFired");
 

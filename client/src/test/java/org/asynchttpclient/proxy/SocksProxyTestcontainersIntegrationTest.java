@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
@@ -126,7 +125,7 @@ public class SocksProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testSocks4ProxyToHttpTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing SOCKS4 proxy to HTTP target");
@@ -145,7 +144,7 @@ public class SocksProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testSocks5ProxyToHttpTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing SOCKS5 proxy to HTTP target");
@@ -164,7 +163,7 @@ public class SocksProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testSocks4ProxyToHttpsTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing SOCKS4 proxy to HTTPS target - validates issue #1913 fix");
@@ -184,7 +183,7 @@ public class SocksProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testSocks5ProxyToHttpsTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing SOCKS5 proxy to HTTPS target - validates issue #1913 fix");
@@ -204,7 +203,7 @@ public class SocksProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testIssue1913ReproductionWithRealProxy() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing exact issue #1913 reproduction with real SOCKS proxy");

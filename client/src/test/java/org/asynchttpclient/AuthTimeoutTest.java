@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.asynchttpclient.test.ExtendedDigestAuthenticator;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -79,7 +79,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         server2.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void basicAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             execute(client, true, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -88,7 +88,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void basicPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             execute(client, true, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -97,7 +97,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void digestAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             execute(client, false, false).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -107,28 +107,28 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     @Disabled
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void digestPreemptiveAuthTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, false, true).get(LONG_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void basicAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, true, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void basicPreemptiveAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, true, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void digestAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, false, false).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -136,7 +136,7 @@ public class AuthTimeoutTest extends AbstractBasicTest {
     }
 
     @Disabled
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void digestPreemptiveAuthFutureTimeoutTest() throws Throwable {
         try (AsyncHttpClient client = newClient()) {
             assertThrows(TimeoutException.class, () -> execute(client, false, true).get(SHORT_FUTURE_TIMEOUT, TimeUnit.MILLISECONDS));

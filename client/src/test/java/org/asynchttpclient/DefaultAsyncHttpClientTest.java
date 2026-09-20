@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
@@ -34,6 +33,7 @@ import org.asynchttpclient.cookie.CookieEvictionTask;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.testserver.HttpServer;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -59,7 +59,7 @@ import static org.mockito.Mockito.verify;
 
 public class DefaultAsyncHttpClientTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportWithEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true)
@@ -67,7 +67,7 @@ public class DefaultAsyncHttpClientTest {
         assertRequestSucceedsAndEventLoopGroupIs(config, EpollEventLoopGroup.class);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportWithoutEpollOnly() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(false)
@@ -75,7 +75,7 @@ public class DefaultAsyncHttpClientTest {
         assertRequestSucceedsAndEventLoopGroupIs(config, MultiThreadIoEventLoopGroup.class);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.MAC)
     public void testNativeTransportKQueueOnMacOs() throws Exception {
         AsyncHttpClientConfig config = config().setUseNativeTransport(true)
@@ -83,38 +83,38 @@ public class DefaultAsyncHttpClientTest {
         assertRequestSucceedsAndEventLoopGroupIs(config, KQueueEventLoopGroup.class);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExternalNioEventLoopGroup() throws Exception {
         assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExternalDeprecatedNioEventLoopGroup() throws Exception {
         assertRequestSucceedsWith(new NioEventLoopGroup(1));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.LINUX)
     public void testExternalEpollEventLoopGroup() throws Exception {
         assumeTrue(Epoll.isAvailable(), "epoll is not available");
         assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, EpollIoHandler.newFactory()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.LINUX)
     public void testExternalIoUringEventLoopGroup() throws Exception {
         assumeTrue(IoUring.isAvailable(), "io_uring is not available");
         assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, IoUringIoHandler.newFactory()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.MAC)
     public void testExternalKQueueEventLoopGroup() throws Exception {
         assumeTrue(KQueue.isAvailable(), "kqueue is not available");
         assertRequestSucceedsWith(new MultiThreadIoEventLoopGroup(1, KQueueIoHandler.newFactory()));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExternalEventLoopGroupOfUnknownTransportIsRejected() throws Exception {
         EventLoopGroup eventLoopGroup = new DefaultEventLoopGroup(1);
         try {
@@ -149,7 +149,7 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.LINUX)
     public void testNativeTransportFallsBackToNioWhenNativeUnavailable() throws IOException {
         // Requesting native transport must never fail client construction: when no native transport is
@@ -169,7 +169,7 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @EnabledOnOs(OS.LINUX)
     public void testAutoSelectsNativeTransportByDefaultWhenAvailable() throws IOException {
         AsyncHttpClientConfig config = config().build();
@@ -184,17 +184,17 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUseOnlyEpollNativeTransportButNativeTransportIsDisabled() {
         assertThrows(IllegalArgumentException.class, () -> config().setUseNativeTransport(false).setUseOnlyEpollNativeTransport(true).build());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUseOnlyEpollNativeTransportAndNativeTransportIsEnabled() {
         assertDoesNotThrow(() -> config().setUseNativeTransport(true).setUseOnlyEpollNativeTransport(true).build());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWithSharedNettyTimerShouldScheduleCookieEvictionOnlyOnce() throws IOException {
         Timer nettyTimerMock = mock(Timer.class);
         CookieStore cookieStore = new ThreadSafeCookieStore();
@@ -208,7 +208,7 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWitDefaultConfigShouldScheduleCookieEvictionForEachAHC() throws IOException {
         AsyncHttpClientConfig config1 = config().build();
         try (AsyncHttpClient client1 = asyncHttpClient(config1)) {
@@ -220,7 +220,7 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWithSharedCookieStoreButNonSharedTimerShouldScheduleCookieEvictionForFirstAHC() throws IOException {
         CookieStore cookieStore = new ThreadSafeCookieStore();
         Timer nettyTimerMock1 = mock(Timer.class);
@@ -248,7 +248,7 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testWithSharedCookieStoreButNonSharedTimerShouldReScheduleCookieEvictionWhenFirstInstanceGetClosed() throws IOException {
         CookieStore cookieStore = new ThreadSafeCookieStore();
         Timer nettyTimerMock1 = mock(Timer.class);
@@ -272,7 +272,7 @@ public class DefaultAsyncHttpClientTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testDisablingCookieStore() throws IOException {
         AsyncHttpClientConfig config = config()
                 .setCookieStore(null).build();

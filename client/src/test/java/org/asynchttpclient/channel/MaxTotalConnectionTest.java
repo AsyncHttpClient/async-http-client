@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.channel;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MaxTotalConnectionTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testMaxTotalConnectionsExceedingException() throws IOException {
         String[] urls = {getTargetUrl(), String.format("http://localhost:%d/foo/test", port2)};
 
@@ -74,7 +74,7 @@ public class MaxTotalConnectionTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testMaxTotalConnections() throws Exception {
         String[] urls = {getTargetUrl(), String.format("http://localhost:%d/foo/test", port2)};
 

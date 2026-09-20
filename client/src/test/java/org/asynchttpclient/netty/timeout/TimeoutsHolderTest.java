@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.netty.timeout;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -24,6 +23,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
@@ -46,7 +46,7 @@ public class TimeoutsHolderTest {
     // deadline lands within a few milliseconds of itself rather than exactly on it.
     private static final long TOLERANCE_MS = 30;
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void anAbsoluteDeadlineStaysWhereTheExchangeStarted() throws Exception {
         NettyResponseFuture<?> future = exchange(true);
 
@@ -58,7 +58,7 @@ public class TimeoutsHolderTest {
                 "the second hop moved the deadline by " + (secondHop - firstHop) + " ms");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void aPerAttemptTimeoutGivesTheSecondHopItsOwnBudget() throws Exception {
         NettyResponseFuture<?> future = exchange(false);
 
@@ -71,7 +71,7 @@ public class TimeoutsHolderTest {
                         + (secondHop - firstHop) + " ms");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void anExchangeThatOutranItsDeadlineHasNothingLeft() throws Exception {
         // A budget this small is spent by the time the sleep is over, so the next hop has nothing to run in.
         NettyResponseFuture<?> future = exchange(true);
@@ -81,7 +81,7 @@ public class TimeoutsHolderTest {
                 "a spent deadline should leave nothing to send a further hop with");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void aPerAttemptExchangeIsNotBoundedAsAWhole() throws Exception {
         // Asserted on the deadline the holder computes rather than on the budget: per attempt there is no
         // exchange-wide budget to run out of, so the arithmetic is not what the answer rests on.

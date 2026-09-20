@@ -15,7 +15,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ComplexClientTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void multipleRequestsTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String body = "hello there";
@@ -49,7 +49,7 @@ public class ComplexClientTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void urlWithoutSlashTest() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             String body = "hello there";

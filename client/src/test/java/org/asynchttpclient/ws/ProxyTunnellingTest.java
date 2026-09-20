@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.ws;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.eclipse.jetty.proxy.ConnectHandler;
@@ -27,6 +26,7 @@ import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerI
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
@@ -66,13 +66,13 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
         server2.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoWSText() throws Exception {
         runTest(false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void echoWSSText() throws Exception {
         runTest(true);

@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +24,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Map;
@@ -59,7 +59,7 @@ public class DigestAuthRfc7616Test extends AbstractBasicTest {
     }
 
     // Phase 2: Stale nonce handling
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void staleNonceRetry() throws Exception {
         server.stop();
         server = new Server();
@@ -80,7 +80,7 @@ public class DigestAuthRfc7616Test extends AbstractBasicTest {
     }
 
     // Phase 5: Multiple challenges - select best algorithm
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void multipleChallengesSelectsBest() throws Exception {
         server.stop();
         server = new Server();
@@ -103,7 +103,7 @@ public class DigestAuthRfc7616Test extends AbstractBasicTest {
     }
 
     // Phase 7: Authentication-Info with nextnonce
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void authenticationInfoNextnonce() throws Exception {
         server.stop();
         server = new Server();

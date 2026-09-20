@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,6 +25,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -69,7 +69,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
         return new RspAuthHandler(false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void validRspAuthIsAccepted() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -89,7 +89,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
      * that realm is computed over the wrong {@code uri} and cannot match what the server signed. Verification
      * has to use the parameters actually sent.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void validRspAuthIsAcceptedAcrossSameOriginRedirect() throws Exception {
         restartServer(new RedirectingRspAuthHandler());
 
@@ -113,7 +113,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
      * {@code uri} at all and an expected rspauth derived from it hashes {@code H(":")}. An honest server must
      * not be rejected for that.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void preemptiveDigestIsNotSpuriouslyRejected() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -132,7 +132,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void invalidRspAuthIsRejected() throws Exception {
         // Server completes the digest handshake but returns an rspauth it could not have computed without the
         // shared secret. RFC 7616 §3.5 requires the client to consider the exchange unsuccessful.
@@ -163,7 +163,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
      * longer be authenticated against. {@code auth,auth-int} is unaffected, because auth is preferred and
      * its rspauth is verified.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void anAuthIntOnlyChallengeIsNotAnsweredWithAuthInt() throws Exception {
         restartServer(new AuthIntRspAuthHandler());
 
@@ -188,7 +188,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
      * stripped case-sensitively, so it reached the digest pool intact, threw, and was reported as "cannot
      * verify" — a one-word opt-out of mutual authentication that any server could take.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void invalidRspAuthIsRejectedWhateverTheSpellingOfTheAlgorithm() throws Exception {
         for (String spelling : new String[]{"MD5-SESS", "MD5-Sess", "MD5-sess", "SHA-256-SESS"}) {
             restartServer(new SessRspAuthHandler(spelling, true));
@@ -211,7 +211,7 @@ public class DigestMutualAuthTest extends AbstractBasicTest {
      * session-variant server must still be accepted, so the spellings above are genuinely being verified
      * rather than uniformly rejected.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void validSessionVariantRspAuthIsAccepted() throws Exception {
         for (String spelling : new String[]{"MD5-SESS", "MD5-sess", "SHA-256-SESS"}) {
             restartServer(new SessRspAuthHandler(spelling, false));

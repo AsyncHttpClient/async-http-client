@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -24,6 +23,7 @@ import org.asynchttpclient.testserver.HttpTest;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -75,7 +75,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         stalledTimer.stop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void byDefaultEachHopGetsItsOwnBudget() throws Throwable {
         // Two hops of 400 ms against a 600 ms budget. Each hop on its own fits, the pair does not, so with a
         // per-attempt timeout the exchange completes.
@@ -86,7 +86,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         outcome.assertReachedTheSecondHop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void withAnAbsoluteDeadlineTheChainCannotOutrunTheBudget() throws Throwable {
         enqueueTwoDelayedHops();
 
@@ -95,7 +95,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         outcome.assertTimedOut();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void aRequestCanAskForAnAbsoluteDeadlineOnAPerAttemptClient() throws Throwable {
         enqueueTwoDelayedHops();
 
@@ -104,7 +104,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         outcome.assertTimedOut();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void aRequestCanOptOutOfAnAbsoluteDeadlineClient() throws Throwable {
         enqueueTwoDelayedHops();
 
@@ -113,7 +113,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         outcome.assertReachedTheSecondHop();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void aSingleHopStillGetsTheWholeBudget() throws Throwable {
         // Guards the other direction: with a deadline, the first hop must not be handed a shortened budget.
         enqueueDelayed(HOP_DELAY_MS, 200, null);
@@ -123,7 +123,7 @@ public class AbsoluteRequestDeadlineTest extends HttpTest {
         outcome.assertCompletedAt(FIRST_HOP);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void aHopWithNothingLeftToSpendIsNeverSent() throws Throwable {
         // The first hop answers after the budget is gone, and the timer is too coarse to have expired the
         // exchange in the meantime. That is the window in which a redirect used to be written anyway: a permit
