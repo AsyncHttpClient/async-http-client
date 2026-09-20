@@ -246,6 +246,12 @@ public final class NettyConnectListener<T> {
                         }
                         registerHttp2AndManageSemaphore(channel, semaphore, permit);
                     }
+                    if (!http2Negotiated && !uri.isWebSocket() && channelManager.isHttp2Enabled()) {
+                        // We offered h2 and did not get it, so this connection will never register HTTP/2
+                        // and a request already waiting for one would wait out its connect timeout. No ALPN
+                        // at all counts the same: RFC 9113 section 3.2 requires it for h2 over TLS.
+                        channelManager.http2Unavailable(future.getPartitionKey());
+                    }
                     writeRequest(channel);
                 }
 

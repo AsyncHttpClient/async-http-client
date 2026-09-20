@@ -23,7 +23,11 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -35,25 +39,66 @@ import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A request that cannot take a connection permit only defers on an HTTP/2 connection that could exist. An
- * HTTP/2 connection is registered from ALPN on a secured origin or from an h2c upgrade on a cleartext one,
- * so for a cleartext origin with h2c disabled, which is the default, nothing ever registers and the waiter can
- * only expire. Arming it there holds the request for the whole {@code connectTimeout} before failing it
- * with the permit exception it already had, overriding the {@code acquireFreeChannelTimeout} the caller
- * asked for (0 by default: fail fast).
+ * A request that cannot take a connection permit only defers on an HTTP/2 connection that could exist. One
+ * is registered from ALPN on a secured origin or from an h2c upgrade on a cleartext one, so neither a
+ * cleartext origin with h2c disabled (the default) nor an origin whose handshake settled on HTTP/1.1 will
+ * ever register one. Arming a waiter there holds the request for the whole {@code connectTimeout} before
+ * failing it with the permit exception it already had, long after the {@code acquireFreeChannelTimeout}
+ * that brought it down this path expired.
  */
 public class Http2ConnectionWaiterGateTest extends AbstractBasicTest {
 
-    private final CountDownLatch release = new CountDownLatch(1);
+    private volatile CountDownLatch release = new CountDownLatch(1);
+
+    @BeforeEach
+    public void freshLatch() {
+        release = new CountDownLatch(1);
+    }
 
     @Override
-    public AbstractHandler configureHandler() throws Exception {
-        return new BlockingHandler();
+    @BeforeAll
+    public void setUpGlobal() throws Exception {
+        server = new Server();
+        ServerConnector plain = addHttpConnector(server);
+        ServerConnector secure = addHttpsConnector(server);
+        server.setHandler(new BlockingHandler());
+        server.start();
+        port1 = plain.getLocalPort();
+        port2 = secure.getLocalPort();
+    }
+
+    /**
+     * Jetty's TLS connector speaks HTTP/1.1, so the scheme cannot rule HTTP/2 out and only the handshake
+     * can. Before the fix the over-cap request waited out connectTimeout for a connection ALPN had already
+     * decided would never be HTTP/2.
+     */
+    @Test
+    public void permitExhaustedOnAnHttp11TlsOriginFailsWithoutWaitingOutConnectTimeout() throws Exception {
+        String url = "https://localhost:" + port2 + "/";
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setMaxConnections(1)
+                .setUseInsecureTrustManager(true)
+                .setConnectTimeout(Duration.ofSeconds(30)))) {
+
+            Future<Response> holder = client.prepareGet(url).execute();
+            try {
+                // No isDone() assertion here, unlike the cleartext sibling: the marker only exists once the
+                // handshake has settled, so this refusal is necessarily asynchronous.
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                        () -> client.prepareGet(url).execute().get(10, TimeUnit.SECONDS));
+                assertInstanceOf(TooManyConnectionsException.class, failure.getCause());
+            } finally {
+                release.countDown();
+            }
+            holder.get(TIMEOUT, TimeUnit.SECONDS);
+        }
     }
 
     @Test

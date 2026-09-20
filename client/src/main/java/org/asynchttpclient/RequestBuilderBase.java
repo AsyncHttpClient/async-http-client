@@ -616,7 +616,7 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
-     * Refuses a scheme downgrade on this request even when the client allows it.
+     * Refuses a scheme downgrade on this request and every hop it leads to, even when the client allows it.
      *
      * @param refuseSchemeDowngradeOnRedirect true to refuse a redirect off this request that leaves a secured
      *                                        scheme for one that is not; false leaves
@@ -630,7 +630,8 @@ public abstract class RequestBuilderBase<T extends RequestBuilderBase<T>> {
     }
 
     /**
-     * Refuses a cross-origin body replay on this request even when the client allows it.
+     * Refuses a cross-origin body replay on this request and every hop it leads to, even when the client
+     * allows it.
      *
      * @param refuseCrossOriginBodyOnRedirect true to refuse a redirect off this request that would resend its
      *                                        content to another origin; false leaves

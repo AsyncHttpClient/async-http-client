@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.handler.intercept;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,6 +94,29 @@ public class Redirect30xInterceptorTest {
                 host("http", "example.com", 443)));
         assertFalse(Redirect30xInterceptor.sameOrigin(host("https", "example.com", 443),
                 host("https", "example.com", 8443)));
+    }
+
+    /**
+     * sameOrigin gates the body and Uri.isSameBase gates credential stripping. They agree today; if one is
+     * ever relaxed on its own, the looser gate would send content somewhere the stricter one still treats as
+     * another origin. This fails when they diverge, whichever way.
+     */
+    @Test
+    public void sameOriginAndIsSameBaseStayInStep() {
+        Uri[][] pairs = {
+                {host("https", "example.com", 443), host("https", "example.com", 443)},
+                {host("https", "example.com", -1), host("https", "example.com", 443)},
+                {host("https", "example.com", 443), host("https", "EXAMPLE.com", 443)},
+                {host("https", "example.com", 443), host("https", "example.com", 8443)},
+                {host("https", "example.com", 443), host("http", "example.com", 443)},
+                {host("https", "example.com", 443), host("https", "other.example", 443)},
+                {host("https", "i.example", 443), host("https", "\u0130.example", 443)},
+                {host("https", "k.example", 443), host("https", "\u212A.example", 443)},
+        };
+        for (Uri[] pair : pairs) {
+            assertEquals(pair[0].isSameBase(pair[1]), Redirect30xInterceptor.sameOrigin(pair[0], pair[1]),
+                    pair[0] + " vs " + pair[1]);
+        }
     }
 
     @Test

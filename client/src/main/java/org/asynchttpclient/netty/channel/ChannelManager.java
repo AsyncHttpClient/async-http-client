@@ -163,6 +163,13 @@ public class ChannelManager {
     // rather than hang (its request-timeout is not scheduled yet at this point). See NettyRequestSender's
     // HTTP/2 deferral.
     private final ConcurrentHashMap<Object, Set<Consumer<Channel>>> http2ConnectionWaiters = new ConcurrentHashMap<>();
+    // Hosts a connection has already finished a handshake with as HTTP/1.1. Sticky, because the waiter is
+    // armed after the handshake that decided it, so an edge alone would fire into an empty waiter set.
+    // ALPN is per-connection, so this can be wrong for a mixed fleet; registerHttp2Connection clears it.
+    // Being wrong costs a parked request the sibling connection it might have multiplexed onto (#2214).
+    // Bounded because nothing prunes it.
+    private static final int MAX_KNOWN_NON_HTTP2 = 1024;
+    private final Set<Object> knownNonHttp2 = ConcurrentHashMap.newKeySet();
     // Set once, permanently, when the client closes and sweeps its waiters (failHttp2ConnectionWaiters). Read
     // by addHttp2ConnectionWaiter to fail-closed against a request that arms a waiter in the window between the
     // sweep and nettyTimer.stop() — such a waiter would otherwise be neither woken nor timed out, hanging its
@@ -519,6 +526,7 @@ public class ChannelManager {
      * multiple requests can share the same connection concurrently.
      */
     public void registerHttp2Connection(Object partitionKey, Channel channel) {
+        knownNonHttp2.remove(baseKeyOf(partitionKey));
         Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
         if (state != null) {
             state.setPartitionKey(partitionKey);
@@ -609,6 +617,31 @@ public class ChannelManager {
             waiters.remove(onConnection);
             return waiters.isEmpty() ? null : waiters;
         });
+    }
+
+    /**
+     * Records that a handshake for this key settled on HTTP/1.1 and fails anything parked waiting for an
+     * HTTP/2 connection there. Without it an over-cap request waits out {@code connectTimeout} for a
+     * connection the handshake has already ruled out.
+     */
+    void http2Unavailable(Object partitionKey) {
+        Object baseKey = baseKeyOf(partitionKey);
+        if (pollHttp2SiblingConnection(baseKey) != null) {
+            // Another IP of this host did negotiate HTTP/2. Marking the host would strand the waiters on a
+            // connection they can still multiplex onto, so leave the mark and the waiters alone.
+            return;
+        }
+        if (knownNonHttp2.size() < MAX_KNOWN_NON_HTTP2) {
+            // Past the cap an over-cap request waits out connectTimeout again, which is what it did before
+            // this existed. Unbounded growth is the worse failure.
+            knownNonHttp2.add(baseKey);
+        }
+        LOGGER.debug("HTTP/2 unavailable for key: {}, failing anything waiting for it", baseKey);
+        wakeHttp2ConnectionWaiters(partitionKey, null);
+    }
+
+    public boolean isHttp2KnownUnavailable(Object partitionKey) {
+        return knownNonHttp2.contains(baseKeyOf(partitionKey));
     }
 
     private void wakeHttp2ConnectionWaiters(Object partitionKey, Channel channel) {
@@ -772,6 +805,7 @@ public class ChannelManager {
         // runs after the (possibly long) graceful EventLoopGroup shutdown, and the nettyTimer that would
         // otherwise fire their deadline is being stopped in parallel.
         failHttp2ConnectionWaiters();
+        knownNonHttp2.clear();
         // Close the resolver group first while the EventLoopGroup is still active,
         // since Netty DNS resolvers may need a live EventLoop for clean shutdown.
         if (addressResolverGroup != null) {
@@ -1216,6 +1250,8 @@ public class ChannelManager {
                 && ApplicationProtocolNames.HTTP_2.equals(targetSslHandler.applicationProtocol())) {
             upgradePipelineToHttp2(pipeline);
             registerHttp2Connection(partitionKey, pipeline.channel());
+        } else if (targetSslHandler != null) {
+            http2Unavailable(partitionKey);
         }
     }
 
@@ -1370,6 +1406,10 @@ public class ChannelManager {
 
     public boolean isOpen() {
         return channelPool.isOpen();
+    }
+
+    boolean isHttp2Enabled() {
+        return config.isHttp2Enabled();
     }
 
     public boolean isHttp2CleartextEnabled() {

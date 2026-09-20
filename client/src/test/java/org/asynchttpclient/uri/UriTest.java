@@ -410,4 +410,14 @@ public class UriTest {
         assertSame(uri.toUrl(), uri.toUrlWithoutUserInfo());
     }
 
+    @RepeatedIfExceptionsTest(repeats = 5)
+    public void testIsSameBaseFoldsHostCaseButOnlyInAscii() {
+        Uri lower = Uri.create("https://example.com/a");
+        assertTrue(lower.isSameBase(Uri.create("https://EXAMPLE.com/b")));
+        assertFalse(lower.isSameBase(Uri.create("http://example.com/b")));
+        assertFalse(lower.isSameBase(Uri.create("https://example.com:8443/b")));
+        assertFalse(Uri.create("https://i.example/a").isSameBase(Uri.create("https://\u0130.example/b")));
+        assertFalse(Uri.create("https://k.example/a").isSameBase(Uri.create("https://\u212A.example/b")));
+    }
+
 }
