@@ -271,17 +271,17 @@ public class Realm {
     public String toString() {
         return "Realm{" +
                 "principal='" + principal + '\'' +
-                ", password='" + password + '\'' +
+                ", password=" + (password == null ? "null" : "<redacted>") +
                 ", scheme=" + scheme +
                 ", realmName='" + realmName + '\'' +
                 ", nonce='" + nonce + '\'' +
                 ", algorithm='" + algorithm + '\'' +
-                ", response='" + response + '\'' +
+                ", response=" + (response == null ? "null" : "<redacted>") +
                 ", opaque='" + opaque + '\'' +
                 ", qop='" + qop + '\'' +
                 ", nc='" + nc + '\'' +
                 ", cnonce='" + cnonce + '\'' +
-                ", uri=" + uri +
+                ", uri=" + (uri == null ? null : uri.toUrlWithoutUserInfo()) +
                 ", usePreemptiveAuth=" + usePreemptiveAuth +
                 ", charset=" + charset +
                 ", ntlmHost='" + ntlmHost + '\'' +

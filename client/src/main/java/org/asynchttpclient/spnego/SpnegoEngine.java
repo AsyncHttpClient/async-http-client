@@ -222,7 +222,7 @@ public class SpnegoEngine {
             gssContext.dispose();
 
             String tokenstr = Base64.getEncoder().encodeToString(token);
-            log.debug("Sending response '{}' back to the server", tokenstr);
+            log.debug("Sending a {}-byte SPNEGO token back to the server", tokenstr.length());
 
             return tokenstr;
         } catch (GSSException gsse) {

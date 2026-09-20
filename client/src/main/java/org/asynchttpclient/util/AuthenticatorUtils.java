@@ -685,7 +685,7 @@ public final class AuthenticatorUtils {
                     // SCRAM reauthentication — handled via interceptor
                     break;
                 default:
-                    throw new IllegalStateException("Invalid Authentication " + realm);
+                    throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
             }
         }
 

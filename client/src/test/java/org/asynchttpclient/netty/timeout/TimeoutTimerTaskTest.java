@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -123,7 +124,7 @@ public class TimeoutTimerTaskTest {
 
     @Test
     public void indefiniteSuspensionLogsOneWarning() {
-        Request request = new RequestBuilder().setUrl("http://example.com").build();
+        Request request = new RequestBuilder().setUrl("http://user:pw@example.com/path").build();
         NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
             public Object onCompleted(Response response) {
@@ -149,7 +150,10 @@ public class TimeoutTimerTaskTest {
                     .filter(event -> event.getLevel() == Level.WARN)
                     .collect(Collectors.toList());
             assertEquals(1, warnings.size());
-            assertTrue(warnings.get(0).getFormattedMessage().contains("request timeout is disabled"));
+            String message = warnings.get(0).getFormattedMessage();
+            assertTrue(message.contains("request timeout is disabled"));
+            assertFalse(message.contains("user:pw"), message);
+            assertTrue(message.contains("http://example.com/path"), message);
         } finally {
             logger.detachAppender(appender);
             appender.stop();

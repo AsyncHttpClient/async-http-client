@@ -170,7 +170,9 @@ public class ProxyUnauthorized407Interceptor {
             }
             final Request nextRequest = nextRequestBuilder.build();
 
-            LOGGER.debug("Sending proxy authentication to {}", request.getUri());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Sending proxy authentication to {}", request.getUri().toUrlWithoutUserInfo());
+            }
             if (channel instanceof Http2StreamChannel) {
                 channel.close();
                 requestSender.sendNextRequest(nextRequest, future);
@@ -320,7 +322,9 @@ public class ProxyUnauthorized407Interceptor {
         }
         final Request nextRequest = nextRequestBuilder.build();
 
-        LOGGER.debug("Sending proxy authentication to {}", request.getUri());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Sending proxy authentication to {}", request.getUri().toUrlWithoutUserInfo());
+        }
         if (channel instanceof Http2StreamChannel) {
             // HTTP/2 stream channels are single-use — close the stream and send the auth retry.
             channel.close();
