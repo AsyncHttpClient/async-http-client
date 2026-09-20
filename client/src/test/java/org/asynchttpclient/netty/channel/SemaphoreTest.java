@@ -17,7 +17,6 @@ package org.asynchttpclient.netty.channel;
 
 import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
@@ -27,6 +26,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -49,9 +49,6 @@ public class SemaphoreTest {
 
     static final int CHECK_ACQUIRE_TIME__PERMITS = 10;
     static final int CHECK_ACQUIRE_TIME__TIMEOUT = 100;
-
-    static final int NON_DETERMINISTIC__INVOCATION_COUNT = 10;
-    static final int NON_DETERMINISTIC__SUCCESS_PERCENT = 70;
 
     private final Object PK = new Object();
 
@@ -111,20 +108,21 @@ public class SemaphoreTest {
         assertEquals(runnerCount - acquired, tooManyConnectionsCount);
     }
 
-    @RepeatedTest(NON_DETERMINISTIC__INVOCATION_COUNT)
-    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    // Keep these @Timeout values small: they are the only check that an acquire ever times out.
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
     public void maxConnectionCheckAcquireTime() {
         checkAcquireTime(new MaxConnectionSemaphore(CHECK_ACQUIRE_TIME__PERMITS, CHECK_ACQUIRE_TIME__TIMEOUT));
     }
 
-    @RepeatedTest(NON_DETERMINISTIC__INVOCATION_COUNT)
-    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
     public void perHostCheckAcquireTime() {
         checkAcquireTime(new PerHostConnectionSemaphore(CHECK_ACQUIRE_TIME__PERMITS, CHECK_ACQUIRE_TIME__TIMEOUT));
     }
 
-    @RepeatedTest(NON_DETERMINISTIC__INVOCATION_COUNT)
-    @Timeout(unit = TimeUnit.MILLISECONDS, value = 1000)
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
     public void combinedCheckAcquireTime() {
         checkAcquireTime(new CombinedConnectionSemaphore(CHECK_ACQUIRE_TIME__PERMITS,
                 CHECK_ACQUIRE_TIME__PERMITS,
@@ -135,13 +133,68 @@ public class SemaphoreTest {
         List<SemaphoreRunner> runners = IntStream.range(0, CHECK_ACQUIRE_TIME__PERMITS * 2)
                 .mapToObj(i -> new SemaphoreRunner(semaphore, PK))
                 .collect(Collectors.toList());
-        long acquireStartTime = System.currentTimeMillis();
         runners.forEach(SemaphoreRunner::acquire);
         runners.forEach(SemaphoreRunner::await);
-        long timeToAcquire = System.currentTimeMillis() - acquireStartTime;
 
-        assertTrue(timeToAcquire >= CHECK_ACQUIRE_TIME__TIMEOUT - 50, "Semaphore acquired too soon: " + timeToAcquire + " ms"); //Lower Bound
-        assertTrue(timeToAcquire <= CHECK_ACQUIRE_TIME__TIMEOUT + 300, "Semaphore acquired too late: " + timeToAcquire + " ms"); //Upper Bound
+        long acquired = runners.stream().map(SemaphoreRunner::getAcquireException)
+                .filter(Objects::isNull)
+                .count();
+        assertEquals(CHECK_ACQUIRE_TIME__PERMITS, acquired);
+
+        for (SemaphoreRunner runner : runners) {
+            Exception acquireException = runner.getAcquireException();
+            if (acquireException == null) {
+                continue;
+            }
+            assertTrue(acquireException instanceof IOException, "unexpected acquire failure: " + acquireException);
+            // Lower bound only. An upper bound would measure the machine, not the semaphore. The 50 ms
+            // slack covers CombinedConnectionSemaphore splitting its budget in whole milliseconds.
+            assertTrue(runner.getAcquireTime() >= CHECK_ACQUIRE_TIME__TIMEOUT - 50,
+                    "Semaphore gave up after " + runner.getAcquireTime() + " ms, before its "
+                            + CHECK_ACQUIRE_TIME__TIMEOUT + " ms acquire timeout");
+        }
+    }
+
+    // ---- a waiting acquire completes on release, not on its own timeout ----
+
+    // Far longer than the @Timeout below, so waiting it out cannot pass.
+    static final int WAKE_ON_RELEASE__ACQUIRE_TIMEOUT = 30_000;
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
+    public void maxConnectionWaitingAcquireWakesOnRelease() throws Exception {
+        waitingAcquireWakesOnRelease(new MaxConnectionSemaphore(1, WAKE_ON_RELEASE__ACQUIRE_TIMEOUT));
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
+    public void perHostWaitingAcquireWakesOnRelease() throws Exception {
+        waitingAcquireWakesOnRelease(new PerHostConnectionSemaphore(1, WAKE_ON_RELEASE__ACQUIRE_TIMEOUT));
+    }
+
+    @Test
+    @Timeout(unit = TimeUnit.SECONDS, value = 5)
+    public void combinedWaitingAcquireWakesOnRelease() throws Exception {
+        waitingAcquireWakesOnRelease(new CombinedConnectionSemaphore(1, 1, WAKE_ON_RELEASE__ACQUIRE_TIMEOUT));
+    }
+
+    private void waitingAcquireWakesOnRelease(ConnectionSemaphore semaphore) throws Exception {
+        semaphore.acquireChannelLock(PK); // consume the only permit
+        CountDownLatch acquireStarted = new CountDownLatch(1);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<Void> waitingAcquire = executor.submit(() -> {
+                acquireStarted.countDown();
+                semaphore.acquireChannelLock(PK);
+                return null;
+            });
+            acquireStarted.await();
+
+            semaphore.releaseChannelLock(PK);
+            waitingAcquire.get(1, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test
