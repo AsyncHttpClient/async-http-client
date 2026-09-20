@@ -36,8 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RedirectTest extends AbstractBasicWebSocketTest {
 
+    @Override
     @BeforeEach
-    public void setUpGlobals() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector1 = addHttpConnector(server);
         ServerConnector connector2 = addHttpConnector(server);

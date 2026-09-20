@@ -56,14 +56,16 @@ public class ProxyTunnellingTest extends AbstractBasicWebSocketTest {
     @Override
     @AfterAll
     public void tearDownGlobal() throws Exception {
-        server.stop();
-        server2.stop();
+        cleanup();
     }
 
+    // The servers are created inside the test body and may be null here.
     @AfterEach
     public void cleanup() throws Exception {
         super.tearDownGlobal();
-        server2.stop();
+        if (server2 != null) {
+            server2.stop();
+        }
     }
 
     @Test
