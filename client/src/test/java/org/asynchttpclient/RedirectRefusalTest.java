@@ -23,6 +23,7 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
+import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
@@ -55,6 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
@@ -113,6 +115,9 @@ public class RedirectRefusalTest extends AbstractBasicTest {
         try (AsyncHttpClient client = asyncHttpClient(followingConfig().setRefuseSchemeDowngradeOnRedirect(true))) {
             RedirectRefusedException refusal = expectRefusal(client.prepareGet(secure("/downgrade")));
             assertEquals(307, refusal.getStatusCode());
+            assertEquals(RedirectRefusedException.Reason.SCHEME_DOWNGRADE, refusal.getReason());
+            assertEquals("https", requireNonNull(refusal.getSourceUri()).getScheme());
+            assertEquals("http", requireNonNull(refusal.getTargetUri()).getScheme());
             assertFalse(targetHit.get(), "the refused target must not be reached");
         }
     }
@@ -196,6 +201,7 @@ public class RedirectRefusalTest extends AbstractBasicTest {
         try (AsyncHttpClient client = asyncHttpClient(followingConfig().setRefuseCrossOriginBodyOnRedirect(true))) {
             RedirectRefusedException refusal = expectRefusal(client.preparePut(plain("/cross-origin")).setBody("payload"));
             assertEquals(307, refusal.getStatusCode());
+            assertEquals(RedirectRefusedException.Reason.CROSS_ORIGIN_BODY, refusal.getReason());
             assertFalse(targetHit.get(), "the content must not reach the other origin");
         }
     }
@@ -377,6 +383,23 @@ public class RedirectRefusalTest extends AbstractBasicTest {
             assertTrue(message.contains("https://localhost:" + port2), message);
             assertTrue(message.contains("http://127.0.0.1:" + port1), message);
         }
+    }
+
+    @Test
+    public void theMessageIsBuiltFromBaseUrlsWhoeverConstructsIt() {
+        Uri source = Uri.create("https://user:pw@localhost:8443/secret/path?token=CALLER_SECRET");
+        Uri target = Uri.create("http://admin:hunter2@127.0.0.1:8080/other?token=SERVER_SECRET");
+
+        String message = new RedirectRefusedException(
+                RedirectRefusedException.Reason.SCHEME_DOWNGRADE, 307, source, target).getMessage();
+
+        assertFalse(message.contains("CALLER_SECRET"), message);
+        assertFalse(message.contains("SERVER_SECRET"), message);
+        assertFalse(message.contains("user:pw"), message);
+        assertFalse(message.contains("hunter2"), message);
+        assertFalse(message.contains("/secret/path"), message);
+        assertTrue(message.contains("https://localhost:8443"), message);
+        assertTrue(message.contains("http://127.0.0.1:8080"), message);
     }
 
     // ---------------------------------------------------------------- per-request override

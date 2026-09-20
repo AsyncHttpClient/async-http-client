@@ -31,6 +31,7 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
+import org.asynchttpclient.handler.RedirectRefusedException.Reason;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.PrincipalScopedPartitionKey;
@@ -155,15 +156,14 @@ public class Redirect30xInterceptor {
                 // Refuse here, before the next request is built and before ensureBodyReplayable can throw an
                 // IOException that an IOExceptionFilter would replay.
                 if (schemeDowngrade && refuseSchemeDowngrade(request)) {
-                    throw refused(statusCode, currentUri, newUri, "the target scheme is not secured");
+                    throw new RedirectRefusedException(Reason.SCHEME_DOWNGRADE, statusCode, currentUri, newUri);
                 }
                 BodyRepresentation bodyRepresentation =
                         keepBody ? selectedBodyRepresentation(request) : BodyRepresentation.NONE;
                 if (keepBody && refuseCrossOriginBody(request)
                         && !sameOrigin(currentUri, newUri) && !secureUpgrade(currentUri, newUri)
                         && bodyRepresentation != BodyRepresentation.NONE) {
-                    throw refused(statusCode, currentUri, newUri,
-                            "it would resend the request content to another origin");
+                    throw new RedirectRefusedException(Reason.CROSS_ORIGIN_BODY, statusCode, currentUri, newUri);
                 }
 
                 if (LOGGER.isDebugEnabled()) {
@@ -294,13 +294,6 @@ public class Redirect30xInterceptor {
 
     private boolean refuseCrossOriginBody(Request request) {
         return refuseCrossOriginBodyOnRedirect || Boolean.TRUE.equals(request.getRefuseCrossOriginBodyOnRedirect());
-    }
-
-    private static RedirectRefusedException refused(int statusCode, Uri from, Uri to, String reason) {
-        // getBaseUrl() on both sides: toBaseUrl() keeps the path and toString() keeps userinfo, neither of
-        // which belongs in a message headed for a log.
-        return new RedirectRefusedException("Refusing to follow the " + statusCode + " redirect from "
-                + from.getBaseUrl() + " to " + to.getBaseUrl() + ": " + reason, statusCode, to);
     }
 
     /**

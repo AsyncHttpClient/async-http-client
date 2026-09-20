@@ -36,28 +36,72 @@ import org.jetbrains.annotations.Nullable;
  * except a 301 or non-strict 302 on a {@code POST}, preserved both the method and the content, so the same
  * request can be aimed somewhere else unchanged. A 303 is defined as an indirect response to the original
  * request, typically the output of a {@code POST} that has already run, so the origin has very likely applied
- * it (RFC 9110 section 15.4.4). No status proves it did not, though, so a non-idempotent method still
- * needs the caller's judgement (section 9.2.2).
+ * it (RFC 9110 section 15.4.4). No status proves it did not, though, so a non-idempotent method still needs
+ * the caller's judgement (section 9.2.2).
  */
-public class RedirectRefusedException extends Exception {
+public final class RedirectRefusedException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Which gate refused the redirect. Constants are only ever appended, so a caller switching on this must
+     * still handle a value it does not know.
+     */
+    public enum Reason {
+
+        /**
+         * The hop left a secured scheme for one that is not.
+         */
+        SCHEME_DOWNGRADE("the target scheme is not secured"),
+
+        /**
+         * The hop would have resent the request content to an origin the caller never addressed.
+         */
+        CROSS_ORIGIN_BODY("it would resend the request content to another origin");
+
+        // Carried as a field rather than switched on, so a constant added later cannot compile without one.
+        private final String description;
+
+        Reason(String description) {
+            this.description = description;
+        }
+    }
+
+    private final Reason reason;
     private final int statusCode;
-    // Uri is not Serializable. getMessage() and getStatusCode() carry the same facts and do survive.
+    // Uri is not Serializable. getMessage(), getReason() and getStatusCode() do survive.
+    private final transient @Nullable Uri sourceUri;
     private final transient @Nullable Uri targetUri;
 
     /**
-     * @param message    the refusal, naming both origins by base URL only
+     * @param reason     which gate refused the redirect
      * @param statusCode the status code of the redirect response that was refused
+     * @param sourceUri  the URI this hop was leaving
      * @param targetUri  the redirect target that was refused
      */
-    public RedirectRefusedException(String message, int statusCode, Uri targetUri) {
+    public RedirectRefusedException(Reason reason, int statusCode, Uri sourceUri, Uri targetUri) {
         // No stack trace: the frames would all be Netty's event loop, and the caller's ExecutionException
         // already carries theirs.
-        super(message, null, true, false);
+        super(message(reason, statusCode, sourceUri, targetUri), null, true, false);
+        this.reason = reason;
         this.statusCode = statusCode;
+        this.sourceUri = sourceUri;
         this.targetUri = targetUri;
+    }
+
+    // getBaseUrl() on both sides: toBaseUrl() keeps the path and toString() keeps userinfo, neither of which
+    // belongs in a message headed for a log. Built here rather than by the caller so a second refusal site
+    // cannot reintroduce that, and eagerly rather than from getMessage() so it survives serialization.
+    private static String message(Reason reason, int statusCode, Uri sourceUri, Uri targetUri) {
+        return "Refusing to follow the " + statusCode + " redirect from " + sourceUri.getBaseUrl()
+                + " to " + targetUri.getBaseUrl() + ": " + reason.description;
+    }
+
+    /**
+     * @return which gate refused the redirect
+     */
+    public Reason getReason() {
+        return reason;
     }
 
     /**
@@ -65,6 +109,16 @@ public class RedirectRefusedException extends Exception {
      */
     public int getStatusCode() {
         return statusCode;
+    }
+
+    /**
+     * The URI this hop was leaving, which is the request actually sent on this leg rather than the one the
+     * caller built. Prefer {@link Uri#getBaseUrl()} when logging it, as {@link #getMessage()} already does.
+     *
+     * @return the URI the refused redirect was leaving, or null on an instance that was deserialized
+     */
+    public @Nullable Uri getSourceUri() {
+        return sourceUri;
     }
 
     /**
