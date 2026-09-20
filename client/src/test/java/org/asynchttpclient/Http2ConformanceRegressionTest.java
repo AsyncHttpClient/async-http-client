@@ -46,6 +46,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -105,7 +106,7 @@ public class Http2ConformanceRegressionTest {
                     }
                 });
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
     @AfterEach

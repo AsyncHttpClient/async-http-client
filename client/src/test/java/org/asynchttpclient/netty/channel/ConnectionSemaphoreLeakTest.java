@@ -24,6 +24,7 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.TooManyConnectionsPerHostException;
 import org.asynchttpclient.testserver.HttpServer;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -270,7 +271,7 @@ class ConnectionSemaphoreLeakTest {
         CountDownLatch started = new CountDownLatch(1);
         server.enqueue(new AbstractHandler() {
             @Override
-            public void handle(String target, org.eclipse.jetty.server.Request baseRequest,
+            public void handle(String target, Request baseRequest,
                                HttpServletRequest request, HttpServletResponse response) throws IOException {
                 baseRequest.setHandled(true);
                 started.countDown();

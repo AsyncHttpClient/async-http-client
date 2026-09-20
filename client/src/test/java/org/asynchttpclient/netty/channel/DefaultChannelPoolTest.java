@@ -17,6 +17,7 @@ package org.asynchttpclient.netty.channel;
 
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.util.AttributeKey;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
@@ -862,7 +863,7 @@ public class DefaultChannelPoolTest {
         Field keyField = DefaultChannelPool.class.getDeclaredField("IDLE_STATE_ATTRIBUTE_KEY");
         keyField.setAccessible(true);
         @SuppressWarnings("unchecked")
-        io.netty.util.AttributeKey<Object> key = (io.netty.util.AttributeKey<Object>) keyField.get(null);
+        AttributeKey<Object> key = (AttributeKey<Object>) keyField.get(null);
         return channel.attr(key).get();
     }
 

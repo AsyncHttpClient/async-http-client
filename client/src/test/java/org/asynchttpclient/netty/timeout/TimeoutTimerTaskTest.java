@@ -19,11 +19,13 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.netty.util.Timeout;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -44,7 +47,7 @@ public class TimeoutTimerTaskTest {
         Request request = new RequestBuilder().setUrl("http://example.com:12345").build();
         NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
-            public Object onCompleted(org.asynchttpclient.Response response) throws Exception {
+            public Object onCompleted(Response response) throws Exception {
                 return null;
             }
         }, null,
@@ -55,7 +58,7 @@ public class TimeoutTimerTaskTest {
 
         TimeoutTimerTask task = new TimeoutTimerTask(future, null, timeoutsHolder) {
             @Override
-            public void run(io.netty.util.Timeout timeout) {
+            public void run(Timeout timeout) {
                 // no-op
             }
         };
@@ -72,7 +75,7 @@ public class TimeoutTimerTaskTest {
         Request request = new RequestBuilder().setUrl("http://example.com:12345").build();
         NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
-            public Object onCompleted(org.asynchttpclient.Response response) throws Exception {
+            public Object onCompleted(Response response) throws Exception {
                 return null;
             }
         }, null,
@@ -85,7 +88,7 @@ public class TimeoutTimerTaskTest {
 
         TimeoutTimerTask task = new TimeoutTimerTask(future, null, timeoutsHolder) {
             @Override
-            public void run(io.netty.util.Timeout timeout) {
+            public void run(Timeout timeout) {
                 // no-op
             }
         };
@@ -100,7 +103,7 @@ public class TimeoutTimerTaskTest {
         Request request = new RequestBuilder().setUrl("http://example.com").build();
         NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
-            public Object onCompleted(org.asynchttpclient.Response response) {
+            public Object onCompleted(Response response) {
                 return null;
             }
         }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
@@ -123,7 +126,7 @@ public class TimeoutTimerTaskTest {
         Request request = new RequestBuilder().setUrl("http://example.com").build();
         NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
-            public Object onCompleted(org.asynchttpclient.Response response) {
+            public Object onCompleted(Response response) {
                 return null;
             }
         }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
@@ -144,7 +147,7 @@ public class TimeoutTimerTaskTest {
 
             List<ILoggingEvent> warnings = appender.list.stream()
                     .filter(event -> event.getLevel() == Level.WARN)
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
             assertEquals(1, warnings.size());
             assertTrue(warnings.get(0).getFormattedMessage().contains("request timeout is disabled"));
         } finally {

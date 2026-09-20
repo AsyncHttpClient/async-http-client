@@ -786,7 +786,7 @@ public final class NettyRequestSender {
                 // Don't close the parent channel since it may still have active streams. sendHttp2Frames
                 // never runs for this future, so release its request body here to avoid leaking it.
                 releaseHttp2Request(future);
-                future.abort(new java.io.IOException("HTTP/2 connection is draining (GOAWAY received)"));
+                future.abort(new IOException("HTTP/2 connection is draining (GOAWAY received)"));
                 return;
             }
             // Queue for later when a stream slot opens up. offerPendingOpener returns false if the
@@ -798,7 +798,7 @@ public final class NettyRequestSender {
                 // Fail ONLY this future (future.abort, not abort(parentChannel, ...)): the parent may be
                 // draining-but-still-active with healthy sibling streams, and abort(channel, ...) would close
                 // it — the multiplexed-connection blast radius. The parent closes itself once its streams drain.
-                future.abort(new java.io.IOException("HTTP/2 connection draining or closed while request was queued"));
+                future.abort(new IOException("HTTP/2 connection draining or closed while request was queued"));
                 return;
             }
             // The parent connection may have closed concurrently with the enqueue above; if so its
@@ -808,7 +808,7 @@ public final class NettyRequestSender {
             if (!parentChannel.isActive() && !future.isDone()) {
                 releaseHttp2Request(future);
                 abort(parentChannel, future,
-                        new java.io.IOException("HTTP/2 connection closed while request was queued"));
+                        new IOException("HTTP/2 connection closed while request was queued"));
             }
             return;
         }

@@ -21,7 +21,6 @@ import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.Zstd;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -55,7 +54,9 @@ import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_LANGUAGE;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.CACHE_CONTROL;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
@@ -63,6 +64,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.ORIGIN;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.REFERER;
 import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_KEY;
 import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_VERSION;
 import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
@@ -95,20 +97,20 @@ public final class NettyRequestFactory {
 
     private static Map<String, AsciiString> buildKnownHeaderNames() {
         AsciiString[] names = {
-                HttpHeaderNames.ACCEPT,
-                HttpHeaderNames.ACCEPT_ENCODING,
-                HttpHeaderNames.ACCEPT_LANGUAGE,
-                HttpHeaderNames.AUTHORIZATION,
-                HttpHeaderNames.CACHE_CONTROL,
-                HttpHeaderNames.CONNECTION,
-                HttpHeaderNames.CONTENT_LENGTH,
-                HttpHeaderNames.CONTENT_TYPE,
-                HttpHeaderNames.COOKIE,
-                HttpHeaderNames.HOST,
-                HttpHeaderNames.ORIGIN,
-                HttpHeaderNames.REFERER,
-                HttpHeaderNames.TRANSFER_ENCODING,
-                HttpHeaderNames.USER_AGENT,
+                ACCEPT,
+                ACCEPT_ENCODING,
+                ACCEPT_LANGUAGE,
+                AUTHORIZATION,
+                CACHE_CONTROL,
+                CONNECTION,
+                CONTENT_LENGTH,
+                CONTENT_TYPE,
+                COOKIE,
+                HOST,
+                ORIGIN,
+                REFERER,
+                TRANSFER_ENCODING,
+                USER_AGENT,
                 new AsciiString("Accept"),
                 new AsciiString("Accept-Encoding"),
                 new AsciiString("Accept-Language"),

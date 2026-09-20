@@ -33,6 +33,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
@@ -40,6 +41,8 @@ import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.resolver.InetNameResolver;
+import io.netty.resolver.NameResolver;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
@@ -53,6 +56,9 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+import io.netty.util.concurrent.Promise;
+import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -66,9 +72,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,8 +83,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -100,7 +109,15 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for HTTP/2 support using a self-contained Netty-based HTTP/2 test server.
@@ -421,7 +438,7 @@ public class BasicHttp2Test {
                 });
 
         serverChannel = b.bind(0).sync().channel();
-        serverPort = ((java.net.InetSocketAddress) serverChannel.localAddress()).getPort();
+        serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
     @AfterEach
@@ -534,19 +551,19 @@ public class BasicHttp2Test {
      */
     @Test
     public void http2RoundRobinSpreadsConnectionsAcrossIps() throws Exception {
-        final List<java.net.InetAddress> ips = new ArrayList<>();
+        final List<InetAddress> ips = new ArrayList<>();
         for (String ip : new String[]{"127.0.0.1", "127.0.0.2", "127.0.0.3"}) {
-            ips.add(java.net.InetAddress.getByName(ip));
+            ips.add(InetAddress.getByName(ip));
         }
-        io.netty.resolver.NameResolver<java.net.InetAddress> resolver =
-                new io.netty.resolver.InetNameResolver(io.netty.util.concurrent.ImmediateEventExecutor.INSTANCE) {
+        NameResolver<InetAddress> resolver =
+                new InetNameResolver(ImmediateEventExecutor.INSTANCE) {
                     @Override
-                    protected void doResolve(String inetHost, io.netty.util.concurrent.Promise<java.net.InetAddress> promise) {
+                    protected void doResolve(String inetHost, Promise<InetAddress> promise) {
                         promise.setSuccess(ips.get(0));
                     }
 
                     @Override
-                    protected void doResolveAll(String inetHost, io.netty.util.concurrent.Promise<List<java.net.InetAddress>> promise) {
+                    protected void doResolveAll(String inetHost, Promise<List<InetAddress>> promise) {
                         promise.setSuccess(new ArrayList<>(ips));
                     }
                 };
@@ -554,14 +571,14 @@ public class BasicHttp2Test {
         // Assert on the targeted IP (onTcpConnectAttempt), not the connected IP: on macOS only 127.0.0.1
         // is a usable loopback address, so the others are targeted but fail over. With an IP-aware H2
         // registry each distinct IP still triggers its own connection attempt.
-        java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        Set<String> attemptedIps = ConcurrentHashMap.newKeySet();
         try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN).setMaxRequestRetry(0))) {
             for (int i = 0; i < 12; i++) {
                 Response response = client.executeRequest(
-                        org.asynchttpclient.Dsl.get(httpsUrl("/hello")).setNameResolver(resolver),
+                        Dsl.get(httpsUrl("/hello")).setNameResolver(resolver),
                         new AsyncCompletionHandler<Response>() {
                             @Override
-                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
+                            public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
                                 if (remoteAddress.getAddress() != null) {
                                     attemptedIps.add(remoteAddress.getAddress().getHostAddress());
                                 }
@@ -575,7 +592,7 @@ public class BasicHttp2Test {
                 assertEquals(200, response.getStatusCode());
             }
         }
-        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
+        assertEquals(Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
                 "round-robin should target every resolved IP over HTTP/2 (each gets its own connection)");
     }
 
@@ -583,19 +600,19 @@ public class BasicHttp2Test {
      * A fixed multi-IP resolver for a single hostname (mirrors the inline resolver used above):
      * {@code doResolve} returns the first IP, {@code doResolveAll} returns the full list.
      */
-    private static io.netty.resolver.NameResolver<java.net.InetAddress> multiIpResolver(String... ips) throws Exception {
-        final List<java.net.InetAddress> addresses = new ArrayList<>();
+    private static NameResolver<InetAddress> multiIpResolver(String... ips) throws Exception {
+        final List<InetAddress> addresses = new ArrayList<>();
         for (String ip : ips) {
-            addresses.add(java.net.InetAddress.getByName(ip));
+            addresses.add(InetAddress.getByName(ip));
         }
-        return new io.netty.resolver.InetNameResolver(io.netty.util.concurrent.ImmediateEventExecutor.INSTANCE) {
+        return new InetNameResolver(ImmediateEventExecutor.INSTANCE) {
             @Override
-            protected void doResolve(String inetHost, io.netty.util.concurrent.Promise<java.net.InetAddress> promise) {
+            protected void doResolve(String inetHost, Promise<InetAddress> promise) {
                 promise.setSuccess(addresses.get(0));
             }
 
             @Override
-            protected void doResolveAll(String inetHost, io.netty.util.concurrent.Promise<List<java.net.InetAddress>> promise) {
+            protected void doResolveAll(String inetHost, Promise<List<InetAddress>> promise) {
                 promise.setSuccess(new ArrayList<>(addresses));
             }
         };
@@ -609,16 +626,16 @@ public class BasicHttp2Test {
      */
     @Test
     public void http2RoundRobinStillSpreadsWhenPermitsAbundant() throws Exception {
-        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
-        java.util.Set<String> attemptedIps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        Set<String> attemptedIps = ConcurrentHashMap.newKeySet();
         try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
                 .setMaxConnectionsPerHost(3).setMaxRequestRetry(0))) {
             for (int i = 0; i < 12; i++) {
                 Response response = client.executeRequest(
-                        org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver),
+                        Dsl.get(httpsUrl("/ok")).setNameResolver(resolver),
                         new AsyncCompletionHandler<Response>() {
                             @Override
-                            public void onTcpConnectAttempt(java.net.InetSocketAddress remoteAddress) {
+                            public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
                                 if (remoteAddress.getAddress() != null) {
                                     attemptedIps.add(remoteAddress.getAddress().getHostAddress());
                                 }
@@ -632,7 +649,7 @@ public class BasicHttp2Test {
                 assertEquals(200, response.getStatusCode());
             }
         }
-        assertEquals(java.util.Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
+        assertEquals(Set.of("127.0.0.1", "127.0.0.2", "127.0.0.3"), attemptedIps,
                 "with enough permits the sibling fallback must not engage — round-robin still targets every IP");
     }
 
@@ -648,7 +665,7 @@ public class BasicHttp2Test {
      */
     @Test
     public void http2RoundRobinPermitStarvedReusesSiblingConnection() throws Exception {
-        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
         int concurrentRequests = 8;
         CountDownLatch latch = new CountDownLatch(concurrentRequests);
         AtomicInteger successCount = new AtomicInteger(0);
@@ -657,7 +674,7 @@ public class BasicHttp2Test {
                 .setMaxConnectionsPerHost(1).setMaxRequestRetry(0).setConnectTimeout(Duration.ofSeconds(2)))) {
             for (int i = 0; i < concurrentRequests; i++) {
                 client.executeRequest(
-                        org.asynchttpclient.Dsl.get(httpsUrl("/delay/300")).setNameResolver(resolver),
+                        Dsl.get(httpsUrl("/delay/300")).setNameResolver(resolver),
                         new AsyncCompletionHandlerBase() {
                             @Override
                             public Response onCompleted(Response response) {
@@ -692,13 +709,13 @@ public class BasicHttp2Test {
      */
     @Test
     public void http2RoundRobinCapsLiveConnectionsAtMaxConnectionsPerHost() throws Exception {
-        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
         int maxPerHost = 2;
         try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
                 .setMaxConnectionsPerHost(maxPerHost).setMaxRequestRetry(0))) {
             for (int i = 0; i < 12; i++) {
                 Response response = client.executeRequest(
-                        org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(30, SECONDS);
+                        Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(30, SECONDS);
                 assertEquals(200, response.getStatusCode());
             }
             // serverChildChannels tracks accepted TCP (HTTP/2) connections; a DefaultChannelGroup auto-removes
@@ -721,13 +738,13 @@ public class BasicHttp2Test {
      */
     @Test
     public void http2RoundRobinGoawayReleasesPermitForReplacementConnection() throws Exception {
-        io.netty.resolver.NameResolver<java.net.InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
         try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
                 .setMaxConnectionsPerHost(1).setMaxRequestRetry(0)
                 .setConnectTimeout(Duration.ofSeconds(1)).setRequestTimeout(Duration.ofSeconds(60)))) {
 
             // Long-running stream that keeps its connection (and, before the fix, the only permit) busy.
-            client.executeRequest(org.asynchttpclient.Dsl.get(httpsUrl("/delay/30000")).setNameResolver(resolver));
+            client.executeRequest(Dsl.get(httpsUrl("/delay/30000")).setNameResolver(resolver));
 
             // Wait for a connection that has settled on HTTP/2; one that has only been accepted has no
             // codec yet and cannot encode the GOAWAY below.
@@ -742,14 +759,14 @@ public class BasicHttp2Test {
 
             // GOAWAY with a high lastStreamId leaves the in-flight stream running, so the connection
             // stays open and draining.
-            parent.writeAndFlush(new io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)
+            parent.writeAndFlush(new DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)
                     .setExtraStreamIds(1000)).sync();
             Thread.sleep(300);
 
             // Must open a replacement connection; before the fix this failed with
             // TooManyConnectionsPerHostException because the draining connection still held the permit.
             Response replacement = client.executeRequest(
-                    org.asynchttpclient.Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(10, SECONDS);
+                    Dsl.get(httpsUrl("/ok")).setNameResolver(resolver)).get(10, SECONDS);
             assertEquals(200, replacement.getStatusCode(),
                     "a request after GOAWAY must open a replacement connection, not fail with "
                             + "TooManyConnectionsPerHostException while the draining connection pins the permit");
@@ -804,7 +821,7 @@ public class BasicHttp2Test {
 
     @Test
     public void postByteArrayBodyOverHttp2() throws Exception {
-        byte[] body = "Binary data over HTTP/2".getBytes(StandardCharsets.UTF_8);
+        byte[] body = "Binary data over HTTP/2".getBytes(UTF_8);
         try (AsyncHttpClient client = http2Client()) {
             Response response = client.preparePost(httpsUrl("/echo"))
                     .setBody(body)
@@ -1442,7 +1459,7 @@ public class BasicHttp2Test {
                         }).get(30, SECONDS);
                 fail("Should have thrown");
             } catch (ExecutionException e) {
-                assertInstanceOf(org.asynchttpclient.handler.MaxRedirectException.class, e.getCause());
+                assertInstanceOf(MaxRedirectException.class, e.getCause());
             }
         }
     }
