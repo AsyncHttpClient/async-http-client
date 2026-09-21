@@ -97,6 +97,8 @@ public final class NettyConnectListener<T> {
         final Object partitionKeyLock = semaphore != null ? future.takePartitionKeyLock() : null;
         final AtomicReference<Object> permit = new AtomicReference<>(partitionKeyLock);
         if (partitionKeyLock != null) {
+            // Also reachable from the channel, so an abort can return the permit before it tells the handler.
+            Channels.setPermitRelease(channel, () -> releasePermitOnce(semaphore, permit));
             channel.closeFuture().addListener(f -> releasePermitOnce(semaphore, permit));
         }
 
