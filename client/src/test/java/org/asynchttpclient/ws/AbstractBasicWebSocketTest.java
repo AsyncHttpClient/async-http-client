@@ -58,6 +58,8 @@ public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
         assertTrue(serversStopped >= serversStarted,
                 "started " + serversStarted + " Jetty servers but stopped only " + serversStopped
                         + "; a lifecycle override most likely dropped its annotation");
+        // For subclasses with their own setUpGlobal, which the counter above never sees.
+        assertTrue(server == null || server.isStopped(), "a Jetty server was still running at class end");
     }
 
     @Override
