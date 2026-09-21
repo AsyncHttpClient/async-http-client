@@ -227,6 +227,11 @@ public class Redirect30xInterceptor {
                     requestBuilder.setRefuseCrossOriginBodyOnRedirect(refuseCrossOriginBody);
                 }
 
+                // Sampled before stripAuth clears the realm: the channel being drained is authenticated to
+                // the previous origin, and reading it afterwards would file it unscoped.
+                final Object initialPartitionKey = PrincipalScopedPartitionKey.scope(
+                        future.getPartitionKey(), future.getRealm());
+
                 if (stripAuth) {
                     future.setRealm(null);
                     future.setProxyRealm(null);
@@ -237,11 +242,6 @@ public class Redirect30xInterceptor {
                 // in case of a redirect from HTTP to HTTPS, future
                 // attributes might change
                 final boolean initialConnectionKeepAlive = future.isKeepAlive();
-                // Scoped like every other offer: an NTLM or Negotiate connection must stay with the
-                // identity that authenticated it, and a same-host redirect during NTLM is the ordinary
-                // case rather than an exotic one.
-                final Object initialPartitionKey = PrincipalScopedPartitionKey.scope(
-                        future.getPartitionKey(), future.getRealm());
 
                 CookieStore cookieStore = config.getCookieStore();
                 if (cookieStore != null) {

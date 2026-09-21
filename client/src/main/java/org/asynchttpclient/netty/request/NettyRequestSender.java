@@ -1313,6 +1313,11 @@ public final class NettyRequestSender {
         if (request.getUri().isWebSocket()) {
             return null;
         }
+        // Nor a request whose realm authenticates the connection: see registerHttp2AndManageSemaphore.
+        if (PrincipalScopedPartitionKey.authenticatesTheConnection(pooledIdentity(future, request),
+                pooledProxyIdentity(future, proxy))) {
+            return null;
+        }
         // In round-robin mode, only multiplex onto the H2 connection for the IP this request is pinned to;
         // otherwise use the per-host base key. Derive it from the live request rather than
         // future.basePartitionKey() so a filter replay that rewrites the host still polls the correct key
@@ -1470,6 +1475,16 @@ public final class NettyRequestSender {
     }
 
     /**
+     * Resolved as newNettyRequestAndResponseFuture resolves it, so the poll and the offer agree.
+     */
+    private @Nullable Realm pooledProxyIdentity(@Nullable NettyResponseFuture<?> future, @Nullable ProxyServer proxy) {
+        if (future != null) {
+            return future.getProxyRealm();
+        }
+        return proxy != null ? proxy.getRealm() : null;
+    }
+
+    /**
      * The realm whose identity a pooled connection is scoped by. Resolved exactly as
      * newNettyRequestAndResponseFuture resolves it, so the poll and the offer agree. The future is null on
      * a request's first attempt, which is why this cannot simply read it off the future.
@@ -1499,8 +1514,10 @@ public final class NettyRequestSender {
         // Round-robin mode: poll with the IP-aware key so reuse stays pinned to the chosen IP (both the
         // HTTP/2 registry and the HTTP/1.1 pool).
         Object override = future != null ? future.getPartitionKeyOverride() : null;
+        boolean http2Shareable = !PrincipalScopedPartitionKey.authenticatesTheConnection(
+                pooledIdentity(future, request), pooledProxyIdentity(future, proxy));
         if (override != null) {
-            if (!uri.isWebSocket()) {
+            if (!uri.isWebSocket() && http2Shareable) {
                 Channel h2Channel = channelManager.pollHttp2Connection(override);
                 if (h2Channel != null) {
                     if (LOGGER.isDebugEnabled()) {
@@ -1531,7 +1548,7 @@ public final class NettyRequestSender {
         // (replayRequest) the future's targetRequest is not updated to the replayed request, so its memoized
         // base key can lag a host-rewriting replay. Reading the current request's URI/virtualHost stays correct.
         Object partitionKey = request.getChannelPoolPartitioning().getPartitionKey(uri, virtualHost, proxy);
-        if (!uri.isWebSocket()) {
+        if (!uri.isWebSocket() && http2Shareable) {
             Channel h2Channel = channelManager.pollHttp2Connection(partitionKey);
             if (h2Channel != null) {
                 if (LOGGER.isDebugEnabled()) {
@@ -1644,7 +1661,9 @@ public final class NettyRequestSender {
                                 if (!nextRequest.getUri().isWebSocket()) {
                                     try {
                                         channelManager.upgradePipelineToHttp2AfterProxyConnect(
-                                                channel.pipeline(), future.getPartitionKey());
+                                                channel.pipeline(), future.getPartitionKey(),
+                                                !PrincipalScopedPartitionKey.authenticatesTheConnection(
+                                                        future.getRealm(), future.getProxyRealm()));
                                     } catch (Exception upgradeError) {
                                         // Thrown inside a future listener, which logs and discards it.
                                         // Fail the future instead, or the request waits for its timeout.

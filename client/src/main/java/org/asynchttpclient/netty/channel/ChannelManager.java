@@ -887,6 +887,13 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri) {
+        return updatePipelineForHttpTunneling(pipeline, requestUri, true);
+    }
+
+    /**
+     * @param http2Allowed false when the realm authenticates the socket the tunnel runs over.
+     */
+    public Future<Channel> updatePipelineForHttpTunneling(ChannelPipeline pipeline, Uri requestUri, boolean http2Allowed) {
         Future<Channel> whenHandshaked = null;
 
         if (pipeline.get(HTTP_CLIENT_CODEC) != null) {
@@ -900,7 +907,8 @@ public class ChannelManager {
                 // Remove existing SSL handler (for proxy) and replace with SSL handler for target
                 pipeline.remove(SSL_HANDLER);
             }
-            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(), !requestUri.isWebSocket());
+            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(),
+                    http2Allowed && !requestUri.isWebSocket());
             whenHandshaked = sslHandler.handshakeFuture();
             addSslHandlerAtPipelineHead(pipeline, SSL_HANDLER, sslHandler);
             pipeline.addAfter(SSL_HANDLER, HTTP_CLIENT_CODEC, newHttpClientCodec());
@@ -926,6 +934,13 @@ public class ChannelManager {
     }
 
     public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, ProxyServer proxyServer) {
+        return updatePipelineForHttpsTunneling(pipeline, requestUri, true);
+    }
+
+    /**
+     * @param http2Allowed false when the realm authenticates the socket the tunnel runs over.
+     */
+    public Future<Channel> updatePipelineForHttpsTunneling(ChannelPipeline pipeline, Uri requestUri, boolean http2Allowed) {
         Future<Channel> whenHandshaked = null;
 
         // Remove HTTP codec as tunnel is established
@@ -938,7 +953,8 @@ public class ChannelManager {
             // The proxy SSL handler should remain as it provides the tunnel transport
             // We need to add target SSL handler that will negotiate with the target through the tunnel
             
-            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(), !requestUri.isWebSocket());
+            SslHandler sslHandler = createSslHandler(requestUri.getHost(), requestUri.getExplicitPort(),
+                    http2Allowed && !requestUri.isWebSocket());
             whenHandshaked = sslHandler.handshakeFuture();
 
             // For HTTPS proxy tunnel, add target SSL handler after the existing proxy SSL handler
@@ -975,6 +991,15 @@ public class ChannelManager {
     }
 
     public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler) {
+        return addSslHandler(pipeline, uri, virtualHost, hasSocksProxyHandler, true);
+    }
+
+    /**
+     * @param http2Allowed false for a WebSocket (no RFC 8441 support) and for a realm that authenticates the
+     *                     socket, since every stream of an h2 connection shares it.
+     */
+    public SslHandler addSslHandler(ChannelPipeline pipeline, Uri uri, String virtualHost, boolean hasSocksProxyHandler,
+                                    boolean http2Allowed) {
         String peerHost;
         int peerPort;
 
@@ -994,7 +1019,7 @@ public class ChannelManager {
         }
 
         // A WebSocket connection must not negotiate h2 (no RFC 8441 support), so advertise only http/1.1 in ALPN.
-        SslHandler sslHandler = createSslHandler(peerHost, peerPort, !uri.isWebSocket());
+        SslHandler sslHandler = createSslHandler(peerHost, peerPort, http2Allowed && !uri.isWebSocket());
         // Check if SOCKS handler actually exists in the pipeline before trying to add after it
         if (hasSocksProxyHandler && pipeline.get(SOCKS_HANDLER) != null) {
             pipeline.addAfter(SOCKS_HANDLER, SSL_HANDLER, sslHandler);
@@ -1257,6 +1282,13 @@ public class ChannelManager {
      * tunneled request is sent.
      */
     public void upgradePipelineToHttp2AfterProxyConnect(ChannelPipeline pipeline, Object partitionKey) {
+        upgradePipelineToHttp2AfterProxyConnect(pipeline, partitionKey, true);
+    }
+
+    /**
+     * @param shareable false when the tunnel is authenticated, so no other principal can draw it.
+     */
+    public void upgradePipelineToHttp2AfterProxyConnect(ChannelPipeline pipeline, Object partitionKey, boolean shareable) {
         SslHandler targetSslHandler = (SslHandler) pipeline.get(TARGET_SSL_HANDLER);
         if (targetSslHandler == null) {
             targetSslHandler = (SslHandler) pipeline.get(SSL_HANDLER);
@@ -1264,7 +1296,19 @@ public class ChannelManager {
         if (targetSslHandler != null
                 && ApplicationProtocolNames.HTTP_2.equals(targetSslHandler.applicationProtocol())) {
             upgradePipelineToHttp2(pipeline);
-            registerHttp2Connection(partitionKey, pipeline.channel());
+            if (shareable) {
+                registerHttp2Connection(partitionKey, pipeline.channel());
+            } else {
+                // Unregistered, and an h2 parent is never offered to the HTTP/1.1 pool either, so it would
+                // linger holding its permit.
+                Http2ConnectionState state = pipeline.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+                if (state != null) {
+                    state.markRedundant();
+                }
+                // The peer does speak h2, so don't mark the host as non-HTTP/2; just release whatever was
+                // waiting for the connection this would have registered.
+                wakeHttp2ConnectionWaiters(partitionKey, null);
+            }
         } else if (targetSslHandler != null) {
             http2Unavailable(partitionKey);
         }

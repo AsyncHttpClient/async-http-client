@@ -196,7 +196,8 @@ public final class NettyConnectListener<T> {
         } else if ((proxyServer == null || proxyServer.getProxyType().isSocks()) && uri.isSecured()) {
             SslHandler sslHandler;
             try {
-                sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost(), proxyServer != null);
+                sslHandler = channelManager.addSslHandler(channel.pipeline(), uri, request.getVirtualHost(), proxyServer != null,
+                        !PrincipalScopedPartitionKey.authenticatesTheConnection(future.getRealm(), future.getProxyRealm()));
             } catch (Exception sslError) {
                 onFailure(channel, sslError);
                 return;
@@ -271,7 +272,19 @@ public final class NettyConnectListener<T> {
         } else {
             // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS. WebSocket (ws://) is
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
-            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
+            // Upgrading and then withholding it from the registry would only orphan the socket, and the
+            // 401 retry needs the one that issued the challenge. The HTTP/1.1 pool is scoped by principal
+            // for the origin hop only, so for a proxy realm this bounds the sharing rather than ending it.
+            boolean connectionAuth = PrincipalScopedPartitionKey.authenticatesTheConnection(future.getRealm(),
+                    future.getProxyRealm());
+            if (connectionAuth && !uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
+                // h2c is prior knowledge (RFC 9113 3.3): there is no negotiation to carry the refusal, so a
+                // server that speaks only h2 sees an HTTP/1.1 request and answers with a preface mismatch.
+                LOGGER.warn("Sending {} over HTTP/1.1 instead of h2c: {} authenticates the connection. "
+                        + "Disable http2Cleartext for this client if the server speaks only HTTP/2.",
+                        uri, future.getRealm() != null ? future.getRealm().getScheme() : future.getProxyRealm().getScheme());
+            }
+            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket() && !connectionAuth) {
                 try {
                     channelManager.upgradePipelineToHttp2(channel.pipeline());
                 } catch (Exception upgradeError) {
@@ -314,6 +327,15 @@ public final class NettyConnectListener<T> {
         // pool is polled with, including the IP-aware key used by LoadBalance.ROUND_ROBIN. Read the key
         // once: it is volatile (repinned on IP failover) and both uses below must agree.
         Object partitionKey = future.getPartitionKey();
+        if (PrincipalScopedPartitionKey.authenticatesTheConnection(future.getRealm(), future.getProxyRealm())) {
+            // Only reachable when a caller-supplied SslEngineFactory advertised h2 anyway. It cannot serve
+            // HTTP/1.1 now, so let it close after this exchange; returning bare would strand the permit.
+            Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+            if (state != null) {
+                state.markRedundant();
+            }
+            return;
+        }
         channelManager.registerHttp2Connection(partitionKey, channel);
         if (partitionKey instanceof RoundRobinPartitionKey) {
             // The permit must be freed as soon as the connection stops serving new requests: on close, or
