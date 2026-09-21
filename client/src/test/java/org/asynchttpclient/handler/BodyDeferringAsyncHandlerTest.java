@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
@@ -219,7 +220,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
             try (is; cos) {
                 copy(is, cos);
             } catch (Exception ex) {
-                assertInstanceOf(UnsupportedOperationException.class, ex.getCause());
+                // The refused retry is only logged: the caller is told why the exchange failed.
+                assertInstanceOf(RemotelyClosedException.class, ex.getCause());
             }
         }
     }
@@ -227,13 +229,15 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     @Test
     public void testConnectionRefused() throws Exception {
         int newPortWithoutAnyoneListening = findFreePort();
-        try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
+        try (AsyncHttpClient client = asyncHttpClient(config().setMaxRequestRetry(1).setRequestTimeout(Duration.ofSeconds(10)).build())) {
             BoundRequestBuilder r = client.prepareGet("http://localhost:" + newPortWithoutAnyoneListening + "/testConnectionRefused");
 
             CountingOutputStream cos = new CountingOutputStream();
             BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
             r.execute(bdah);
-            assertThrows(IOException.class, () -> bdah.getResponse());
+            // The handler refuses retries by throwing from onRetry; that must not replace the real failure.
+            IOException e = assertThrows(IOException.class, () -> bdah.getResponse());
+            assertInstanceOf(ConnectException.class, e.getCause());
         }
     }
 

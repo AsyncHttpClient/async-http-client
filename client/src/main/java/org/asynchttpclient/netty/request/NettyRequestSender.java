@@ -1199,8 +1199,8 @@ public final class NettyRequestSender {
             try {
                 future.getAsyncHandler().onRetry();
             } catch (Exception e) {
+                // Throwing is how a handler refuses a retry. The caller aborts with the failure it has.
                 LOGGER.error("onRetry crashed", e);
-                abort(future.channel(), future, e);
                 return false;
             }
 
