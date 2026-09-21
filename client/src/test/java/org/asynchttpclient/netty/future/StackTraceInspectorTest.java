@@ -57,8 +57,14 @@ public class StackTraceInspectorTest {
         assertTrue(StackTraceInspector.recoverOnNettyDisconnectException(annotated(refused)));
     }
 
-    // NoRouteToHostException is not a ConnectException, so only the frame probes match it. The running JDK
-    // produces just one of the two frames (checkConnect up to JDK 12, pollConnect after), hence the fake stacks.
+    // Native transports map EHOSTUNREACH and ENETUNREACH to a NoRouteToHostException with no sun.nio.ch frame.
+    @Test
+    public void unreachablePeerOnNativeTransportIsRecoverable() {
+        assertTrue(StackTraceInspector.recoverOnNettyDisconnectException(annotated(new NoRouteToHostException())));
+    }
+
+    // The running JDK produces just one of the two frames (checkConnect up to JDK 12, pollConnect after),
+    // hence the fake stacks.
     @Test
     public void unreachablePeerReportedFromConnectCompletionIsRecoverable() {
         assertTrue(StackTraceInspector.recoverOnNettyDisconnectException(

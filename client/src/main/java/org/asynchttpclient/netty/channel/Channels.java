@@ -28,6 +28,7 @@ public final class Channels {
 
     private static final AttributeKey<Object> DEFAULT_ATTRIBUTE = AttributeKey.valueOf("default");
     private static final AttributeKey<Active> ACTIVE_TOKEN_ATTRIBUTE = AttributeKey.valueOf("activeToken");
+    private static final AttributeKey<Runnable> PERMIT_RELEASE_ATTRIBUTE = AttributeKey.valueOf("permitRelease");
 
     private Channels() {
         // Prevent outside initialization
@@ -56,6 +57,21 @@ public final class Channels {
 
     public static boolean isActiveTokenSet(Channel channel) {
         return channel != null && channel.attr(ACTIVE_TOKEN_ATTRIBUTE).getAndSet(null) != null;
+    }
+
+    static void setPermitRelease(Channel channel, Runnable release) {
+        channel.attr(PERMIT_RELEASE_ATTRIBUTE).set(release);
+    }
+
+    /**
+     * Releases the connection permit this channel holds, if any. Safe to call more than once; the close
+     * listener remains the backstop.
+     */
+    public static void releasePermit(Channel channel) {
+        Runnable release = channel.attr(PERMIT_RELEASE_ATTRIBUTE).get();
+        if (release != null) {
+            release.run();
+        }
     }
 
     public static void silentlyCloseChannel(Channel channel) {

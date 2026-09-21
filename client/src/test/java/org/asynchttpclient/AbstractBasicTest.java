@@ -24,7 +24,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(NettyLeakDetectorExtension.class)
+@ExtendWith({NettyLeakDetectorExtension.class, AbstractBasicTest.ServerStoppedGuard.class})
 public abstract class AbstractBasicTest {
     protected static final Logger logger = LoggerFactory.getLogger(AbstractBasicTest.class);
     protected static final int TIMEOUT = 30;
@@ -82,6 +84,20 @@ public abstract class AbstractBasicTest {
         if (previous != null && previous != server) {
             assertTrue(previous.isStopped(), "a Jetty server was replaced while it was still running;"
                     + " a fixture re-annotated as @BeforeEach needs its teardown re-annotated to match");
+        }
+    }
+
+    // An extension rather than an @AfterAll method: JUnit leaves the order of two of those in one class open,
+    // but runs this after all of them.
+    static final class ServerStoppedGuard implements AfterAllCallback {
+
+        @Override
+        public void afterAll(ExtensionContext context) {
+            Object instance = context.getTestInstance().orElse(null);
+            if (instance instanceof AbstractBasicTest) {
+                Server server = ((AbstractBasicTest) instance).server;
+                assertTrue(server == null || server.isStopped(), "a Jetty server was still running at class end");
+            }
         }
     }
 

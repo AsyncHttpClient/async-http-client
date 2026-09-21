@@ -1155,6 +1155,13 @@ public final class NettyRequestSender {
         // NettyConnectListener.onFailure to abort the same future with a ConnectException instead -- which a
         // request timeout on the connect path can now hit, since the channel is published before the
         // handshake (issue #2189). The close still uses the channel passed in, which abort() does not clear.
+        //
+        // The permit goes back first: the channel is closed below either way, and a handler that sends its
+        // next request from onThrowable must not be refused by the connection it is being told has failed.
+        // An HTTP/2 connection keeps its permit until it stops serving streams.
+        if (channel != null && !ChannelManager.isHttp2(channel)) {
+            Channels.releasePermit(channel);
+        }
         if (!future.isDone()) {
             future.setChannelState(ChannelState.CLOSED);
             LOGGER.debug("Aborting Future {}\n", future);
@@ -1192,8 +1199,8 @@ public final class NettyRequestSender {
             try {
                 future.getAsyncHandler().onRetry();
             } catch (Exception e) {
+                // Throwing is how a handler refuses a retry. The caller aborts with the failure it has.
                 LOGGER.error("onRetry crashed", e);
-                abort(future.channel(), future, e);
                 return false;
             }
 

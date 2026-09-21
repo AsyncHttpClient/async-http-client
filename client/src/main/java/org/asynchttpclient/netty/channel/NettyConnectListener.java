@@ -47,6 +47,8 @@ public final class NettyConnectListener<T> {
     private final NettyResponseFuture<T> future;
     private final ChannelManager channelManager;
     private final ConnectionSemaphore connectionSemaphore;
+    // Shared by the addresses one connect fails over, but only the one that connects reaches writeRequest.
+    private volatile boolean requestWritten;
 
     public NettyConnectListener(NettyResponseFuture<T> future, NettyRequestSender requestSender, ChannelManager channelManager, ConnectionSemaphore connectionSemaphore) {
         this.future = future;
@@ -83,6 +85,7 @@ public final class NettyConnectListener<T> {
         Channels.setAttribute(channel, future);
 
         channelManager.registerOpenChannel(channel);
+        requestWritten = true;
         requestSender.writeRequest(future, channel);
     }
 
@@ -97,6 +100,8 @@ public final class NettyConnectListener<T> {
         final Object partitionKeyLock = semaphore != null ? future.takePartitionKeyLock() : null;
         final AtomicReference<Object> permit = new AtomicReference<>(partitionKeyLock);
         if (partitionKeyLock != null) {
+            // Also reachable from the channel, so an abort can return the permit before it tells the handler.
+            Channels.setPermitRelease(channel, () -> releasePermitOnce(semaphore, permit));
             channel.closeFuture().addListener(f -> releasePermitOnce(semaphore, permit));
         }
 
@@ -351,8 +356,7 @@ public final class NettyConnectListener<T> {
     }
 
     /**
-     * Must only be called before {@link #writeRequest}: it may replay the request, and replaying one that was
-     * already written would send it twice.
+     * Replays the request only while it is unwritten: replaying one that was already written would send it twice.
      */
     public void onFailure(Channel channel, Throwable cause) {
 
@@ -362,6 +366,7 @@ public final class NettyConnectListener<T> {
         boolean canRetry = future.incrementRetryAndCheck();
         LOGGER.debug("Trying to recover from failing to connect channel {} with a retry value of {} ", channel, canRetry);
         if (canRetry//
+                && !requestWritten
                 && cause != null // FIXME when can we have a null cause?
                 && (future.getChannelState() != ChannelState.NEW || StackTraceInspector.recoverOnNettyDisconnectException(cause))) {
 

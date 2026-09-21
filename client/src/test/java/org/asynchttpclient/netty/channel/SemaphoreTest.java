@@ -35,6 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -153,6 +154,30 @@ public class SemaphoreTest {
                     "Semaphore gave up after " + runner.getAcquireTime() + " ms, before its "
                             + CHECK_ACQUIRE_TIME__TIMEOUT + " ms acquire timeout");
         }
+    }
+
+    // The per-host gate gets what the global gate left of the timeout, not a second full timeout. Both gates
+    // have a free permit here, so only the budget can refuse the acquire.
+    @Test
+    public void combinedSpendsOneTimeoutAcrossBothGates() throws IOException {
+        ConnectionSemaphore refused = combinedWhoseGlobalGateTakes(CHECK_ACQUIRE_TIME__TIMEOUT + 1);
+        assertThrows(TooManyConnectionsPerHostException.class, () -> refused.acquireChannelLock(PK));
+        // the refusal handed the global permit back
+        refused.acquireChannelLock(PK, true);
+
+        combinedWhoseGlobalGateTakes(CHECK_ACQUIRE_TIME__TIMEOUT / 2).acquireChannelLock(PK);
+    }
+
+    private static ConnectionSemaphore combinedWhoseGlobalGateTakes(long millis) {
+        AtomicLong now = new AtomicLong();
+        return new CombinedConnectionSemaphore(1, 1, CHECK_ACQUIRE_TIME__TIMEOUT, now::get) {
+            @Override
+            protected long acquireGlobal(Object partitionKey) throws IOException {
+                long remaining = super.acquireGlobal(partitionKey);
+                now.addAndGet(millis);
+                return remaining;
+            }
+        };
     }
 
     // ---- a waiting acquire completes on release, not on its own timeout ----

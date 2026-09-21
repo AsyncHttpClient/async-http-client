@@ -18,6 +18,7 @@ package org.asynchttpclient.netty.channel;
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /**
  * A combined {@link ConnectionSemaphore} with two limits - a global limit and a per-host limit
@@ -25,9 +26,18 @@ import java.util.concurrent.TimeUnit;
 public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
     protected final MaxConnectionSemaphore globalMaxConnectionSemaphore;
 
+    private final LongSupplier millisClock;
+
     CombinedConnectionSemaphore(int maxConnections, int maxConnectionsPerHost, int acquireTimeout) {
+        // Monotonic, and finer than the 15 ms steps currentTimeMillis takes on Windows.
+        this(maxConnections, maxConnectionsPerHost, acquireTimeout, () -> TimeUnit.NANOSECONDS.toMillis(System.nanoTime()));
+    }
+
+    // For tests: the split of the budget can be checked without waiting for it.
+    CombinedConnectionSemaphore(int maxConnections, int maxConnectionsPerHost, int acquireTimeout, LongSupplier millisClock) {
         super(maxConnectionsPerHost, acquireTimeout);
         globalMaxConnectionSemaphore = new MaxConnectionSemaphore(maxConnections, acquireTimeout);
+        this.millisClock = millisClock;
     }
 
     @Override
@@ -89,9 +99,9 @@ public class CombinedConnectionSemaphore extends PerHostConnectionSemaphore {
      * Acquires the global lock and returns the remaining time, in millis, to acquire the per-host lock
      */
     protected long acquireGlobalTimed(Object partitionKey) throws IOException {
-        long beforeGlobalAcquire = System.currentTimeMillis();
+        long beforeGlobalAcquire = millisClock.getAsLong();
         acquireGlobal(partitionKey);
-        long lockTime = System.currentTimeMillis() - beforeGlobalAcquire;
+        long lockTime = millisClock.getAsLong() - beforeGlobalAcquire;
         return acquireTimeout - lockTime;
     }
 

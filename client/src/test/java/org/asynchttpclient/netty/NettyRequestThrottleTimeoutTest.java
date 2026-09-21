@@ -20,6 +20,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.asynchttpclient.exception.TooManyConnectionsException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
 
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxConnections(1))) {
             final CountDownLatch latch = new CountDownLatch(samples);
-            final List<Exception> tooManyConnections = Collections.synchronizedList(new ArrayList<>(2));
+            final List<Throwable> tooManyConnections = Collections.synchronizedList(new ArrayList<>(2));
 
             for (int i = 0; i < samples; i++) {
                 new Thread(() -> {
@@ -74,6 +75,10 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                                         @Override
                                         public void onThrowable(Throwable t) {
                                             logger.error("onThrowable got an error", t);
+                                            // execute() reports a refused permit here, it does not throw
+                                            if (t instanceof TooManyConnectionsException) {
+                                                tooManyConnections.add(t);
+                                            }
                                             try {
                                                 Thread.sleep(100);
                                             } catch (InterruptedException e) {
@@ -101,7 +106,7 @@ public class NettyRequestThrottleTimeoutTest extends AbstractBasicTest {
                 assertTrue(latch.await(30, TimeUnit.SECONDS));
             });
 
-            for (Exception e : tooManyConnections) {
+            for (Throwable e : tooManyConnections) {
                 logger.error("Exception while calling execute", e);
             }
 

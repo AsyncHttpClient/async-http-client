@@ -19,6 +19,7 @@ import io.netty.channel.ConnectTimeoutException;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.nio.channels.ClosedChannelException;
 
 public final class StackTraceInspector {
@@ -45,9 +46,11 @@ public final class StackTraceInspector {
             if (t instanceof ConnectTimeoutException) {
                 return false;
             }
-            // The type covers every transport. The frames (checkConnect up to JDK 12, pollConnect after)
-            // still matter: NIO reports an unreachable peer as NoRouteToHostException, not a ConnectException.
+            // The types cover every transport: native ones report an unreachable peer as a bare
+            // NoRouteToHostException. The frames (checkConnect up to JDK 12, pollConnect after) keep whatever
+            // else NIO throws from connect completion.
             if (t instanceof ConnectException
+                    || t instanceof NoRouteToHostException
                     || exceptionInMethod(t, "sun.nio.ch.SocketChannelImpl", "checkConnect")
                     || exceptionInMethod(t, "sun.nio.ch.Net", "pollConnect")) {
                 return true;

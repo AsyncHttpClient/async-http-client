@@ -25,11 +25,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PutFileTest extends AbstractBasicTest {
 
@@ -49,6 +53,17 @@ public class PutFileTest extends AbstractBasicTest {
     @Test
     public void testPutSmallFile() throws Exception {
         put(1024);
+    }
+
+    // No interceptor stands in front of a first request, so this is NettyFileBody's own guard.
+    @Test
+    public void testPutMissingFile() throws Exception {
+        File missing = new File(createTempFile(1).getParentFile(), "missing-" + System.nanoTime());
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            ExecutionException e = assertThrows(ExecutionException.class,
+                    () -> client.preparePut(getTargetUrl()).setBody(missing).execute().get(TIMEOUT, TimeUnit.SECONDS));
+            assertInstanceOf(IllegalArgumentException.class, e.getCause());
+        }
     }
 
     @Override
