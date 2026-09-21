@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,6 +53,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
 
     // Counted down by the client on its first body part. The server writes the second part only after that.
     private volatile CountDownLatch firstPartReceived = new CountDownLatch(1);
+    private volatile boolean handshakeTimedOut;
 
     @Override
     @AfterAll
@@ -75,7 +77,9 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                         writer.write("part1");
                         writer.flush();
                         if (!firstPartReceived.await(TIMEOUT, TimeUnit.SECONDS)) {
-                            logger.error("Client never received part1.");
+                            // Writing part2 anyway would let the test pass without the ordering it checks.
+                            handshakeTimedOut = true;
+                            return;
                         }
                         logger.info("Delivering part2.");
                         writer.write("part2");
@@ -96,6 +100,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
     @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void testStream() throws Exception {
         firstPartReceived = new CountDownLatch(1);
+        handshakeTimedOut = false;
         try (AsyncHttpClient ahc = asyncHttpClient()) {
             final AtomicReference<Throwable> thrown = new AtomicReference<>();
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
@@ -145,6 +150,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
             // The latch also fires on failure, so check for one before looking at the parts.
             assertTrue(latch.await(TIMEOUT, TimeUnit.SECONDS), () -> "Latch failed. Received so far: " + queue);
             assertNull(thrown.get(), () -> "Got throwable: " + thrown.get());
+            assertFalse(handshakeTimedOut, "the server gave up waiting for the client to receive part1");
             assertEquals(2, queue.size());
             assertEquals("part1", queue.poll());
             assertEquals("part2", queue.poll());
