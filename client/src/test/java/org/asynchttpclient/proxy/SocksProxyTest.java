@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
@@ -58,7 +57,7 @@ public class SocksProxyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSocks4ProxyWithHttp() throws Exception {
         SocksProxy socksProxy = new SocksProxy(60000);
         new Thread(() -> {

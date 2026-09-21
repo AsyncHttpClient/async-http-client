@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.netty;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -20,6 +19,7 @@ import io.netty.handler.codec.http.HttpMessage;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EventPipelineTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void asyncPipelineTest() throws Exception {
         Consumer<Channel> httpAdditionalPipelineInitializer = channel -> channel.pipeline()
                 .addBefore("inflater", "copyEncodingHeader", new CopyEncodingHandler());

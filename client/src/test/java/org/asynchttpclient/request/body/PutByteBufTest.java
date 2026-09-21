@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +21,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -44,12 +44,12 @@ public class PutByteBufTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutSmallBody() throws Exception {
         put("Hello Test");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutBigBody() throws Exception {
         byte[] array = new byte[2048];
         Arrays.fill(array, (byte) 97);

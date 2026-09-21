@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +29,7 @@ import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -46,7 +46,9 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
@@ -63,6 +65,7 @@ import static org.asynchttpclient.util.HttpConstants.Methods.QUERY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -146,7 +149,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void regular301LosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -159,7 +162,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void regular302LosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -172,7 +175,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void regular302StrictKeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setStrict302Handling(true))) {
             String body = "hello there";
@@ -185,7 +188,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void regular303SwitchesToGetAndLosesBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -198,7 +201,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void regular307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -211,7 +214,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void regular308KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -224,22 +227,22 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query301KeepsMethodAndBody() throws Exception {
         queryRedirectKeepsMethodAndBody(301, false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query302KeepsMethodAndBody() throws Exception {
         queryRedirectKeepsMethodAndBody(302, false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query302StrictKeepsMethodAndBody() throws Exception {
         queryRedirectKeepsMethodAndBody(302, true);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query303SwitchesToGetAndDropsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -257,17 +260,17 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query307KeepsMethodAndBody() throws Exception {
         queryRedirectKeepsMethodAndBody(307, false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query308KeepsMethodAndBody() throws Exception {
         queryRedirectKeepsMethodAndBody(308, false);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query301KeepsRepeatableBodyGenerator() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             byte[] body = "hello there".getBytes(UTF_8);
@@ -285,7 +288,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void query301WithNonRepeatableBodyGeneratorFailsPromptly() throws Exception {
         try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
             @Override
@@ -311,7 +314,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void put301WithNonRepeatableBodyGeneratorFailsPromptly() throws Exception {
         try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
             @Override
@@ -419,7 +422,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void put301AcrossDifferentHostsKeepsMethodAndBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             String body = "hello there";
@@ -462,7 +465,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirectPreservesPerRequestSettings() throws Exception {
         Duration readTimeout = Duration.ofSeconds(7);
         long rangeOffset = 41L;
@@ -492,7 +495,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void bodylessRedirectPreservesPerRequestSettings() throws Exception {
         Duration readTimeout = Duration.ofSeconds(7);
         long rangeOffset = 41L;
@@ -522,7 +525,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void compositeByteArray307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             byte[] first = "redirect ".getBytes(UTF_8);
@@ -534,7 +537,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void byteBuf307KeepsBody() throws Exception {
         ByteBuf body = Unpooled.wrappedBuffer(REDIRECT_BODY);
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -547,7 +550,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void resettableInputStream307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = execute307(c.preparePost(getTargetUrl()).setBody(new ByteArrayInputStream(REDIRECT_BODY)));
@@ -556,7 +559,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void inputStream307PreservesExplicitContentLength() throws Exception {
         try (InputStream body = new ByteArrayInputStream(REDIRECT_BODY);
              AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -570,7 +573,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void inputStreamBodyGenerator307PreservesExplicitContentLength() throws Exception {
         try (InputStream body = new ByteArrayInputStream(REDIRECT_BODY);
              AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -584,7 +587,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void nonResettableInputStream307FailsPromptly() throws Exception {
         try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
             @Override
@@ -606,7 +609,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void fileInputStream307FailsPromptly() throws Exception {
         Path bodyFile = Files.createTempFile("ahc-redirect-stream-", ".bin");
         try {
@@ -624,7 +627,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void file307KeepsBody() throws Exception {
         Path body = Files.createTempFile("ahc-redirect-body-", ".bin");
         try {
@@ -639,16 +642,45 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void vanishedFile307FailsPromptly() throws Exception {
         Path body = Files.createTempFile("ahc-redirect-vanished-", ".bin");
         try {
             Files.write(body, REDIRECT_BODY);
-            fileToDeleteBeforeRedirect = body;
-            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-                ExecutionException thrown = assertThrows(ExecutionException.class,
-                        () -> execute307(c.preparePost(getTargetUrl()).setBody(body.toFile())));
+            // Deleted here, not in the server handler: Windows cannot delete a file the client still has open.
+            // The 307 only arrives after the whole body was sent, and by then the client has closed the file.
+            // Not true for /deferred-redirect, nor with TLS or disableZeroCopy.
+            AtomicBoolean vanished = new AtomicBoolean();
+            AtomicReference<IOException> vanishFailure = new AtomicReference<>();
+            ResponseFilter vanisher = new ResponseFilter() {
+                @Override
+                public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                    HttpResponseStatus status = ctx.getResponseStatus();
+                    if (status != null && status.getStatusCode() == 307) {
+                        try {
+                            if (Files.deleteIfExists(body)) {
+                                vanished.set(true);
+                            }
+                        } catch (IOException e) {
+                            vanishFailure.set(e);
+                        }
+                    }
+                    return ctx;
+                }
+            };
 
+            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(vanisher))) {
+                ExecutionException thrown = null;
+                try {
+                    execute307(c.preparePost(getTargetUrl()).setBody(body.toFile()));
+                } catch (ExecutionException e) {
+                    thrown = e;
+                }
+
+                assertNull(vanishFailure.get(), "request body file should be deletable once the region is released");
+                assertTrue(vanished.get(), "the 307 never reached the response filter");
+                assertNotNull(thrown, "the redirect replay should have failed once the body vanished");
+                // NettyFileBody rejects a missing file too, so the type and message must be checked.
                 IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
                 assertEquals("Redirect request body file " + body.toAbsolutePath()
                         + " is not a file or does not exist", cause.getMessage());
@@ -658,7 +690,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void coexistingFileAndByteArray308UsesByteArray() throws Exception {
         Path file = Files.createTempFile("ahc-redirect-precedence-", ".bin");
         try {
@@ -680,7 +712,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void coexistingMultipartStreamAndByteArray307UsesByteArray() throws Exception {
         try (InputStream unusedPart = new ByteArrayInputStream("unused part".getBytes(UTF_8));
              AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -693,7 +725,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void formParams307KeepBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.preparePost(getTargetUrl())
@@ -706,7 +738,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void multipart307KeepsBody() throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             Response response = c.preparePost(getTargetUrl())
@@ -719,7 +751,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void inputStreamMultipart307FailsPromptly() throws Exception {
         Path bodyFile = Files.createTempFile("ahc-redirect-multipart-", ".bin");
         try {

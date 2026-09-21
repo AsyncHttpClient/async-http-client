@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.netty;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -45,7 +44,7 @@ import static org.mockito.Mockito.when;
 
 public class NettyAsyncResponseTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testCookieParseExpires() {
         // e.g. "Tue, 27 Oct 2015 12:54:24 GMT";
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
@@ -64,7 +63,7 @@ public class NettyAsyncResponseTest {
         assertTrue(cookie.maxAge() >= 58 && cookie.maxAge() <= 60);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testCookieParseMaxAge() {
         final String cookieDef = "efmembercheck=true; max-age=60; path=/; domain=.eclipse.org";
 
@@ -77,7 +76,7 @@ public class NettyAsyncResponseTest {
         assertEquals(60, cookie.maxAge());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testCookieParseWeirdExpiresValue() {
         final String cookieDef = "efmembercheck=true; expires=60; path=/; domain=.eclipse.org";
         HttpHeaders responseHeaders = new DefaultHttpHeaders().add(SET_COOKIE, cookieDef);
@@ -90,7 +89,7 @@ public class NettyAsyncResponseTest {
         assertEquals(Long.MIN_VALUE, cookie.maxAge());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetResponseBodyAsByteBuffer() {
         List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
         bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes()), false));

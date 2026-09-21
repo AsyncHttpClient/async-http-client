@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.HttpHeaders;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +22,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -33,12 +34,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests default asynchronous life cycle.
@@ -46,7 +47,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Hubert Iwaniuk
  */
 public class AsyncStreamLifecycleTest extends AbstractBasicTest {
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
+    // One thread, so the two parts are written in order.
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    // Counted down by the client on its first body part. The server writes the second part only after that.
+    private volatile CountDownLatch firstPartReceived = new CountDownLatch(1);
 
     @Override
     @AfterAll
@@ -66,34 +71,33 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 final PrintWriter writer = resp.getWriter();
                 executorService.submit(() -> {
                     try {
-                        Thread.sleep(100);
+                        logger.info("Delivering part1.");
+                        writer.write("part1");
+                        writer.flush();
+                        if (!firstPartReceived.await(TIMEOUT, TimeUnit.SECONDS)) {
+                            logger.error("Client never received part1.");
+                        }
+                        logger.info("Delivering part2.");
+                        writer.write("part2");
+                        writer.flush();
                     } catch (InterruptedException e) {
-                        logger.error("Failed to sleep for 100 ms.", e);
+                        Thread.currentThread().interrupt();
+                        logger.error("Interrupted while waiting for part1 to be received.", e);
+                    } finally {
+                        asyncContext.complete();
                     }
-                    logger.info("Delivering part1.");
-                    writer.write("part1");
-                    writer.flush();
-                });
-                executorService.submit(() -> {
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        logger.error("Failed to sleep for 200 ms.", e);
-                    }
-                    logger.info("Delivering part2.");
-                    writer.write("part2");
-                    writer.flush();
-                    asyncContext.complete();
                 });
                 request.setHandled(true);
             }
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void testStream() throws Exception {
+        firstPartReceived = new CountDownLatch(1);
         try (AsyncHttpClient ahc = asyncHttpClient()) {
-            final AtomicBoolean err = new AtomicBoolean(false);
+            final AtomicReference<Throwable> thrown = new AtomicReference<>();
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);
             final AtomicInteger headers = new AtomicInteger(0);
@@ -101,8 +105,9 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build(), new AsyncHandler<Object>() {
                 @Override
                 public void onThrowable(Throwable t) {
-                    fail("Got throwable.", t);
-                    err.set(true);
+                    // Recorded, not asserted: NettyResponseFuture.abort swallows anything thrown here.
+                    thrown.set(t);
+                    latch.countDown();
                 }
 
                 @Override
@@ -111,6 +116,7 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                         String s = new String(e.getBodyPartBytes());
                         logger.info("got part: {}", s);
                         queue.put(s);
+                        firstPartReceived.countDown();
                     }
                     return State.CONTINUE;
                 }
@@ -136,13 +142,14 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 }
             });
 
-            assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
-            assertFalse(err.get());
-            assertEquals(queue.size(), 2);
-            assertTrue(queue.contains("part1"));
-            assertTrue(queue.contains("part2"));
+            // The latch also fires on failure, so check for one before looking at the parts.
+            assertTrue(latch.await(TIMEOUT, TimeUnit.SECONDS), () -> "Latch failed. Received so far: " + queue);
+            assertNull(thrown.get(), () -> "Got throwable: " + thrown.get());
+            assertEquals(2, queue.size());
+            assertEquals("part1", queue.poll());
+            assertEquals("part2", queue.poll());
             assertTrue(status.get());
-            assertEquals(headers.get(), 1);
+            assertEquals(1, headers.get());
         }
     }
 }

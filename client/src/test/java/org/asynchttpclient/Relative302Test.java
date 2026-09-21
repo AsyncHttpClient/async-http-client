@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +23,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -70,7 +71,13 @@ public class Relative302Test extends AbstractBasicTest {
         port2 = findFreePort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
+    }
+
+    @Test
     public void testAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
         redirected302InvalidTest();
@@ -78,7 +85,7 @@ public class Relative302Test extends AbstractBasicTest {
         relativePathRedirectTest();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
 
@@ -93,7 +100,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -111,7 +118,7 @@ public class Relative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void absolutePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 
@@ -128,7 +135,7 @@ public class Relative302Test extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void relativePathRedirectTest() throws Exception {
         isSet.getAndSet(false);
 

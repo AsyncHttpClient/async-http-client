@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.scram.ScramEngine;
@@ -24,7 +23,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -61,11 +62,17 @@ public class ScramAuthTest extends AbstractBasicTest {
     }
 
     @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
+    }
+
+    @Override
     public AbstractHandler configureHandler() throws Exception {
         return new ScramAuthHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_fullExchange() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -78,7 +85,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_wrongPassword() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -90,7 +97,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_maxIterationCount() throws Exception {
         // Server uses 4096 iterations, client max is 100 — should fail
         try (AsyncHttpClient client = asyncHttpClient()) {
@@ -107,7 +114,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_missingAuthInfo() throws Exception {
         // Test with handler that doesn't send Authentication-Info
         server.stop();
@@ -128,7 +135,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_malformedBase64InData() throws Exception {
         server.stop();
         server = new Server();
@@ -148,7 +155,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_invalidServerSignatureIsRejected() throws Exception {
         // Server completes the handshake but returns a ServerSignature it could not have computed without
         // the shared secret. RFC 7804 §5 requires the client to consider the exchange unsuccessful.
@@ -169,7 +176,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_quotedDataAttribute() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> f = client.prepareGet("http://localhost:" + port1 + '/')
@@ -183,7 +190,7 @@ public class ScramAuthTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testScramSha256_proxyFullExchange() throws Exception {
         server.stop();
         server = new Server();

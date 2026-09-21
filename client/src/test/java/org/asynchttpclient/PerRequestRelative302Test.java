@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +23,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -72,7 +73,13 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         port2 = findFreePort();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
+    }
+
+    @Test
     // FIXME threadsafe
     public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
         redirected302Test();
@@ -81,7 +88,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         redirected302InvalidTest();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient()) {
@@ -97,7 +104,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void notRedirected302Test() throws Exception {
         isSet.getAndSet(false);
         try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
@@ -117,7 +124,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         return url.substring(0, url.lastIndexOf(':') + String.valueOf(port).length() + 1);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void redirected302InvalidTest() throws Exception {
         isSet.getAndSet(false);
         Exception e = null;
@@ -134,7 +141,7 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         assertTrue(cause.getMessage().contains(":" + port2));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void relativeLocationUrl() throws Exception {
         isSet.getAndSet(false);
 

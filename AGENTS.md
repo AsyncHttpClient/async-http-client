@@ -94,7 +94,7 @@ Common commands:
 * Extend `AbstractBasicTest` for tests requiring an embedded Jetty server.
 * Extend `AbstractBasicWebSocketTest` for WebSocket tests.
 * Never use `Thread.sleep()` for synchronization. Use futures, latches or timeouts.
-* Mark known flaky tests with `@RepeatedIfExceptionsTest` instead of `@Test`.
+* Do not retry flaky tests. A flaky test is a bug. Find and fix the race.
 * Do not leak Netty `ByteBuf` instances. The leak detector extension will fail the test.
 * Keep the default test suite hermetic.
 * Tests requiring public hosts must be tagged `external`.

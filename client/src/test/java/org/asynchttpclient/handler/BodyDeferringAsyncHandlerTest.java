@@ -12,7 +12,6 @@
  */
 package org.asynchttpclient.handler;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +26,7 @@ import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.handler.BodyDeferringAsyncHandler.BodyDeferringInputStream;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -65,7 +65,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         return config().setMaxRequestRetry(0).setRequestTimeout(Duration.ofSeconds(10)).build();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void deferredSimple() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl());
@@ -91,7 +91,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void deferredSimpleWithFailure() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder requestBuilder = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
@@ -118,7 +118,26 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    // Joining the future first guarantees the body failure is recorded before getResponse() is called.
+    @Test
+    public void deferredResponseIsReturnedWhenTheBodyFailsFirst() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
+            BoundRequestBuilder requestBuilder = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
+
+            CountingOutputStream cos = new CountingOutputStream();
+            BodyDeferringAsyncHandler bdah = new BodyDeferringAsyncHandler(cos);
+            Future<Response> f = requestBuilder.execute(bdah);
+
+            assertThrows(ExecutionException.class, f::get);
+
+            Response resp = bdah.getResponse();
+            assertNotNull(resp);
+            assertEquals(HttpServletResponse.SC_OK, resp.getStatusCode());
+            assertEquals(String.valueOf(CONTENT_LENGTH_VALUE), resp.getHeader(CONTENT_LENGTH));
+        }
+    }
+
+    @Test
     public void deferredInputStreamTrick() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl());
@@ -151,7 +170,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void deferredInputStreamTrickWithFailure() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-FAIL-TRANSFER", Boolean.TRUE.toString());
@@ -178,7 +197,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void deferredInputStreamTrickWithCloseConnectionAndRetry() throws Throwable {
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxRequestRetry(1).setRequestTimeout(Duration.ofSeconds(10)).build())) {
             BoundRequestBuilder r = client.prepareGet(getTargetUrl()).addHeader("X-CLOSE-CONNECTION", Boolean.TRUE.toString());
@@ -205,7 +224,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testConnectionRefused() throws Exception {
         int newPortWithoutAnyoneListening = findFreePort();
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
@@ -218,7 +237,7 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPipedStreams() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             PipedOutputStream pout = new PipedOutputStream();

@@ -21,6 +21,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(NettyLeakDetectorExtension.class)
@@ -38,6 +40,7 @@ public abstract class AbstractBasicTest {
     protected Server server;
     protected int port1 = -1;
     protected int port2 = -1;
+    private Server lastObservedServer;
 
     @BeforeAll
     public void setUpGlobal() throws Exception {
@@ -46,6 +49,8 @@ public abstract class AbstractBasicTest {
         server.setHandler(configureHandler());
         ServerConnector connector2 = addHttpConnector(server);
         server.start();
+        // Lets the guard below catch a subclass that replaces this server in its very first test.
+        lastObservedServer = server;
 
         port1 = connector1.getLocalPort();
         port2 = connector2.getLocalPort();
@@ -53,12 +58,30 @@ public abstract class AbstractBasicTest {
         logger.info("Local HTTP server started successfully");
     }
 
+    /**
+     * An override does not inherit this annotation. A subclass that re-annotates {@code setUpGlobal} must
+     * re-annotate this method to match, or it leaks a server per test.
+     */
     @AfterAll
     public void tearDownGlobal() throws Exception {
         logger.debug("Shutting down local server: {}", server);
 
         if (server != null) {
             server.stop();
+        }
+    }
+
+    /**
+     * Fails a subclass that starts a server per test but only stops the last one. Only sees replacements
+     * between tests, not inside a test body.
+     */
+    @AfterEach
+    public void assertReplacedServerWasStopped() {
+        Server previous = lastObservedServer;
+        lastObservedServer = server;
+        if (previous != null && previous != server) {
+            assertTrue(previous.isStopped(), "a Jetty server was replaced while it was still running;"
+                    + " a fixture re-annotated as @BeforeEach needs its teardown re-annotated to match");
         }
     }
 

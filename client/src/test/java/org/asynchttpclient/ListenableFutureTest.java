@@ -12,7 +12,7 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ListenableFutureTest extends AbstractBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testListenableFuture() throws Exception {
         final AtomicInteger statusCode = new AtomicInteger(500);
         try (AsyncHttpClient ahc = asyncHttpClient()) {
@@ -45,7 +45,7 @@ public class ListenableFutureTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testListenableFutureAfterCompletion() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -59,7 +59,7 @@ public class ListenableFutureTest extends AbstractBasicTest {
         latch.await(10, TimeUnit.SECONDS);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testListenableFutureBeforeAndAfterCompletion() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(2);

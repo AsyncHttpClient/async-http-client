@@ -18,11 +18,17 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
+
+    private int serversStarted;
+    private int serversStopped;
 
     @Override
     @BeforeEach
@@ -31,15 +37,29 @@ public abstract class AbstractBasicWebSocketTest extends AbstractBasicTest {
         ServerConnector connector = addHttpConnector(server);
         server.setHandler(configureHandler());
         server.start();
+        serversStarted++;
         port1 = connector.getLocalPort();
         logger.info("Local HTTP server started successfully");
     }
 
+    // An override does not inherit @AfterAll. Without this annotation no server is ever stopped.
     @Override
+    @AfterEach
     public void tearDownGlobal() throws Exception {
         if (server != null) {
             server.stop();
+            serversStopped++;
         }
+    }
+
+    @AfterAll
+    public void assertEveryStartedServerWasStopped() {
+        // >= because ProxyTunnellingTest starts its own servers but stops them through this class.
+        assertTrue(serversStopped >= serversStarted,
+                "started " + serversStarted + " Jetty servers but stopped only " + serversStopped
+                        + "; a lifecycle override most likely dropped its annotation");
+        // For subclasses with their own setUpGlobal, which the counter above never sees.
+        assertTrue(server == null || server.isStopped(), "a Jetty server was still running at class end");
     }
 
     @Override

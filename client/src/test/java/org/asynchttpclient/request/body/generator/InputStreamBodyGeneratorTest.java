@@ -15,11 +15,11 @@
  */
 package org.asynchttpclient.request.body.generator;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,7 +38,7 @@ public class InputStreamBodyGeneratorTest {
 
     private static final int CHUNK_SIZE = 1024 * 8;
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void streamsAllBytesAcrossMultipleReads() throws IOException {
         final byte[] src = new byte[3 * CHUNK_SIZE + 42];
         new Random().nextBytes(src);
@@ -62,7 +62,7 @@ public class InputStreamBodyGeneratorTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void singleReadDrainsASmallStream() throws IOException {
         final byte[] src = new byte[CHUNK_SIZE - 100]; // fits in one writable region, so one read drains it
         new Random().nextBytes(src);
@@ -80,7 +80,7 @@ public class InputStreamBodyGeneratorTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void emptyStreamStopsImmediately() throws IOException {
         Body body = new InputStreamBodyGenerator(new ByteArrayInputStream(new byte[0])).createBody();
         ByteBuf chunkBuffer = Unpooled.buffer(CHUNK_SIZE);
@@ -96,7 +96,7 @@ public class InputStreamBodyGeneratorTest {
     // Locks the removal of the old "writableBytes() - 10" margin: with a writable region of 10 or fewer bytes the
     // margin made the transfer length 0 (or negative), so it silently STOPped without writing / threw. The stream
     // must now still be drained through a tiny target buffer.
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void smallWritableRegionStillTransfers() throws IOException {
         final byte[] src = new byte[25];
         new Random().nextBytes(src);

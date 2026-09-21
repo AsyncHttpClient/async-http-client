@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Response;
@@ -114,7 +113,7 @@ public class HttpsProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testHttpProxyToHttpTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing HTTP proxy to HTTP target");
@@ -133,7 +132,7 @@ public class HttpsProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testHttpsProxyToHttpTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing HTTPS proxy to HTTP target");
@@ -153,7 +152,7 @@ public class HttpsProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testHttpProxyToHttpsTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing HTTP proxy to HTTPS target");
@@ -173,7 +172,7 @@ public class HttpsProxyTestcontainersIntegrationTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 3)
+    @Test
     public void testHttpsProxyToHttpsTarget() throws Exception {
         assumeTrue(dockerAvailable, "Docker is not available - skipping test");
         LOGGER.info("Testing HTTPS proxy to HTTPS target - validates issue #1907 fix");

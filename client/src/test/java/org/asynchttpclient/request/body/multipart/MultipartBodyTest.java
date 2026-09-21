@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.request.body.multipart;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.request.body.Body.BodyState;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -151,7 +151,7 @@ public class MultipartBodyTest {
         return transferred.get();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void transferWithCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
@@ -161,7 +161,7 @@ public class MultipartBodyTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void transferZeroCopy() throws Exception {
         for (int bufferLength = 1; bufferLength < MAX_MULTIPART_CONTENT_LENGTH_ESTIMATE + 1; bufferLength++) {
             try (MultipartBody multipartBody = buildMultipart()) {
@@ -237,7 +237,7 @@ public class MultipartBodyTest {
      * A target that refuses writes must not cost bytes and must not spin. Sweeps the chunk size so the
      * refusal lands at a different offset each time, including mid-part and mid-boundary.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void transferZeroCopyToTargetThatRefusesWrites() {
         // A part that spins on a refusing target never returns, so bound the whole sweep in wall time:
         // that is the shape issue #2216 took, and an assertion cannot observe it from the inside.
@@ -267,7 +267,7 @@ public class MultipartBodyTest {
      * A stream that hands over exactly its declared length must finish without the part reading again for
      * EOF. Socket-backed streams have nothing more to give and would block that extra read forever.
      */
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void inputStreamPartFinishesOnDeclaredLengthWithoutWaitingForEof() {
         assertTimeoutPreemptively(Duration.ofSeconds(30), () -> {
             byte[] content = "declared length, no EOF to follow".getBytes(UTF_8);
@@ -315,7 +315,7 @@ public class MultipartBodyTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void finishingChunkReportsStopAndCarriesAllBytes() throws Exception {
         try (MultipartBody multipartBody = buildMultipart()) {
             // A buffer large enough for the whole body: the single transferTo that writes the last bytes must

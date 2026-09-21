@@ -25,7 +25,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -47,9 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * {@code wss} to {@code ws} is a cleartext downgrade, and RFC 6455 section 4.1 leaves a client free not to
  * follow it. The WebSocket path reaches the same interceptor as HTTP.
- * <p>
- * Both fixture methods are re-annotated because the base class drops the annotation when it overrides
- * {@code tearDownGlobal}, so declaring only half the pair starts a server per test and stops none.
  */
 public class WebSocketRedirectRefusalTest extends AbstractBasicWebSocketTest {
 
@@ -76,14 +72,6 @@ public class WebSocketRedirectRefusalTest extends AbstractBasicWebSocketTest {
         server.start();
         port1 = plain.getLocalPort();
         port2 = secure.getLocalPort();
-    }
-
-    @Override
-    @AfterEach
-    public void tearDownGlobal() throws Exception {
-        if (server != null) {
-            server.stop();
-        }
     }
 
     @Test

@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -36,7 +36,7 @@ public class BodyChunkTest extends AbstractBasicTest {
 
     private static final String MY_MESSAGE = "my message";
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void negativeContentTypeTest() throws Exception {
 
         AsyncHttpClientConfig config = config()

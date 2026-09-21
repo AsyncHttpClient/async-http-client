@@ -350,6 +350,10 @@ public final class NettyConnectListener<T> {
         }
     }
 
+    /**
+     * Must only be called before {@link #writeRequest}: it may replay the request, and replaying one that was
+     * already written would send it twice.
+     */
     public void onFailure(Channel channel, Throwable cause) {
 
         // beware, channel can be null

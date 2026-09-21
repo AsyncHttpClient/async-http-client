@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +36,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -196,7 +196,7 @@ public class HttpsProxyIntegrationTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testChannelPoolPartitioningWithHttpsProxy() throws Exception {
         // Test that HTTPS proxy creates correct partition keys for connection pooling
         ProxyServer httpsProxy = proxyServer("proxy.example.com", 8080)
@@ -215,7 +215,7 @@ public class HttpsProxyIntegrationTest extends AbstractBasicTest {
         assertTrue(partitionKey.toString().contains("HTTPS"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testChannelPoolPartitioningWithHttpProxy() throws Exception {
         // Test that HTTP proxy creates correct partition keys for connection pooling
         ProxyServer httpProxy = proxyServer("proxy.example.com", 8080)

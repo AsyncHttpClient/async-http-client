@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -43,7 +42,7 @@ public class RequestBuilderTest {
     private static final String SAFE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890-_*.";
     private static final String HEX_CHARS = "0123456789ABCDEF";
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testEncodesQueryParameters() {
         String[] values = {"abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKQLMNOPQRSTUVWXYZ", "1234567890", "1234567890", "`~!@#$%^&*()", "`~!@#$%^&*()", "_+-=,.<>/?",
                 "_+-=,.<>/?", ";:'\"[]{}\\| ", ";:'\"[]{}\\| "};
@@ -78,7 +77,7 @@ public class RequestBuilderTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testChaining() {
         Request request = get("http://foo.com").addQueryParam("x", "value").build();
         Request request2 = request.toBuilder().build();
@@ -86,7 +85,7 @@ public class RequestBuilderTest {
         assertEquals(request2.getUri(), request.getUri());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testParsesQueryParams() {
         Request request = get("http://foo.com/?param1=value1").addQueryParam("param2", "value2").build();
 
@@ -97,21 +96,21 @@ public class RequestBuilderTest {
         assertEquals(params.get(1), new Param("param2", "value2"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getMethod(), "ABC");
         assertEquals(req.getUrl(), "http://foo.com");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPercentageEncodedUserInfo() {
         final Request req = get("http://hello:wor%20ld@foo.com").build();
         assertEquals(req.getMethod(), "GET");
         assertEquals(req.getUrl(), "http://hello:wor%20ld@foo.com");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testContentTypeCharsetToBodyEncoding() {
         final Request req = get("http://localhost").setHeader("Content-Type", "application/json; charset=utf-8").build();
         assertEquals(req.getCharset(), UTF_8);
@@ -119,14 +118,14 @@ public class RequestBuilderTest {
         assertEquals(req2.getCharset(), UTF_8);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testDefaultMethod() {
         RequestBuilder requestBuilder = new RequestBuilder();
         String defaultMethodName = HttpMethod.GET.name();
         assertEquals(requestBuilder.method, defaultMethodName, "Default HTTP method should be " + defaultMethodName);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSetHeaders() {
         RequestBuilder requestBuilder = new RequestBuilder();
         assertTrue(requestBuilder.headers.isEmpty(), "Headers should be empty by default.");
@@ -138,7 +137,7 @@ public class RequestBuilderTest {
         assertEquals(requestBuilder.headers.get("Content-Type"), "application/json", "header value incorrect");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testAddOrReplaceCookies() {
         RequestBuilder requestBuilder = new RequestBuilder();
         Cookie cookie = new DefaultCookie("name", "value");
@@ -172,7 +171,7 @@ public class RequestBuilderTest {
         assertEquals(requestBuilder.cookies.size(), 2, "cookie size must be 2 after adding 1 more cookie i.e. cookie3");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testAddIfUnsetCookies() {
         RequestBuilder requestBuilder = new RequestBuilder();
         Cookie cookie = new DefaultCookie("name", "value");
@@ -206,7 +205,7 @@ public class RequestBuilderTest {
         assertEquals(requestBuilder.cookies.size(), 2, "cookie size must be 2 after adding 1 more cookie i.e. cookie3");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSettingQueryParamsBeforeUrlShouldNotProduceNPE() {
         RequestBuilder requestBuilder = new RequestBuilder();
         requestBuilder.setQueryParams(singletonList(new Param("key", "value")));
@@ -215,7 +214,7 @@ public class RequestBuilderTest {
         assertEquals(request.getUrl(), "http://localhost?key=value");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSettingHeadersUsingMapWithStringKeys() {
         Map<String, List<String>> headers = new HashMap<>();
         headers.put("X-Forwarded-For", singletonList("10.0.0.1"));
@@ -227,7 +226,7 @@ public class RequestBuilderTest {
         assertEquals(request.getHeaders().get("X-Forwarded-For"), "10.0.0.1");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUserSetTextPlainContentTypeShouldNotBeModified() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", "text/plain")
@@ -239,7 +238,7 @@ public class RequestBuilderTest {
         assertFalse(contentType.contains("charset"), "Charset should not be added to user-specified Content-Type");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUserSetTextXmlContentTypeShouldNotBeModified() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", "text/xml")
@@ -250,7 +249,7 @@ public class RequestBuilderTest {
         assertEquals("text/xml", contentType, "Content-Type should not be modified when user explicitly sets it");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUserSetTextHtmlContentTypeShouldNotBeModified() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", "text/html")
@@ -261,7 +260,7 @@ public class RequestBuilderTest {
         assertEquals("text/html", contentType, "Content-Type should not be modified when user explicitly sets it");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testUserSetContentTypeWithCharsetShouldBePreserved() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", "text/xml; charset=ISO-8859-1")
@@ -274,7 +273,7 @@ public class RequestBuilderTest {
         assertFalse(contentType.contains("UTF-8"), "UTF-8 should not be added");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testApplicationJsonContentTypeShouldNotBeModified() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", "application/json")
@@ -286,7 +285,7 @@ public class RequestBuilderTest {
         assertFalse(contentType.contains("charset"), "Charset should not be added to application/json");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testAddHeaderContentTypeShouldNotBeModified() {
         Request request = post("http://localhost/test")
                 .addHeader("Content-Type", "text/plain")
@@ -297,7 +296,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type set via addHeader should not be modified");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSetHeadersWithHttpHeadersShouldLockContentType() {
         HttpHeaders httpHeaders = new DefaultHttpHeaders();
         httpHeaders.set("Content-Type", "text/plain");
@@ -311,7 +310,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type set via setHeaders(HttpHeaders) should not be modified");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSetHeadersWithMapShouldLockContentType() {
         Map<String, List<String>> headerMap = new HashMap<>();
         headerMap.put("Content-Type", singletonList("text/plain"));
@@ -325,7 +324,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type set via setHeaders(Map) should not be modified");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSetSingleHeadersShouldLockContentType() {
         Map<String, String> headerMap = new HashMap<>();
         headerMap.put("Content-Type", "text/plain");
@@ -339,7 +338,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type set via setSingleHeaders should not be modified");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testClearHeadersShouldResetContentTypeLock() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", "text/plain")
@@ -352,7 +351,7 @@ public class RequestBuilderTest {
         assertEquals("text/xml", contentType, "Content-Type should still be preserved after clear and re-set");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPrototypeRequestShouldPreserveContentType() {
         Request original = post("http://localhost/test")
                 .setHeader("Content-Type", "text/plain")
@@ -369,7 +368,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type should be preserved from prototype");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testRequestBuilderFromPrototypeShouldPreserveContentType() {
         Request original = post("http://localhost/test")
                 .setHeader("Content-Type", "text/plain")
@@ -382,7 +381,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type should be preserved from prototype via RequestBuilder");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testCaseInsensitiveContentTypeHeader() {
         Request request = post("http://localhost/test")
                 .setHeader("content-type", "text/plain")
@@ -393,7 +392,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type should be matched case-insensitively");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testSetHeaderWithIterableShouldLockContentType() {
         Request request = post("http://localhost/test")
                 .setHeader("Content-Type", singletonList("text/plain"))
@@ -404,7 +403,7 @@ public class RequestBuilderTest {
         assertEquals("text/plain", contentType, "Content-Type set via setHeader(Iterable) should not be modified");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testAddHeaderWithIterableShouldLockContentType() {
         Request request = post("http://localhost/test")
                 .addHeader("Content-Type", singletonList("text/plain"))

@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.request.body;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +24,7 @@ import org.asynchttpclient.Response;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -68,7 +68,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         };
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutImageFile() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
@@ -78,7 +78,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutImageFileUnknownSize() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMinutes(10)))) {
             InputStream inputStream = new BufferedInputStream(new FileInputStream(LARGE_IMAGE_FILE));
@@ -88,7 +88,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutLargeTextFile() throws Exception {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -101,7 +101,7 @@ public class InputStreamPartLargeFileTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testPutLargeTextFileUnknownSize() throws Exception {
         File file = createTempFile(1024 * 1024);
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));

@@ -15,9 +15,9 @@
  */
 package org.asynchttpclient.proxy;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.asynchttpclient.uri.Uri;
+import org.junit.jupiter.api.Test;
 
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class HttpsProxyBasicTest {
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testHttpsProxyTypeConfiguration() throws Exception {
         // Test that HTTPS proxy type can be configured correctly
         ProxyServer.Builder builder = proxyServer("proxy.example.com", 8080)
@@ -45,7 +45,7 @@ public class HttpsProxyBasicTest {
         assertEquals("proxy.example.com", proxy.getHost());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testHttpsProxyTypeDefaultSecuredPort() {
         // Test HTTPS proxy type with default secured port
         ProxyServer proxy = proxyServer("proxy.example.com", 8080)
@@ -56,7 +56,7 @@ public class HttpsProxyBasicTest {
         assertEquals(true, proxy.getProxyType().isHttp());
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testChannelPoolPartitioningWithHttpsProxy() {
         // Test that HTTPS proxy creates correct partition keys for connection pooling
         ProxyServer httpsProxy = proxyServer("proxy.example.com", 8080)
@@ -75,7 +75,7 @@ public class HttpsProxyBasicTest {
         assertTrue(partitionKey.toString().contains("HTTPS"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testChannelPoolPartitioningHttpsProxyHttpTarget() {
         // Test HTTPS proxy with HTTP target - should use normal port
         ProxyServer httpsProxy = proxyServer("proxy.example.com", 8080)
@@ -94,7 +94,7 @@ public class HttpsProxyBasicTest {
         assertTrue(partitionKey.toString().contains("HTTPS"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testChannelPoolPartitioningWithHttpProxy() {
         // Test that HTTP proxy creates correct partition keys for connection pooling
         ProxyServer httpProxy = proxyServer("proxy.example.com", 8080)

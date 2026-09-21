@@ -15,7 +15,6 @@
  */
 package org.asynchttpclient.util;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -23,6 +22,7 @@ import org.asynchttpclient.Dsl;
 import org.asynchttpclient.Param;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.uri.Uri;
+import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -52,44 +52,44 @@ public class HttpUtilsTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExtractCharsetWithoutQuotes() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=iso-8859-1");
         assertEquals(ISO_8859_1, charset);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExtractCharsetWithSingleQuotes() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset='iso-8859-1'");
         assertEquals(ISO_8859_1, charset);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExtractCharsetWithDoubleQuotes() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset=\"iso-8859-1\"");
         assertEquals(ISO_8859_1, charset);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExtractCharsetWithDoubleQuotesAndSpaces() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute("text/html; charset= \"iso-8859-1\" ");
         assertEquals(ISO_8859_1, charset);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testExtractCharsetFallsBackToUtf8() {
         Charset charset = HttpUtils.extractContentTypeCharsetAttribute(APPLICATION_JSON.toString());
         assertNull(charset);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetHostHeader() {
         Uri uri = Uri.create("https://stackoverflow.com/questions/1057564/pretty-git-branch-graphs");
         String hostHeader = HttpUtils.hostHeader(uri);
         assertEquals("stackoverflow.com", hostHeader, "Incorrect hostHeader returned");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testDefaultFollowRedirect() {
         Request request = Dsl.get("https://shieldblaze.com").setVirtualHost("shieldblaze.com").setFollowRedirect(false).build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
@@ -97,7 +97,7 @@ public class HttpUtilsTest {
         assertFalse(followRedirect, "Default value of redirect should be false");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetFollowRedirectInRequest() {
         Request request = Dsl.get("https://stackoverflow.com/questions/1057564").setFollowRedirect(true).build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
@@ -105,7 +105,7 @@ public class HttpUtilsTest {
         assertTrue(followRedirect, "Follow redirect must be true as set in the request");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetFollowRedirectInConfig() {
         Request request = Dsl.get("https://stackoverflow.com/questions/1057564").build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
@@ -113,7 +113,7 @@ public class HttpUtilsTest {
         assertTrue(followRedirect, "Follow redirect should be equal to value specified in config when not specified in request");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGetFollowRedirectPriorityGivenToRequest() {
         Request request = Dsl.get("https://stackoverflow.com/questions/1057564").setFollowRedirect(false).build();
         DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setFollowRedirect(true).build();
@@ -121,7 +121,7 @@ public class HttpUtilsTest {
         assertFalse(followRedirect, "Follow redirect value set in request should be given priority");
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testComputeMultipartBoundary() {
         String allowed = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
         Set<String> boundaries = new HashSet<>();
@@ -146,42 +146,42 @@ public class HttpUtilsTest {
         assertEquals(ahcString, jdkString);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void formUrlEncodingShouldSupportUtf8Charset() throws Exception {
         formUrlEncoding(UTF_8);
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void formUrlEncodingShouldSupportNonUtf8Charset() throws Exception {
         formUrlEncoding(Charset.forName("GBK"));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void computeOriginForPlainUriWithImplicitPort() {
         assertEquals("http://foo.com", HttpUtils.originHeader(Uri.create("ws://foo.com/bar")));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void computeOriginForPlainUriWithDefaultPort() {
         assertEquals("http://foo.com", HttpUtils.originHeader(Uri.create("ws://foo.com:80/bar")));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void computeOriginForPlainUriWithNonDefaultPort() {
         assertEquals("http://foo.com:81", HttpUtils.originHeader(Uri.create("ws://foo.com:81/bar")));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void computeOriginForSecuredUriWithImplicitPort() {
         assertEquals("https://foo.com", HttpUtils.originHeader(Uri.create("wss://foo.com/bar")));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void computeOriginForSecuredUriWithDefaultPort() {
         assertEquals("https://foo.com", HttpUtils.originHeader(Uri.create("wss://foo.com:443/bar")));
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void computeOriginForSecuredUriWithNonDefaultPort() {
         assertEquals("https://foo.com:444", HttpUtils.originHeader(Uri.create("wss://foo.com:444/bar")));
     }

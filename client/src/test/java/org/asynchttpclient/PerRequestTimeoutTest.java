@@ -15,13 +15,13 @@
  */
 package org.asynchttpclient;
 
-import io.github.artsok.RepeatedIfExceptionsTest;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -63,7 +63,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         return new SlowHandler();
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient()) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl())
@@ -81,7 +81,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testReadTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setReadTimeout(Duration.ofMillis(100)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -97,7 +97,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGlobalDefaultPerRequestInfiniteTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMillis(100)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl())
@@ -113,7 +113,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGlobalRequestTimeout() throws IOException {
         try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofMillis(100)))) {
             Future<Response> responseFuture = client.prepareGet(getTargetUrl()).execute();
@@ -129,7 +129,7 @@ public class PerRequestTimeoutTest extends AbstractBasicTest {
         }
     }
 
-    @RepeatedIfExceptionsTest(repeats = 5)
+    @Test
     public void testGlobalIdleTimeout() throws IOException {
         final long[] times = {-1, -1};
 

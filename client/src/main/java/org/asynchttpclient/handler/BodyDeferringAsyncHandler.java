@@ -216,7 +216,9 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
      *
      * @return a {@link Response}
      * @throws InterruptedException if the latch is interrupted
-     * @throws IOException          if the handler completed with an exception
+     * @throws IOException          if the request failed before any response was received. A later body
+     *                              failure is reported by the request future and by
+     *                              {@link BodyDeferringInputStream#close()}, not here
      */
     public @Nullable Response getResponse() throws InterruptedException, IOException {
         // block here as long as headers arrive
@@ -224,11 +226,15 @@ public class BodyDeferringAsyncHandler implements AsyncHandler<Response> {
 
         try {
             semaphore.acquire();
+            Response headers = response;
+            if (headers != null) {
+                // A failure recorded after the headers belongs to the body and is reported by the future.
+                return headers;
+            }
             if (throwable != null) {
                 throw new IOException(throwable.getMessage(), throwable);
-            } else {
-                return response;
             }
+            return null;
         } finally {
             semaphore.release();
         }
