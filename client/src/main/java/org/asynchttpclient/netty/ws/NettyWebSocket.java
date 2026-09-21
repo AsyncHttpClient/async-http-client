@@ -18,6 +18,8 @@ package org.asynchttpclient.netty.ws;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
@@ -35,11 +37,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.RejectedExecutionException;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 
@@ -53,6 +57,8 @@ public final class NettyWebSocket implements WebSocket {
     private FragmentedFrameType expectedFragmentedFrameType;
     // no need for volatile because only mutated in IO thread
     private boolean ready;
+    // written in the IO thread, but isOpen() reads it from any
+    private volatile boolean closing;
     private List<WebSocketFrame> bufferedFrames;
 
     public NettyWebSocket(Channel channel, HttpHeaders upgradeHeaders) {
@@ -87,12 +93,12 @@ public final class NettyWebSocket implements WebSocket {
 
     @Override
     public Future<Void> sendTextFrame(String payload, boolean finalFragment, int rsv) {
-        return channel.writeAndFlush(new TextWebSocketFrame(finalFragment, rsv, payload));
+        return send(new TextWebSocketFrame(finalFragment, rsv, payload));
     }
 
     @Override
     public Future<Void> sendTextFrame(ByteBuf payload, boolean finalFragment, int rsv) {
-        return channel.writeAndFlush(new TextWebSocketFrame(finalFragment, rsv, payload));
+        return send(new TextWebSocketFrame(finalFragment, rsv, payload));
     }
 
     @Override
@@ -107,12 +113,12 @@ public final class NettyWebSocket implements WebSocket {
 
     @Override
     public Future<Void> sendBinaryFrame(ByteBuf payload, boolean finalFragment, int rsv) {
-        return channel.writeAndFlush(new BinaryWebSocketFrame(finalFragment, rsv, payload));
+        return send(new BinaryWebSocketFrame(finalFragment, rsv, payload));
     }
 
     @Override
     public Future<Void> sendContinuationFrame(String payload, boolean finalFragment, int rsv) {
-        return channel.writeAndFlush(new ContinuationWebSocketFrame(finalFragment, rsv, payload));
+        return send(new ContinuationWebSocketFrame(finalFragment, rsv, payload));
     }
 
     @Override
@@ -122,12 +128,12 @@ public final class NettyWebSocket implements WebSocket {
 
     @Override
     public Future<Void> sendContinuationFrame(ByteBuf payload, boolean finalFragment, int rsv) {
-        return channel.writeAndFlush(new ContinuationWebSocketFrame(finalFragment, rsv, payload));
+        return send(new ContinuationWebSocketFrame(finalFragment, rsv, payload));
     }
 
     @Override
     public Future<Void> sendPingFrame() {
-        return channel.writeAndFlush(new PingWebSocketFrame());
+        return send(new PingWebSocketFrame());
     }
 
     @Override
@@ -137,12 +143,12 @@ public final class NettyWebSocket implements WebSocket {
 
     @Override
     public Future<Void> sendPingFrame(ByteBuf payload) {
-        return channel.writeAndFlush(new PingWebSocketFrame(payload));
+        return send(new PingWebSocketFrame(payload));
     }
 
     @Override
     public Future<Void> sendPongFrame() {
-        return channel.writeAndFlush(new PongWebSocketFrame());
+        return send(new PongWebSocketFrame());
     }
 
     @Override
@@ -152,7 +158,7 @@ public final class NettyWebSocket implements WebSocket {
 
     @Override
     public Future<Void> sendPongFrame(ByteBuf payload) {
-        return channel.writeAndFlush(new PongWebSocketFrame(wrappedBuffer(payload)));
+        return send(new PongWebSocketFrame(wrappedBuffer(payload)));
     }
 
     @Override
@@ -162,15 +168,44 @@ public final class NettyWebSocket implements WebSocket {
 
     @Override
     public Future<Void> sendCloseFrame(int statusCode, String reasonText) {
-        if (channel.isOpen()) {
-            return channel.writeAndFlush(new CloseWebSocketFrame(statusCode, reasonText));
+        if (isOpen()) {
+            return send(new CloseWebSocketFrame(statusCode, reasonText));
         }
         return ImmediateEventExecutor.INSTANCE.newSucceededFuture(null);
     }
 
+    // Writes are decided on the event loop, so one issued once the close has begun always fails the same way.
+    // Left to the pipeline it fails with whatever the SslHandler or the socket happens to report. A listener
+    // may still send from inside onClose, which is how it answers the peer's close frame.
+    private Future<Void> send(WebSocketFrame frame) {
+        EventLoop eventLoop = channel.eventLoop();
+        if (eventLoop.inEventLoop()) {
+            return closing ? refuse(frame) : channel.writeAndFlush(frame);
+        }
+        ChannelPromise promise = channel.newPromise();
+        try {
+            eventLoop.execute(() -> {
+                if (closing) {
+                    frame.release();
+                    promise.setFailure(new ClosedChannelException());
+                } else {
+                    channel.writeAndFlush(frame, promise);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            return refuse(frame);
+        }
+        return promise;
+    }
+
+    private static Future<Void> refuse(WebSocketFrame frame) {
+        frame.release();
+        return ImmediateEventExecutor.INSTANCE.newFailedFuture(new ClosedChannelException());
+    }
+
     @Override
     public boolean isOpen() {
-        return channel.isOpen();
+        return !closing && channel.isOpen();
     }
 
     @Override
@@ -233,6 +268,7 @@ public final class NettyWebSocket implements WebSocket {
             Channels.setDiscard(channel);
             CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
             onClose(closeFrame.statusCode(), closeFrame.reasonText());
+            closing = true;
             Channels.silentlyCloseChannel(channel);
 
         } else if (frame instanceof PingWebSocketFrame) {
