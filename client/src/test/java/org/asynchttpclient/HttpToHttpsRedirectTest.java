@@ -40,9 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
-    // FIXME super NOT threadsafe!!!
-    private static final AtomicBoolean redirectDone = new AtomicBoolean(false);
-
     @Override
     @BeforeEach
     public void setUpGlobal() throws Exception {
@@ -62,19 +59,9 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
         super.tearDownGlobal();
     }
 
-    @Test
-    // FIXME find a way to make this threadsafe
-    public void runAllSequentiallyBecauseNotThreadSafe() throws Exception {
-        httpToHttpsRedirect();
-        httpToHttpsProperConfig();
-        relativeLocationUrl();
-    }
-
     //    @Disabled
     @Test
     public void httpToHttpsRedirect() throws Exception {
-        redirectDone.getAndSet(false);
-
         AsyncHttpClientConfig cg = config()
                 .setMaxRedirects(5)
                 .setFollowRedirect(true)
@@ -90,8 +77,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     @Test
     public void httpToHttpsProperConfig() throws Exception {
-        redirectDone.getAndSet(false);
-
         AsyncHttpClientConfig cg = config()
                 .setMaxRedirects(5)
                 .setFollowRedirect(true)
@@ -113,8 +98,6 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
 
     @Test
     public void relativeLocationUrl() throws Exception {
-        redirectDone.getAndSet(false);
-
         AsyncHttpClientConfig cg = config()
                 .setMaxRedirects(5)
                 .setFollowRedirect(true)
@@ -129,6 +112,9 @@ public class HttpToHttpsRedirectTest extends AbstractBasicTest {
     }
 
     private static class Relative302Handler extends AbstractHandler {
+
+        // One handler per test, so no test sees another's redirect.
+        private final AtomicBoolean redirectDone = new AtomicBoolean(false);
 
         @Override
         public void handle(String s, Request r, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
