@@ -245,7 +245,8 @@ public class BodyDeferringAsyncHandlerTest extends AbstractBasicTest {
     public void testPipedStreams() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(getAsyncHttpClientConfig())) {
             PipedOutputStream pout = new PipedOutputStream();
-            try (PipedInputStream pin = new PipedInputStream(pout)) {
+            // Room for the whole body: a full pipe blocks the event loop until this thread reads.
+            try (PipedInputStream pin = new PipedInputStream(pout, CONTENT_LENGTH_VALUE)) {
                 BodyDeferringAsyncHandler handler = new BodyDeferringAsyncHandler(pout);
                 ListenableFuture<Response> respFut = client.prepareGet(getTargetUrl()).execute(handler);
 
