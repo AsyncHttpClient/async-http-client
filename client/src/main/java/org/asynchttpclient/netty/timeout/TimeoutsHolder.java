@@ -22,6 +22,7 @@ import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.DateUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +31,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
+import java.util.function.LongSupplier;
 
 /**
  * The request and read timeouts of one exchange, armed either on the client's {@link Timer} or on the event
@@ -56,6 +56,8 @@ public class TimeoutsHolder {
     private volatile @Nullable ReadTimeoutTimerTask readTimeoutTask;
     private final NettyResponseFuture<?> nettyResponseFuture;
     private volatile InetSocketAddress remoteAddress;
+    private final LongSupplier millisClock;
+    private final LongSupplier nanoClock;
 
     public TimeoutsHolder(Timer nettyTimer, NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender,
                           AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
@@ -71,6 +73,17 @@ public class TimeoutsHolder {
      */
     public TimeoutsHolder(Timer nettyTimer, @Nullable EventExecutor eventExecutor, NettyResponseFuture<?> nettyResponseFuture,
                           NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress) {
+        this(nettyTimer, eventExecutor, nettyResponseFuture, requestSender, config, originalRemoteAddress,
+                DateUtils::unpreciseMillisTime, System::nanoTime);
+    }
+
+    // For tests: a deadline can be checked without letting time pass. nanoClock must read the clock the
+    // future took its start from.
+    TimeoutsHolder(Timer nettyTimer, @Nullable EventExecutor eventExecutor, NettyResponseFuture<?> nettyResponseFuture,
+                   NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress,
+                   LongSupplier millisClock, LongSupplier nanoClock) {
+        this.millisClock = millisClock;
+        this.nanoClock = nanoClock;
         this.nettyTimer = nettyTimer;
         this.eventExecutor = eventExecutor;
         this.nettyResponseFuture = nettyResponseFuture;
@@ -93,8 +106,8 @@ public class TimeoutsHolder {
             // exchange has already spent bounds it as a whole instead. Which one applies is the caller's
             // choice, per request or per client. Left negative when the deadline is already behind us, which is
             // what stops startReadTimeout arming a sibling for an exchange that is over.
-            requestTimeoutMillisTime = unpreciseMillisTime()
-                    + (absoluteDeadline ? remainingBudget(requestTimeoutInMs, nettyResponseFuture) : requestTimeoutInMs);
+            requestTimeoutMillisTime = millisClock.getAsLong()
+                    + (absoluteDeadline ? remainingBudget(requestTimeoutInMs, nettyResponseFuture, nanoClock) : requestTimeoutInMs);
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
         } else {
             requestTimeoutMillisTime = -1L;
@@ -125,7 +138,7 @@ public class TimeoutsHolder {
             // absolute deadline was anchored before this holder existed, so there the remainder is the budget,
             // floored at zero: a task armed at zero still runs, and running is how the exchange gets failed.
             arm(requestTimeoutTask, absoluteDeadline
-                    ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture), 0L) : requestTimeoutValue);
+                    ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue);
         }
     }
 
@@ -142,17 +155,21 @@ public class TimeoutsHolder {
      * @see org.asynchttpclient.AsyncHttpClientConfig#isUseAbsoluteRequestDeadline()
      */
     public static long remainingBudget(AsyncHttpClientConfig config, NettyResponseFuture<?> nettyResponseFuture) {
+        return remainingBudget(config, nettyResponseFuture, System::nanoTime);
+    }
+
+    static long remainingBudget(AsyncHttpClientConfig config, NettyResponseFuture<?> nettyResponseFuture, LongSupplier nanoClock) {
         if (!nettyResponseFuture.isUseAbsoluteRequestDeadline()) {
             return Long.MAX_VALUE;
         }
-        return remainingBudget(requestTimeout(config, nettyResponseFuture.getTargetRequest()), nettyResponseFuture);
+        return remainingBudget(requestTimeout(config, nettyResponseFuture.getTargetRequest()), nettyResponseFuture, nanoClock);
     }
 
-    private static long remainingBudget(long requestTimeoutInMs, NettyResponseFuture<?> nettyResponseFuture) {
+    private static long remainingBudget(long requestTimeoutInMs, NettyResponseFuture<?> nettyResponseFuture, LongSupplier nanoClock) {
         if (requestTimeoutInMs <= -1) {
             return Long.MAX_VALUE;
         }
-        long spent = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nettyResponseFuture.getStartNanos());
+        long spent = TimeUnit.NANOSECONDS.toMillis(nanoClock.getAsLong() - nettyResponseFuture.getStartNanos());
         return requestTimeoutInMs - spent;
     }
 
@@ -207,7 +224,7 @@ public class TimeoutsHolder {
 
     void startReadTimeout(@Nullable ReadTimeoutTimerTask task) {
         if (requestTimeoutTask == null
-                || !requestTimeoutTask.isClaimed() && readTimeoutValue < requestTimeoutMillisTime - unpreciseMillisTime()) {
+                || !requestTimeoutTask.isClaimed() && readTimeoutValue < requestTimeoutMillisTime - millisClock.getAsLong()) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)
@@ -239,7 +256,7 @@ public class TimeoutsHolder {
     private long remainingRequestTimeout() {
         // Floored at zero rather than passed on negative: a scheduler has no use for a negative delay, and the
         // task has to run either way, since running is what fails the exchange.
-        return Math.max(requestTimeoutMillisTime - unpreciseMillisTime(), 0L);
+        return Math.max(requestTimeoutMillisTime - millisClock.getAsLong(), 0L);
     }
 
     /**

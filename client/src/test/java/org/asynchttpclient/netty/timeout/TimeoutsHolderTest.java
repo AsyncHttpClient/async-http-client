@@ -26,7 +26,10 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -42,72 +45,72 @@ public class TimeoutsHolderTest {
 
     private static final Duration BUDGET = Duration.ofMillis(600);
     private static final long ELAPSED_MS = 100;
-    // The deadline is a wall-clock reading and the budget is netted off in whole milliseconds, so an anchored
-    // deadline lands within a few milliseconds of itself rather than exactly on it.
-    private static final long TOLERANCE_MS = 30;
+
+    // Both fake clocks move only when a test moves them. The nano one runs from the exchange's own start,
+    // which the future reads off System.nanoTime().
+    private long nanoOrigin;
+    private final AtomicLong elapsedMillis = new AtomicLong();
 
     @Test
-    public void anAbsoluteDeadlineStaysWhereTheExchangeStarted() throws Exception {
+    public void anAbsoluteDeadlineStaysWhereTheExchangeStarted() {
         NettyResponseFuture<?> future = exchange(true);
 
         long firstHop = deadlineOf(future, BUDGET);
-        Thread.sleep(ELAPSED_MS);
+        elapsedMillis.addAndGet(ELAPSED_MS);
         long secondHop = deadlineOf(future, BUDGET);
 
-        assertTrue(Math.abs(secondHop - firstHop) <= TOLERANCE_MS,
-                "the second hop moved the deadline by " + (secondHop - firstHop) + " ms");
+        assertEquals(firstHop, secondHop, "the second hop moved the deadline");
     }
 
     @Test
-    public void aPerAttemptTimeoutGivesTheSecondHopItsOwnBudget() throws Exception {
+    public void aPerAttemptTimeoutGivesTheSecondHopItsOwnBudget() {
         NettyResponseFuture<?> future = exchange(false);
 
         long firstHop = deadlineOf(future, BUDGET);
-        Thread.sleep(ELAPSED_MS);
+        elapsedMillis.addAndGet(ELAPSED_MS);
         long secondHop = deadlineOf(future, BUDGET);
 
-        assertTrue(secondHop - firstHop >= ELAPSED_MS / 2,
-                "the second hop should have started a budget of its own, moved by only "
-                        + (secondHop - firstHop) + " ms");
+        assertEquals(firstHop + ELAPSED_MS, secondHop, "the second hop should have started a budget of its own");
     }
 
     @Test
-    public void anExchangeThatOutranItsDeadlineHasNothingLeft() throws Exception {
-        // A budget this small is spent by the time the sleep is over, so the next hop has nothing to run in.
+    public void anExchangeThatOutranItsDeadlineHasNothingLeft() {
         NettyResponseFuture<?> future = exchange(true);
-        Thread.sleep(ELAPSED_MS);
+        elapsedMillis.addAndGet(ELAPSED_MS);
 
-        assertTrue(TimeoutsHolder.remainingBudget(config(Duration.ofMillis(1)), future) <= 0,
+        assertTrue(TimeoutsHolder.remainingBudget(config(Duration.ofMillis(1)), future, this::nanos) <= 0,
                 "a spent deadline should leave nothing to send a further hop with");
     }
 
     @Test
-    public void aPerAttemptExchangeIsNotBoundedAsAWhole() throws Exception {
+    public void aPerAttemptExchangeIsNotBoundedAsAWhole() {
         // Asserted on the deadline the holder computes rather than on the budget: per attempt there is no
         // exchange-wide budget to run out of, so the arithmetic is not what the answer rests on.
         NettyResponseFuture<?> future = exchange(false);
-        Thread.sleep(ELAPSED_MS);
+        elapsedMillis.addAndGet(ELAPSED_MS);
 
-        long deadline = deadlineOf(future, BUDGET);
-
-        assertTrue(deadline - System.currentTimeMillis() >= BUDGET.toMillis() - TOLERANCE_MS,
-                "a hop should be given the configured timeout of its own however long the exchange has run, got "
-                        + (deadline - System.currentTimeMillis()) + " ms");
+        assertEquals(millis() + BUDGET.toMillis(), deadlineOf(future, BUDGET),
+                "a hop should be given the configured timeout of its own however long the exchange has run");
     }
 
-    private static long deadlineOf(NettyResponseFuture<?> future, Duration requestTimeout) {
-        return holder(future, requestTimeout).requestTimeoutMillisTime();
+    private long millis() {
+        return elapsedMillis.get();
     }
 
-    private static TimeoutsHolder holder(NettyResponseFuture<?> future, Duration requestTimeout) {
-        return new TimeoutsHolder(null, future, null, config(requestTimeout), null);
+    private long nanos() {
+        return nanoOrigin + TimeUnit.MILLISECONDS.toNanos(elapsedMillis.get());
+    }
+
+    private long deadlineOf(NettyResponseFuture<?> future, Duration requestTimeout) {
+        return new TimeoutsHolder(null, null, future, null, config(requestTimeout), null, this::millis, this::nanos)
+                .requestTimeoutMillisTime();
     }
 
     private static AsyncHttpClientConfig config(Duration requestTimeout) {
         return new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(requestTimeout).build();
     }
 
-    private static NettyResponseFuture<?> exchange(boolean useAbsoluteRequestDeadline) {
+    private NettyResponseFuture<?> exchange(boolean useAbsoluteRequestDeadline) {
         Request request = new RequestBuilder().setUrl("http://example.com:12345").build();
         NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
@@ -116,6 +119,7 @@ public class TimeoutsHolderTest {
             }
         }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
         future.setUseAbsoluteRequestDeadline(useAbsoluteRequestDeadline);
+        nanoOrigin = future.getStartNanos();
         return future;
     }
 }
