@@ -27,6 +27,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -60,6 +61,12 @@ public class RetryNonBlockingIssueTest extends AbstractBasicTest {
 
         server.start();
         port1 = connector.getLocalPort();
+    }
+
+    @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
     }
 
     @Override

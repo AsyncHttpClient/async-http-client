@@ -22,6 +22,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,8 +49,9 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
     private String baseUrl;
     private String servletEndpointRedirectUrl;
 
+    @Override
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
 
@@ -63,6 +65,12 @@ public class RedirectConnectionUsageTest extends AbstractBasicTest {
 
         baseUrl = "http://localhost" + ':' + port1;
         servletEndpointRedirectUrl = baseUrl + "/redirect";
+    }
+
+    @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
     }
 
     /**

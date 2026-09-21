@@ -29,6 +29,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -66,8 +67,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class MultipartUploadTest extends AbstractBasicTest {
 
+    @Override
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUpGlobal() throws Exception {
         server = new Server();
         ServerConnector connector = addHttpConnector(server);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -75,6 +77,12 @@ public class MultipartUploadTest extends AbstractBasicTest {
         server.setHandler(context);
         server.start();
         port1 = connector.getLocalPort();
+    }
+
+    @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
     }
 
     @Test

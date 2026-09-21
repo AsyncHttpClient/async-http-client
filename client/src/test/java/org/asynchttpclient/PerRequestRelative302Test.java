@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -70,6 +71,12 @@ public class PerRequestRelative302Test extends AbstractBasicTest {
         redirectTargetPort = redirectTargetConnector.getLocalPort();
         logger.info("Local HTTP server started successfully");
         port2 = findFreePort();
+    }
+
+    @Override
+    @AfterEach
+    public void tearDownGlobal() throws Exception {
+        super.tearDownGlobal();
     }
 
     @Test
