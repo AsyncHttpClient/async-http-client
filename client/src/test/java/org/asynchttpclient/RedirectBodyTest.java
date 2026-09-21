@@ -46,7 +46,9 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
@@ -63,6 +65,7 @@ import static org.asynchttpclient.util.HttpConstants.Methods.QUERY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -644,11 +647,40 @@ public class RedirectBodyTest extends AbstractBasicTest {
         Path body = Files.createTempFile("ahc-redirect-vanished-", ".bin");
         try {
             Files.write(body, REDIRECT_BODY);
-            fileToDeleteBeforeRedirect = body;
-            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
-                ExecutionException thrown = assertThrows(ExecutionException.class,
-                        () -> execute307(c.preparePost(getTargetUrl()).setBody(body.toFile())));
+            // Deleted here, not in the server handler: Windows cannot delete a file the client still has open.
+            // The 307 only arrives after the whole body was sent, and by then the client has closed the file.
+            // Not true for /deferred-redirect, nor with TLS or disableZeroCopy.
+            AtomicBoolean vanished = new AtomicBoolean();
+            AtomicReference<IOException> vanishFailure = new AtomicReference<>();
+            ResponseFilter vanisher = new ResponseFilter() {
+                @Override
+                public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                    HttpResponseStatus status = ctx.getResponseStatus();
+                    if (status != null && status.getStatusCode() == 307) {
+                        try {
+                            if (Files.deleteIfExists(body)) {
+                                vanished.set(true);
+                            }
+                        } catch (IOException e) {
+                            vanishFailure.set(e);
+                        }
+                    }
+                    return ctx;
+                }
+            };
 
+            try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(vanisher))) {
+                ExecutionException thrown = null;
+                try {
+                    execute307(c.preparePost(getTargetUrl()).setBody(body.toFile()));
+                } catch (ExecutionException e) {
+                    thrown = e;
+                }
+
+                assertNull(vanishFailure.get(), "request body file should be deletable once the region is released");
+                assertTrue(vanished.get(), "the 307 never reached the response filter");
+                assertNotNull(thrown, "the redirect replay should have failed once the body vanished");
+                // NettyFileBody rejects a missing file too, so the type and message must be checked.
                 IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
                 assertEquals("Redirect request body file " + body.toAbsolutePath()
                         + " is not a file or does not exist", cause.getMessage());
