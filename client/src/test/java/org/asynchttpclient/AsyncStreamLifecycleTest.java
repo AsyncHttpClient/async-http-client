@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -33,12 +34,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests default asynchronous life cycle.
@@ -92,10 +93,11 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
     }
 
     @Test
+    @Timeout(unit = TimeUnit.MILLISECONDS, value = 60000)
     public void testStream() throws Exception {
         firstPartReceived = new CountDownLatch(1);
         try (AsyncHttpClient ahc = asyncHttpClient()) {
-            final AtomicBoolean err = new AtomicBoolean(false);
+            final AtomicReference<Throwable> thrown = new AtomicReference<>();
             final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
             final AtomicBoolean status = new AtomicBoolean(false);
             final AtomicInteger headers = new AtomicInteger(0);
@@ -103,8 +105,9 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
             ahc.executeRequest(ahc.prepareGet(getTargetUrl()).build(), new AsyncHandler<Object>() {
                 @Override
                 public void onThrowable(Throwable t) {
-                    fail("Got throwable.", t);
-                    err.set(true);
+                    // Recorded, not asserted: NettyResponseFuture.abort swallows anything thrown here.
+                    thrown.set(t);
+                    latch.countDown();
                 }
 
                 @Override
@@ -139,8 +142,9 @@ public class AsyncStreamLifecycleTest extends AbstractBasicTest {
                 }
             });
 
-            assertTrue(latch.await(1, TimeUnit.SECONDS), "Latch failed.");
-            assertFalse(err.get());
+            // The latch also fires on failure, so check for one before looking at the parts.
+            assertTrue(latch.await(TIMEOUT, TimeUnit.SECONDS), () -> "Latch failed. Received so far: " + queue);
+            assertNull(thrown.get(), () -> "Got throwable: " + thrown.get());
             assertEquals(2, queue.size());
             assertEquals("part1", queue.poll());
             assertEquals("part2", queue.poll());
