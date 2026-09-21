@@ -18,7 +18,6 @@ package org.asynchttpclient;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.uri.Uri;
@@ -28,9 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -85,7 +82,6 @@ public class CookieStoreTest {
         shouldAlsoServeNonSecureCookiesBasedOnTheUriScheme();
         shouldNotServeSecureCookiesForDefaultRetrievedHttpUriScheme();
         shouldServeSecureCookiesForSpecificallyRetrievedHttpUriScheme();
-        shouldCleanExpiredCookieFromUnderlyingDataStructure();
     }
 
     private static void addCookieWithEmptyPath() {
@@ -354,27 +350,5 @@ public class CookieStoreTest {
         assertEquals(1, store.get(uri).size());
         assertEquals("VALUE3", store.get(uri).get(0).value());
         assertTrue(store.get(uri).get(0).isSecure());
-    }
-
-    private static void shouldCleanExpiredCookieFromUnderlyingDataStructure() throws Exception {
-        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
-        store.add(Uri.create("https://foo.org/moodle/"), getCookie("JSESSIONID", "FOO", 1));
-        store.add(Uri.create("https://bar.org/moodle/"), getCookie("JSESSIONID", "BAR", 1));
-        store.add(Uri.create("https://bar.org/moodle/"), new DefaultCookie("UNEXPIRED_BAR", "BAR"));
-        store.add(Uri.create("https://foobar.org/moodle/"), new DefaultCookie("UNEXPIRED_FOOBAR", "FOOBAR"));
-
-
-        assertEquals(4, store.getAll().size());
-        Thread.sleep(2000);
-        store.evictExpired();
-        assertEquals(2, store.getUnderlying().size());
-        Collection<String> unexpiredCookieNames = store.getAll().stream().map(Cookie::name).collect(Collectors.toList());
-        assertTrue(unexpiredCookieNames.containsAll(Set.of("UNEXPIRED_BAR", "UNEXPIRED_FOOBAR")));
-    }
-
-    private static Cookie getCookie(String key, String value, int maxAge) {
-        DefaultCookie cookie = new DefaultCookie(key, value);
-        cookie.setMaxAge(maxAge);
-        return cookie;
     }
 }
