@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,16 @@ public final class ThreadSafeCookieStore implements CookieStore {
     // order for eviction (see evictExcessCookies). Preferred over creation time, which is millisecond-
     // granular (so it ties under a flood) and wall-clock based (an NTP step backward would reorder it).
     private final AtomicLong cookieSequence = new AtomicLong();
+    private final LongSupplier clock;
+
+    public ThreadSafeCookieStore() {
+        this(System::currentTimeMillis);
+    }
+
+    // For tests: expiry can be checked without waiting for it.
+    ThreadSafeCookieStore(LongSupplier clock) {
+        this.clock = clock;
+    }
 
     @Override
     public void add(Uri uri, Cookie cookie) {
@@ -160,7 +171,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
         }
     }
 
-    private static boolean hasCookieExpired(Cookie cookie, long whenCreated) {
+    private boolean hasCookieExpired(Cookie cookie, long whenCreated) {
         // if not specify max-age, this cookie should be discarded when user agent is to be closed, but it is not expired.
         if (cookie.maxAge() == Cookie.UNDEFINED_MAX_AGE) {
             return false;
@@ -171,7 +182,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
         }
 
         if (whenCreated > 0) {
-            long deltaSecond = (System.currentTimeMillis() - whenCreated) / 1000;
+            long deltaSecond = (clock.getAsLong() - whenCreated) / 1000;
             return deltaSecond > cookie.maxAge();
         } else {
             return false;
@@ -221,7 +232,8 @@ public final class ThreadSafeCookieStore implements CookieStore {
             cookieJar.getOrDefault(keyDomain, Collections.emptyMap()).remove(key);
         } else {
             final Map<CookieKey, StoredCookie> innerMap = cookieJar.computeIfAbsent(keyDomain, domain -> new ConcurrentHashMap<>());
-            innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE, cookieSequence.getAndIncrement()));
+            innerMap.put(key, new StoredCookie(cookie, hostOnly, cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE, clock.getAsLong(),
+                    cookieSequence.getAndIncrement()));
             if (innerMap.size() > MAX_COOKIES_PER_DOMAIN) {
                 evictExcessCookies(innerMap);
             }
@@ -244,7 +256,7 @@ public final class ThreadSafeCookieStore implements CookieStore {
      * no-op — the bucket may still briefly sit a little below the cap until the next add, but never grows
      * unbounded.
      */
-    private static void evictExcessCookies(Map<CookieKey, StoredCookie> innerMap) {
+    private void evictExcessCookies(Map<CookieKey, StoredCookie> innerMap) {
         List<Map.Entry<CookieKey, StoredCookie>> live = new ArrayList<>(innerMap.size());
         for (Map.Entry<CookieKey, StoredCookie> entry : innerMap.entrySet()) {
             if (hasCookieExpired(entry.getValue().cookie, entry.getValue().createdAt)) {
@@ -356,14 +368,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
         final Cookie cookie;
         final boolean hostOnly;
         final boolean persistent;
-        final long createdAt = System.currentTimeMillis();
+        final long createdAt;
         // Strict, tie-free insertion order for eviction; see ThreadSafeCookieStore.cookieSequence.
         final long seq;
 
-        StoredCookie(Cookie cookie, boolean hostOnly, boolean persistent, long seq) {
+        StoredCookie(Cookie cookie, boolean hostOnly, boolean persistent, long createdAt, long seq) {
             this.cookie = cookie;
             this.hostOnly = hostOnly;
             this.persistent = persistent;
+            this.createdAt = createdAt;
             this.seq = seq;
         }
 
