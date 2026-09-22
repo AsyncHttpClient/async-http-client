@@ -261,7 +261,7 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             Object[] expectedEvents = {CONNECTION_POOL_EVENT, CONNECTION_POOLED_EVENT, REQUEST_SEND_EVENT, HEADERS_WRITTEN_EVENT, STATUS_RECEIVED_EVENT,
                     HEADERS_RECEIVED_EVENT, CONNECTION_OFFER_EVENT, COMPLETED_EVENT};
 
-            assertArrayEquals(secondHandler.firedEvents.toArray(), expectedEvents, "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
+            assertArrayEquals(expectedEvents, secondHandler.firedEvents.toArray(), "Got " + Arrays.toString(secondHandler.firedEvents.toArray()));
         }
     }
 }

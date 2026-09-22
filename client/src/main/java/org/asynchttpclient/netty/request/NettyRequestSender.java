@@ -743,10 +743,11 @@ public final class NettyRequestSender {
                     ChannelFuture f = channel.write(httpRequest, promise);
                     f.addListener(new WriteProgressListener(future, true, 0L));
                 } else {
-                    // we can just track write completion
+                    // we can just track write completion. Listen before writing: off the event loop the flush can
+                    // finish first, and a listener added to a completed promise is then notified after the response.
                     ChannelPromise promise = channel.newPromise();
-                    ChannelFuture f = channel.writeAndFlush(httpRequest, promise);
-                    f.addListener(new WriteCompleteListener(future));
+                    promise.addListener(new WriteCompleteListener(future));
+                    channel.writeAndFlush(httpRequest, promise);
                 }
             }
 
