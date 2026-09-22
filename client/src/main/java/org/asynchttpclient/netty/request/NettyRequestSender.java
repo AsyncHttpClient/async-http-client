@@ -451,12 +451,6 @@ public final class NettyRequestSender {
         // some headers are only set when performing the first request
         HttpRequest nettyRequest = future.getNettyRequest().getHttpRequest();
         HttpHeaders headers = nettyRequest.headers();
-        if (proxy != null && proxy.getCustomHeaders() != null) {
-            HttpHeaders customHeaders = proxy.getCustomHeaders().apply(request);
-            if (customHeaders != null) {
-                headers.add(customHeaders);
-            }
-        }
         Realm realm = future.getRealm();
         Realm proxyRealm = future.getProxyRealm();
         // On the tunnel path this is the CONNECT request, sent to the proxy in the clear before the TLS

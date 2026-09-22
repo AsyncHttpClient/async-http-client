@@ -51,6 +51,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_ENCODING;
@@ -79,6 +80,7 @@ import static org.asynchttpclient.util.HttpUtils.filterOutZstdFromAcceptEncoding
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.HttpUtils.originHeader;
 import static org.asynchttpclient.util.HttpUtils.urlEncodeFormParams;
+import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 
@@ -213,6 +215,32 @@ public final class NettyRequestFactory {
         }
     }
 
+    private static void addProxyCustomHeaders(HttpHeaders headers, Request request, ProxyServer proxyServer) {
+        Function<Request, HttpHeaders> customHeaders = proxyServer.getCustomHeaders();
+        if (customHeaders == null) {
+            return;
+        }
+        HttpHeaders proxyHeaders = customHeaders.apply(request);
+        if (proxyHeaders == null) {
+            return;
+        }
+        for (String name : proxyHeaders.names()) {
+            // Framing is the message's, not the caller's: on a CONNECT, which has no body, Netty would
+            // write a chunk terminator into the tunnel. Upgrade goes with them.
+            if (CONTENT_LENGTH.contentEqualsIgnoreCase(name) || TRANSFER_ENCODING.contentEqualsIgnoreCase(name)
+                    || UPGRADE.contentEqualsIgnoreCase(name)) {
+                continue;
+            }
+            if (CONNECTION.contentEqualsIgnoreCase(name)) {
+                // List-valued, and replacing it would drop the close token keepAlive=false put there.
+                headers.add(name, proxyHeaders.getAll(name));
+            } else {
+                // Replace: a second Host line is a 400 from a conforming recipient (RFC 9112 section 3.2).
+                headers.set(name, proxyHeaders.getAll(name));
+            }
+        }
+    }
+
     public NettyRequest newNettyRequest(Request request, boolean performConnectRequest, ProxyServer proxyServer, Realm realm, Realm proxyRealm) {
         Uri uri = request.getUri();
         HttpMethod method = performConnectRequest ? HttpMethod.CONNECT : HttpMethod.valueOf(request.getMethod());
@@ -331,7 +359,20 @@ public final class NettyRequestFactory {
         // A ws:// request is tunnelled through CONNECT the same way wss:// is (see
         // NettyRequestSender.needConnect), so the upgrade request that follows also reaches the origin, not
         // the proxy; exclude it from the plain-HTTP branch the same way wss:// already is.
+        // Custom headers are proxy-scoped too, so they travel under the same gate, and before the generated
+        // header so a realm still decides Proxy-Authorization.
         if ((connect || (!uri.isSecured() && !uri.isWebSocket())) && proxyServer != null && proxyServer.getProxyType().isHttp()) {
+            try {
+                addProxyCustomHeaders(headers, request, proxyServer);
+            } catch (RuntimeException | Error e) {
+                // Caller code, and a CR or LF in what it returns throws here too. Nothing owns nettyRequest
+                // until this method returns, so a throw would strand the body it already holds.
+                nettyRequest.release();
+                if (body instanceof NettyBodyBody) {
+                    closeSilently(((NettyBodyBody) body).getBody());
+                }
+                throw e;
+            }
             setProxyAuthorizationHeader(headers, perRequestProxyAuthorizationHeader(request, proxyRealm));
         }
 

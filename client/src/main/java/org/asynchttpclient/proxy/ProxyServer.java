@@ -175,6 +175,15 @@ public class ProxyServer {
             return this;
         }
 
+        /**
+         * Headers for the proxy itself, sent only on a request the proxy reads: an absolute-form request or a
+         * CONNECT. A SOCKS proxy never parses the HTTP it carries, so it gets none.
+         *
+         * <p>An HTTP proxy forwards what it does not recognise, so to keep one of these off the origin, name
+         * it in a {@code Connection} header of the same set.
+         *
+         * <p>Called once per request built for the proxy, on an I/O thread.
+         */
         public Builder setCustomHeaders(Function<Request, HttpHeaders> customHeaders) {
             this.customHeaders = customHeaders;
             return this;
