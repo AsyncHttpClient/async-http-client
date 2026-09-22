@@ -186,6 +186,9 @@ public class Redirect30xInterceptor {
                 if (keepBody) {
                     ensureBodyReplayable(request, bodyRepresentation, future.isStreamConsumed());
                     requestBuilder = request.toBuilder();
+                    // These include what the store held before this response, which would outrank what the
+                    // redirect just set; the store adds back below whatever matches the new URI.
+                    requestBuilder.resetCookies();
                     if (!sameBase) {
                         // An explicitly resolved address and virtual host belong to the previous target.
                         requestBuilder.setAddress(null);
@@ -235,8 +238,6 @@ public class Redirect30xInterceptor {
                 if (stripAuth) {
                     future.setRealm(null);
                     future.setProxyRealm(null);
-                    // Request.toBuilder copies Cookie objects separately from the Cookie header.
-                    requestBuilder.resetCookies();
                 }
 
                 // in case of a redirect from HTTP to HTTPS, future
