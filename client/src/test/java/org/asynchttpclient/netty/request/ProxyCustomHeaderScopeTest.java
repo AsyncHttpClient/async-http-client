@@ -234,13 +234,18 @@ public class ProxyCustomHeaderScopeTest extends AbstractBasicTest {
     }
 
     /**
-     * The drop list matches names exactly, so a near-miss is caught by the validating headers it lands in
-     * rather than by the list.
+     * The drop and the replace fold case the way Netty's header store does, or a name in another case would
+     * sit beside the generated one instead of being caught.
      */
     @Test
-    void aFramingNameWithTrailingSpaceCannotSlipPastTheDropList() {
-        assertThrows(IllegalArgumentException.class, () -> headersOf("http://origin.example/", ProxyType.HTTP,
-                false, null, new DefaultHttpHeaders(false).add("Content-Length ", "0")));
+    void aNameInAnotherCaseIsMatchedJustTheSame() {
+        Request request = post("http://origin.example/").setBody("payload").build();
+        HttpHeaders headers = headersOf(request, ProxyType.HTTP, false, null,
+                new DefaultHttpHeaders().add("CONTENT-LENGTH", "0").add("HOST", "proxy-vhost.example"));
+
+        assertEquals(Collections.singletonList("7"), headers.getAll(CONTENT_LENGTH),
+                "the message keeps the length of the body it carries");
+        assertEquals(Collections.singletonList("proxy-vhost.example"), headers.getAll(HOST));
     }
 
     /**
