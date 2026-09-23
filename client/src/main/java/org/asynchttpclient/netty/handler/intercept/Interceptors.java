@@ -76,8 +76,8 @@ public class Interceptors {
         this.config = config;
         this.requestSender = requestSender;
         nonceCounter = new NonceCounter();
-        unauthorized401Interceptor = new Unauthorized401Interceptor(channelManager, requestSender, nonceCounter);
-        proxyUnauthorized407Interceptor = new ProxyUnauthorized407Interceptor(channelManager, requestSender, nonceCounter);
+        unauthorized401Interceptor = new Unauthorized401Interceptor(config, channelManager, requestSender, nonceCounter);
+        proxyUnauthorized407Interceptor = new ProxyUnauthorized407Interceptor(config, channelManager, requestSender, nonceCounter);
         continue100Interceptor = new Continue100Interceptor(requestSender);
         redirect30xInterceptor = new Redirect30xInterceptor(channelManager, config, requestSender);
         connectSuccessInterceptor = new ConnectSuccessInterceptor(channelManager, requestSender);
