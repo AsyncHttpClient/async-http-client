@@ -18,7 +18,6 @@ package org.asynchttpclient.netty.request;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
@@ -736,17 +735,17 @@ public final class NettyRequestSender {
                     return;
                 }
 
-                // if the request has a body, we want to track progress
+                // Listen before writing: off the event loop the write can complete first, and a listener added to
+                // a completed promise is then notified after the response has been read.
                 if (writeBody) {
                     // FIXME does this really work??? the promise is for the request without body!!!
                     ChannelProgressivePromise promise = channel.newProgressivePromise();
-                    ChannelFuture f = channel.write(httpRequest, promise);
-                    f.addListener(new WriteProgressListener(future, true, 0L));
+                    promise.addListener(new WriteProgressListener(future, true, 0L));
+                    channel.write(httpRequest, promise);
                 } else {
-                    // we can just track write completion
                     ChannelPromise promise = channel.newPromise();
-                    ChannelFuture f = channel.writeAndFlush(httpRequest, promise);
-                    f.addListener(new WriteCompleteListener(future));
+                    promise.addListener(new WriteCompleteListener(future));
+                    channel.writeAndFlush(httpRequest, promise);
                 }
             }
 
