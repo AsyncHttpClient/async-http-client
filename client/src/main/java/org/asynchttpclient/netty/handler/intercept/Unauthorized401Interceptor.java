@@ -46,6 +46,10 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import org.asynchttpclient.cookie.CookieStore;
+import org.asynchttpclient.RequestBuilder;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.WWW_AUTHENTICATE;
@@ -59,11 +63,16 @@ public class Unauthorized401Interceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Unauthorized401Interceptor.class);
 
+    private final AsyncHttpClientConfig config;
+    private final ClientCookieDecoder cookieDecoder;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
     private final NonceCounter nonceCounter;
 
-    Unauthorized401Interceptor(ChannelManager channelManager, NettyRequestSender requestSender, NonceCounter nonceCounter) {
+    Unauthorized401Interceptor(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender,
+                               NonceCounter nonceCounter) {
+        this.config = config;
+        cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
         this.channelManager = channelManager;
         this.requestSender = requestSender;
         this.nonceCounter = nonceCounter;
@@ -134,7 +143,9 @@ public class Unauthorized401Interceptor {
             future.setChannelState(ChannelState.NEW);
             HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
-            final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
+            RequestBuilder retry = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+            refreshCookies(retry, request, response);
+            final Request nextRequest = retry.build();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Sending authentication to {}", request.getUri().toUrlWithoutUserInfo());
             }
@@ -280,7 +291,9 @@ public class Unauthorized401Interceptor {
                 throw new IllegalStateException("Invalid Authentication scheme " + realm.getScheme());
         }
 
-        final Request nextRequest = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders).build();
+        RequestBuilder retry = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+        refreshCookies(retry, request, response);
+        final Request nextRequest = retry.build();
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Sending authentication to {}", request.getUri().toUrlWithoutUserInfo());
@@ -334,5 +347,12 @@ public class Unauthorized401Interceptor {
                 realm.getCustomLoginConfig(),
                 realm.getLoginContextName()).generateToken(host);
         headers.set(AUTHORIZATION, NEGOTIATE + ' ' + challengeHeader);
+    }
+    // The challenge may have set cookies, and the retry has to carry those, not the values it went out with.
+    private void refreshCookies(RequestBuilder retry, Request request, HttpResponse response) {
+        CookieStore cookieStore = config.getCookieStore();
+        if (cookieStore != null) {
+            CallerCookies.refresh(retry, request, response, cookieStore, cookieDecoder);
+        }
     }
 }

@@ -48,9 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
@@ -60,7 +58,6 @@ import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
-import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.asynchttpclient.uri.Uri.HTTP;
 import static org.asynchttpclient.uri.Uri.HTTPS;
 import static org.asynchttpclient.uri.Uri.WS;
@@ -212,7 +209,7 @@ public class Redirect30xInterceptor {
                     requestBuilder.resetCookies();
                 } else {
                     requestBuilder.setCookies(cookieStore == null
-                            ? request.getCookies() : callersOwnCookies(request, response, cookieStore));
+                            ? request.getCookies() : CallerCookies.of(request, response, cookieStore, newUri, cookieDecoder));
                 }
 
                 requestBuilder.setMethod(switchToGet ? GET : originalMethod)
@@ -458,42 +455,6 @@ public class Redirect30xInterceptor {
         INPUT_STREAM_BODY_GENERATOR,
         BODY_GENERATOR,
         NONE
-    }
-
-    /**
-     * The request's cookies minus the ones the store put there: those this response set, rotated or deleted,
-     * and those the store still holds with the same value. A caller's cookie sharing only a name with a stored
-     * one stays the caller's.
-     */
-    private List<Cookie> callersOwnCookies(Request request, HttpResponse response, CookieStore cookieStore) {
-        List<Cookie> cookies = request.getCookies();
-        if (cookies.isEmpty()) {
-            return cookies;
-        }
-        Set<String> setByResponse = new HashSet<>();
-        for (String header : response.headers().getAll(SET_COOKIE)) {
-            Cookie cookie = cookieDecoder.decode(header);
-            if (cookie != null) {
-                setByResponse.add(cookie.name());
-            }
-        }
-        List<Cookie> stored = cookieStore.get(request.getUri());
-        List<Cookie> callers = new ArrayList<>(cookies.size());
-        for (Cookie cookie : cookies) {
-            if (!setByResponse.contains(cookie.name()) && !holdsSameValue(stored, cookie)) {
-                callers.add(cookie);
-            }
-        }
-        return callers;
-    }
-
-    private static boolean holdsSameValue(List<Cookie> stored, Cookie cookie) {
-        for (Cookie candidate : stored) {
-            if (candidate.name().equals(cookie.name()) && candidate.value().equals(cookie.value())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {

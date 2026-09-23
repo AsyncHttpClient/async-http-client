@@ -83,6 +83,12 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
                     case "/bounce-307":
                         redirect(response, 307, null, "/home");
                         break;
+                    case "/reject-domain":
+                        redirect(response, HttpServletResponse.SC_FOUND, "SID=evil; Domain=example.org; Path=/", "/home");
+                        break;
+                    case "/other-path":
+                        redirect(response, HttpServletResponse.SC_FOUND, "SID=other; Path=/elsewhere", "/home");
+                        break;
                     case "/see-other":
                         redirect(response, HttpServletResponse.SC_SEE_OTHER, null, "/home");
                         break;
@@ -157,6 +163,15 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
     @Test
     void theCallersCookieStillBeatsAStoredOneOfTheSameName() throws Exception {
         assertEquals("SID=mine", withCallerCookie("SID", "mine", client -> client.prepareGet(url("/bounce"))));
+    }
+
+    /** A Set-Cookie the store refused, or filed for another path, does not replace the caller's cookie. */
+    @Test
+    void aSetCookieThatDoesNotReachTheNextHopLeavesTheCallersCookie() throws Exception {
+        assertEquals("SID=mine", withCallerCookie("SID", "mine", client -> client.prepareGet(url("/reject-domain"))),
+                "refused: Domain does not match");
+        assertEquals("SID=mine", withCallerCookie("SID", "mine", client -> client.prepareGet(url("/other-path"))),
+                "stored for /elsewhere, not sent to /home");
     }
 
     // Without a cookie store every cookie on the request is the caller's own.
