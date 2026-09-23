@@ -246,6 +246,27 @@ public class ConnectionPoolTest extends AbstractBasicTest {
     }
 
     @Test
+    public void headersWrittenIsReportedBeforeCompletionOnAPooledConnection() throws Exception {
+        RequestBuilder request = get("http://localhost:" + port1 + "/Test");
+
+        // The race hits roughly one request in ten, so a few hundred make a miss vanishingly unlikely.
+        int outOfOrder = 0;
+        try (AsyncHttpClient client = asyncHttpClient()) {
+            for (int i = 0; i < 500; i++) {
+                EventCollectingHandler handler = new EventCollectingHandler();
+                client.executeRequest(request, handler).get(3, TimeUnit.SECONDS);
+                handler.waitForCompletion(3, TimeUnit.SECONDS);
+                List<String> events = new ArrayList<>(handler.firedEvents);
+                int written = events.indexOf(HEADERS_WRITTEN_EVENT);
+                if (written < 0 || written > events.indexOf(COMPLETED_EVENT)) {
+                    outOfOrder++;
+                }
+            }
+        }
+        assertEquals(0, outOfOrder, "requests whose headers-written event came after completion");
+    }
+
+    @Test
     public void testPooledEventsFired() throws Exception {
         RequestBuilder request = get("http://localhost:" + port1 + "/Test");
 
