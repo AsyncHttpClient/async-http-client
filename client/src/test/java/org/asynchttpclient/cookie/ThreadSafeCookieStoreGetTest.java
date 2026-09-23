@@ -52,6 +52,15 @@ public class ThreadSafeCookieStoreGetTest {
     }
 
     @Test
+    public void aDomainOfJustADotMakesTheCookieHostOnly() {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        store.add(Uri.create("http://www.foo.com/"), ClientCookieDecoder.LAX.decode("ALPHA=VALUE1; Domain=.; Path=/"));
+
+        assertEquals(setOf("ALPHA=VALUE1"), namesValues(store.get(Uri.create("http://www.foo.com/"))));
+        assertTrue(store.get(Uri.create("http://sub.www.foo.com/")).isEmpty(), "host-only, so not for subdomains");
+    }
+
+    @Test
     public void returnsCookieOnExactDomainAndPath() {
         ThreadSafeCookieStore store = new ThreadSafeCookieStore();
         store.add(Uri.create("http://www.foo.com/bar"),
