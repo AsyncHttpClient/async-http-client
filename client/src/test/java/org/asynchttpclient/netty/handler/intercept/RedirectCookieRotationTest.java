@@ -15,16 +15,21 @@
  */
 package org.asynchttpclient.netty.handler.intercept;
 
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.BoundRequestBuilder;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -33,6 +38,7 @@ import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The request a redirect leads to must carry what the redirect response just stored, not the cookies the
@@ -65,8 +71,23 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
                     case "/logout-303":
                         redirect(response, HttpServletResponse.SC_SEE_OTHER, "SID=; Path=/; Max-Age=0", "/home");
                         break;
+                    case "/logout-307":
+                        redirect(response, 307, "SID=; Path=/; Max-Age=0", "/home");
+                        break;
                     case "/p/a":
                         redirect(response, HttpServletResponse.SC_FOUND, null, "/q/b");
+                        break;
+                    case "/bounce":
+                        redirect(response, HttpServletResponse.SC_FOUND, null, "/home");
+                        break;
+                    case "/bounce-307":
+                        redirect(response, 307, null, "/home");
+                        break;
+                    case "/see-other":
+                        redirect(response, HttpServletResponse.SC_SEE_OTHER, null, "/home");
+                        break;
+                    case "/elsewhere":
+                        redirect(response, HttpServletResponse.SC_FOUND, null, "http://127.0.0.1:" + port1 + "/home");
                         break;
                     default:
                         String cookie = request.getHeader("Cookie");
@@ -80,16 +101,23 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
     }
 
     @Test
-    void aSessionRotatedByARedirectIsTheOneSent() throws Exception {
-        assertEquals("SID=new", afterSeeding(client -> client.prepareGet(url("/login"))), "GET, 302");
-        assertEquals("SID=new", afterSeeding(client -> client.preparePost(url("/login"))), "POST, 302 to GET");
-        assertEquals("SID=new", afterSeeding(client -> client.preparePost(url("/login-307"))), "POST, 307");
+    void aGetRedirectSendsTheSessionItRotated() throws Exception {
+        assertEquals("SID=new", afterSeeding(client -> client.prepareGet(url("/login"))));
     }
 
     @Test
-    void aCookieARedirectDeletedStaysDeleted() throws Exception {
-        assertNull(afterSeeding(client -> client.prepareGet(url("/logout"))), "GET, 302");
-        assertNull(afterSeeding(client -> client.preparePost(url("/logout-303"))), "POST, 303");
+    void a307SendsTheSessionItRotated() throws Exception {
+        assertEquals("SID=new", afterSeeding(client -> client.preparePost(url("/login-307"))));
+    }
+
+    @Test
+    void aGetRedirectDoesNotResendACookieItDeleted() throws Exception {
+        assertNull(afterSeeding(client -> client.prepareGet(url("/logout"))));
+    }
+
+    @Test
+    void a307DoesNotResendACookieItDeleted() throws Exception {
+        assertNull(afterSeeding(client -> client.preparePost(url("/logout-307"))));
     }
 
     @Test
@@ -98,10 +126,77 @@ public class RedirectCookieRotationTest extends AbstractBasicTest {
         assertFalse(received != null && received.contains("P="), "sent to /q/b: " + received);
     }
 
+    // The next two already hold on main, where a redirect to GET is built from scratch; they keep it that way.
+
+    @Test
+    void aPostRedirectedToGetSendsTheSessionItRotated() throws Exception {
+        assertEquals("SID=new", afterSeeding(client -> client.preparePost(url("/login"))));
+    }
+
+    @Test
+    void a303DoesNotResendACookieItDeleted() throws Exception {
+        assertNull(afterSeeding(client -> client.preparePost(url("/logout-303"))));
+    }
+
+    // The caller's own cookies follow a same-origin redirect; only the store's are replaced.
+
+    @Test
+    void theCallersCookieFollowsASameOriginRedirect() throws Exception {
+        assertTrue(cookiesSent(withCallerCookie("X", "1", client -> client.prepareGet(url("/bounce")))).contains("X=1"),
+                "GET, 302");
+        assertTrue(cookiesSent(withCallerCookie("X", "1", client -> client.preparePost(url("/bounce-307"))))
+                .contains("X=1"), "POST, 307");
+    }
+
+    @Test
+    void theCallersCookieIsSentBesideTheSessionTheRedirectRotated() throws Exception {
+        Set<String> sent = cookiesSent(withCallerCookie("X", "1", client -> client.prepareGet(url("/login"))));
+        assertEquals(new HashSet<>(Arrays.asList("X=1", "SID=new")), sent);
+    }
+
+    @Test
+    void theCallersCookieStillBeatsAStoredOneOfTheSameName() throws Exception {
+        assertEquals("SID=mine", withCallerCookie("SID", "mine", client -> client.prepareGet(url("/bounce"))));
+    }
+
+    // Without a cookie store every cookie on the request is the caller's own.
+
+    @Test
+    void withoutAStoreTheCallersCookieFollowsASameOriginRedirect() throws Exception {
+        assertEquals("X=1", withoutAStore(client -> client.prepareGet(url("/login"))), "GET, 302");
+        assertEquals("X=1", withoutAStore(client -> client.preparePost(url("/see-other"))), "POST, 303");
+    }
+
+    @Test
+    void withoutAStoreTheCallersCookieStaysBehindOnACrossOriginRedirect() throws Exception {
+        assertNull(withoutAStore(client -> client.prepareGet(url("/elsewhere"))));
+    }
+
     private String afterSeeding(Function<AsyncHttpClient, BoundRequestBuilder> request) throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true))) {
             client.prepareGet(url("/seed")).execute().get(TIMEOUT, TimeUnit.SECONDS);
             return request.apply(client).execute().get(TIMEOUT, TimeUnit.SECONDS).getHeader(RECEIVED_COOKIE);
+        }
+    }
+
+    private String withCallerCookie(String name, String value, Function<AsyncHttpClient, BoundRequestBuilder> request)
+            throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config().setFollowRedirect(true))) {
+            client.prepareGet(url("/seed")).execute().get(TIMEOUT, TimeUnit.SECONDS);
+            return request.apply(client).addCookie(new DefaultCookie(name, value))
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS).getHeader(RECEIVED_COOKIE);
+        }
+    }
+
+    private static Set<String> cookiesSent(String header) {
+        return header == null ? new HashSet<>() : new HashSet<>(Arrays.asList(header.split("; ")));
+    }
+
+    private String withoutAStore(Function<AsyncHttpClient, BoundRequestBuilder> request) throws Exception {
+        AsyncHttpClientConfig noStore = config().setFollowRedirect(true).setCookieStore(null).build();
+        try (AsyncHttpClient client = asyncHttpClient(noStore)) {
+            return request.apply(client).addCookie(new DefaultCookie("X", "1"))
+                    .execute().get(TIMEOUT, TimeUnit.SECONDS).getHeader(RECEIVED_COOKIE);
         }
     }
 
