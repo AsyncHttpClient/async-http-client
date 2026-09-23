@@ -147,13 +147,15 @@ public final class ThreadSafeCookieStore implements CookieStore {
     private static AbstractMap.SimpleEntry<String, Boolean> cookieDomain(@Nullable String cookieDomain, String requestDomain) {
         if (cookieDomain != null) {
             String normalizedCookieDomain = cookieDomain.toLowerCase();
-            return new AbstractMap.SimpleEntry<>(
-                    !cookieDomain.isEmpty() && cookieDomain.charAt(0) == '.' ?
-                            normalizedCookieDomain.substring(1) :
-                            normalizedCookieDomain, false);
-        } else {
-            return new AbstractMap.SimpleEntry<>(requestDomain, true);
+            String domain = !cookieDomain.isEmpty() && cookieDomain.charAt(0) == '.' ?
+                    normalizedCookieDomain.substring(1) :
+                    normalizedCookieDomain;
+            // Domain=. leaves nothing, and an empty domain makes the cookie host-only (RFC 6265 section 5.3 step 6).
+            if (!domain.isEmpty()) {
+                return new AbstractMap.SimpleEntry<>(domain, false);
+            }
         }
+        return new AbstractMap.SimpleEntry<>(requestDomain, true);
     }
 
     // rfc6265#section-5.2.4

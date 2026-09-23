@@ -47,6 +47,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import org.asynchttpclient.cookie.CookieStore;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHENTICATE;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
@@ -60,11 +63,16 @@ public class ProxyUnauthorized407Interceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyUnauthorized407Interceptor.class);
 
+    private final AsyncHttpClientConfig config;
+    private final ClientCookieDecoder cookieDecoder;
     private final ChannelManager channelManager;
     private final NettyRequestSender requestSender;
     private final NonceCounter nonceCounter;
 
-    ProxyUnauthorized407Interceptor(ChannelManager channelManager, NettyRequestSender requestSender, NonceCounter nonceCounter) {
+    ProxyUnauthorized407Interceptor(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender,
+                                    NonceCounter nonceCounter) {
+        this.config = config;
+        cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
         this.channelManager = channelManager;
         this.requestSender = requestSender;
         this.nonceCounter = nonceCounter;
@@ -165,6 +173,7 @@ public class ProxyUnauthorized407Interceptor {
             HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
             RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+            refreshCookies(nextRequestBuilder, request, response);
             if (future.getCurrentRequest().getUri().isSecured()) {
                 nextRequestBuilder.setMethod(CONNECT);
             }
@@ -317,6 +326,7 @@ public class ProxyUnauthorized407Interceptor {
         }
 
         RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+        refreshCookies(nextRequestBuilder, request, response);
         if (future.getCurrentRequest().getUri().isSecured()) {
             nextRequestBuilder.setMethod(CONNECT);
         }
@@ -369,6 +379,13 @@ public class ProxyUnauthorized407Interceptor {
             // FIXME we might want to filter current NTLM and add (leave other
             // Authorization headers untouched)
             requestHeaders.set(PROXY_AUTHORIZATION, "NTLM " + challengeHeader);
+        }
+    }
+    // The challenge may have set cookies, and the retry has to carry those, not the values it went out with.
+    private void refreshCookies(RequestBuilder retry, Request request, HttpResponse response) {
+        CookieStore cookieStore = config.getCookieStore();
+        if (cookieStore != null) {
+            CallerCookies.refresh(retry, request, response, cookieStore, cookieDecoder);
         }
     }
 }
