@@ -212,7 +212,7 @@ public class Redirect30xInterceptor {
                     requestBuilder.resetCookies();
                 } else {
                     requestBuilder.setCookies(cookieStore == null
-                            ? request.getCookies() : callersOwnCookies(request, response, cookieStore));
+                            ? request.getCookies() : callersOwnCookies(request, response, cookieStore, newUri));
                 }
 
                 requestBuilder.setMethod(switchToGet ? GET : originalMethod)
@@ -465,15 +465,28 @@ public class Redirect30xInterceptor {
      * and those the store still holds with the same value. A caller's cookie sharing only a name with a stored
      * one stays the caller's.
      */
-    private List<Cookie> callersOwnCookies(Request request, HttpResponse response, CookieStore cookieStore) {
+    private List<Cookie> callersOwnCookies(Request request, HttpResponse response, CookieStore cookieStore, Uri newUri) {
         List<Cookie> cookies = request.getCookies();
         if (cookies.isEmpty()) {
             return cookies;
         }
+        // Only what the store took counts: a Set-Cookie it refused, or one for another path, leaves the
+        // caller's cookie of that name in place.
         Set<String> setByResponse = new HashSet<>();
+        List<Cookie> next = null;
         for (String header : response.headers().getAll(SET_COOKIE)) {
             Cookie cookie = cookieDecoder.decode(header);
-            if (cookie != null) {
+            if (cookie == null) {
+                continue;
+            }
+            if (cookie.maxAge() != Cookie.UNDEFINED_MAX_AGE && cookie.maxAge() <= 0) {
+                setByResponse.add(cookie.name());
+                continue;
+            }
+            if (next == null) {
+                next = cookieStore.get(newUri);
+            }
+            if (holdsSameValue(next, cookie)) {
                 setByResponse.add(cookie.name());
             }
         }
