@@ -17,11 +17,15 @@ package org.asynchttpclient.netty.handler;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketCloseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -41,6 +45,8 @@ import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_ACCEPT;
 import static io.netty.handler.codec.http.HttpHeaderNames.SEC_WEBSOCKET_KEY;
 import static io.netty.handler.codec.http.HttpHeaderNames.UPGRADE;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
+import static org.asynchttpclient.netty.channel.ChannelManager.WS_FRAME_AGGREGATOR;
+import static org.asynchttpclient.util.MiscUtils.getCause;
 import static org.asynchttpclient.ws.WebSocketUtils.getAcceptKey;
 
 @Sharable
@@ -151,6 +157,15 @@ public final class WebSocketHandler extends AsyncHttpClientHandler {
             // ignore, end of handshake response
             logger.error("Invalid message {}", e);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable e) {
+        // RFC 6455 section 7.4.1: 1009 for a message too big to process. Queued before the close below.
+        if (getCause(e) instanceof TooLongFrameException && ctx.pipeline().get(WS_FRAME_AGGREGATOR) != null) {
+            ctx.writeAndFlush(new CloseWebSocketFrame(WebSocketCloseStatus.MESSAGE_TOO_BIG));
+        }
+        super.exceptionCaught(ctx, e);
     }
 
     @Override
