@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.util.AsciiString;
@@ -47,7 +48,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
@@ -57,6 +60,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 import static org.asynchttpclient.uri.Uri.HTTP;
 import static org.asynchttpclient.uri.Uri.HTTPS;
 import static org.asynchttpclient.uri.Uri.WS;
@@ -104,6 +108,7 @@ public class Redirect30xInterceptor {
     private final boolean stripAuthorizationOnRedirect;
     private final boolean refuseSchemeDowngradeOnRedirect;
     private final boolean refuseCrossOriginBodyOnRedirect;
+    private final ClientCookieDecoder cookieDecoder;
 
     Redirect30xInterceptor(ChannelManager channelManager, AsyncHttpClientConfig config, NettyRequestSender requestSender) {
         this.channelManager = channelManager;
@@ -112,6 +117,7 @@ public class Redirect30xInterceptor {
         stripAuthorizationOnRedirect = config.isStripAuthorizationOnRedirect(); // New flag
         refuseSchemeDowngradeOnRedirect = config.isRefuseSchemeDowngradeOnRedirect();
         refuseCrossOriginBodyOnRedirect = config.isRefuseCrossOriginBodyOnRedirect();
+        cookieDecoder = config.isUseLaxCookieEncoder() ? ClientCookieDecoder.LAX : ClientCookieDecoder.STRICT;
         maxRedirectException = unknownStackTrace(new MaxRedirectException("Maximum redirect reached: " + config.getMaxRedirects()),
                 Redirect30xInterceptor.class, "exitAfterHandlingRedirect");
     }
@@ -199,6 +205,15 @@ public class Redirect30xInterceptor {
                             .setProxyServer(request.getProxyServer())
                             .setRangeOffset(request.getRangeOffset());
                 }
+                // A same-origin hop keeps the caller's cookies but not the store's: those are its values from
+                // before this response and would outrank what it just set. The store adds its current ones below.
+                CookieStore cookieStore = config.getCookieStore();
+                if (stripAuth) {
+                    requestBuilder.resetCookies();
+                } else {
+                    requestBuilder.setCookies(cookieStore == null
+                            ? request.getCookies() : callersOwnCookies(request, response, cookieStore));
+                }
 
                 requestBuilder.setMethod(switchToGet ? GET : originalMethod)
                         .setFollowRedirect(true)
@@ -235,15 +250,12 @@ public class Redirect30xInterceptor {
                 if (stripAuth) {
                     future.setRealm(null);
                     future.setProxyRealm(null);
-                    // Request.toBuilder copies Cookie objects separately from the Cookie header.
-                    requestBuilder.resetCookies();
                 }
 
                 // in case of a redirect from HTTP to HTTPS, future
                 // attributes might change
                 final boolean initialConnectionKeepAlive = future.isKeepAlive();
 
-                CookieStore cookieStore = config.getCookieStore();
                 if (cookieStore != null) {
                     // Update request's cookies assuming that cookie store is already updated by Interceptors
                     for (Cookie cookie : cookieStore.get(newUri)) {
@@ -446,6 +458,42 @@ public class Redirect30xInterceptor {
         INPUT_STREAM_BODY_GENERATOR,
         BODY_GENERATOR,
         NONE
+    }
+
+    /**
+     * The request's cookies minus the ones the store put there: those this response set, rotated or deleted,
+     * and those the store still holds with the same value. A caller's cookie sharing only a name with a stored
+     * one stays the caller's.
+     */
+    private List<Cookie> callersOwnCookies(Request request, HttpResponse response, CookieStore cookieStore) {
+        List<Cookie> cookies = request.getCookies();
+        if (cookies.isEmpty()) {
+            return cookies;
+        }
+        Set<String> setByResponse = new HashSet<>();
+        for (String header : response.headers().getAll(SET_COOKIE)) {
+            Cookie cookie = cookieDecoder.decode(header);
+            if (cookie != null) {
+                setByResponse.add(cookie.name());
+            }
+        }
+        List<Cookie> stored = cookieStore.get(request.getUri());
+        List<Cookie> callers = new ArrayList<>(cookies.size());
+        for (Cookie cookie : cookies) {
+            if (!setByResponse.contains(cookie.name()) && !holdsSameValue(stored, cookie)) {
+                callers.add(cookie);
+            }
+        }
+        return callers;
+    }
+
+    private static boolean holdsSameValue(List<Cookie> stored, Cookie cookie) {
+        for (Cookie candidate : stored) {
+            if (candidate.name().equals(cookie.name()) && candidate.value().equals(cookie.value())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static HttpHeaders propagatedHeaders(Request request, Realm realm, boolean keepBody, boolean stripAuthorization) {
