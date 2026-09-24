@@ -264,7 +264,7 @@ public final class NettyRequestSender {
 
             @Override
             protected void onFailure(Throwable cause) {
-                abort(null, newFuture, getCause(cause));
+                abort(null, newFuture, resolutionFailureCause(cause));
             }
         });
 
@@ -544,11 +544,21 @@ public final class NettyRequestSender {
 
             @Override
             protected void onFailure(Throwable cause) {
-                abort(null, future, getCause(cause));
+                abort(null, future, resolutionFailureCause(cause));
             }
         });
 
         return future;
+    }
+
+    // DnsNameResolver wraps the DNS error in an UnknownHostException; unwrapping would lose the type and host.
+    private static Throwable resolutionFailureCause(Throwable cause) {
+        for (Throwable t = cause; t != null; t = t.getCause()) {
+            if (t instanceof UnknownHostException) {
+                return t;
+            }
+        }
+        return getCause(cause);
     }
 
     private <T> void connectWithAddresses(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler,

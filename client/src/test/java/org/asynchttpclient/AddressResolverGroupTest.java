@@ -15,6 +15,9 @@
  */
 package org.asynchttpclient;
 
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsServerAddressStreamProviders;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
@@ -36,6 +40,8 @@ import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.test.TestUtils.isExternalNetworkAvailable;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,16 +54,31 @@ public class AddressResolverGroupTest extends HttpTest {
     private static final String EXAMPLE_URL = "https://www.example.com/";
 
     private HttpServer server;
+    private EventLoopGroup eventLoopGroup;
 
     @BeforeEach
     public void start() throws Throwable {
+        eventLoopGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         server = new HttpServer();
         server.start();
     }
 
     @AfterEach
     public void stop() throws Throwable {
-        server.close();
+        try {
+            server.close();
+        } finally {
+            eventLoopGroup.shutdownGracefully(0, 0, SECONDS).await();
+        }
+    }
+
+    // NioDatagramChannel can't register on the native event loops the client picks by default
+    private DefaultAsyncHttpClientConfig.Builder dnsResolverConfig() {
+        return config()
+                .setEventLoopGroup(eventLoopGroup)
+                .setAddressResolverGroup(new DnsAddressResolverGroup(
+                        NioDatagramChannel.class,
+                        DnsServerAddressStreamProviders.platformDefault()));
     }
 
     private String getTargetUrl() {
@@ -66,11 +87,7 @@ public class AddressResolverGroupTest extends HttpTest {
 
     @Test
     public void requestWithDnsAddressResolverGroupSucceeds() throws Throwable {
-        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
-                NioDatagramChannel.class,
-                DnsServerAddressStreamProviders.platformDefault());
-
-        withClient(config().setAddressResolverGroup(resolverGroup)).run(client ->
+        withClient(dnsResolverConfig()).run(client ->
                 withServer(server).run(server -> {
                     server.enqueueOk();
                     Response response = client.prepareGet(getTargetUrl()).execute().get(3, SECONDS);
@@ -80,11 +97,7 @@ public class AddressResolverGroupTest extends HttpTest {
 
     @Test
     public void dnsResolverGroupFiresHostnameResolutionEvents() throws Throwable {
-        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
-                NioDatagramChannel.class,
-                DnsServerAddressStreamProviders.platformDefault());
-
-        withClient(config().setAddressResolverGroup(resolverGroup)).run(client ->
+        withClient(dnsResolverConfig()).run(client ->
                 withServer(server).run(server -> {
                     server.enqueueOk();
                     Request request = get(getTargetUrl()).build();
@@ -119,16 +132,13 @@ public class AddressResolverGroupTest extends HttpTest {
 
     @Test
     public void unknownHostWithDnsResolverGroupFails() throws Throwable {
-        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
-                NioDatagramChannel.class,
-                DnsServerAddressStreamProviders.platformDefault());
-
-        withClient(config().setAddressResolverGroup(resolverGroup)).run(client -> {
+        withClient(dnsResolverConfig()).run(client -> {
             try {
                 client.prepareGet("http://nonexistent.invalid/foo").execute().get(10, SECONDS);
                 fail("Request to nonexistent host should have thrown an exception");
             } catch (ExecutionException e) {
-                assertNotNull(e.getCause(), "Should have a cause for the DNS failure");
+                UnknownHostException unknownHost = assertInstanceOf(UnknownHostException.class, e.getCause());
+                assertFalse(unknownHost.getCause() instanceof IllegalStateException, "No query sent: " + unknownHost);
             }
         });
     }
@@ -138,11 +148,7 @@ public class AddressResolverGroupTest extends HttpTest {
     public void resolveRealDomainWithDnsResolverGroup() throws Throwable {
         assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
 
-        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
-                NioDatagramChannel.class,
-                DnsServerAddressStreamProviders.platformDefault());
-
-        try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
+        try (AsyncHttpClient client = asyncHttpClient(dnsResolverConfig())) {
             Response response = client.prepareGet(GOOGLE_URL).execute().get(20, SECONDS);
             assertNotNull(response);
             assertTrue(response.getStatusCode() >= 200 && response.getStatusCode() < 400,
@@ -155,11 +161,7 @@ public class AddressResolverGroupTest extends HttpTest {
     public void resolveMultipleRealDomainsWithDnsResolverGroup() throws Throwable {
         assumeTrue(isExternalNetworkAvailable(), "External network not available - skipping test");
 
-        DnsAddressResolverGroup resolverGroup = new DnsAddressResolverGroup(
-                NioDatagramChannel.class,
-                DnsServerAddressStreamProviders.platformDefault());
-
-        try (AsyncHttpClient client = asyncHttpClient(config().setAddressResolverGroup(resolverGroup))) {
+        try (AsyncHttpClient client = asyncHttpClient(dnsResolverConfig())) {
             Response response1 = client.prepareGet(GOOGLE_URL).execute().get(20, SECONDS);
             assertNotNull(response1);
             assertTrue(response1.getStatusCode() >= 200 && response1.getStatusCode() < 400,

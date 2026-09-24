@@ -1759,6 +1759,11 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          * When set, this resolver group is used instead of the per-request {@link io.netty.resolver.NameResolver}.
          * Pass {@code null} (the default) to use per-request resolvers (legacy behavior).
          * <p>
+         * <b>Transport:</b> Resolvers run on the client's event loops, so a channel-based group such as
+         * {@link io.netty.resolver.dns.DnsAddressResolverGroup} must use the client's transport. Unless an
+         * {@link EventLoopGroup} is set, that is epoll, io_uring or kqueue where available, and a
+         * {@code NioDatagramChannel} resolver fails every lookup.
+         * <p>
          * <b>Lifecycle:</b> The client takes ownership of the provided resolver group and will
          * {@linkplain AddressResolverGroup#close() close} it when the client is shut down.
          * Do not pass a shared resolver group that is used by other clients unless you manage
