@@ -19,7 +19,7 @@
 
     <groupId>org.asynchttpclient</groupId>
     <artifactId>async-http-client-project</artifactId>
-    <version>3.0.14-SNAPSHOT</version>
+    <version>3.0.14</version>
     <packaging>pom</packaging>
 
     <name>AHC/Project</name>
@@ -74,7 +74,7 @@
         <connection>scm:git:https://github.com/AsyncHttpClient/async-http-client.git</connection>
         <developerConnection>scm:git:https://github.com/AsyncHttpClient/async-http-client.git</developerConnection>
         <url>https://github.com/AsyncHttpClient/async-http-client/tree/main</url>
-        <tag>HEAD</tag>
+        <tag>async-http-client-project-3.0.14</tag>
     </scm>
 
     <distributionManagement>
