@@ -97,7 +97,7 @@ Common commands:
 * Do not retry flaky tests. A flaky test is a bug. Find and fix the race.
 * Do not leak Netty `ByteBuf` instances. The leak detector extension will fail the test.
 * Keep the default test suite hermetic.
-* Tests requiring public hosts must be tagged `external`.
+* Tests must not reach public hosts or DNS. Use the in-process servers under `org.asynchttpclient.testserver`; only Docker-gated integration tests may pull images.
 * Docker-based integration tests must follow the existing Testcontainers gating properties.
 
 ## Coding Conventions

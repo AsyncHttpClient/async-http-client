@@ -1763,6 +1763,10 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          * {@linkplain AddressResolverGroup#close() close} it when the client is shut down.
          * Do not pass a shared resolver group that is used by other clients unless you manage
          * its lifecycle independently.
+         * <p>
+         * A {@link io.netty.resolver.dns.DnsAddressResolverGroup} must use the datagram channel of the transport the
+         * client selects (see {@link #setUseNativeTransport(boolean)}): {@code EpollDatagramChannel} on epoll, not
+         * {@code NioDatagramChannel}. Otherwise every DNS query fails with "incompatible event loop type".
          *
          * @param addressResolverGroup the resolver group, or {@code null} to use per-request resolvers
          * @return the same builder instance

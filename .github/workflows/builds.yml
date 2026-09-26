@@ -1,8 +1,11 @@
 name: Build Check
+permissions:
+  contents: read
 
 on:
   schedule:
     - cron: '0 12 * * *'
+  workflow_dispatch:
 
 jobs:
   Verify:
@@ -32,7 +35,7 @@ jobs:
           cache-jdk: true
       - uses: ./.github/actions/setup-maven
       - name: Run Tests
-        run: ./mvnw -B -ntp test -Ddocker.tests=true -Dexternal.tests=true
+        run: ./mvnw -B -ntp test -Ddocker.tests=true
 
   RunOnMacOs:
     runs-on: macos-latest
@@ -47,7 +50,7 @@ jobs:
           cache-jdk: true
       - uses: ./.github/actions/setup-maven
       - name: Run Tests
-        run: ./mvnw -B -ntp test -Dexternal.tests=true
+        run: ./mvnw -B -ntp test -Dno.docker.tests=true
 
   RunOnWindows:
     runs-on: windows-latest
@@ -62,4 +65,4 @@ jobs:
           cache-jdk: true
       - uses: ./.github/actions/setup-maven
       - name: Run Tests
-        run: ./mvnw.cmd -B -ntp test "-Dexternal.tests=true"
+        run: ./mvnw.cmd -B -ntp test "-Dno.docker.tests=true"
