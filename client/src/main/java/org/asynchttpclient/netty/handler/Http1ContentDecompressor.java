@@ -34,6 +34,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
+import io.netty.util.internal.SystemPropertyUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -82,7 +83,14 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
     // Same floor and forwarding threshold as JdkZlibDecoder, so the body is cut into parts the same way.
     private static final int MIN_OUTPUT_BUFFER_SIZE = 512;
-    private static final int MAX_FORWARD_BYTES = 64 * 1024;
+    private static final int MAX_FORWARD_BYTES =
+            SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024);
+
+    // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
+    // native window on every idle pooled connection.
+    private static final int MAX_IDLE_INFLATERS = 16;
+    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_NOWRAP_INFLATERS = idleInflaters();
+    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_ZLIB_INFLATERS = idleInflaters();
 
     private enum GzipState {
         HEADER_START,
@@ -99,14 +107,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     // Maximum cumulative decompressed bytes for one response; 0 disables the limit.
     private final long maxDecompressedBytes;
 
-    // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
-    // native window on every idle pooled connection.
-    private static final int MAX_IDLE_INFLATERS = 16;
-    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_NOWRAP_INFLATERS = idleInflaters();
-    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_ZLIB_INFLATERS = idleInflaters();
-
     private final CRC32 crc = new CRC32();
 
+    // Bumped whenever the state of a response is dropped. A handler further on may end the response from
+    // inside a call that forwards decoded content, by removing this handler or closing the channel; the
+    // decoding that made the call must then stop.
+    private int generation;
     // The response being inflated by this class rather than by HttpContentDecompressor.
     private boolean inflating;
     private boolean gzip;
@@ -147,8 +153,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 if (isGzip(contentEncoding) || isDeflate(contentEncoding)) {
                     lastDecodedBySuper = false;
                     needRead = true;
+                    int generation = this.generation;
                     startResponse(ctx, response, contentEncoding);
-                    if (response instanceof HttpContent && !ctx.isRemoved()) {
+                    if (response instanceof HttpContent && generation == this.generation) {
                         decodeContent(ctx, (HttpContent) response);
                     }
                     return;
@@ -272,15 +279,18 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         }
         ByteBuf in = content.content();
         if (in.isReadable()) {
+            int generation = this.generation;
             try {
-                inflate(ctx, in);
+                inflate(ctx, in, generation);
             } catch (Throwable t) {
-                endResponse();
-                inflating = true;
-                failed = true;
+                if (generation == this.generation) {
+                    endResponse();
+                    inflating = true;
+                    failed = true;
+                }
                 throw t;
             }
-            if (ctx.isRemoved()) {
+            if (generation != this.generation) {
                 return;
             }
         }
@@ -294,7 +304,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         }
     }
 
-    private void inflate(ChannelHandlerContext ctx, ByteBuf content) {
+    private void inflate(ChannelHandlerContext ctx, ByteBuf content, int generation) {
         ByteBuf in = content;
         ByteBuf pending = this.pending;
         if (pending != null) {
@@ -304,8 +314,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
         for (;;) {
             int readable = in.readableBytes();
-            inflateOnce(ctx, in);
-            if (ctx.isRemoved()) {
+            inflateOnce(ctx, in, generation);
+            if (generation != this.generation) {
                 return;
             }
             if (!in.isReadable() || in.readableBytes() == readable) {
@@ -321,8 +331,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 this.pending = null;
             }
         } else if (in.isReadable()) {
-            // Only a gzip header or trailer that has not fully arrived is left over; the inflater consumes
-            // all the deflate data it is given.
+            // Only a gzip header or trailer that has not fully arrived, or the first byte of a deflate body, is
+            // left over; the inflater consumes all the deflate data it is given.
             this.pending = ctx.alloc().heapBuffer(in.readableBytes()).writeBytes(in);
         }
     }
@@ -331,7 +341,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
      * One step of {@code JdkZlibDecoder#decode}, which {@code ByteToMessageDecoder} would call again for as
      * long as it consumes input.
      */
-    private void inflateOnce(ChannelHandlerContext ctx, ByteBuf in) {
+    private void inflateOnce(ChannelHandlerContext ctx, ByteBuf in, int generation) {
         if (finished) {
             in.skipBytes(in.readableBytes());
             return;
@@ -401,9 +411,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                         ByteBuf buffer = decompressed;
                         decompressed = null;
                         fireContent(ctx, buffer);
-                        if (ctx.isRemoved()) {
-                            // A handler further on took this one out of the pipeline, which already gave the
-                            // inflater back.
+                        if (generation != this.generation) {
+                            // The inflater has already been given back.
                             return;
                         }
                     }
@@ -618,7 +627,13 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         return inflater;
     }
 
+    // Visible for tests.
+    static int idleInflaterCount(boolean nowrap) {
+        return (nowrap ? IDLE_NOWRAP_INFLATERS : IDLE_ZLIB_INFLATERS).get().size();
+    }
+
     private void endResponse() {
+        generation++;
         Inflater inflater = this.inflater;
         if (inflater != null) {
             this.inflater = null;

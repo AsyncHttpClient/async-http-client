@@ -49,7 +49,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Decodes one gzip response per operation on a keep-alive connection, through Netty's
  * {@link HttpContentDecompressor} and through {@link Http1ContentDecompressor}, which inflates gzip without an
- * {@code EmbeddedChannel} and with one {@code Inflater} per connection.
+ * {@code EmbeddedChannel} and with an {@code Inflater} borrowed from a per-event-loop pool for each response.
  * <p>
  * The compressed body arrives in direct pooled buffers of at most {@code chunkSize} bytes, as
  * {@code HttpClientCodec} hands it on under the default allocator.
