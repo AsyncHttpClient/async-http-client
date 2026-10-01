@@ -15,9 +15,14 @@
  */
 package org.asynchttpclient.netty.handler;
 
+import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.buffer.UnpooledDirectByteBuf;
+import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -279,6 +284,7 @@ public class Http1ContentDecompressorTest {
 
     private static final class Outcome {
         final ByteArrayOutputStream body = new ByteArrayOutputStream();
+        final List<ByteBuf> inputs = new ArrayList<>();
         HttpResponse head;
         int parts;
         boolean ended;
@@ -296,7 +302,7 @@ public class Http1ContentDecompressorTest {
         return response;
     }
 
-    private enum Kind { HEAP, DIRECT, COMPOSITE, READ_ONLY }
+    private enum Kind { HEAP, DIRECT, POOLED_DIRECT, COMPOSITE, READ_ONLY }
 
     private static ByteBuf buffer(byte[] bytes, int offset, int length, Kind kind) {
         if (kind == Kind.COMPOSITE && length > 1) {
@@ -308,7 +314,9 @@ public class Http1ContentDecompressorTest {
                             .writeBytes(bytes, offset + half, length - half));
         }
         int capacity = Math.max(length, 1);
-        ByteBuf buf = kind == Kind.DIRECT ? Unpooled.directBuffer(capacity) : Unpooled.buffer(capacity);
+        ByteBuf buf = kind == Kind.DIRECT ? Unpooled.directBuffer(capacity)
+                : kind == Kind.POOLED_DIRECT ? PooledByteBufAllocator.DEFAULT.directBuffer(capacity)
+                : Unpooled.buffer(capacity);
         if (kind == Kind.READ_ONLY) {
             // Heap, but without an accessible array, so its NIO view goes to the inflater.
             return buf.writeBytes(bytes, offset, length).asReadOnly();
@@ -327,6 +335,7 @@ public class Http1ContentDecompressorTest {
         int offset = 0;
         for (int i = 0; i < sizes.length; i++) {
             ByteBuf content = buffer(encoded, offset, sizes[i], kind);
+            outcome.inputs.add(content);
             offset += sizes[i];
             messages.add(i == sizes.length - 1 ? new DefaultLastHttpContent(content) : new DefaultHttpContent(content));
         }
@@ -344,6 +353,13 @@ public class Http1ContentDecompressorTest {
             }
         }
         return outcome;
+    }
+
+    // Netty keeps an unread input as its cumulation until the channel is finished, so this is checked after.
+    private static void assertInputsReleased(Outcome outcome, String scenario) {
+        for (ByteBuf input : outcome.inputs) {
+            assertEquals(0, input.refCnt(), scenario + ": an input buffer was not released");
+        }
     }
 
     private static void drain(EmbeddedChannel channel, Outcome outcome) {
@@ -372,7 +388,7 @@ public class Http1ContentDecompressorTest {
         }
     }
 
-    private static EmbeddedChannel channel(ChannelHandler decompressor, UnpooledByteBufAllocator allocator) {
+    private static EmbeddedChannel channel(ChannelHandler decompressor, ByteBufAllocator allocator) {
         EmbeddedChannel channel = new EmbeddedChannel();
         channel.config().setAllocator(allocator);
         channel.pipeline().addLast(decompressor);
@@ -409,6 +425,8 @@ public class Http1ContentDecompressorTest {
                         // Netty's decoder runs once more over a corrupt body when its channel is torn down.
                     }
                     assertEquals(0, ahcAllocator.metric().usedHeapMemory(), scenario + ": heap left allocated");
+                    assertInputsReleased(actual, scenario);
+                    assertInputsReleased(expected, scenario + " (Netty)");
                     checked++;
                 }
             }
@@ -990,5 +1008,84 @@ public class Http1ContentDecompressorTest {
             // The corrupt body of the last batch.
         }
         return perBatch;
+    }
+
+    @Test
+    void closingTheChannelWhileTheHeadIsForwardedDropsTheBody() throws Exception {
+        onFreshThread(() -> {
+            EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
+            List<Object> afterClose = new ArrayList<>();
+            channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                @Override
+                public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                    if (msg instanceof HttpResponse) {
+                        ctx.channel().close();
+                    } else {
+                        afterClose.add(msg);
+                    }
+                    ReferenceCountUtil.release(msg);
+                }
+            });
+            byte[] encoded = gzip(TEXT);
+            // One read: the body is already queued behind the head when the head is forwarded.
+            channel.writeInbound(response("gzip", encoded.length),
+                    new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
+            assertEquals(List.of(), afterClose);
+            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            channel.finishAndReleaseAll();
+        });
+    }
+
+    @Test
+    void aBufferThatCannotGrowFailsLikeNetty() {
+        // A raw deflate stream flushed but not finished, so the inflater wants more room after its output.
+        Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+        byte[] flushed = new byte[4096];
+        deflater.setInput(randomBytes(900, 7));
+        int length = deflater.deflate(flushed, 0, flushed.length, Deflater.SYNC_FLUSH);
+        deflater.end();
+        byte[] encoded = Arrays.copyOf(flushed, length);
+
+        List<Outcome> outcomes = new ArrayList<>();
+        for (ChannelHandler decompressor : new ChannelHandler[]{nettyDecompressor(),
+                new Http1ContentDecompressor(false, 0)}) {
+            EmbeddedChannel channel = channel(decompressor, new CappedHeapAllocator(1024));
+            outcomes.add(exchange(channel, "deflate", encoded, new int[]{encoded.length}, Kind.DIRECT));
+            try {
+                channel.finishAndReleaseAll();
+            } catch (DecompressionException ignored) {
+                // Netty's decoder runs once more when its channel is torn down.
+            }
+        }
+        assertSameOutcome(outcomes.get(0), outcomes.get(1), "capped buffer");
+        assertEquals("Decompression buffer has reached maximum size: 1024", outcomes.get(1).failure.getMessage());
+        assertInputsReleased(outcomes.get(1), "capped buffer");
+    }
+
+    /**
+     * Never hands out a heap buffer that can grow past {@code cap} bytes.
+     */
+    private static final class CappedHeapAllocator extends AbstractByteBufAllocator {
+
+        private final int cap;
+
+        CappedHeapAllocator(int cap) {
+            this.cap = cap;
+        }
+
+        @Override
+        protected ByteBuf newHeapBuffer(int initialCapacity, int maxCapacity) {
+            return new UnpooledHeapByteBuf(this, Math.min(initialCapacity, cap), Math.min(maxCapacity, cap));
+        }
+
+        @Override
+        protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {
+            return new UnpooledDirectByteBuf(this, initialCapacity, maxCapacity);
+        }
+
+        @Override
+        public boolean isDirectBufferPooled() {
+            return false;
+        }
     }
 }

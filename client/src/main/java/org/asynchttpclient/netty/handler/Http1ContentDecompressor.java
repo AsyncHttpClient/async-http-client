@@ -62,7 +62,9 @@ import java.util.zip.Inflater;
  * per event loop for the length of one response, and feeds it the input buffer as it is. The format
  * handling (header and trailer checks, concatenated gzip members, zlib-or-raw detection for
  * {@code deflate}, a truncated stream ending quietly) follows {@code JdkZlibDecoder} as
- * {@link HttpContentDecompressor} configures it, so the decoded body and the errors are unchanged.
+ * {@link HttpContentDecompressor} configures it, so the decoded body and the errors are unchanged. These
+ * encodings no longer go through {@link #newContentDecoder(String)}, and {@code java.util.zip} is used even when
+ * {@code io.netty.noJdkZlibDecoder} asks Netty for JZlib.
  * <p>
  * Every other encoding still goes through {@link HttpContentDecompressor}. There the counting is done
  * inside the decoder's own {@link EmbeddedChannel} rather than around {@code HttpContentDecoder#decode}:
@@ -158,7 +160,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     needRead = true;
                     int generation = this.generation;
                     startResponse(ctx, response, contentEncoding);
-                    if (response instanceof HttpContent && !abandoned(ctx, generation)) {
+                    if (!abandoned(ctx, generation) && response instanceof HttpContent) {
                         decodeContent(ctx, (HttpContent) response);
                     }
                     return;
@@ -388,12 +390,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             // input, so needsInput() alone would end the loop too early.
             boolean pendingOutput = false;
             while (pendingOutput || !inflater.needsInput()) {
-                int preferredSize = Math.max(inflater.getRemaining() << 1, MIN_OUTPUT_BUFFER_SIZE);
                 if (decompressed == null) {
-                    decompressed = ctx.alloc().heapBuffer(preferredSize);
-                } else if (decompressed.ensureWritable(preferredSize, true) == 1) {
-                    throw new DecompressionException(
-                            "Decompression buffer has reached maximum size: " + decompressed.maxCapacity());
+                    decompressed = ctx.alloc().heapBuffer(preferredOutputBufferSize(inflater));
                 }
                 byte[] outArray = decompressed.array();
                 int writerIndex = decompressed.writerIndex();
@@ -434,6 +432,13 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     }
                     break;
                 }
+                // Grown after every unfinished step, as ZlibDecoder.prepareDecompressBuffer does, so a buffer
+                // that cannot grow fails at the same point.
+                if (decompressed != null
+                        && decompressed.ensureWritable(preferredOutputBufferSize(inflater), true) == 1) {
+                    throw new DecompressionException(
+                            "Decompression buffer has reached maximum size: " + decompressed.maxCapacity());
+                }
             }
 
             in.skipBytes(readable - inflater.getRemaining());
@@ -472,6 +477,10 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             return true;
         }
         return false;
+    }
+
+    private static int preferredOutputBufferSize(Inflater inflater) {
+        return Math.max(inflater.getRemaining() << 1, MIN_OUTPUT_BUFFER_SIZE);
     }
 
     private void fireContent(ChannelHandlerContext ctx, ByteBuf buffer) {
