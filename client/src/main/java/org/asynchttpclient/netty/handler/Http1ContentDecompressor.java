@@ -33,8 +33,10 @@ import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.FastThreadLocal;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
@@ -55,12 +57,11 @@ import java.util.zip.Inflater;
  * {@code gzip}, {@code x-gzip}, {@code deflate} and {@code x-deflate} named by {@code Content-Encoding} are
  * inflated here directly. {@link HttpContentDecompressor} builds an {@link EmbeddedChannel} and a fresh
  * {@link Inflater} for every such response, and its {@code JdkZlibDecoder} copies each direct input buffer
- * onto the heap before inflating it. This handler sits in the pipeline of one connection, whose responses
- * arrive one after another, so it keeps one {@link Inflater} per wrapper for the life of the connection,
- * resets it between responses, and feeds it the input buffer as it is. The format handling (header and
- * trailer checks, concatenated gzip members, zlib-or-raw detection for {@code deflate}, a truncated stream
- * ending quietly) follows {@code JdkZlibDecoder} as {@link HttpContentDecompressor} configures it, so the
- * decoded body and the errors are unchanged.
+ * onto the heap before inflating it. This handler borrows a reset {@link Inflater} from a small pool kept
+ * per event loop for the length of one response, and feeds it the input buffer as it is. The format
+ * handling (header and trailer checks, concatenated gzip members, zlib-or-raw detection for
+ * {@code deflate}, a truncated stream ending quietly) follows {@code JdkZlibDecoder} as
+ * {@link HttpContentDecompressor} configures it, so the decoded body and the errors are unchanged.
  * <p>
  * Every other encoding still goes through {@link HttpContentDecompressor}. There the counting is done
  * inside the decoder's own {@link EmbeddedChannel} rather than around {@code HttpContentDecoder#decode}:
@@ -98,9 +99,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     // Maximum cumulative decompressed bytes for one response; 0 disables the limit.
     private final long maxDecompressedBytes;
 
-    // Reused by every response on this connection and released when the handler leaves the pipeline.
-    private @Nullable Inflater nowrapInflater;
-    private @Nullable Inflater zlibInflater;
+    // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
+    // native window on every idle pooled connection.
+    private static final int MAX_IDLE_INFLATERS = 16;
+    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_NOWRAP_INFLATERS = idleInflaters();
+    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_ZLIB_INFLATERS = idleInflaters();
+
     private final CRC32 crc = new CRC32();
 
     // The response being inflated by this class rather than by HttpContentDecompressor.
@@ -108,6 +112,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     private boolean gzip;
     // Null until the first two bytes of a deflate body have told zlib from raw deflate.
     private @Nullable Inflater inflater;
+    private boolean nowrap;
     private boolean failed;
     private boolean finished;
     private GzipState gzipState = GzipState.HEADER_START;
@@ -143,7 +148,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     lastDecodedBySuper = false;
                     needRead = true;
                     startResponse(ctx, response, contentEncoding);
-                    if (response instanceof HttpContent) {
+                    if (response instanceof HttpContent && !ctx.isRemoved()) {
                         decodeContent(ctx, (HttpContent) response);
                     }
                     return;
@@ -181,7 +186,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         try {
-            releaseInflaters();
+            endResponse();
         } finally {
             super.handlerRemoved(ctx);
         }
@@ -189,8 +194,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        releaseInflaters();
-        super.channelInactive(ctx);
+        try {
+            endResponse();
+        } finally {
+            super.channelInactive(ctx);
+        }
     }
 
     @Override
@@ -224,11 +232,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     /**
      * Rewrites the headers exactly as {@code HttpContentDecoder} does once it has installed a decoder.
      */
-    private void startResponse(ChannelHandlerContext ctx, HttpResponse response, String contentEncoding) throws Exception {
+    private void startResponse(ChannelHandlerContext ctx, HttpResponse response, String contentEncoding)
+            throws Exception {
         inflating = true;
         gzip = isGzip(contentEncoding);
         if (gzip) {
-            inflater = nowrapInflater();
+            acquireInflater(true);
         }
 
         HttpHeaders headers = response.headers();
@@ -271,6 +280,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 failed = true;
                 throw t;
             }
+            if (ctx.isRemoved()) {
+                return;
+            }
         }
         if (content instanceof LastHttpContent) {
             endResponse();
@@ -290,11 +302,16 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             in = pending;
         }
 
-        int readable;
-        do {
-            readable = in.readableBytes();
+        for (;;) {
+            int readable = in.readableBytes();
             inflateOnce(ctx, in);
-        } while (in.isReadable() && in.readableBytes() != readable);
+            if (ctx.isRemoved()) {
+                return;
+            }
+            if (!in.isReadable() || in.readableBytes() == readable) {
+                break;
+            }
+        }
 
         if (pending != null) {
             if (pending.isReadable()) {
@@ -326,8 +343,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 return;
             }
             // RFC 1950 says deflate is zlib-wrapped, but some servers send raw deflate.
-            inflater = looksLikeZlib(in.getShort(in.readerIndex())) ? zlibInflater() : nowrapInflater();
-            this.inflater = inflater;
+            inflater = acquireInflater(!looksLikeZlib(in.getShort(in.readerIndex())));
         }
 
         if (gzip && gzipState != GzipState.HEADER_END) {
@@ -373,7 +389,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 if (outputLength > 0) {
                     decompressedBytes += outputLength;
                     if (maxDecompressedBytes > 0 && decompressedBytes > maxDecompressedBytes) {
-                        throw new DecompressionException("HTTP/1.1 response body exceeds the maximum decompressed size of "
+                        throw new DecompressionException(
+                                "HTTP/1.1 response body exceeds the maximum decompressed size of "
                                 + maxDecompressedBytes + " bytes");
                     }
                     decompressed.writerIndex(writerIndex + outputLength);
@@ -384,9 +401,15 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                         ByteBuf buffer = decompressed;
                         decompressed = null;
                         fireContent(ctx, buffer);
+                        if (ctx.isRemoved()) {
+                            // A handler further on took this one out of the pipeline, which already gave the
+                            // inflater back.
+                            return;
+                        }
                     }
                 } else if (inflater.needsDictionary()) {
-                    throw new DecompressionException("decompression failure, unable to set dictionary as non was specified");
+                    throw new DecompressionException(
+                            "decompression failure, unable to set dictionary as non was specified");
                 }
 
                 if (inflater.finished()) {
@@ -441,7 +464,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
                 int method = in.readUnsignedByte();
                 if (method != Deflater.DEFLATED) {
-                    throw new DecompressionException("Unsupported compression method " + method + " in the GZIP header");
+                    throw new DecompressionException(
+                            "Unsupported compression method " + method + " in the GZIP header");
                 }
                 crc.update(method);
 
@@ -499,7 +523,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     int crc16Value = in.readUnsignedShortLE();
                     int readCrc16 = (int) (crc.getValue() & 0xFFFF);
                     if (crc16Value != readCrc16) {
-                        throw new DecompressionException("CRC16 value mismatch. Expected: " + crc16Value + ", Got: " + readCrc16);
+                        throw new DecompressionException(
+                                "CRC16 value mismatch. Expected: " + crc16Value + ", Got: " + readCrc16);
                     }
                 }
                 crc.reset();
@@ -544,7 +569,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         int dataLength = in.readIntLE();
         int readLength = inflater.getTotalOut();
         if (dataLength != readLength) {
-            throw new DecompressionException("Number of bytes mismatch. Expected: " + dataLength + ", Got: " + readLength);
+            throw new DecompressionException(
+                    "Number of bytes mismatch. Expected: " + dataLength + ", Got: " + readLength);
         }
         inflater.reset();
         crc.reset();
@@ -566,30 +592,44 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         return (cmfFlg & 0x7800) == 0x7800 && cmfFlg % 31 == 0;
     }
 
-    private Inflater nowrapInflater() {
-        Inflater inflater = nowrapInflater;
-        if (inflater == null) {
-            inflater = new Inflater(true);
-            nowrapInflater = inflater;
-        }
-        return inflater;
+    private static FastThreadLocal<ArrayDeque<Inflater>> idleInflaters() {
+        return new FastThreadLocal<ArrayDeque<Inflater>>() {
+            @Override
+            protected ArrayDeque<Inflater> initialValue() {
+                return new ArrayDeque<>();
+            }
+
+            @Override
+            protected void onRemoval(ArrayDeque<Inflater> inflaters) {
+                for (Inflater inflater; (inflater = inflaters.pollFirst()) != null; ) {
+                    inflater.end();
+                }
+            }
+        };
     }
 
-    private Inflater zlibInflater() {
-        Inflater inflater = zlibInflater;
+    private Inflater acquireInflater(boolean nowrap) {
+        Inflater inflater = (nowrap ? IDLE_NOWRAP_INFLATERS : IDLE_ZLIB_INFLATERS).get().pollLast();
         if (inflater == null) {
-            inflater = new Inflater();
-            zlibInflater = inflater;
+            inflater = new Inflater(nowrap);
         }
+        this.inflater = inflater;
+        this.nowrap = nowrap;
         return inflater;
     }
 
     private void endResponse() {
         Inflater inflater = this.inflater;
         if (inflater != null) {
+            this.inflater = null;
             // Also drops the inflater's reference to the last input buffer, which is released after decode.
             inflater.reset();
-            this.inflater = null;
+            ArrayDeque<Inflater> idle = (nowrap ? IDLE_NOWRAP_INFLATERS : IDLE_ZLIB_INFLATERS).get();
+            if (idle.size() < MAX_IDLE_INFLATERS) {
+                idle.offerLast(inflater);
+            } else {
+                inflater.end();
+            }
         }
         ByteBuf pending = this.pending;
         if (pending != null) {
@@ -604,18 +644,6 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         xlen = -1;
         decompressedBytes = 0;
         crc.reset();
-    }
-
-    private void releaseInflaters() {
-        endResponse();
-        if (nowrapInflater != null) {
-            nowrapInflater.end();
-            nowrapInflater = null;
-        }
-        if (zlibInflater != null) {
-            zlibInflater.end();
-            zlibInflater = null;
-        }
     }
 
     /**
