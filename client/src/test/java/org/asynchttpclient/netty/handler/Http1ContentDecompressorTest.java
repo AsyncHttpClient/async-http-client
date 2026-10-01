@@ -44,6 +44,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.FastThreadLocal;
+import io.netty.util.concurrent.FastThreadLocalThread;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -704,6 +706,32 @@ public class Http1ContentDecompressorTest {
     }
 
     @Test
+    void idleInflatersAreDroppedWithTheThreadLocals() throws Exception {
+        onFreshThread(() -> {
+            byte[] encoded = gzip(TEXT);
+            EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
+            assertDecoded(TEXT, exchange(channel, "gzip", encoded, new int[]{encoded.length}, Kind.HEAP));
+            channel.finishAndReleaseAll();
+            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            // What an event loop does on its way out.
+            FastThreadLocal.removeAll();
+            assertEquals(0, Http1ContentDecompressor.idleInflaterCount(true));
+        });
+    }
+
+    @Test
+    void limitCountsEveryMemberOfAConcatenatedBody() {
+        // Each member is under the limit on its own; together they are over it.
+        byte[] member = gzip(Arrays.copyOf(ZEROS, 600_000));
+        byte[] encoded = concat(member, member);
+        EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 1_000_000), allocator());
+        Outcome outcome = exchange(channel, "gzip", encoded, new int[]{encoded.length}, Kind.HEAP);
+        assertInstanceOf(DecompressionException.class, outcome.failure);
+        assertTrue(outcome.body.size() <= 1_000_000);
+        channel.finishAndReleaseAll();
+    }
+
+    @Test
     void limitAllowsABodyOfExactlyTheLimit() {
         byte[] encoded = gzip(ZEROS);
         EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, ZEROS.length), allocator());
@@ -942,7 +970,8 @@ public class Http1ContentDecompressorTest {
 
     private static void onFreshThread(Runnable test) throws Exception {
         AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread thread = new Thread(() -> {
+        // Event loops run on FastThreadLocalThreads, so the pool takes the same path as in production.
+        Thread thread = new FastThreadLocalThread(() -> {
             try {
                 test.run();
             } catch (Throwable t) {

@@ -289,11 +289,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             try {
                 inflate(ctx, in, generation);
             } catch (Throwable t) {
-                if (generation == this.generation) {
-                    endResponse();
-                    inflating = true;
-                    failed = true;
-                }
+                failResponse();
                 throw t;
             }
             if (abandoned(ctx, generation)) {
@@ -372,6 +368,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         }
 
         int readable = in.readableBytes();
+        // The inflater keeps pointing at this input after the chunk is released. That is safe only because
+        // nothing reads from it again before the next setInput() or reset(): the loop below runs until the
+        // input is used up or the stream has finished, and a finished gzip member is reset by its trailer.
         if (in.hasArray()) {
             inflater.setInput(in.array(), in.arrayOffset() + in.readerIndex(), readable);
         } else if (in.nioBufferCount() == 1) {
@@ -471,12 +470,17 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             return true;
         }
         if (activeAtDecode && !ctx.channel().isActive()) {
-            endResponse();
-            inflating = true;
-            failed = true;
+            failResponse();
             return true;
         }
         return false;
+    }
+
+    // Drops the response's state; whatever is still in flight for it is then discarded.
+    private void failResponse() {
+        endResponse();
+        inflating = true;
+        failed = true;
     }
 
     private static int preferredOutputBufferSize(Inflater inflater) {
