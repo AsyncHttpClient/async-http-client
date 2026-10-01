@@ -110,9 +110,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     private final CRC32 crc = new CRC32();
 
     // Bumped whenever the state of a response is dropped. A handler further on may end the response from
-    // inside a call that forwards decoded content, by removing this handler or closing the channel; the
-    // decoding that made the call must then stop.
+    // inside a call that forwards decoded content, and the decoding that made the call must then stop.
     private int generation;
+    // Whether the channel was active when the message being decoded arrived. The last part of a body that
+    // ends with the connection is decoded after the channel has gone inactive, and must still be decoded.
+    private boolean activeAtDecode;
     // The response being inflated by this class rather than by HttpContentDecompressor.
     private boolean inflating;
     private boolean gzip;
@@ -152,10 +154,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 contentEncoding = contentEncoding.trim();
                 if (isGzip(contentEncoding) || isDeflate(contentEncoding)) {
                     lastDecodedBySuper = false;
+                    activeAtDecode = ctx.channel().isActive();
                     needRead = true;
                     int generation = this.generation;
                     startResponse(ctx, response, contentEncoding);
-                    if (response instanceof HttpContent && generation == this.generation) {
+                    if (response instanceof HttpContent && !abandoned(ctx, generation)) {
                         decodeContent(ctx, (HttpContent) response);
                     }
                     return;
@@ -163,6 +166,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             }
         } else if (inflating) {
             lastDecodedBySuper = false;
+            activeAtDecode = ctx.channel().isActive();
             needRead = true;
             decodeContent(ctx, (HttpContent) msg);
             return;
@@ -290,7 +294,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 }
                 throw t;
             }
-            if (generation != this.generation) {
+            if (abandoned(ctx, generation)) {
                 return;
             }
         }
@@ -315,7 +319,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         for (;;) {
             int readable = in.readableBytes();
             inflateOnce(ctx, in, generation);
-            if (generation != this.generation) {
+            if (abandoned(ctx, generation)) {
                 return;
             }
             if (!in.isReadable() || in.readableBytes() == readable) {
@@ -387,8 +391,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 int preferredSize = Math.max(inflater.getRemaining() << 1, MIN_OUTPUT_BUFFER_SIZE);
                 if (decompressed == null) {
                     decompressed = ctx.alloc().heapBuffer(preferredSize);
-                } else {
-                    decompressed.ensureWritable(preferredSize);
+                } else if (decompressed.ensureWritable(preferredSize, true) == 1) {
+                    throw new DecompressionException(
+                            "Decompression buffer has reached maximum size: " + decompressed.maxCapacity());
                 }
                 byte[] outArray = decompressed.array();
                 int writerIndex = decompressed.writerIndex();
@@ -411,7 +416,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                         ByteBuf buffer = decompressed;
                         decompressed = null;
                         fireContent(ctx, buffer);
-                        if (generation != this.generation) {
+                        if (abandoned(ctx, generation)) {
                             // The inflater has already been given back.
                             return;
                         }
@@ -449,6 +454,24 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 }
             }
         }
+    }
+
+    /**
+     * Whether the response being decoded when content was last forwarded is over. Removing this handler
+     * ends it at once. Closing the channel only queues the inactive event, so a channel that went inactive
+     * during the forward ends the response here, and what is left of its body is not inflated.
+     */
+    private boolean abandoned(ChannelHandlerContext ctx, int generation) {
+        if (generation != this.generation) {
+            return true;
+        }
+        if (activeAtDecode && !ctx.channel().isActive()) {
+            endResponse();
+            inflating = true;
+            failed = true;
+            return true;
+        }
+        return false;
     }
 
     private void fireContent(ChannelHandlerContext ctx, ByteBuf buffer) {

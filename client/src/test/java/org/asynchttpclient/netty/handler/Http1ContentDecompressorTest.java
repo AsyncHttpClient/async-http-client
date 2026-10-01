@@ -202,6 +202,7 @@ public class Http1ContentDecompressorTest {
         byte[] gzipText = gzip(TEXT);
         byte[] gzipRandom = gzip(RANDOM);
         bodies.add(new Body("gzip empty", "gzip", gzip(EMPTY)));
+        bodies.add(new Body("gzip no body", "gzip", EMPTY));
         bodies.add(new Body("gzip text", "gzip", gzipText));
         bodies.add(new Body("gzip random", "gzip", gzipRandom));
         bodies.add(new Body("gzip zeros", "gzip", gzip(ZEROS)));
@@ -295,7 +296,7 @@ public class Http1ContentDecompressorTest {
         return response;
     }
 
-    private enum Kind { HEAP, DIRECT, COMPOSITE }
+    private enum Kind { HEAP, DIRECT, COMPOSITE, READ_ONLY }
 
     private static ByteBuf buffer(byte[] bytes, int offset, int length, Kind kind) {
         if (kind == Kind.COMPOSITE && length > 1) {
@@ -307,7 +308,11 @@ public class Http1ContentDecompressorTest {
                             .writeBytes(bytes, offset + half, length - half));
         }
         int capacity = Math.max(length, 1);
-        ByteBuf buf = kind == Kind.HEAP ? Unpooled.buffer(capacity) : Unpooled.directBuffer(capacity);
+        ByteBuf buf = kind == Kind.DIRECT ? Unpooled.directBuffer(capacity) : Unpooled.buffer(capacity);
+        if (kind == Kind.READ_ONLY) {
+            // Heap, but without an accessible array, so its NIO view goes to the inflater.
+            return buf.writeBytes(bytes, offset, length).asReadOnly();
+        }
         return buf.writeBytes(bytes, offset, length);
     }
 
@@ -760,25 +765,105 @@ public class Http1ContentDecompressorTest {
     }
 
     @Test
-    void closingTheChannelFromAHandlerFurtherOnMidChunkIsSafe() {
-        UnpooledByteBufAllocator allocator = allocator();
-        EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator);
-        int[] parts = new int[1];
-        channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-            @Override
-            public void channelRead(ChannelHandlerContext ctx, Object msg) {
-                if (msg instanceof HttpContent && ((HttpContent) msg).content().isReadable() && parts[0]++ == 0) {
-                    ctx.channel().close();
+    void closingTheChannelFromAHandlerFurtherOnMidChunkStopsDecoding() throws Exception {
+        onFreshThread(() -> {
+            UnpooledByteBufAllocator allocator = allocator();
+            EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator);
+            int[] parts = new int[1];
+            List<Object> afterClose = new ArrayList<>();
+            channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                @Override
+                public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                    if (parts[0] > 0) {
+                        afterClose.add(msg);
+                    } else if (msg instanceof HttpContent && ((HttpContent) msg).content().isReadable()) {
+                        parts[0]++;
+                        // Netty runs channelInactive later, once this read is over.
+                        ctx.channel().close();
+                    }
+                    ReferenceCountUtil.release(msg);
                 }
-                ReferenceCountUtil.release(msg);
-            }
+            });
+            byte[] encoded = gzip(ZEROS);
+            channel.writeInbound(response("gzip", encoded.length));
+            channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
+            assertEquals(1, parts[0]);
+            assertEquals(List.of(), afterClose);
+            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            channel.finishAndReleaseAll();
+            assertEquals(0, allocator.metric().usedHeapMemory());
         });
-        byte[] encoded = gzip(ZEROS);
-        channel.writeInbound(response("gzip", encoded.length));
-        channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
-        assertTrue(parts[0] >= 1);
-        channel.finishAndReleaseAll();
-        assertEquals(0, allocator.metric().usedHeapMemory());
+    }
+
+    @Test
+    void decodesTheEndOfABodyThatEndsWithTheConnectionLikeNetty() {
+        byte[] encoded = gzip(RANDOM);
+        int split = encoded.length / 2;
+        List<Outcome> outcomes = new ArrayList<>();
+        for (ChannelHandler decompressor : new ChannelHandler[]{nettyDecompressor(),
+                new Http1ContentDecompressor(false, 0)}) {
+            EmbeddedChannel channel = new EmbeddedChannel();
+            // Stands in for HttpClientCodec, which ends a body without a length when the channel goes inactive.
+            channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                @Override
+                public void channelInactive(ChannelHandlerContext ctx) {
+                    ctx.fireChannelRead(new DefaultLastHttpContent(
+                            Unpooled.wrappedBuffer(encoded, split, encoded.length - split)));
+                    ctx.fireChannelInactive();
+                }
+            });
+            channel.pipeline().addLast(decompressor);
+            channel.writeInbound(response("gzip", -1),
+                    new DefaultHttpContent(Unpooled.wrappedBuffer(encoded, 0, split)));
+            channel.close();
+            Outcome outcome = new Outcome();
+            drain(channel, outcome);
+            channel.finishAndReleaseAll();
+            outcomes.add(outcome);
+        }
+        assertSameOutcome(outcomes.get(0), outcomes.get(1), "body ending with the connection");
+        assertDecoded(RANDOM, outcomes.get(1));
+    }
+
+    @Test
+    void removingOrClosingMidResponseGivesTheInflaterBack() throws Exception {
+        onFreshThread(() -> {
+            byte[] encoded = gzip(RANDOM);
+            EmbeddedChannel removed = channel(new Http1ContentDecompressor(false, 0), allocator());
+            removed.writeInbound(response("gzip", -1), new DefaultHttpContent(Unpooled.wrappedBuffer(encoded, 0, 100)));
+            ReferenceCountUtil.release(removed.readInbound());
+            removed.pipeline().removeFirst();
+            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+
+            EmbeddedChannel closed = channel(new Http1ContentDecompressor(false, 0), allocator());
+            closed.writeInbound(response("gzip", -1), new DefaultHttpContent(Unpooled.wrappedBuffer(encoded, 0, 100)));
+            // Took the idle inflater.
+            assertEquals(0, Http1ContentDecompressor.idleInflaterCount(true));
+            closed.close();
+            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+
+            removed.finishAndReleaseAll();
+            closed.finishAndReleaseAll();
+        });
+    }
+
+    @Test
+    void transferEncodingGzipIsLeftToNettyAndDecodedTheSame() {
+        byte[] encoded = gzip(TEXT);
+        List<Outcome> outcomes = new ArrayList<>();
+        for (ChannelHandler decompressor : new ChannelHandler[]{nettyDecompressor(),
+                new Http1ContentDecompressor(false, 0)}) {
+            EmbeddedChannel channel = channel(decompressor, allocator());
+            HttpResponse response = response(null, -1);
+            response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, "gzip, chunked");
+            channel.writeInbound(response, new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
+            Outcome outcome = new Outcome();
+            drain(channel, outcome);
+            channel.finishAndReleaseAll();
+            outcomes.add(outcome);
+        }
+        assertSameOutcome(outcomes.get(0), outcomes.get(1), "transfer-encoding gzip");
+        assertDecoded(TEXT, outcomes.get(1));
     }
 
     @Test
