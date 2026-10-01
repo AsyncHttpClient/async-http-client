@@ -718,8 +718,9 @@ public class Http1ContentDecompressorTest {
             assertNotNull(pooled);
             // What an event loop does on its way out.
             FastThreadLocal.removeAll();
-            // An open inflater with no input returns 0 here; an ended one throws.
-            assertThrows(NullPointerException.class, () -> pooled.inflate(new byte[1]));
+            // An open inflater with no input returns 0 here; an ended one throws, a NullPointerException on
+            // JDK 11 to 21 and an IllegalStateException on JDK 25.
+            assertThrows(RuntimeException.class, () -> pooled.inflate(new byte[1]));
         });
     }
 
