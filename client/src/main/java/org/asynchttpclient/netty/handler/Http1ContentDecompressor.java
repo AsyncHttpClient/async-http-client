@@ -91,8 +91,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
     // native window on every idle pooled connection.
     private static final int MAX_IDLE_INFLATERS = 16;
-    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_NOWRAP_INFLATERS = idleInflaters();
-    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_ZLIB_INFLATERS = idleInflaters();
+    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_NOWRAP_INFLATERS = newIdleInflaterPool();
+    private static final FastThreadLocal<ArrayDeque<Inflater>> IDLE_ZLIB_INFLATERS = newIdleInflaterPool();
 
     private enum GzipState {
         HEADER_START,
@@ -166,7 +166,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     return;
                 }
             }
-        } else if (inflating) {
+        } else if (inflating && msg instanceof HttpContent) {
             lastDecodedBySuper = false;
             activeAtDecode = ctx.channel().isActive();
             needRead = true;
@@ -637,7 +637,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         return (cmfFlg & 0x7800) == 0x7800 && cmfFlg % 31 == 0;
     }
 
-    private static FastThreadLocal<ArrayDeque<Inflater>> idleInflaters() {
+    private static FastThreadLocal<ArrayDeque<Inflater>> newIdleInflaterPool() {
         return new FastThreadLocal<ArrayDeque<Inflater>>() {
             @Override
             protected ArrayDeque<Inflater> initialValue() {
@@ -664,8 +664,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     }
 
     // Visible for tests.
-    static int idleInflaterCount(boolean nowrap) {
-        return (nowrap ? IDLE_NOWRAP_INFLATERS : IDLE_ZLIB_INFLATERS).get().size();
+    static ArrayDeque<Inflater> idleInflaters(boolean nowrap) {
+        return (nowrap ? IDLE_NOWRAP_INFLATERS : IDLE_ZLIB_INFLATERS).get();
     }
 
     private void endResponse() {

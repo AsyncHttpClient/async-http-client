@@ -59,6 +59,7 @@ import java.util.function.Supplier;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.Inflater;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -706,16 +708,18 @@ public class Http1ContentDecompressorTest {
     }
 
     @Test
-    void idleInflatersAreDroppedWithTheThreadLocals() throws Exception {
+    void idleInflatersAreEndedWithTheThreadLocals() throws Exception {
         onFreshThread(() -> {
             byte[] encoded = gzip(TEXT);
             EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
             assertDecoded(TEXT, exchange(channel, "gzip", encoded, new int[]{encoded.length}, Kind.HEAP));
             channel.finishAndReleaseAll();
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            Inflater pooled = Http1ContentDecompressor.idleInflaters(true).peekLast();
+            assertNotNull(pooled);
             // What an event loop does on its way out.
             FastThreadLocal.removeAll();
-            assertEquals(0, Http1ContentDecompressor.idleInflaterCount(true));
+            // An open inflater with no input returns 0 here; an ended one throws.
+            assertThrows(NullPointerException.class, () -> pooled.inflate(new byte[1]));
         });
     }
 
@@ -835,7 +839,7 @@ public class Http1ContentDecompressorTest {
             channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
             assertEquals(1, parts[0]);
             assertEquals(List.of(), afterClose);
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
             channel.finishAndReleaseAll();
             assertEquals(0, allocator.metric().usedHeapMemory());
         });
@@ -879,14 +883,14 @@ public class Http1ContentDecompressorTest {
             removed.writeInbound(response("gzip", -1), new DefaultHttpContent(Unpooled.wrappedBuffer(encoded, 0, 100)));
             ReferenceCountUtil.release(removed.readInbound());
             removed.pipeline().removeFirst();
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
 
             EmbeddedChannel closed = channel(new Http1ContentDecompressor(false, 0), allocator());
             closed.writeInbound(response("gzip", -1), new DefaultHttpContent(Unpooled.wrappedBuffer(encoded, 0, 100)));
             // Took the idle inflater.
-            assertEquals(0, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(0, Http1ContentDecompressor.idleInflaters(true).size());
             closed.close();
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
 
             removed.finishAndReleaseAll();
             closed.finishAndReleaseAll();
@@ -923,20 +927,20 @@ public class Http1ContentDecompressorTest {
                         new DefaultHttpContent(Unpooled.wrappedBuffer(encoded, 0, 20)));
                 channels.add(channel);
             }
-            assertEquals(0, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(0, Http1ContentDecompressor.idleInflaters(true).size());
             for (EmbeddedChannel channel : channels) {
                 channel.writeInbound(new DefaultLastHttpContent(
                         Unpooled.wrappedBuffer(encoded, 20, encoded.length - 20)));
                 channel.finishAndReleaseAll();
             }
-            assertEquals(16, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(16, Http1ContentDecompressor.idleInflaters(true).size());
 
             EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
             assertDecoded(TEXT, exchange(channel, "gzip", encoded, new int[]{encoded.length}, Kind.HEAP));
-            assertEquals(16, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(16, Http1ContentDecompressor.idleInflaters(true).size());
             byte[] zlib = deflate(TEXT, false);
             assertDecoded(TEXT, exchange(channel, "deflate", zlib, new int[]{zlib.length}, Kind.HEAP));
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(false));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(false).size());
             channel.finishAndReleaseAll();
         });
     }
@@ -957,13 +961,13 @@ public class Http1ContentDecompressorTest {
             });
             removed.writeInbound(response("gzip", -1), new DefaultLastHttpContent(Unpooled.wrappedBuffer(zeros)));
             removed.finishAndReleaseAll();
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
 
             EmbeddedChannel next = channel(new Http1ContentDecompressor(false, 0), allocator());
             assertDecoded(ZEROS, exchange(next, "gzip", zeros, sizes(zeros.length, 500), Kind.DIRECT));
             byte[] raw = deflate(RANDOM, true);
             assertDecoded(RANDOM, exchange(next, "deflate", raw, sizes(raw.length, 3000), Kind.DIRECT));
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
             next.finishAndReleaseAll();
         });
     }
@@ -1060,7 +1064,7 @@ public class Http1ContentDecompressorTest {
             channel.writeInbound(response("gzip", encoded.length),
                     new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
             assertEquals(List.of(), afterClose);
-            assertEquals(1, Http1ContentDecompressor.idleInflaterCount(true));
+            assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
             channel.finishAndReleaseAll();
         });
     }
