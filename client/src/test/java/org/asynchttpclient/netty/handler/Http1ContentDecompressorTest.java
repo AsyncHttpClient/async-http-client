@@ -291,6 +291,7 @@ public class Http1ContentDecompressorTest {
         final List<ByteBuf> inputs = new ArrayList<>();
         HttpResponse head;
         int parts;
+        int maxPart;
         boolean ended;
         Throwable failure;
     }
@@ -378,6 +379,7 @@ public class Http1ContentDecompressorTest {
                     ByteBuf content = ((HttpContent) msg).content();
                     if (content.isReadable()) {
                         outcome.parts++;
+                        outcome.maxPart = Math.max(outcome.maxPart, content.readableBytes());
                         content.readBytes(outcome.body, content.readableBytes());
                     }
                     if (msg instanceof LastHttpContent) {
@@ -446,7 +448,13 @@ public class Http1ContentDecompressorTest {
             assertNull(actual.failure, scenario + ": unexpected failure");
             assertArrayEquals(expected.body.toByteArray(), actual.body.toByteArray(), scenario + ": body");
             assertEquals(expected.ended, actual.ended, scenario + ": end of response");
-            assertEquals(expected.parts, actual.parts, scenario + ": parts");
+            if (expected.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE) {
+                assertEquals(expected.parts, actual.parts, scenario + ": parts");
+            } else {
+                // Netty hands such output on in larger parts; this decompressor cuts them at MAX_PART_SIZE.
+                assertTrue(actual.parts > expected.parts, scenario + ": parts");
+            }
+            assertTrue(actual.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, scenario + ": part size");
         } else {
             assertNotNull(actual.failure, scenario + ": expected " + expected.failure);
             assertEquals(expected.failure.getClass(), actual.failure.getClass(), scenario + ": failure type");
