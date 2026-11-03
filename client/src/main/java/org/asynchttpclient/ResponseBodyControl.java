@@ -34,6 +34,14 @@ public interface ResponseBodyControl {
      * delivered to the {@link AsyncHandler}.
      * If the final response headers already ended the response, this call has no effect on completion.
      * <p>
+     * For an HTTP/1.1 response whose {@code Content-Encoding} AHC decompresses ({@code gzip}, {@code deflate},
+     * {@code br}, {@code zstd} or {@code snappy}), a suspension also stops decompression: once it has taken effect, no
+     * further body part with content is delivered until {@link #resume()}. Once the body has been decompressed in full,
+     * the final empty part, trailing headers and completion can still arrive while reads are suspended. If the
+     * connection closes while compressed input is held back, the rest of it is decompressed and delivered at once,
+     * bounded only by {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. A transfer coding, such as
+     * {@code Transfer-Encoding: gzip}, is decompressed as soon as it is read.
+     * <p>
      * While reads are suspended, the read timeout is paused but the request timeout remains active. If the request
      * timeout is disabled, failing to resume or cancel the response can retain its transport resources indefinitely.
      * <p>
