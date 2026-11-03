@@ -77,19 +77,24 @@ import java.util.zip.Inflater;
  * encodings no longer go through {@link #newContentDecoder(String)}, and {@code java.util.zip} is used even when
  * {@code io.netty.noJdkZlibDecoder} asks Netty for JZlib.
  * <p>
- * Inflating {@code gzip} and {@code deflate} also follows the response's demand. {@link HttpContentDecompressor}
- * inflates each chunk completely as soon as it is read: suspending a response through
- * {@link ResponseBodyControl} stops further socket reads, but not that, so one read of a highly
- * compressible body could become tens of megabytes of body parts nobody had asked for. This handler hands the body on
- * in parts of at most 64 KiB, cut where {@code JdkZlibDecoder} would cut them, and checks before each part whether the
- * response is suspended. If it is, the input the inflater has not used yet stays here, together with every message
- * that arrived after it, and the next read request, such as the one {@code resume()} issues, inflates that input
- * before it is passed on to the transport. That is why this handler also sees outbound events; it passes all others
- * through. Only parts with content wait for a resume: once the body has been inflated in full, its end, with any
- * trailers, is handed on even to a suspended response, as for an unencoded body. If the connection closes while input
- * is held back, the rest of it is inflated and handed on at once, bounded only by {@code maxDecompressedBytes}.
+ * Decompression also follows the response's demand. {@link HttpContentDecompressor} decompresses each chunk
+ * completely as soon as it is read: suspending a response through {@link ResponseBodyControl} stops further socket
+ * reads, but not that, so one read of a highly compressible body could become tens of megabytes of body parts nobody
+ * had asked for. This handler hands the body on in parts of at most 64 KiB, for {@code gzip} and {@code deflate} cut
+ * where {@code JdkZlibDecoder} would cut them, and checks before each part whether the response is suspended. If it
+ * is, the input not decompressed yet stays here, together with every message that arrived after it, and the next read
+ * request, such as the one {@code resume()} issues, decompresses that input before it is passed on to the transport.
+ * That is why this handler also sees outbound events; it passes all others through. Only parts with content wait for
+ * a resume: once the body has been decompressed in full, its end, with any trailers, is handed on even to a suspended
+ * response, as for an unencoded body. If the connection closes while input is held back, the rest of it is
+ * decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}.
  * <p>
- * Every other encoding still goes through {@link HttpContentDecompressor}. There the counting is done
+ * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
+ * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17, so these
+ * codings need at least that version; {@code gzip} and {@code deflate} do not.
+ * <p>
+ * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
+ * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
  * inside the decoder's own {@link EmbeddedChannel} rather than around {@code HttpContentDecoder#decode}:
  * that class forwards decompressed output straight down the outer pipeline through an internal forwarder
  * installed at the end of the embedded pipeline, so the output never passes through the {@code decode}
@@ -181,6 +186,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private boolean inputClosed;
     // Whether nobody reads the rest of the current body, so its input is dropped instead of inflated.
     private boolean discarding;
+    // The decompressor of a br, zstd or snappy body; null for gzip and deflate, which are inflated here.
+    private @Nullable PullDecompression pull;
 
     public Http1ContentDecompressor(boolean keepEncodingHeader, long maxDecompressedBytes) {
         // maxAllocation=0 is what the no-arg HttpContentDecompressor() constructor passes, so a single
@@ -209,7 +216,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             String contentEncoding = response.headers().get(HttpHeaderNames.CONTENT_ENCODING);
             if (contentEncoding != null && response.status().code() != 100) {
                 contentEncoding = contentEncoding.trim();
-                if (isGzip(contentEncoding) || isDeflate(contentEncoding)) {
+                boolean zlib = isGzip(contentEncoding) || isDeflate(contentEncoding);
+                if (!zlib && isPulled(contentEncoding)) {
+                    // Only here, so that gzip and deflate never load Netty's newer Decompressor API.
+                    pull = PullDecompression.create(contentEncoding, ctx.alloc(), maxDecompressedBytes);
+                }
+                if (zlib || pull != null) {
                     lastDecodedBySuper = false;
                     activeAtDecode = ctx.channel().isActive();
                     needRead = true;
@@ -328,14 +340,14 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private boolean continueBody(ChannelHandlerContext ctx) {
         paused = false;
         ByteBuf in = heldInput;
-        if (in == null) {
+        if (in == null && pull == null) {
             return true;
         }
         heldInput = null;
         int generation = this.generation;
         boolean usedUp;
         try {
-            usedUp = inflate(ctx, in, true, generation);
+            usedUp = in != null ? inflate(ctx, in, true, generation) : decompress(ctx, null, generation);
         } catch (Throwable t) {
             failResponse();
             throw t;
@@ -456,6 +468,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 || HttpHeaderValues.X_DEFLATE.contentEqualsIgnoreCase(contentEncoding);
     }
 
+    private static boolean isPulled(String contentEncoding) {
+        return HttpHeaderValues.BR.contentEqualsIgnoreCase(contentEncoding)
+                || HttpHeaderValues.ZSTD.contentEqualsIgnoreCase(contentEncoding)
+                || HttpHeaderValues.SNAPPY.contentEqualsIgnoreCase(contentEncoding);
+    }
+
     /**
      * Rewrites the headers exactly as {@code HttpContentDecoder} does once it has installed a decoder.
      */
@@ -502,7 +520,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             int generation = this.generation;
             boolean usedUp;
             try {
-                usedUp = inflate(ctx, in, generation);
+                usedUp = pull != null ? decompress(ctx, in.retain(), generation) : inflate(ctx, in, generation);
             } catch (Throwable t) {
                 failResponse();
                 throw t;
@@ -539,6 +557,35 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         LastHttpContent trailer = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, trailers);
         trailer.setDecoderResult(last.decoderResult());
         return trailer;
+    }
+
+    /**
+     * Hands on the output of a br, zstd or snappy body, after taking over {@code input} if there is any. Returns
+     * {@code false} if the response was suspended before the output was used up; the rest stays in the decompressor.
+     */
+    private boolean decompress(ChannelHandlerContext ctx, @Nullable ByteBuf input, int generation) {
+        PullDecompression pull = this.pull;
+        if (input != null) {
+            pull.addInput(input);
+        }
+        while (pull.hasOutput()) {
+            Channel channel = ctx.channel();
+            if (isUnwanted(channel)) {
+                discarding = true;
+                return true;
+            }
+            if (!inputClosed && isSuspended(channel)) {
+                return false;
+            }
+            ByteBuf part = pull.nextPart(ctx.alloc());
+            if (part != null) {
+                fireContent(ctx, part);
+                if (abandoned(ctx, generation)) {
+                    return true;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -977,6 +1024,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         heldOutput = false;
         heldLast = null;
         discarding = false;
+        PullDecompression pull = this.pull;
+        if (pull != null) {
+            this.pull = null;
+            pull.close();
+        }
         inflating = false;
         failed = false;
         finished = false;

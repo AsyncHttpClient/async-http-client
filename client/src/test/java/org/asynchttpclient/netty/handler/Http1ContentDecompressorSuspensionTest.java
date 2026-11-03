@@ -15,13 +15,17 @@
  */
 package org.asynchttpclient.netty.handler;
 
+import com.aayushatharva.brotli4j.encoder.Encoder;
+import com.github.luben.zstd.Zstd;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.DecompressionException;
+import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -111,9 +115,32 @@ public class Http1ContentDecompressorSuspensionTest {
                 return compress(payload, DeflaterOutputStream::new);
             case "x-deflate":
                 return rawDeflate(payload);
+            case "snappy":
+                return snappy(payload);
+            case "zstd":
+                return Zstd.compress(payload);
+            case "br":
+                try {
+                    Brotli.ensureAvailability();
+                    return Encoder.compress(payload);
+                } catch (Throwable e) {
+                    throw new IllegalStateException(e);
+                }
             default:
                 throw new IllegalArgumentException(contentEncoding);
         }
+    }
+
+    private static byte[] snappy(byte[] payload) {
+        EmbeddedChannel encoder = new EmbeddedChannel(new SnappyFrameEncoder());
+        encoder.writeOutbound(Unpooled.wrappedBuffer(payload));
+        encoder.finish();
+        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+        for (ByteBuf buf; (buf = encoder.readOutbound()) != null; ) {
+            compressed.writeBytes(toBytes(buf));
+            buf.release();
+        }
+        return compressed.toByteArray();
     }
 
     private static byte[] toBytes(ByteBuf buf) {
@@ -407,7 +434,7 @@ public class Http1ContentDecompressorSuspensionTest {
         byte[] random = new byte[130_000];
         new Random(29).nextBytes(random);
         byte[] payload = concat(random, new byte[200_000], TEXT);
-        for (String contentEncoding : List.of("gzip", "deflate", "x-deflate")) {
+        for (String contentEncoding : List.of("gzip", "deflate", "x-deflate", "snappy", "zstd", "br")) {
             SuspendedExchange exchange = new SuspendedExchange(contentEncoding, compress(contentEncoding, payload),
                     4096, 0, true, autoRead, Input.HEAP);
             assertArrayEquals(payload, exchange.resumeToTheEnd().bytes.toByteArray(), contentEncoding);
