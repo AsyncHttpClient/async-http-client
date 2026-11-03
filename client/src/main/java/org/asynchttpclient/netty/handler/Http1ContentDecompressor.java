@@ -529,11 +529,16 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         ctx.fireChannelRead(last);
     }
 
+    // The end of the body, with its trailers and its decoder result, which marks a chunk HttpObjectDecoder could not
+    // parse. Dropping a failed result would turn a broken body into a complete one.
     private static LastHttpContent trailer(LastHttpContent last) {
         HttpHeaders trailers = last.trailingHeaders();
-        return trailers.isEmpty()
-                ? LastHttpContent.EMPTY_LAST_CONTENT
-                : new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, trailers);
+        if (trailers.isEmpty() && last.decoderResult().isSuccess()) {
+            return LastHttpContent.EMPTY_LAST_CONTENT;
+        }
+        LastHttpContent trailer = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, trailers);
+        trailer.setDecoderResult(last.decoderResult());
+        return trailer;
     }
 
     /**

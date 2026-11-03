@@ -28,6 +28,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -67,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -675,6 +677,37 @@ public class Http1ContentDecompressorTest {
         assertFalse(end.content().isReadable());
         end.release();
         channel.finishAndReleaseAll();
+    }
+
+    @Test
+    void aFailedLastChunkStaysFailed() {
+        // HttpObjectDecoder reports a chunk it cannot parse as a LastHttpContent with a failed result.
+        IllegalStateException cause = new IllegalStateException("invalid chunk");
+        for (boolean withTrailer : new boolean[]{false, true}) {
+            EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
+            byte[] encoded = gzip(TEXT);
+            channel.writeInbound(response("gzip", -1));
+            channel.writeInbound(new DefaultHttpContent(Unpooled.wrappedBuffer(encoded)));
+            LastHttpContent last = new DefaultLastHttpContent();
+            if (withTrailer) {
+                last.trailingHeaders().set("x-trailer", "done");
+            }
+            last.setDecoderResult(DecoderResult.failure(cause));
+            channel.writeInbound(last);
+
+            Object msg;
+            LastHttpContent end = null;
+            while ((msg = channel.readInbound()) != null) {
+                if (msg instanceof LastHttpContent) {
+                    end = (LastHttpContent) msg;
+                }
+                ReferenceCountUtil.release(msg);
+            }
+            assertNotNull(end);
+            assertSame(cause, end.decoderResult().cause(), "a parse failure must not become a complete body");
+            assertEquals(withTrailer ? "done" : null, end.trailingHeaders().get("x-trailer"));
+            assertFalse(channel.finishAndReleaseAll());
+        }
     }
 
     @Test
