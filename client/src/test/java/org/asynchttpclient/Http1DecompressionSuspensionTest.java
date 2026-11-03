@@ -42,9 +42,14 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.channel.ChannelPool;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.netty.channel.DefaultChannelPool;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,13 +61,16 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -367,6 +375,50 @@ public class Http1DecompressionSuspensionTest {
     }
 
     @Test
+    public void drainedBodyOfAReplayedResponseIsNotInflated() throws Exception {
+        // A response filter replays the request on the headers of a compressed response whose body inflates far beyond
+        // the limit. Nobody reads that body, so draining its connection must not inflate it. Inflating it would exceed
+        // the limit, which closes the drained connection and could fail the replayed request, which shares the future.
+        AtomicBoolean replayed = new AtomicBoolean();
+        ResponseFilter replayOnce = new ResponseFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                if (replayed.compareAndSet(false, true)) {
+                    return new FilterContext.FilterContextBuilder<>(ctx)
+                            .request(Dsl.get(url("/empty")).build())
+                            .replayRequest(true)
+                            .build();
+                }
+                return ctx;
+            }
+        };
+        List<Channel> clientChannels = new CopyOnWriteArrayList<>();
+        HashedWheelTimer timer = new HashedWheelTimer();
+        AcceptingPool pool = new AcceptingPool(new DefaultChannelPool(config().build(), timer));
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setMaxDecompressedResponseSize(1024 * 1024)
+                .setRequestTimeout(Duration.ofSeconds(10))
+                .setChannelPool(pool)
+                .setHttpAdditionalChannelInitializer(clientChannels::add)
+                .addResponseFilter(replayOnce))) {
+            Response response = client.prepareGet(url("/zeros")).execute().get(10, SECONDS);
+            assertEquals(200, response.getStatusCode());
+            assertEquals(0, response.getResponseBodyAsBytes().length);
+            assertTrue(replayed.get());
+
+            // The drained connection goes back to the pool once its last chunk has arrived.
+            Channel drained = clientChannels.get(0);
+            Channel accepted;
+            do {
+                accepted = pool.accepted.poll(10, SECONDS);
+                assertNotNull(accepted, "the drained connection must be returned to the pool");
+            } while (accepted != drained);
+        } finally {
+            timer.stop();
+        }
+    }
+
+    @Test
     public void compressedResponsesWithoutBodyComplete() throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config().setMaxConnectionsPerHost(1))) {
             Response head = client.prepareHead(url("/zeros")).execute().get(10, SECONDS);
@@ -392,6 +444,55 @@ public class Http1DecompressionSuspensionTest {
     }
 
     /** Delegates to a pool and reports every connection that the pool has accepted. */
+    private static final class AcceptingPool implements ChannelPool {
+
+        final LinkedBlockingQueue<Channel> accepted = new LinkedBlockingQueue<>();
+        private final ChannelPool delegate;
+
+        AcceptingPool(ChannelPool delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean offer(Channel channel, Object partitionKey) {
+            boolean offered = delegate.offer(channel, partitionKey);
+            if (offered) {
+                accepted.add(channel);
+            }
+            return offered;
+        }
+
+        @Override
+        public @Nullable Channel poll(Object partitionKey) {
+            return delegate.poll(partitionKey);
+        }
+
+        @Override
+        public boolean removeAll(Channel channel) {
+            return delegate.removeAll(channel);
+        }
+
+        @Override
+        public boolean isOpen() {
+            return delegate.isOpen();
+        }
+
+        @Override
+        public void destroy() {
+            delegate.destroy();
+        }
+
+        @Override
+        public void flushPartitions(Predicate<Object> predicate) {
+            delegate.flushPartitions(predicate);
+        }
+
+        @Override
+        public Map<String, Long> getIdleChannelCountPerHost() {
+            return delegate.getIdleChannelCountPerHost();
+        }
+    }
+
     /**
      * Suspends inline from every body callback, the way a demand-driven consumer does, and records what was
      * delivered.

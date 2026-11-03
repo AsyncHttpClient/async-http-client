@@ -33,8 +33,10 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.netty.DiscardEvent;
 import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.Channels;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -456,6 +458,34 @@ public class Http1ContentDecompressorSuspensionTest {
         }
         assertEquals(0, exchange.compressed.refCnt());
         exchange.channel.finishAndReleaseAll();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void aBodyThatIsBeingDrainedIsNotInflated(boolean drainCallback) {
+        // Inflating this body would pass the limit and fail the drain. Its end must still reach the callback.
+        EmbeddedChannel channel = new EmbeddedChannel(new Http1ContentDecompressor(false, 1024 * 1024));
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(
+                new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
+                null, 0, null, null, null);
+        Channels.setAttribute(channel, drainCallback ? new OnLastHttpContentCallback(future) {
+            @Override
+            public void call() {
+            }
+        } : DiscardEvent.DISCARD);
+        channel.writeInbound(response("gzip", ZEROS_GZIP.length));
+        ReferenceCountUtil.release(channel.readInbound());
+        ByteBuf input = Unpooled.wrappedBuffer(ZEROS_GZIP);
+        LastHttpContent last = new DefaultLastHttpContent(input);
+        last.trailingHeaders().set("x-trailer", "done");
+        channel.writeInbound(last);
+
+        Body body = new Body().drain(channel);
+        assertEquals(0, body.parts);
+        assertTrue(body.last);
+        assertEquals("done", body.trailer);
+        assertEquals(0, input.refCnt());
+        assertFalse(channel.finishAndReleaseAll());
     }
 
     @Test

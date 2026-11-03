@@ -39,8 +39,10 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.internal.SystemPropertyUtil;
 import org.asynchttpclient.ResponseBodyControl;
+import org.asynchttpclient.netty.DiscardEvent;
 import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.Channels;
 import org.jetbrains.annotations.Nullable;
 
@@ -177,6 +179,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private boolean draining;
     private boolean readPending;
     private boolean inputClosed;
+    // Whether nobody reads the rest of the current body, so its input is dropped instead of inflated.
+    private boolean discarding;
 
     public Http1ContentDecompressor(boolean keepEncodingHeader, long maxDecompressedBytes) {
         // maxAllocation=0 is what the no-arg HttpContentDecompressor() constructor passes, so a single
@@ -372,6 +376,16 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         readPending = false;
     }
 
+    /**
+     * Whether the rest of the current body is discarded: the exchange is over, or the channel is being drained, for
+     * example after a redirect, an authentication challenge or a replay.
+     */
+    private static boolean isUnwanted(Channel channel) {
+        Object attribute = Channels.getAttribute(channel);
+        return attribute == DiscardEvent.DISCARD || attribute instanceof OnLastHttpContentCallback
+                || attribute instanceof NettyResponseFuture && ((NettyResponseFuture<?>) attribute).isDone();
+    }
+
     private static boolean isSuspended(Channel channel) {
         Object attribute = Channels.getAttribute(channel);
         return attribute instanceof NettyResponseFuture
@@ -484,7 +498,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             return;
         }
         ByteBuf in = content.content();
-        if (in.isReadable()) {
+        if (in.isReadable() && !discarding) {
             int generation = this.generation;
             boolean usedUp;
             try {
@@ -543,6 +557,10 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 int readable = in.readableBytes();
                 boolean usedUp = inflateOnce(ctx, in, generation);
                 if (abandoned(ctx, generation)) {
+                    return true;
+                }
+                if (discarding) {
+                    in.skipBytes(in.readableBytes());
                     return true;
                 }
                 if (!usedUp) {
@@ -622,6 +640,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             heldOutput = false;
             while (pendingOutput || !inflater.needsInput()) {
                 if (decompressed == null) {
+                    if (isUnwanted(ctx.channel())) {
+                        // Nobody reads the rest of this body, so inflating it would be wasted work, and could fail
+                        // the drain at the size limit. Its end is still handed on, so a drain callback still runs.
+                        discarding = true;
+                        break;
+                    }
                     if (!inputClosed && isSuspended(ctx.channel())) {
                         // The next part waits for a resume, and so does the output the inflater still holds.
                         suspended = true;
@@ -947,6 +971,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         }
         heldOutput = false;
         heldLast = null;
+        discarding = false;
         inflating = false;
         failed = false;
         finished = false;
