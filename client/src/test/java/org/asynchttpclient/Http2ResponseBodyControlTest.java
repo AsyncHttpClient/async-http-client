@@ -22,6 +22,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -32,9 +33,11 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
+import io.netty.handler.codec.http2.DefaultHttp2PingFrame;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
+import io.netty.handler.codec.http2.Http2PingFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
@@ -46,11 +49,15 @@ import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -58,6 +65,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -82,10 +90,13 @@ public class Http2ResponseBodyControlTest {
     private static final int FRAME_COUNT = 16;
     private static final int SIBLING_FRAME_COUNT = 64;
     private static final int CANCELLATION_ATTEMPTS = 8;
+    private static final long REPLAY_PING = 2362;
 
     private final AtomicInteger connectionCount = new AtomicInteger();
     private final CountDownLatch largeResponseQueued = new CountDownLatch(1);
     private final CompletableFuture<Void> largeResponseWritten = new CompletableFuture<>();
+    private final CompletableFuture<Void> replayFramesRead = new CompletableFuture<>();
+    private final AtomicInteger replayRequests = new AtomicInteger();
     private final CountDownLatch cancelledStreamClosed = new CountDownLatch(1);
     private final LinkedBlockingQueue<Boolean> cancelledLargeStreamClosed = new LinkedBlockingQueue<>();
 
@@ -128,7 +139,8 @@ public class Http2ResponseBodyControlTest {
                                         serverChildChannels.add(streamChannel);
                                         streamChannel.pipeline().addLast(new StreamingServerHandler());
                                     }
-                                }));
+                                }))
+                                .addLast(new ReplayPingAckHandler());
                     }
                 })
                 .bind(0)
@@ -225,6 +237,53 @@ public class Http2ResponseBodyControlTest {
     }
 
     @Test
+    public void replayDoesNotDeliverFramesQueuedForTheReplacedStream() throws Exception {
+        AtomicBoolean replayed = new AtomicBoolean();
+        IOExceptionFilter replayOnce = new IOExceptionFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                if (ctx.getIOException() != null && replayed.compareAndSet(false, true)) {
+                    return new FilterContext.FilterContextBuilder<>(ctx.getAsyncHandler(), ctx.getRequest())
+                            .replayRequest(true)
+                            .build();
+                }
+                return ctx;
+            }
+        };
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseInsecureTrustManager(true)
+                .setHttp2Enabled(true)
+                .setMaxRequestRetry(1)
+                .setRequestTimeout(Duration.ofSeconds(10))
+                .addIOExceptionFilter(replayOnce))) {
+            RecordingHandler handler = new RecordingHandler();
+            ListenableFuture<RecordingHandler> request = client.prepareGet(url("/replay")).execute(handler);
+            ResponseBodyControl first = handler.control.get(5, SECONDS);
+            assertSame(first, handler.controls.poll(5, SECONDS));
+
+            // The first response's DATA frames reach the client while it is suspended, so they wait in its stream
+            // channel when the replay completes the old response.
+            replayFramesRead.get(5, SECONDS);
+            assertTrue(handler.items.isEmpty(), "nothing may arrive while the response is suspended");
+
+            Channel stream = ((NettyResponseFuture<?>) request).channel();
+            stream.eventLoop().submit(() -> {
+                stream.pipeline().fireExceptionCaught(new IOException("injected"));
+            }).sync();
+            assertTrue(replayed.get());
+
+            assertEquals("<retry>", handler.items.poll(5, SECONDS));
+            ResponseBodyControl replacement = handler.controls.poll(5, SECONDS);
+            assertTrue(replacement != null, "the replayed response must get its own body control");
+            replacement.resume();
+            assertEquals("replayed", handler.items.poll(5, SECONDS),
+                    "after onRetry, the handler must not receive the frames of the replaced stream");
+            assertSame(handler, request.get(5, SECONDS));
+            assertNull(handler.throwable.get());
+        }
+    }
+
+    @Test
     public void repeatedCancellationReturnsHttp2ConnectionWindow() throws Exception {
         try (AsyncHttpClient client = http2Client()) {
             for (int i = 0; i < CANCELLATION_ATTEMPTS; i++) {
@@ -306,6 +365,17 @@ public class Http2ResponseBodyControlTest {
         return "https://localhost:" + serverPort + path;
     }
 
+    private final class ReplayPingAckHandler extends ChannelInboundHandlerAdapter {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object message) {
+            if (message instanceof Http2PingFrame && ((Http2PingFrame) message).ack()
+                    && ((Http2PingFrame) message).content() == REPLAY_PING) {
+                replayFramesRead.complete(null);
+            }
+            ctx.fireChannelRead(message);
+        }
+    }
+
     private final class StreamingServerHandler extends SimpleChannelInboundHandler<Object> {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Object message) {
@@ -342,6 +412,32 @@ public class Http2ResponseBodyControlTest {
                     writeHeaders(ctx);
                     writeFrames(ctx, SIBLING_FRAME_COUNT);
                     break;
+                case "/replay":
+                    if (replayRequests.incrementAndGet() > 1) {
+                        writeHeaders(ctx);
+                        ctx.writeAndFlush(new DefaultHttp2DataFrame(
+                                Unpooled.copiedBuffer("replayed", CharsetUtil.US_ASCII), true));
+                        break;
+                    }
+                    ctx.writeAndFlush(new DefaultHttp2HeadersFrame(new DefaultHttp2Headers().status("200"), false));
+                    // Written after the parent's read loop and flushed one by one, so that they arrive as separate
+                    // DATA frames. The stream stays open.
+                    ctx.executor().execute(() -> {
+                        ChannelFuture write = null;
+                        for (String frame : new String[]{"a", "b", "c"}) {
+                            write = ctx.writeAndFlush(new DefaultHttp2DataFrame(
+                                    Unpooled.copiedBuffer(frame, CharsetUtil.US_ASCII), false));
+                        }
+                        // The client acknowledges this PING only after it has read the frames written before it.
+                        write.addListener(result -> {
+                            if (result.isSuccess()) {
+                                ctx.channel().parent().writeAndFlush(new DefaultHttp2PingFrame(REPLAY_PING));
+                            } else {
+                                replayFramesRead.completeExceptionally(result.cause());
+                            }
+                        });
+                    });
+                    break;
                 case "/empty":
                     ctx.writeAndFlush(new DefaultHttp2HeadersFrame(
                             new DefaultHttp2Headers().status("200"), true));
@@ -374,6 +470,7 @@ public class Http2ResponseBodyControlTest {
 
     private static final class RecordingHandler implements AsyncHandler<RecordingHandler> {
         private final CompletableFuture<ResponseBodyControl> control = new CompletableFuture<>();
+        private final LinkedBlockingQueue<ResponseBodyControl> controls = new LinkedBlockingQueue<>();
         private final LinkedBlockingQueue<String> items = new LinkedBlockingQueue<>();
         private final AtomicLong bodyBytes = new AtomicLong();
         private final AtomicInteger protocolMajorVersion = new AtomicInteger();
@@ -413,6 +510,7 @@ public class Http2ResponseBodyControlTest {
             responseBodyControl = newControl;
             newControl.suspend();
             control.complete(newControl);
+            controls.add(newControl);
             return State.CONTINUE;
         }
 
@@ -431,6 +529,11 @@ public class Http2ResponseBodyControlTest {
                 responseBodyControl.cancel();
             }
             return State.CONTINUE;
+        }
+
+        @Override
+        public void onRetry() {
+            items.add("<retry>");
         }
 
         @Override

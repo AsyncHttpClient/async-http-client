@@ -22,6 +22,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -505,6 +506,68 @@ public class ResponseBodyControlTest {
             assertNull(handler.throwable.get());
 
             writeLast(firstServer);
+        }
+    }
+
+    @Test
+    public void ioExceptionReplayDrainsTheOldConnectionWithAutoReadDisabled() throws Exception {
+        AtomicBoolean replay = new AtomicBoolean();
+        IOExceptionFilter replayOnce = new IOExceptionFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                if (ctx.getIOException() != null && replay.compareAndSet(false, true)) {
+                    return new FilterContext.FilterContextBuilder<>(ctx.getAsyncHandler(), ctx.getRequest())
+                            .replayRequest(true)
+                            .build();
+                }
+                return ctx;
+            }
+        };
+        List<Channel> clientChannels = new CopyOnWriteArrayList<>();
+        AtomicInteger responseStarts = new AtomicInteger();
+        CompletableFuture<ResponseBodyControl> replacementControl = new CompletableFuture<>();
+
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setMaxRequestRetry(1)
+                .setRequestTimeout(Duration.ofSeconds(10))
+                .addIOExceptionFilter(replayOnce)
+                .addChannelOption(ChannelOption.AUTO_READ, false)
+                .setHttpAdditionalChannelInitializer(clientChannels::add))) {
+            RecordingHandler handler = new RecordingHandler(true) {
+                @Override
+                public State onResponseBodyStart(ResponseBodyControl control) {
+                    if (responseStarts.incrementAndGet() == 2) {
+                        replacementControl.complete(control);
+                    }
+                    return super.onResponseBodyStart(control);
+                }
+            };
+
+            ListenableFuture<RecordingHandler> request = client.prepareGet(url("/replay")).execute(handler);
+            ChannelHandlerContext firstServer = firstReplayContext.get(5, SECONDS);
+            handler.control.get(5, SECONDS);
+
+            // An I/O error while the first response is suspended replays the request.
+            Channel first = clientChannels.get(0);
+            first.eventLoop().submit(() -> {
+                first.pipeline().fireExceptionCaught(new IOException("injected"));
+            }).sync();
+            assertTrue(replay.get());
+            ResponseBodyControl replacement = replacementControl.get(5, SECONDS);
+
+            // With auto-read off, only a read issued by the replay lets the drain reach the end of the old response
+            // and close the connection, which a replay no longer keeps alive.
+            writeLast(firstServer);
+            assertTrue(first.closeFuture().await(5, SECONDS), "the old connection must be drained and closed");
+
+            ChannelHandlerContext secondServer = secondReplayContext.get(5, SECONDS);
+            writeChunk(secondServer, "replayed");
+            writeLast(secondServer);
+            replacement.resume();
+            assertEquals("replayed", handler.items.poll(5, SECONDS));
+            replacement.resume();
+            assertSame(handler, request.get(5, SECONDS));
+            assertNull(handler.throwable.get());
         }
     }
 
