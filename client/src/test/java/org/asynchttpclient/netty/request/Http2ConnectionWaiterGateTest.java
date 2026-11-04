@@ -39,8 +39,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -130,6 +132,33 @@ public class Http2ConnectionWaiterGateTest extends AbstractBasicTest {
                 release.countDown();
             }
             holder.get(TIMEOUT, TimeUnit.SECONDS);
+        }
+    }
+
+    /**
+     * h2c is never spoken to an HTTP proxy, so a cleartext origin behind one cannot register HTTP/2 either,
+     * even with h2c enabled. Jetty serves the absolute-URI request a forward proxy gets, so it stands in for
+     * the proxy.
+     */
+    @Test
+    public void permitExhaustedOnCleartextOriginBehindAnHttpProxyFailsWithoutWaitingOutConnectTimeout() throws Exception {
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setMaxConnections(1)
+                .setHttp2CleartextEnabled(true)
+                .setProxyServer(proxyServer("localhost", port1))
+                .setConnectTimeout(Duration.ofSeconds(30)))) {
+
+            Future<Response> holder = client.prepareGet(getTargetUrl()).execute();
+            try {
+                Future<Response> refused = client.prepareGet(getTargetUrl()).execute();
+                assertTrue(refused.isDone(), "the permit refusal should fail the future before execute() returns");
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                        () -> refused.get(5, TimeUnit.SECONDS));
+                assertInstanceOf(TooManyConnectionsException.class, failure.getCause());
+            } finally {
+                release.countDown();
+            }
+            assertEquals(200, holder.get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
         }
     }
 
