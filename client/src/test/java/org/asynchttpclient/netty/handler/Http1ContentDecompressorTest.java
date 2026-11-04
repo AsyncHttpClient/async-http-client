@@ -1269,6 +1269,32 @@ public class Http1ContentDecompressorTest {
         channel.finishAndReleaseAll();
     }
 
+    @Test
+    void aLargeChunkDoesNotInflateIntoOversizedPartBuffers() {
+        // One chunk of 1 MiB: the inflater would like an output buffer twice that size, but a part never holds more
+        // than MAX_PART_SIZE, so its buffer must not either.
+        byte[] encoded = gzip(randomBytes(1024 * 1024, 11));
+        EmbeddedChannel channel = new EmbeddedChannel(new Http1ContentDecompressor(false, 0));
+        channel.writeInbound(response("gzip", encoded.length));
+        channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
+        ReferenceCountUtil.release(channel.readInbound());
+        int parts = 0;
+        for (HttpContent part; (part = channel.readInbound()) != null; ) {
+            try {
+                if (part.content().isReadable()) {
+                    parts++;
+                    assertTrue(part.content().capacity() <= Http1ContentDecompressor.MAX_PART_SIZE,
+                            "a part of " + part.content().readableBytes() + " bytes sits in a buffer of "
+                                    + part.content().capacity());
+                }
+            } finally {
+                part.release();
+            }
+        }
+        assertTrue(parts >= 16, "parts: " + parts);
+        assertFalse(channel.finishAndReleaseAll());
+    }
+
     /**
      * Defines the decompressor's own classes afresh, and hides Netty's {@code Decompressor} API and its implementations
      * from them, as a Netty release older than 4.2.17 would.

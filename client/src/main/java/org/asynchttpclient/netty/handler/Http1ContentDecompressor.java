@@ -704,7 +704,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                         heldOutput = pendingOutput;
                         break;
                     }
-                    decompressed = ctx.alloc().heapBuffer(preferredOutputBufferSize(inflater));
+                    // No more than a part is ever written into it, so a large chunk does not get a buffer twice its
+                    // size for every part.
+                    decompressed = ctx.alloc().heapBuffer(Math.min(preferredOutputBufferSize(inflater), MAX_PART_SIZE));
                 }
                 byte[] outArray = decompressed.array();
                 int writerIndex = decompressed.writerIndex();
@@ -749,9 +751,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                     break;
                 }
                 // Grown after every unfinished step, as ZlibDecoder.prepareDecompressBuffer does, so a buffer
-                // that cannot grow fails at the same point: since Netty 4.2.19, only once it is also full.
+                // that cannot grow fails at the same point: since Netty 4.2.19, only once it is also full. Never
+                // past what is left of the part, though.
                 if (decompressed != null
-                        && decompressed.ensureWritable(preferredOutputBufferSize(inflater), true) == 1
+                        && decompressed.ensureWritable(Math.min(preferredOutputBufferSize(inflater),
+                                MAX_PART_SIZE - decompressed.readableBytes()), true) == 1
                         && !decompressed.isWritable()) {
                     throw new DecompressionException(
                             "Decompression buffer has reached maximum size: " + decompressed.maxCapacity());
