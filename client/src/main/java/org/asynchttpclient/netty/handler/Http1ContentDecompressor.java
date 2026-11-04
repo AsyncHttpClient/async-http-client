@@ -117,7 +117,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     // Same floor and forwarding threshold as JdkZlibDecoder, so the body is cut into parts the same way, except that
     // a part never grows past MAX_PART_SIZE.
     private static final int MIN_OUTPUT_BUFFER_SIZE = 512;
-    private static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
+    static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
             SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024));
 
     // Netty added its Decompressor API in 4.2.17. Without it, br, zstd and snappy go to HttpContentDecompressor's own

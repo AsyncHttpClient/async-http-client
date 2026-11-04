@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.netty.handler;
 
+import com.github.luben.zstd.Zstd;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -92,11 +93,11 @@ public class Http1ContentDecompressorForwardThresholdTest {
             new Random(91).nextBytes(payload);
             byte[] compressed = gzip(payload);
 
-            Exchange whole = new Exchange(compressed, false);
+            Exchange whole = new Exchange("gzip", compressed, false);
             check(whole.last, "the body did not end");
             check(Arrays.equals(payload, whole.bytes.toByteArray()), "the body differs");
 
-            Exchange suspended = new Exchange(compressed, true);
+            Exchange suspended = new Exchange("gzip", compressed, true);
             for (int resumes = 0; !suspended.last; resumes++) {
                 check(resumes < 100_000, "the suspended body did not end");
                 int before = suspended.parts;
@@ -107,8 +108,15 @@ public class Http1ContentDecompressorForwardThresholdTest {
             check(Arrays.equals(payload, suspended.bytes.toByteArray()), "the suspended body differs");
             check(suspended.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, "a part of " + suspended.maxPart
                     + " bytes was handed on");
-            System.out.println("decoded " + payload.length + " bytes in " + whole.parts + " parts, and in "
-                    + suspended.parts + " parts while suspending after each");
+
+            // At this threshold zstd is left to Netty's decoder, which must still decode it rather than hang.
+            Exchange zstd = new Exchange("zstd", Zstd.compress(payload), false);
+            check(zstd.last, "the zstd body did not end");
+            check(Arrays.equals(payload, zstd.bytes.toByteArray()), "the zstd body differs");
+
+            System.out.println("decoded " + payload.length + " bytes in " + whole.parts + " parts, in "
+                    + suspended.parts + " parts while suspending after each, and the zstd body in " + zstd.parts
+                    + " parts");
         }
 
         private static byte[] gzip(byte[] payload) {
@@ -128,7 +136,7 @@ public class Http1ContentDecompressorForwardThresholdTest {
         }
     }
 
-    /** A gzip response in one chunk, optionally suspended after every body part. */
+    /** A compressed response in one chunk, optionally suspended after every body part. */
     private static final class Exchange {
         final EmbeddedChannel channel = new EmbeddedChannel();
         final NettyResponseBodyControl control;
@@ -137,7 +145,7 @@ public class Http1ContentDecompressorForwardThresholdTest {
         int maxPart;
         boolean last;
 
-        Exchange(byte[] compressed, boolean suspendEachPart) {
+        Exchange(String contentEncoding, byte[] compressed, boolean suspendEachPart) {
             NettyResponseFuture<?> future = new NettyResponseFuture<>(
                     new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
                     null, 0, null, null, null);
@@ -169,7 +177,7 @@ public class Http1ContentDecompressorForwardThresholdTest {
                 }
             });
             DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
-            response.headers().set(HttpHeaderNames.CONTENT_ENCODING, "gzip");
+            response.headers().set(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, compressed.length);
             channel.writeInbound(response);
             channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(compressed)));
