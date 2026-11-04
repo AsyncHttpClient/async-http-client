@@ -432,9 +432,10 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     break;
                 }
                 // Grown after every unfinished step, as ZlibDecoder.prepareDecompressBuffer does, so a buffer
-                // that cannot grow fails at the same point.
+                // that cannot grow fails at the same point: since Netty 4.2.19, only once it is also full.
                 if (decompressed != null
-                        && decompressed.ensureWritable(preferredOutputBufferSize(inflater), true) == 1) {
+                        && decompressed.ensureWritable(preferredOutputBufferSize(inflater), true) == 1
+                        && !decompressed.isWritable()) {
                     throw new DecompressionException(
                             "Decompression buffer has reached maximum size: " + decompressed.maxCapacity());
                 }

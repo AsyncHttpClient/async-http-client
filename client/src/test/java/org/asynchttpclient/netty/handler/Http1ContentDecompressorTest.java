@@ -1072,14 +1072,15 @@ public class Http1ContentDecompressorTest {
 
     @Test
     void aBufferThatCannotGrowFailsLikeNetty() {
-        // A raw deflate stream flushed but not finished, so the inflater wants more room after its output.
-        Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-        byte[] flushed = new byte[4096];
-        deflater.setInput(randomBytes(900, 7));
-        int length = deflater.deflate(flushed, 0, flushed.length, Deflater.SYNC_FLUSH);
-        deflater.end();
-        byte[] encoded = Arrays.copyOf(flushed, length);
+        // Since Netty 4.2.19 (netty/netty#17692), output that still fits into the capped buffer is decoded.
+        Outcome fits = cappedBufferOutcome(flushedRawDeflate(randomBytes(900, 7)), "capped buffer, output fits");
+        assertNull(fits.failure, "capped buffer, output fits");
+        Outcome overflows = cappedBufferOutcome(flushedRawDeflate(new byte[64 * 1024]),
+                "capped buffer, output overflows");
+        assertEquals("Decompression buffer has reached maximum size: 1024", overflows.failure.getMessage());
+    }
 
+    private Outcome cappedBufferOutcome(byte[] encoded, String scenario) {
         List<Outcome> outcomes = new ArrayList<>();
         for (ChannelHandler decompressor : new ChannelHandler[]{nettyDecompressor(),
                 new Http1ContentDecompressor(false, 0)}) {
@@ -1091,9 +1092,19 @@ public class Http1ContentDecompressorTest {
                 // Netty's decoder runs once more when its channel is torn down.
             }
         }
-        assertSameOutcome(outcomes.get(0), outcomes.get(1), "capped buffer");
-        assertEquals("Decompression buffer has reached maximum size: 1024", outcomes.get(1).failure.getMessage());
-        assertInputsReleased(outcomes.get(1), "capped buffer");
+        assertSameOutcome(outcomes.get(0), outcomes.get(1), scenario);
+        assertInputsReleased(outcomes.get(1), scenario);
+        return outcomes.get(1);
+    }
+
+    // A raw deflate stream flushed but not finished, so the inflater wants more room after its output.
+    private static byte[] flushedRawDeflate(byte[] payload) {
+        Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+        byte[] flushed = new byte[payload.length + 1024];
+        deflater.setInput(payload);
+        int length = deflater.deflate(flushed, 0, flushed.length, Deflater.SYNC_FLUSH);
+        deflater.end();
+        return Arrays.copyOf(flushed, length);
     }
 
     /**
