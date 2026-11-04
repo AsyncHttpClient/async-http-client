@@ -541,6 +541,11 @@ public class ResponseBodyControlTest {
                     }
                     return super.onResponseBodyStart(control);
                 }
+
+                @Override
+                public void onRetry() {
+                    super.items.add("<retry>");
+                }
             };
 
             ListenableFuture<RecordingHandler> request = client.prepareGet(url("/replay")).execute(handler);
@@ -564,6 +569,13 @@ public class ResponseBodyControlTest {
             writeChunk(secondServer, "replayed");
             writeLast(secondServer);
             replacement.resume();
+            // The first chunk is delivered before the replay when it arrives in the same read as the head; nothing of
+            // the first response may follow onRetry.
+            String beforeReplay = handler.items.poll(5, SECONDS);
+            if ("first".equals(beforeReplay)) {
+                beforeReplay = handler.items.poll(5, SECONDS);
+            }
+            assertEquals("<retry>", beforeReplay);
             assertEquals("replayed", handler.items.poll(5, SECONDS));
             replacement.resume();
             assertSame(handler, request.get(5, SECONDS));
