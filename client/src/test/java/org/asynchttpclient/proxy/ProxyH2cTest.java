@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -47,14 +48,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -100,8 +104,9 @@ public class ProxyH2cTest {
     }
 
     /**
-     * An HTTP forward proxy stub that records the first line it is sent and hangs up. Enough to see whether
-     * AsyncHttpClient opened with an HTTP/1.1 request or with the HTTP/2 connection preface.
+     * An HTTP forward proxy stub that records the first line it is sent and answers with HTTP/1.1. Enough to
+     * see whether AsyncHttpClient opened with an HTTP/1.1 request or with the HTTP/2 connection preface, and
+     * that the request still completes.
      */
     @Test
     public void h2cIsNotSpokenToAnHttpProxy() throws Exception {
@@ -117,39 +122,56 @@ public class ProxyH2cTest {
             pool.submit(() -> {
                 try (Socket client = serverSocket.accept()) {
                     InputStream in = client.getInputStream();
-                    StringBuilder sb = new StringBuilder();
-                    int c;
-                    while ((c = in.read()) != -1 && c != '\n') {
-                        if (c != '\r') {
-                            sb.append((char) c);
-                        }
+                    String line = readLine(in);
+                    firstLines.add(line);
+                    while (line != null && !line.isEmpty()) {
+                        line = readLine(in);
                     }
-                    firstLines.add(sb.toString());
+                    OutputStream out = client.getOutputStream();
+                    out.write("HTTP/1.1 200 OK\r\nContent-Length: 7\r\nConnection: close\r\n\r\nproxied"
+                            .getBytes(StandardCharsets.US_ASCII));
+                    out.flush();
                 } catch (IOException ignored) {
-                    // the client hangs up as soon as we do
+                    // the client hung up
                 } finally {
                     received.countDown();
                 }
             });
 
+            Response response = null;
+            Exception failure = null;
             try (AsyncHttpClient client = asyncHttpClient(config()
                     .setHttp2CleartextEnabled(true)
                     .setProxyServer(proxyServer("localhost", serverSocket.getLocalPort())))) {
                 try {
-                    client.prepareGet("http://example.invalid:8080/probe").execute().get(10, TimeUnit.SECONDS);
-                } catch (Exception expected) {
-                    // the stub proxy answers nothing; only the request head matters
+                    response = client.prepareGet("http://example.invalid:8080/probe").execute().get(10, TimeUnit.SECONDS);
+                } catch (ExecutionException | TimeoutException e) {
+                    failure = e;
                 }
             }
 
             assertTrue(received.await(10, TimeUnit.SECONDS), "the proxy never saw a request");
+            assertEquals(1, firstLines.size());
+            assertEquals("GET http://example.invalid:8080/probe HTTP/1.1", firstLines.get(0),
+                    "AsyncHttpClient must open an HTTP/1.1 exchange with an HTTP proxy, not an HTTP/2 preface");
+            assertNull(failure, "the request should complete through the proxy");
+            assertEquals(200, response.getStatusCode());
+            assertEquals(HttpProtocol.HTTP_1_1, response.getProtocol());
+            assertEquals("proxied", response.getResponseBody());
         } finally {
             pool.shutdownNow();
         }
+    }
 
-        assertEquals(1, firstLines.size());
-        assertEquals("GET http://example.invalid:8080/probe HTTP/1.1", firstLines.get(0),
-                "AsyncHttpClient must open an HTTP/1.1 exchange with an HTTP proxy, not an HTTP/2 preface");
+    private static String readLine(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int c;
+        while ((c = in.read()) != -1 && c != '\n') {
+            if (c != '\r') {
+                sb.append((char) c);
+            }
+        }
+        return c == -1 && sb.length() == 0 ? null : sb.toString();
     }
 
     /**
