@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * HTTP/2 across a forward proxy, against proxies written at the socket level rather than through Jetty.
  * <p>
  * Two hops can negotiate ALPN on a proxied HTTPS request and they have opposite requirements. The hop that
- * ends at the <b>origin</b> — set up after the {@code CONNECT} is accepted — must be able to negotiate h2,
+ * ends at the <b>origin</b>, set up after the {@code CONNECT} is accepted, must be able to negotiate h2,
  * or the request goes out as HTTP/1.1 on a connection the origin agreed to speak HTTP/2 on and fails with
  * {@code InvalidLineSeparatorException} (issues #2241, #2311). The hop that ends at an <b>HTTPS proxy</b>
  * must never negotiate h2, because everything AsyncHttpClient writes there is HTTP/1.1.
@@ -247,9 +247,9 @@ public class ProxyTunnelHttp2Test {
 
     /**
      * A TLS {@code CONNECT} proxy whose listener advertises {@code h2} ahead of {@code http/1.1}, like any
-     * HTTP/2-capable forward proxy. Records what each connection negotiated, and behaves like a real h2
-     * endpoint when h2 is selected: it demands the client connection preface (RFC 9113 §3.4) and drops a
-     * connection that opens with anything else.
+     * HTTP/2-capable forward proxy. Records what each connection negotiated. When h2 is selected, it reads
+     * up to the length of the client connection preface (RFC 9113 section 3.4) and then drops the
+     * connection, whatever arrived: the test only checks what ALPN selected.
      */
     private static final class TlsConnectProxy extends ConnectProxy {
 
@@ -298,7 +298,7 @@ public class ProxyTunnelHttp2Test {
                     }
                     read += n;
                 }
-                // Whatever arrived, it was not an HTTP/2 preface: connection error, drop it.
+                // Not checked: an h2-capable proxy would drop our HTTP/1.1 bytes, so drop the connection.
                 client.close();
                 return;
             }
@@ -464,7 +464,7 @@ public class ProxyTunnelHttp2Test {
     }
 
     /**
-     * The hop to an HTTPS proxy carries an HTTP/1.1 {@code CONNECT}, so it must advertise only http/1.1 —
+     * The hop to an HTTPS proxy carries an HTTP/1.1 {@code CONNECT}, so it must advertise only http/1.1,
      * whatever the target hop is allowed to negotiate. Advertising h2 lets an HTTP/2-capable proxy select it
      * and then receive HTTP/1.1 bytes, which it answers by dropping the connection.
      */
