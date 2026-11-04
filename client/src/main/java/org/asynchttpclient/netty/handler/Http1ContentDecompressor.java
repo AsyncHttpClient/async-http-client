@@ -92,6 +92,7 @@ import java.util.zip.Inflater;
  * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
  * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
  * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
+ * {@code zstd} also goes there while {@code io.netty.compression.defaultMaxForwardBytes} is not positive.
  * {@code gzip} and {@code deflate} never use the API.
  * <p>
  * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
