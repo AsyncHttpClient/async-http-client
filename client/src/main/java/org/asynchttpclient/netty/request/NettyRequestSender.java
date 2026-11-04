@@ -1631,12 +1631,21 @@ public final class NettyRequestSender {
         future.setProxyServer(getProxyServer(config, newRequest));
         future.setTargetRequest(newRequest);
 
-        NettyResponseBodyControl.complete(future);
+        // Detach the old channel before completing its body control. Completing it restores auto-read, and the read
+        // that issues can deliver what the old response still holds back on the spot, such as frames queued in an
+        // HTTP/2 stream channel. While the channel still names this future, that would reach the handler that has
+        // just been told to retry.
         if (channel instanceof Http2StreamChannel) {
             Channels.setDiscard(channel);
+            NettyResponseBodyControl.complete(future);
             channelManager.closeChannel(channel);
         } else {
             channelManager.drainChannelAndOffer(channel, future, future.isKeepAlive(), initialPartitionKey);
+            NettyResponseBodyControl.complete(future);
+            if (!channel.config().isAutoRead()) {
+                // Nothing else reads a suspended channel without auto-read, so start the drain here.
+                channel.read();
+            }
         }
         sendNextRequest(newRequest, future);
     }
