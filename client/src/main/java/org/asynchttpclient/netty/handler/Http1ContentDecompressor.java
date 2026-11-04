@@ -90,8 +90,9 @@ import java.util.zip.Inflater;
  * decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}.
  * <p>
  * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
- * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17, so these
- * codings need at least that version; {@code gzip} and {@code deflate} do not.
+ * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
+ * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
+ * {@code gzip} and {@code deflate} never use the API.
  * <p>
  * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
  * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
