@@ -1262,11 +1262,15 @@ public class Http1ContentDecompressorTest {
             assertDecoded(TEXT, exchange(channel, contentEncoding, encoded, sizes(encoded.length, 100), Kind.DIRECT));
             channel.finishAndReleaseAll();
         }
-        // The other codings need the API: without it, their response fails rather than being decoded another way.
-        EmbeddedChannel channel = channel((ChannelHandler) type.getConstructor(boolean.class, long.class)
-                .newInstance(false, 0L), allocator());
-        assertThrows(LinkageError.class, () -> channel.writeInbound(response("zstd", -1)));
-        channel.finishAndReleaseAll();
+        // Without the API, the other codings go to Netty's own decoders, as before. A second handler must not try
+        // the API again.
+        byte[] zstd = encode("zstd", TEXT);
+        for (int attempt = 0; attempt < 2; attempt++) {
+            EmbeddedChannel channel = channel((ChannelHandler) type.getConstructor(boolean.class, long.class)
+                    .newInstance(false, 0L), allocator());
+            assertDecoded(TEXT, exchange(channel, "zstd", zstd, sizes(zstd.length, 100), Kind.DIRECT));
+            channel.finishAndReleaseAll();
+        }
     }
 
     @Test

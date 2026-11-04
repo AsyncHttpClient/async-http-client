@@ -120,6 +120,10 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
             SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024));
 
+    // Netty added its Decompressor API in 4.2.17. Without it, br, zstd and snappy go to HttpContentDecompressor's own
+    // decoders, as they did before.
+    private static volatile boolean pullAvailable = true;
+
     // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
     // native window on every idle pooled connection.
     private static final int MAX_IDLE_INFLATERS = 16;
@@ -218,8 +222,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 contentEncoding = contentEncoding.trim();
                 boolean zlib = isGzip(contentEncoding) || isDeflate(contentEncoding);
                 if (!zlib && isPulled(contentEncoding)) {
-                    // Only here, so that gzip and deflate never load Netty's newer Decompressor API.
-                    pull = PullDecompression.create(contentEncoding, ctx.alloc(), maxDecompressedBytes);
+                    pull = newPullDecompression(ctx, contentEncoding);
                 }
                 if (zlib || pull != null) {
                     lastDecodedBySuper = false;
@@ -466,6 +469,19 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private static boolean isDeflate(String contentEncoding) {
         return HttpHeaderValues.DEFLATE.contentEqualsIgnoreCase(contentEncoding)
                 || HttpHeaderValues.X_DEFLATE.contentEqualsIgnoreCase(contentEncoding);
+    }
+
+    // Only called for br, zstd and snappy, so that gzip and deflate never load Netty's newer Decompressor API.
+    private @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+        if (!pullAvailable) {
+            return null;
+        }
+        try {
+            return PullDecompression.create(contentEncoding, ctx.alloc(), maxDecompressedBytes);
+        } catch (LinkageError e) {
+            pullAvailable = false;
+            return null;
+        }
     }
 
     private static boolean isPulled(String contentEncoding) {
