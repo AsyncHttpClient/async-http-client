@@ -48,6 +48,8 @@ final class PullDecompression {
     private long decompressedBytes;
     // Output already taken from the decompressor that did not fit into the previous part.
     private @Nullable ByteBuf carriedOutput;
+    private boolean inputAdded;
+    private boolean inputEnded;
 
     private PullDecompression(Decompressor decompressor, long maxDecompressedBytes) {
         this.decompressor = decompressor;
@@ -87,9 +89,21 @@ final class PullDecompression {
      */
     void addInput(ByteBuf input) {
         if (decompressor.status() == Decompressor.Status.NEED_INPUT) {
+            inputAdded = true;
             decompressor.addInput(input);
         } else {
             input.release();
+        }
+    }
+
+    /**
+     * Tells the decompressor that the body has ended, which fails a truncated stream. Only called once all output has
+     * been taken; there may be more afterwards. A body without any bytes is left alone, as Netty's decoders leave it.
+     */
+    void endOfInput() {
+        if (inputAdded && !inputEnded && decompressor.status() == Decompressor.Status.NEED_INPUT) {
+            inputEnded = true;
+            decompressor.endOfInput();
         }
     }
 
