@@ -227,6 +227,32 @@ public class UriTest {
     }
 
     @Test
+    public void testToRelativeUrlWithoutQuery() {
+        assertEquals("/path/path2", new Uri("http", null, "example.com", -1, "/path/path2", null, null).toRelativeUrl());
+        assertEquals("/", new Uri("http", null, "example.com", -1, "/", null, null).toRelativeUrl());
+        assertEquals("/", new Uri("http", null, "example.com", -1, "", null, null).toRelativeUrl());
+        assertEquals("/", new Uri("http", null, "example.com", -1, null, null, null).toRelativeUrl());
+        assertEquals("/a%20b/%E2%82%AC", new Uri("http", null, "example.com", -1, "/a%20b/%E2%82%AC", null, null).toRelativeUrl());
+    }
+
+    @Test
+    public void testToRelativeUrlWithEmptyQuery() {
+        assertEquals("/path?", new Uri("http", null, "example.com", -1, "/path", "", null).toRelativeUrl());
+        assertEquals("/?", new Uri("http", null, "example.com", -1, "", "", null).toRelativeUrl());
+        assertEquals("/?", new Uri("http", null, "example.com", -1, null, "", null).toRelativeUrl());
+    }
+
+    @Test
+    public void testToRelativeUrlOfParsedUri() {
+        assertEquals("/", Uri.create("http://example.com").toRelativeUrl());
+        assertEquals("/", Uri.create("http://example.com/").toRelativeUrl());
+        assertEquals("/?", Uri.create("http://example.com?").toRelativeUrl());
+        assertEquals("/a%2Fb/c%20d", Uri.create("http://user@example.com:8080/a%2Fb/c%20d#frag").toRelativeUrl());
+        assertEquals("/a%2Fb?x=%20&y", Uri.create("http://example.com/a%2Fb?x=%20&y#frag").toRelativeUrl());
+        assertEquals("/?x=1", Uri.create("https://example.com?x=1").toRelativeUrl());
+    }
+
+    @Test
     public void testGetSchemeDefaultPortHttpScheme() {
         String url = "https://hello.com/level1/level2/level3";
         Uri uri = Uri.create(url);
