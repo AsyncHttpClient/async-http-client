@@ -24,6 +24,7 @@ import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.compression.DecompressionException;
+import io.netty.handler.codec.compression.ZstdDecoder;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -448,6 +449,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     @Override
     protected EmbeddedChannel newContentDecoder(String contentEncoding) throws Exception {
         EmbeddedChannel decoder = super.newContentDecoder(contentEncoding);
+        if (decoder != null && MAX_FORWARD_BYTES <= 0
+                && HttpHeaderValues.ZSTD.contentEqualsIgnoreCase(contentEncoding)) {
+            // Since Netty 4.2.20, the ZstdDecoder that HttpContentDecompressor creates sizes its output buffers by
+            // this threshold, so it would hand on an empty body at 0 and fail below it.
+            decoder.pipeline().replace(ZstdDecoder.class, null, new ZstdDecoder(MAX_PART_SIZE));
+        }
         if (decoder != null && maxDecompressedBytes > 0) {
             // Appended before HttpContentDecoder appends its forwarder, so every decompressed buffer is
             // counted before it leaves for the outer pipeline.
