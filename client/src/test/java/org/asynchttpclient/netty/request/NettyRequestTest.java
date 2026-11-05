@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link NettyRequest#release()} — the idempotent release that lets the HTTP/2
@@ -61,6 +63,31 @@ public class NettyRequestTest {
         request.release();
 
         assertEquals(0, content.refCnt(), "buffer stays released; no double-free");
+    }
+
+    @Test
+    public void releaseLeavesARequestHandedToTheChannelToTheEncoder() {
+        ByteBuf content = Unpooled.buffer().writeBytes("payload".getBytes(StandardCharsets.UTF_8));
+        NettyRequest request = new NettyRequest(postWithBody(content), null);
+
+        assertTrue(request.markHandedToChannel());
+        request.release();
+        request.release();
+
+        assertEquals(1, content.refCnt(), "the encoder owns the release once the request is handed over");
+        assertTrue(request.isHandedToChannel());
+        content.release();
+    }
+
+    @Test
+    public void releasedRequestCannotBeHandedToTheChannel() {
+        ByteBuf content = Unpooled.buffer().writeBytes("payload".getBytes(StandardCharsets.UTF_8));
+        NettyRequest request = new NettyRequest(postWithBody(content), null);
+
+        request.release();
+
+        assertFalse(request.markHandedToChannel(), "a released body must never be written");
+        assertEquals(0, content.refCnt());
     }
 
     @Test
