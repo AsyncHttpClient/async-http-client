@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.ProtocolException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -184,15 +185,18 @@ public final class NettyConnectListener<T> {
                         NettyConnectListener.this.onFailure(channel, e);
                         return;
                     }
-                    // The engine advertises only http/1.1, so a conformant proxy cannot have selected h2.
-                    // A user-supplied SslContext is reused as-is and can still do it, in which case the
-                    // proxy rejects our HTTP/1.1 bytes and the request dies of a bare "Remotely closed".
-                    // Name the cause, as the WebSocket path below does.
+                    // The default engine advertises only http/1.1 here, so a conformant proxy cannot have
+                    // selected h2. An engine that still offers it can get it, and the proxy would then reject
+                    // our HTTP/1.1 bytes: fail now with the reason rather than with a bare "Remotely closed".
+                    // Not retried, since a new connection would select h2 again.
                     if (ApplicationProtocolNames.HTTP_2.equals(sslHandler.applicationProtocol())) {
-                        LOGGER.warn("HTTPS proxy {}:{} negotiated HTTP/2; AsyncHttpClient speaks only HTTP/1.1 to a "
-                                        + "proxy, so this connection will likely be rejected. Supply an SslContext "
-                                        + "or SslEngineFactory that advertises http/1.1 for the proxy connection.",
-                                proxyServer.getHost(), proxyServer.getSecuredPort());
+                        Channels.silentlyCloseChannel(channel);
+                        abort(new ProtocolException("HTTPS proxy " + proxyServer.getHost() + ':'
+                                + proxyServer.getSecuredPort() + " selected h2, but AsyncHttpClient speaks only "
+                                + "HTTP/1.1 to a proxy. A user-supplied SslContext offers the same protocols on every "
+                                + "connection; to keep h2 to origins, use an SslEngineFactory that offers only "
+                                + "http/1.1 when http2Allowed is false."));
+                        return;
                     }
                     // After SSL handshake to proxy, continue with normal proxy request
                     writeRequest(channel);
@@ -395,7 +399,10 @@ public final class NettyConnectListener<T> {
         }
 
         LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
+        abort(cause);
+    }
 
+    private void abort(Throwable cause) {
         String message = cause.getMessage() != null ? cause.getMessage() : future.getUri().getBaseUrl();
         ConnectException e = new ConnectException(message);
         e.initCause(cause);

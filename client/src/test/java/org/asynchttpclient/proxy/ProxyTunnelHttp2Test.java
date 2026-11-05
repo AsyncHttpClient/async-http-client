@@ -39,6 +39,8 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.ReferenceCountUtil;
@@ -57,6 +59,7 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -65,10 +68,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,7 +84,10 @@ import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * HTTP/2 across a forward proxy, against proxies written at the socket level rather than through Jetty.
@@ -248,14 +257,15 @@ public class ProxyTunnelHttp2Test {
     /**
      * A TLS {@code CONNECT} proxy whose listener advertises {@code h2} ahead of {@code http/1.1}, like any
      * HTTP/2-capable forward proxy. Records what each connection negotiated. When h2 is selected, it reads
-     * up to the length of the client connection preface (RFC 9113 section 3.4) and then drops the
-     * connection, whatever arrived: the test only checks what ALPN selected.
+     * up to the length of the client connection preface (RFC 9113 section 3.4), records how many bytes
+     * arrived, and then drops the connection, whatever they were.
      */
     private static final class TlsConnectProxy extends ConnectProxy {
 
         private static final int H2_PREFACE_LENGTH = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".length();
 
         private final List<String> negotiatedProtocols = new CopyOnWriteArrayList<>();
+        private final BlockingQueue<Integer> bytesReadAfterSelectingHttp2 = new LinkedBlockingQueue<>();
 
         TlsConnectProxy(X509Bundle bundle) throws Exception {
             super(newTlsServerSocket(bundle));
@@ -277,6 +287,11 @@ public class ProxyTunnelHttp2Test {
             return Collections.unmodifiableList(negotiatedProtocols);
         }
 
+        /** For each connection that selected h2, in order, how many bytes it was sent before it closed. */
+        BlockingQueue<Integer> bytesReadAfterSelectingHttp2() {
+            return bytesReadAfterSelectingHttp2;
+        }
+
         @Override
         void handle(Socket socket) throws Exception {
             SSLSocket client = (SSLSocket) socket;
@@ -291,12 +306,18 @@ public class ProxyTunnelHttp2Test {
             if (ApplicationProtocolNames.HTTP_2.equals(alpn)) {
                 byte[] preface = new byte[H2_PREFACE_LENGTH];
                 int read = 0;
-                while (read < preface.length) {
-                    int n = in.read(preface, read, preface.length - read);
-                    if (n < 0) {
-                        break;
+                try {
+                    while (read < preface.length) {
+                        int n = in.read(preface, read, preface.length - read);
+                        if (n < 0) {
+                            break;
+                        }
+                        read += n;
                     }
-                    read += n;
+                } catch (IOException e) {
+                    // the client hung up without a close_notify
+                } finally {
+                    bytesReadAfterSelectingHttp2.add(read);
                 }
                 // Not checked: an h2-capable proxy would drop our HTTP/1.1 bytes, so drop the connection.
                 client.close();
@@ -490,6 +511,41 @@ public class ProxyTunnelHttp2Test {
             assertNotNull(response, "request should succeed once the proxy hop stays on HTTP/1.1");
             assertEquals(200, response.getStatusCode());
             assertEquals(HttpProtocol.HTTP_2, response.getProtocol(), "the target hop should still be HTTP/2");
+        }
+    }
+
+    /**
+     * An engine that still offers h2 on the hop to the proxy, here one from a user-supplied {@code SslContext},
+     * lets an h2-capable proxy select it. The request must then fail at once with the reason, without writing
+     * HTTP/1.1 at the proxy or retrying the handshake, and return its connection permit.
+     */
+    @Test
+    public void httpsProxyHopThatSelectsHttp2FailsTheConnect() throws Exception {
+        SslContext offersHttp2 = SslContextBuilder.forClient()
+                .sslProvider(SslProvider.JDK)
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .applicationProtocolConfig(new ApplicationProtocolConfig(
+                        ApplicationProtocolConfig.Protocol.ALPN,
+                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                        ApplicationProtocolNames.HTTP_2,
+                        ApplicationProtocolNames.HTTP_1_1))
+                .build();
+        try (TlsConnectProxy tlsProxy = TlsConnectProxy.started(proxyBundle);
+             AsyncHttpClient client = asyncHttpClient(config()
+                     .setSslContext(offersHttp2)
+                     .setMaxConnections(1)
+                     .setProxyServer(proxyServer("localhost", tlsProxy.port()).setProxyType(ProxyType.HTTPS)))) {
+            // With one permit, the second request only reaches the proxy if the first returned it.
+            for (int i = 1; i <= 2; i++) {
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                        () -> client.prepareGet(httpsUrl("/through-tls-proxy")).execute().get(30, SECONDS));
+                assertInstanceOf(ConnectException.class, failure.getCause());
+                assertTrue(failure.getCause().getMessage().contains("selected h2"), failure.getCause().getMessage());
+                assertEquals(0, tlsProxy.bytesReadAfterSelectingHttp2().poll(10, SECONDS),
+                        "request " + i + " wrote to the proxy after it selected h2");
+                assertEquals(i, tlsProxy.acceptedConnections(), "one handshake per request, without retries");
+            }
         }
     }
 
