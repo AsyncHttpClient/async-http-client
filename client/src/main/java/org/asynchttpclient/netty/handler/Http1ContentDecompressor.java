@@ -846,10 +846,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 if (in.readableBytes() < 10) {
                     return false;
                 }
-                int magic0 = in.readByte();
-                int magic1 = in.readByte();
-                // Like JdkZlibDecoder, only the first magic byte is checked.
-                if (magic0 != 31) {
+                int magic0 = in.readUnsignedByte();
+                int magic1 = in.readUnsignedByte();
+                if (magic0 != 31 || magic1 != 139) {
                     throw new DecompressionException("Input is not in the GZIP format");
                 }
                 crc.update(magic0);
