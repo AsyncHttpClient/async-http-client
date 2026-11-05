@@ -507,6 +507,12 @@
                                         "ignore": true,
                                         "differences": [
                                             {
+                                                "code": "java.method.visibilityIncreased",
+                                                "old": "method void org.asynchttpclient.netty.NettyResponseBodyControl::execute(java.lang.Runnable)",
+                                                "new": "method void org.asynchttpclient.netty.NettyResponseBodyControl::execute(java.lang.Runnable)",
+                                                "justification": "NettyResponseBodyControl implements the new ResponseBodyControl.execute default method with its existing event-loop dispatch, which was private. Making a private method public is binary and source compatible, and the class is final, so no subclass can be affected. Scoped to this exact method."
+                                            },
+                                            {
                                                 "code": "java.class.externalClassExposedInAPI",
                                                 "justification": "Netty types are part of the public API by design"
                                             },

@@ -186,7 +186,9 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
         }
     }
 
-    private void execute(Runnable task) {
+    @Override
+    public void execute(Runnable task) {
+        Objects.requireNonNull(task, "task");
         if (channel.eventLoop().inEventLoop()) {
             task.run();
         } else {

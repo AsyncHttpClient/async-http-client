@@ -351,6 +351,48 @@ public class Http2ResponseBodyControlTest {
         }
     }
 
+    @Test
+    public void executeFromAnotherThreadCanResumeAnHttp2Stream() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            RecordingHandler handler = new RecordingHandler();
+            ListenableFuture<RecordingHandler> request = client.prepareGet(url("/large")).execute(handler);
+            ResponseBodyControl control = handler.control.get(5, SECONDS);
+            assertTrue(largeResponseQueued.await(5, SECONDS));
+            assertThrows(TimeoutException.class, () -> request.get(250, MILLISECONDS));
+
+            CompletableFuture<Thread> taskThread = new CompletableFuture<>();
+            control.execute(() -> {
+                taskThread.complete(Thread.currentThread());
+                control.resume();
+            });
+
+            assertSame(handler, request.get(10, SECONDS));
+            assertSame(handler.bodyPartThread.get(), taskThread.get(5, SECONDS),
+                    "a task from another thread must run on the stream's event loop");
+            assertEquals((long) FRAME_SIZE * FRAME_COUNT, handler.bodyBytes.get());
+            assertNull(handler.throwable.get());
+        }
+    }
+
+    @Test
+    public void aQueuedTaskThatThrowsDoesNotFailTheHttp2Stream() throws Exception {
+        try (AsyncHttpClient client = http2Client()) {
+            RecordingHandler handler = new RecordingHandler();
+            ListenableFuture<RecordingHandler> request = client.prepareGet(url("/large")).execute(handler);
+            ResponseBodyControl control = handler.control.get(5, SECONDS);
+            assertTrue(largeResponseQueued.await(5, SECONDS));
+
+            control.execute(() -> {
+                throw new IllegalStateException("task failed");
+            });
+            control.execute(control::resume);
+
+            assertSame(handler, request.get(10, SECONDS));
+            assertEquals((long) FRAME_SIZE * FRAME_COUNT, handler.bodyBytes.get());
+            assertNull(handler.throwable.get());
+        }
+    }
+
     private AsyncHttpClient http2Client() {
         return asyncHttpClient(config()
                 .setUseInsecureTrustManager(true)
@@ -476,6 +518,7 @@ public class Http2ResponseBodyControlTest {
         private final AtomicInteger protocolMajorVersion = new AtomicInteger();
         private final AtomicReference<Throwable> throwable = new AtomicReference<>();
         private final CompletableFuture<Void> firstBodyPart = new CompletableFuture<>();
+        private final AtomicReference<Thread> bodyPartThread = new AtomicReference<>();
         private final AtomicInteger completionCount = new AtomicInteger();
         private final boolean suspendEveryPart;
         private final boolean cancelOnBodyPart;
@@ -516,6 +559,7 @@ public class Http2ResponseBodyControlTest {
 
         @Override
         public State onBodyPartReceived(HttpResponseBodyPart bodyPart) {
+            bodyPartThread.set(Thread.currentThread());
             byte[] bytes = bodyPart.getBodyPartBytes();
             bodyBytes.addAndGet(bytes.length);
             if (bytes.length > 0) {
