@@ -46,7 +46,6 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StringUtils;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -250,7 +249,7 @@ public final class NettyRequestFactory {
         } else if (request.getCompositeByteData() != null) {
             nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
         } else if (request.getStringData() != null) {
-            nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
+            nettyBody = new NettyByteArrayBody(request.getStringData().getBytes(bodyCharset));
         } else if (request.getByteBufferData() != null) {
             nettyBody = new NettyByteBufferBody(request.getByteBufferData());
         } else if (request.getByteBufData() != null) {
