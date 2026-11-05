@@ -80,6 +80,8 @@ import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizatio
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.ACCEPT_ALL_HEADER_VALUE;
 import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
+import static org.asynchttpclient.util.HttpUtils.cookiePairName;
+import static org.asynchttpclient.util.HttpUtils.cookiePairs;
 import static org.asynchttpclient.util.HttpUtils.filterOutBrotliFromAcceptEncoding;
 import static org.asynchttpclient.util.HttpUtils.filterOutZstdFromAcceptEncoding;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
@@ -203,10 +205,9 @@ public final class NettyRequestFactory {
                 merged.append("; ");
             }
             merged.append(callerHeader, start, end);
-            for (String pair : callerHeader.split(";")) {
-                int eq = pair.indexOf('=');
-                // Case-sensitive, but trimmed: "a = 1" still names "a".
-                String name = (eq >= 0 ? pair.substring(0, eq) : pair).trim();
+            for (String pair : cookiePairs(callerHeader)) {
+                // Case-sensitive, unlike CallerCookies, which folds names as the store does.
+                String name = cookiePairName(pair);
                 if (!name.isEmpty()) {
                     callerNames.add(name);
                 }

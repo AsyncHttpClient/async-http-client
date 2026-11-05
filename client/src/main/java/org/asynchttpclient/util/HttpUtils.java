@@ -178,6 +178,23 @@ public final class HttpUtils {
         }
     }
 
+    /**
+     * The name=value pairs of a {@code Cookie} header value, as written. Every ';' ends a pair, inside quotes too:
+     * RFC 6265 does not allow one in a cookie value.
+     */
+    public static String[] cookiePairs(String cookieHeader) {
+        return cookieHeader.split(";", -1);
+    }
+
+    /**
+     * The name of a pair from {@link #cookiePairs}: the text before its first '=', or all of it, trimmed, so
+     * "a = 1" names "a".
+     */
+    public static String cookiePairName(String pair) {
+        int eq = pair.indexOf('=');
+        return (eq >= 0 ? pair.substring(0, eq) : pair).trim();
+    }
+
     public static CharSequence filterOutBrotliFromAcceptEncoding(String acceptEncoding) {
         // we don't support Brotly ATM
         if (acceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
