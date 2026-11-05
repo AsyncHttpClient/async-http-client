@@ -41,8 +41,6 @@ public final class HttpUtils {
     public static final AsciiString GZIP_DEFLATE_HPACK = new AsciiString(HttpHeaderValues.GZIP + ", " + HttpHeaderValues.DEFLATE);
     private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
     private static final String CONTENT_TYPE_BOUNDARY_ATTRIBUTE = "boundary=";
-    private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
-    private static final String ZSTD_ACCEPT_ENCODING_SUFFIX = ", zstd";
 
     private HttpUtils() {
         // Prevent outside initialization
@@ -179,18 +177,36 @@ public final class HttpUtils {
     }
 
     public static CharSequence filterOutBrotliFromAcceptEncoding(String acceptEncoding) {
-        // we don't support Brotly ATM
-        if (acceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
-            return acceptEncoding.subSequence(0, acceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length());
-        }
-        return acceptEncoding;
+        return filterOutAcceptEncoding(acceptEncoding, HttpHeaderValues.BR);
     }
 
     public static CharSequence filterOutZstdFromAcceptEncoding(String acceptEncoding) {
-        // we don't support zstd ATM
-        if (acceptEncoding.endsWith(ZSTD_ACCEPT_ENCODING_SUFFIX)) {
-            return acceptEncoding.subSequence(0, acceptEncoding.length() - ZSTD_ACCEPT_ENCODING_SUFFIX.length());
+        return filterOutAcceptEncoding(acceptEncoding, HttpHeaderValues.ZSTD);
+    }
+
+    /**
+     * Drops every element naming {@code coding}, which may appear anywhere in the list, in any case and with a weight
+     * (RFC 9110 section 12.5.3). Dropping the last element leaves an empty value, which accepts no content coding.
+     */
+    private static String filterOutAcceptEncoding(String acceptEncoding, AsciiString coding) {
+        if (!AsciiString.containsIgnoreCase(acceptEncoding, coding)) {
+            return acceptEncoding;
         }
-        return acceptEncoding;
+        StringBuilder kept = new StringBuilder(acceptEncoding.length());
+        boolean dropped = false;
+        for (String element : acceptEncoding.split(",")) {
+            String trimmed = element.trim();
+            int semicolon = trimmed.indexOf(';');
+            String token = semicolon < 0 ? trimmed : trimmed.substring(0, semicolon).trim();
+            if (coding.contentEqualsIgnoreCase(token)) {
+                dropped = true;
+            } else if (!trimmed.isEmpty()) {
+                if (kept.length() > 0) {
+                    kept.append(", ");
+                }
+                kept.append(trimmed);
+            }
+        }
+        return dropped ? kept.toString() : acceptEncoding;
     }
 }

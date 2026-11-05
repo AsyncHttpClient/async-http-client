@@ -185,4 +185,42 @@ public class HttpUtilsTest {
     public void computeOriginForSecuredUriWithNonDefaultPort() {
         assertEquals("https://foo.com:444", HttpUtils.originHeader(Uri.create("wss://foo.com:444/bar")));
     }
+
+    @Test
+    public void filterOutBrotliDropsTheCodingWherever() {
+        assertEquals("gzip, deflate", filterOutBrotli("gzip, deflate, br"));
+        assertEquals("gzip, deflate, zstd", filterOutBrotli("gzip, deflate, br, zstd"));
+        assertEquals("gzip, deflate", filterOutBrotli("br, gzip, deflate"));
+        assertEquals("gzip, deflate", filterOutBrotli("gzip,br,deflate"));
+        assertEquals("", filterOutBrotli("br"));
+    }
+
+    @Test
+    public void filterOutBrotliIgnoresCaseWhitespaceAndWeight() {
+        assertEquals("gzip;q=0.8, deflate", filterOutBrotli("gzip;q=0.8, BR ; q=1.0 ,	deflate"));
+        assertEquals("gzip", filterOutBrotli("gzip, Br;q=0.5"));
+    }
+
+    @Test
+    public void filterOutBrotliKeepsOtherCodings() {
+        assertEquals("gzip,deflate", filterOutBrotli("gzip,deflate"));
+        assertEquals("gzip, brotli, x-br", filterOutBrotli("gzip, brotli, x-br"));
+    }
+
+    @Test
+    public void filterOutZstdDropsTheCodingWherever() {
+        assertEquals("gzip, deflate", filterOutZstd("gzip, deflate, zstd"));
+        assertEquals("gzip, deflate, br", filterOutZstd("gzip, deflate, zstd, br"));
+        assertEquals("gzip;q=0.8, br", filterOutZstd("ZSTD;q=1, gzip;q=0.8, br"));
+        assertEquals("gzip, zstd-x", filterOutZstd("gzip, zstd-x"));
+        assertEquals("", filterOutZstd(" zstd "));
+    }
+
+    private static String filterOutBrotli(String acceptEncoding) {
+        return HttpUtils.filterOutBrotliFromAcceptEncoding(acceptEncoding).toString();
+    }
+
+    private static String filterOutZstd(String acceptEncoding) {
+        return HttpUtils.filterOutZstdFromAcceptEncoding(acceptEncoding).toString();
+    }
 }

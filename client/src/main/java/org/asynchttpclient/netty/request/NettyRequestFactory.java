@@ -355,19 +355,10 @@ public final class NettyRequestFactory {
             // Unconditional: it also folds several caller-set Cookie fields into one.
             mergeCookies(request.getCookies(), headers);
 
-            String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
-            if (userDefinedAcceptEncoding != null) {
+            if (headers.contains(ACCEPT_ENCODING)) {
+                // For manual decompression by the user any encoding may suit, so leave it untouched
                 if (config.isEnableAutomaticDecompression()) {
-                    if (!Brotli.isAvailable()) {
-                        // Brotli is not available.
-                        // For manual decompression by user, any encoding may suite, so leave untouched
-                        headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
-                    }
-                    if (!Zstd.isAvailable()) {
-                        // zstd is not available.
-                        // For manual decompression by user, any encoding may suit, so leave untouched
-                        headers.set(ACCEPT_ENCODING, filterOutZstdFromAcceptEncoding(userDefinedAcceptEncoding));
-                    }
+                    filterOutUndecodableAcceptEncodings(headers, Brotli.isAvailable(), Zstd.isAvailable());
                 }
             } else if (config.isCompressionEnforced()) {
                 // Add Accept Encoding header if compression is enforced
@@ -485,6 +476,27 @@ public final class NettyRequestFactory {
             return keepAlive ? null : HttpHeaderValues.CLOSE;
         } else {
             return keepAlive ? HttpHeaderValues.KEEP_ALIVE : null;
+        }
+    }
+
+    /**
+     * Without its library a coding would reach the user still compressed, so it is not offered. Several fields are
+     * filtered as their comma-joined list, which means the same (RFC 9110 section 5.3).
+     */
+    static void filterOutUndecodableAcceptEncodings(HttpHeaders headers, boolean brotliAvailable, boolean zstdAvailable) {
+        if (brotliAvailable && zstdAvailable) {
+            return;
+        }
+        String acceptEncoding = String.join(", ", headers.getAll(ACCEPT_ENCODING));
+        String filtered = acceptEncoding;
+        if (!brotliAvailable) {
+            filtered = filterOutBrotliFromAcceptEncoding(filtered).toString();
+        }
+        if (!zstdAvailable) {
+            filtered = filterOutZstdFromAcceptEncoding(filtered).toString();
+        }
+        if (!filtered.equals(acceptEncoding)) {
+            headers.set(ACCEPT_ENCODING, filtered);
         }
     }
 }
