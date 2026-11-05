@@ -23,6 +23,14 @@ import java.util.Objects;
  * The control is thread-safe and remains valid until its response completes. Calls made after completion have no
  * effect.
  * <p>
+ * Calls take effect on the event loop that delivers the response body callbacks to the {@link AsyncHandler}. A call
+ * made on that event loop, for example from one of those callbacks, takes effect before it returns. A call made from
+ * any other thread takes effect asynchronously on the event loop, possibly after further callbacks. A
+ * {@link #resume()} always takes effect, even after a {@link #suspend()} that a callback makes before the resume is
+ * applied, so a resume is never lost. A {@link #suspend()} from another thread is skipped if, by the time it would take
+ * effect, the most recent call to {@link #suspend()} or {@link #resume()} was a resume. Calls made concurrently on
+ * different threads are not ordered otherwise.
+ * <p>
  * A control is also supplied when the final response headers end the response without a body. In that case,
  * {@link #suspend()} cannot defer completion: the control becomes inactive when
  * {@link AsyncHandler#onResponseBodyStart(ResponseBodyControl)} returns, and later calls have no effect.

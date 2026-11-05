@@ -39,6 +39,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     private final boolean previousAutoRead;
 
     private final AtomicBoolean active = new AtomicBoolean(true);
+    private volatile boolean suspendRequested;
     private volatile boolean suspended;
     private volatile boolean bodyFullyRead;
 
@@ -119,17 +120,32 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
 
     @Override
     public void suspend() {
-        execute(this::suspend0);
+        suspendRequested = true;
+        if (channel.eventLoop().inEventLoop()) {
+            suspend0();
+        } else {
+            execute(this::applySuspend);
+        }
     }
 
     @Override
     public void resume() {
+        suspendRequested = false;
         execute(this::resume0);
     }
 
     @Override
     public void cancel() {
         execute(this::cancel0);
+    }
+
+    private void applySuspend() {
+        // A queued suspend() is skipped if resume() was called after the latest suspend(), so it cannot undo a newer
+        // resume(). A resume() is never skipped, so it is not lost to a suspend() that a callback decided on an older
+        // view.
+        if (suspendRequested) {
+            suspend0();
+        }
     }
 
     private void suspend0() {
