@@ -113,7 +113,10 @@ public class ProxyTunnelHttp2Test {
     private ConnectProxy proxy;
     private X509Bundle proxyBundle;
 
-    /** A raw {@code CONNECT} proxy that answers exactly like tinyproxy 1.11.2's {@code send_ssl_response()}. */
+    /**
+     * A raw {@code CONNECT} proxy that answers like tinyproxy 1.11.1 and older, with {@code HTTP/1.0 200}
+     * whatever HTTP version the {@code CONNECT} used.
+     */
     private static class ConnectProxy implements AutoCloseable {
 
         final ExecutorService pool = Executors.newCachedThreadPool(r -> {
@@ -174,7 +177,7 @@ public class ProxyTunnelHttp2Test {
         void handle(Socket client) throws Exception {
             client.setTcpNoDelay(true);
             tunnel(client, client.getInputStream(), client.getOutputStream(),
-                    "HTTP/1.0 200 Connection established\r\nProxy-agent: tinyproxy/1.11.2\r\n\r\n");
+                    "HTTP/1.0 200 Connection established\r\nProxy-agent: tinyproxy/1.11.1\r\n\r\n");
         }
 
         final void tunnel(Socket client, InputStream in, OutputStream out, String establishedResponse) throws IOException {

@@ -69,15 +69,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Cleartext HTTP/2 (prior knowledge) and proxies.
  * <p>
- * Prior knowledge is knowledge about the <em>origin</em>, so it may only be acted on when the origin is what
- * is on the other end of the socket. Behind an HTTP forward proxy it is not: a cleartext target needs no
- * {@code CONNECT}, so the request goes to the proxy in absolute-URI HTTP/1.1 form. Behind a SOCKS proxy it
- * is, because SOCKS tunnels at the transport layer, which is why the guard cannot simply be
- * {@code proxyServer == null}.
+ * {@code http2CleartextEnabled} states prior knowledge (RFC 9113 section 3.3) about origins, so it is only acted
+ * on when the origin is what is on the other end of the socket. Behind an HTTP forward proxy it is not: a
+ * cleartext target needs no {@code CONNECT}, so the request goes to the proxy in absolute-URI HTTP/1.1 form.
+ * Behind a SOCKS proxy it is, because SOCKS tunnels at the transport layer, which is why the guard cannot
+ * simply be {@code proxyServer == null}.
  */
 public class ProxyH2cTest {
 
-    /** Echoes the method and {@code :authority} of whatever the client sent, over cleartext HTTP/2. */
+    /** Echoes the method of whatever the client sent, over cleartext HTTP/2. */
     private static final class H2cHandler extends SimpleChannelInboundHandler<Object> {
 
         private Http2Headers requestHeaders;
