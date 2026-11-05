@@ -45,19 +45,24 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.asynchttpclient.Dsl.proxyServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -194,23 +199,7 @@ public class ProxyH2cTest {
         socksThread.start();
 
         try {
-            serverChannel = new ServerBootstrap()
-                    .group(serverGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer<Channel>() {
-                        @Override
-                        protected void initChannel(Channel ch) {
-                            ch.pipeline()
-                                    .addLast(Http2FrameCodecBuilder.forServer().build())
-                                    .addLast(new Http2MultiplexHandler(new ChannelInitializer<Http2StreamChannel>() {
-                                        @Override
-                                        protected void initChannel(Http2StreamChannel streamCh) {
-                                            streamCh.pipeline().addLast(new H2cHandler());
-                                        }
-                                    }));
-                        }
-                    })
-                    .bind(0).sync().channel();
+            serverChannel = startH2cServer(serverGroup, new AtomicInteger());
             int serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
 
             try (AsyncHttpClient client = asyncHttpClient(config()
@@ -229,5 +218,79 @@ public class ProxyH2cTest {
             }
             serverGroup.shutdownGracefully(0, 100, TimeUnit.MILLISECONDS).sync();
         }
+    }
+
+    /**
+     * Through SOCKS a cleartext origin can register HTTP/2, so a request that is refused a connection permit
+     * must wait for that connection rather than fail. The SOCKS proxy only starts answering once the second
+     * request has been refused, so the first connection cannot have registered HTTP/2 before.
+     */
+    @Test
+    public void overCapH2cRequestThroughASocksProxyWaitsForTheFirstConnection() throws Exception {
+        NioEventLoopGroup serverGroup = new NioEventLoopGroup(1);
+        Channel serverChannel = null;
+        AtomicInteger serverConnections = new AtomicInteger();
+        // Bound, but nothing is answered until run() starts.
+        SocksProxy socks = new SocksProxy(30_000);
+        Thread socksThread = new Thread(() -> {
+            try {
+                socks.run();
+            } catch (IOException ignored) {
+                // shutting down
+            }
+        });
+        socksThread.setDaemon(true);
+
+        try {
+            serverChannel = startH2cServer(serverGroup, serverConnections);
+            String url = "http://localhost:" + ((InetSocketAddress) serverChannel.localAddress()).getPort();
+
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setMaxConnections(1)
+                    .setHttp2CleartextEnabled(true)
+                    .setConnectTimeout(Duration.ofSeconds(30))
+                    .setProxyServer(proxyServer("localhost", socks.getPort()).setProxyType(ProxyType.SOCKS_V4)))) {
+                Future<Response> first = client.prepareGet(url + "/first").execute();
+                Future<Response> second = client.prepareGet(url + "/second").execute();
+                // A refusal that does not wait fails the future before execute() returns.
+                assertFalse(second.isDone(), "the request over the cap should wait for the first connection");
+                socksThread.start();
+
+                for (Future<Response> future : Arrays.asList(first, second)) {
+                    Response response = future.get(30, TimeUnit.SECONDS);
+                    assertEquals(200, response.getStatusCode());
+                    assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
+                }
+                assertEquals(1, serverConnections.get(), "both requests should share the one h2c connection");
+            }
+        } finally {
+            socks.stop();
+            if (serverChannel != null) {
+                serverChannel.close().sync();
+            }
+            serverGroup.shutdownGracefully(0, 100, TimeUnit.MILLISECONDS).sync();
+        }
+    }
+
+    private static Channel startH2cServer(NioEventLoopGroup group, AtomicInteger connections)
+            throws InterruptedException {
+        return new ServerBootstrap()
+                .group(group)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<Channel>() {
+                    @Override
+                    protected void initChannel(Channel ch) {
+                        connections.incrementAndGet();
+                        ch.pipeline()
+                                .addLast(Http2FrameCodecBuilder.forServer().build())
+                                .addLast(new Http2MultiplexHandler(new ChannelInitializer<Http2StreamChannel>() {
+                                    @Override
+                                    protected void initChannel(Http2StreamChannel streamCh) {
+                                        streamCh.pipeline().addLast(new H2cHandler());
+                                    }
+                                }));
+                    }
+                })
+                .bind(0).sync().channel();
     }
 }

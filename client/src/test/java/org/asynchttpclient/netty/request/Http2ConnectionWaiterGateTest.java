@@ -22,6 +22,8 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.exception.TooManyConnectionsException;
+import org.asynchttpclient.proxy.ProxyServer;
+import org.asynchttpclient.proxy.ProxyType;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -142,10 +144,25 @@ public class Http2ConnectionWaiterGateTest extends AbstractBasicTest {
      */
     @Test
     public void permitExhaustedOnCleartextOriginBehindAnHttpProxyFailsWithoutWaitingOutConnectTimeout() throws Exception {
+        assertCleartextRequestBehindAProxyIsRefusedAtOnce(proxyServer("localhost", port1).build());
+    }
+
+    /**
+     * The same behind an HTTPS proxy: the hop to it is TLS, but a cleartext request still goes to the proxy in
+     * absolute-URI form. Jetty's TLS connector stands in for the proxy.
+     */
+    @Test
+    public void permitExhaustedOnCleartextOriginBehindAnHttpsProxyFailsWithoutWaitingOutConnectTimeout() throws Exception {
+        assertCleartextRequestBehindAProxyIsRefusedAtOnce(
+                proxyServer("localhost", port2).setProxyType(ProxyType.HTTPS).build());
+    }
+
+    private void assertCleartextRequestBehindAProxyIsRefusedAtOnce(ProxyServer proxy) throws Exception {
         try (AsyncHttpClient client = asyncHttpClient(config()
                 .setMaxConnections(1)
                 .setHttp2CleartextEnabled(true)
-                .setProxyServer(proxyServer("localhost", port1))
+                .setUseInsecureTrustManager(true)
+                .setProxyServer(proxy)
                 .setConnectTimeout(Duration.ofSeconds(30)))) {
 
             Future<Response> holder = client.prepareGet(getTargetUrl()).execute();
