@@ -15,9 +15,12 @@
  */
 package org.asynchttpclient.netty.handler;
 
+import com.aayushatharva.brotli4j.encoder.Encoder;
+import com.github.luben.zstd.Zstd;
 import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -28,6 +31,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -49,6 +54,8 @@ import io.netty.util.concurrent.FastThreadLocalThread;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +73,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -291,6 +300,7 @@ public class Http1ContentDecompressorTest {
         final List<ByteBuf> inputs = new ArrayList<>();
         HttpResponse head;
         int parts;
+        int maxPart;
         boolean ended;
         Throwable failure;
     }
@@ -378,6 +388,7 @@ public class Http1ContentDecompressorTest {
                     ByteBuf content = ((HttpContent) msg).content();
                     if (content.isReadable()) {
                         outcome.parts++;
+                        outcome.maxPart = Math.max(outcome.maxPart, content.readableBytes());
                         content.readBytes(outcome.body, content.readableBytes());
                     }
                     if (msg instanceof LastHttpContent) {
@@ -446,7 +457,13 @@ public class Http1ContentDecompressorTest {
             assertNull(actual.failure, scenario + ": unexpected failure");
             assertArrayEquals(expected.body.toByteArray(), actual.body.toByteArray(), scenario + ": body");
             assertEquals(expected.ended, actual.ended, scenario + ": end of response");
-            assertEquals(expected.parts, actual.parts, scenario + ": parts");
+            if (expected.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE) {
+                assertEquals(expected.parts, actual.parts, scenario + ": parts");
+            } else {
+                // Netty hands such output on in larger parts; this decompressor cuts them at MAX_PART_SIZE.
+                assertTrue(actual.parts > expected.parts, scenario + ": parts");
+            }
+            assertTrue(actual.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, scenario + ": part size");
         } else {
             assertNotNull(actual.failure, scenario + ": expected " + expected.failure);
             assertEquals(expected.failure.getClass(), actual.failure.getClass(), scenario + ": failure type");
@@ -609,7 +626,7 @@ public class Http1ContentDecompressorTest {
     }
 
     @Test
-    void alternatesWithEncodingsLeftToNettyOnOneConnection() {
+    void alternatesWithOtherCodingsOnOneConnection() {
         byte[] snappyText = snappy(TEXT);
         byte[] snappyRandom = snappy(RANDOM);
         byte[] gzipText = gzip(TEXT);
@@ -622,7 +639,7 @@ public class Http1ContentDecompressorTest {
         assertDecoded(RANDOM, exchange(channel, "snappy", snappyRandom, sizes(snappyRandom.length, 5000),
                 Kind.DIRECT));
         assertDecoded(RANDOM, exchange(channel, "deflate", zlib, sizes(zlib.length, 5000), Kind.DIRECT));
-        // A snappy response that never ends leaves Netty's decoder behind; the next gzip response must not care.
+        // A snappy response that never ends leaves its decompressor behind; the next gzip response must not care.
         channel.writeInbound(response("snappy", -1),
                 new DefaultHttpContent(Unpooled.wrappedBuffer(snappyRandom, 0, 3000)));
         drain(channel, new Outcome());
@@ -650,6 +667,35 @@ public class Http1ContentDecompressorTest {
         return bos.toByteArray();
     }
 
+    private static byte[] brotli(byte[] payload) {
+        try {
+            Brotli.ensureAvailability();
+            return Encoder.compress(payload);
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    // One snappy frame per piece, so the decompressor hands out one small output per piece.
+    private static byte[] snappyFrames(int pieces, int pieceSize) {
+        EmbeddedChannel encoder = new EmbeddedChannel(new SnappyFrameEncoder());
+        for (int i = 0; i < pieces; i++) {
+            encoder.writeOutbound(Unpooled.wrappedBuffer("x".repeat(pieceSize).getBytes(StandardCharsets.US_ASCII)));
+        }
+        encoder.finish();
+        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+        for (ByteBuf buf; (buf = encoder.readOutbound()) != null; ) {
+            try {
+                buf.readBytes(compressed, buf.readableBytes());
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            } finally {
+                buf.release();
+            }
+        }
+        return compressed.toByteArray();
+    }
+
     @Test
     void trailersSurviveDecompression() {
         EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
@@ -667,6 +713,37 @@ public class Http1ContentDecompressorTest {
         assertFalse(end.content().isReadable());
         end.release();
         channel.finishAndReleaseAll();
+    }
+
+    @Test
+    void aFailedLastChunkStaysFailed() {
+        // HttpObjectDecoder reports a chunk it cannot parse as a LastHttpContent with a failed result.
+        IllegalStateException cause = new IllegalStateException("invalid chunk");
+        for (boolean withTrailer : new boolean[]{false, true}) {
+            EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
+            byte[] encoded = gzip(TEXT);
+            channel.writeInbound(response("gzip", -1));
+            channel.writeInbound(new DefaultHttpContent(Unpooled.wrappedBuffer(encoded)));
+            LastHttpContent last = new DefaultLastHttpContent();
+            if (withTrailer) {
+                last.trailingHeaders().set("x-trailer", "done");
+            }
+            last.setDecoderResult(DecoderResult.failure(cause));
+            channel.writeInbound(last);
+
+            Object msg;
+            LastHttpContent end = null;
+            while ((msg = channel.readInbound()) != null) {
+                if (msg instanceof LastHttpContent) {
+                    end = (LastHttpContent) msg;
+                }
+                ReferenceCountUtil.release(msg);
+            }
+            assertNotNull(end);
+            assertSame(cause, end.decoderResult().cause(), "a parse failure must not become a complete body");
+            assertEquals(withTrailer ? "done" : null, end.trailingHeaders().get("x-trailer"));
+            assertFalse(channel.finishAndReleaseAll());
+        }
     }
 
     @Test
@@ -764,9 +841,9 @@ public class Http1ContentDecompressorTest {
         byte[] header = gzipWithHeaderFields(TEXT, FNAME | FCOMMENT);
         byte[] zeros = gzip(ZEROS);
         byte[] raw = deflate(TEXT, true);
-        byte[][] bodies = {header, zeros, raw};
-        String[] encodings = {"gzip", "gzip", "deflate"};
-        int[] chunk = {3, 97, 1};
+        byte[][] bodies = {header, zeros, raw, snappy(TEXT), Zstd.compress(TEXT), brotli(TEXT)};
+        String[] encodings = {"gzip", "gzip", "deflate", "snappy", "zstd", "br"};
+        int[] chunk = {3, 97, 1, 7, 7, 7};
         for (int i = 0; i < bodies.length; i++) {
             int[] sizes = sizes(bodies[i].length, chunk[i]);
             List<Integer> expected = readsRequested(nettyDecompressor(), encodings[i], bodies[i], sizes);
@@ -995,15 +1072,15 @@ public class Http1ContentDecompressorTest {
 
     @Test
     void requestsReadsLikeNettyWhenOneReadMixesItsMessagesWithNettys() {
-        byte[] snappy = snappy(TEXT);
+        // A transfer coding is left to Netty's decoder, so its messages are Netty's.
         byte[] gzipText = gzip(TEXT);
         byte[] corrupt = withByte(gzip(TEXT), 0, 0);
         List<Supplier<List<Object>>> batches = List.of(
-                () -> List.of(response("snappy", -1), new DefaultLastHttpContent(Unpooled.wrappedBuffer(snappy)),
+                () -> List.of(transferCodedResponse(), new DefaultLastHttpContent(Unpooled.wrappedBuffer(gzipText)),
                         response("gzip", -1), new DefaultHttpContent(Unpooled.wrappedBuffer(gzipText, 0, 3))),
                 () -> List.of(new DefaultLastHttpContent(Unpooled.wrappedBuffer(gzipText, 3, gzipText.length - 3)),
-                        response("snappy", -1), new DefaultHttpContent(Unpooled.wrappedBuffer(snappy, 0, 5))),
-                () -> List.of(new DefaultLastHttpContent(Unpooled.wrappedBuffer(snappy, 5, snappy.length - 5)),
+                        transferCodedResponse(), new DefaultHttpContent(Unpooled.wrappedBuffer(gzipText, 0, 5))),
+                () -> List.of(new DefaultLastHttpContent(Unpooled.wrappedBuffer(gzipText, 5, gzipText.length - 5)),
                         response("gzip", -1)),
                 () -> List.of(new DefaultLastHttpContent(Unpooled.wrappedBuffer(gzipText))),
                 // A body rejected before anything is decoded still asks for a read.
@@ -1011,6 +1088,12 @@ public class Http1ContentDecompressorTest {
         List<Integer> expected = readsPerBatch(nettyDecompressor(), batches);
         assertEquals(expected, readsPerBatch(new Http1ContentDecompressor(false, 0), batches));
         assertEquals(List.of(1, 1, 0, 0, 1), expected);
+    }
+
+    private static HttpResponse transferCodedResponse() {
+        HttpResponse response = response(null, -1);
+        response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, "gzip, chunked");
+        return response;
     }
 
     private static List<Integer> readsPerBatch(ChannelHandler decompressor, List<Supplier<List<Object>>> batches) {
@@ -1068,6 +1151,192 @@ public class Http1ContentDecompressorTest {
             assertEquals(1, Http1ContentDecompressor.idleInflaters(true).size());
             channel.finishAndReleaseAll();
         });
+    }
+
+    private static byte[] encode(String contentEncoding, byte[] payload) {
+        switch (contentEncoding) {
+            case "br":
+                return brotli(payload);
+            case "zstd":
+                return Zstd.compress(payload);
+            case "snappy":
+                return snappy(payload);
+            default:
+                throw new IllegalArgumentException(contentEncoding);
+        }
+    }
+
+    @Test
+    void decodesBrZstdAndSnappyLikeNetty() {
+        int checked = 0;
+        for (String contentEncoding : List.of("br", "zstd", "snappy")) {
+            for (byte[] payload : List.of(EMPTY, TEXT, RANDOM, ZEROS)) {
+                byte[] encoded = encode(contentEncoding, payload);
+                for (int[] sizes : splits(encoded.length)) {
+                    for (Kind kind : List.of(Kind.HEAP, Kind.DIRECT)) {
+                        String scenario = contentEncoding + ", " + payload.length + " bytes, " + sizes.length
+                                + " chunks, " + kind;
+                        UnpooledByteBufAllocator ahcAllocator = allocator();
+                        EmbeddedChannel ahc = channel(new Http1ContentDecompressor(false, 0), ahcAllocator);
+                        EmbeddedChannel netty = channel(nettyDecompressor(), allocator());
+                        Outcome expected = exchange(netty, contentEncoding, encoded, sizes, kind);
+                        Outcome actual = exchange(ahc, contentEncoding, encoded, sizes, kind);
+
+                        // Parts are cut differently: small outputs are merged, large ones split.
+                        assertNull(expected.failure, scenario);
+                        assertNull(actual.failure, scenario);
+                        assertEquals(expected.head.headers().entries().toString(),
+                                actual.head.headers().entries().toString(), scenario + ": headers");
+                        assertArrayEquals(expected.body.toByteArray(), actual.body.toByteArray(), scenario + ": body");
+                        assertEquals(expected.ended, actual.ended, scenario + ": end of response");
+                        assertTrue(actual.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, scenario + ": part size");
+                        ahc.finishAndReleaseAll();
+                        netty.finishAndReleaseAll();
+                        assertEquals(0, ahcAllocator.metric().usedHeapMemory(), scenario + ": heap left allocated");
+                        assertInputsReleased(actual, scenario);
+                        checked++;
+                    }
+                }
+            }
+        }
+        assertTrue(checked > 100, "only " + checked + " scenarios ran");
+    }
+
+    @Test
+    void limitAppliesToBrZstdAndSnappy() {
+        for (String contentEncoding : List.of("br", "zstd", "snappy")) {
+            byte[] encoded = encode(contentEncoding, ZEROS);
+            EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 100_000), allocator());
+            Outcome outcome = exchange(channel, contentEncoding, encoded, new int[]{encoded.length}, Kind.HEAP);
+            assertInstanceOf(DecompressionException.class, outcome.failure, contentEncoding);
+            assertTrue(outcome.failure.getMessage().contains("maximum decompressed size of 100000 bytes"),
+                    outcome.failure.getMessage());
+            assertTrue(outcome.body.size() <= 100_000, contentEncoding);
+            assertFalse(outcome.ended, contentEncoding);
+            channel.finishAndReleaseAll();
+            assertInputsReleased(outcome, contentEncoding);
+        }
+    }
+
+    // The first part of a body that is decompressed in many small outputs.
+    private static ByteBuf firstPart(byte[] snappy) {
+        EmbeddedChannel channel = new EmbeddedChannel(new Http1ContentDecompressor(false, 0));
+        channel.writeInbound(response("snappy", snappy.length));
+        channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(snappy)));
+        ReferenceCountUtil.release(channel.readInbound());
+        HttpContent part = channel.readInbound();
+        assertInstanceOf(LastHttpContent.class, channel.readInbound());
+        assertFalse(channel.finishAndReleaseAll());
+        return part.content();
+    }
+
+    @Test
+    void smallOutputsAreMergedIntoAPartSizedForThem() {
+        ByteBuf part = firstPart(snappyFrames(10, 100));
+        try {
+            assertEquals(1_000, part.readableBytes());
+            assertTrue(part.capacity() <= 2 * part.readableBytes(),
+                    "a small merged part must not take a whole part's buffer: " + part.capacity());
+        } finally {
+            part.release();
+        }
+        part = firstPart(snappyFrames(40, 1_000));
+        try {
+            assertEquals(40_000, part.readableBytes());
+            assertTrue(part.capacity() <= Http1ContentDecompressor.MAX_PART_SIZE);
+            assertArrayEquals("x".repeat(40_000).getBytes(StandardCharsets.US_ASCII), ByteBufUtil.getBytes(part));
+        } finally {
+            part.release();
+        }
+    }
+
+    @Test
+    void gzipAndDeflateDoNotNeedNettysDecompressorApi() throws Exception {
+        Class<?> type = new WithoutDecompressorApi(Http1ContentDecompressor.class.getClassLoader())
+                .loadClass(Http1ContentDecompressor.class.getName());
+        assertNotSame(Http1ContentDecompressor.class, type);
+        for (String contentEncoding : List.of("gzip", "deflate")) {
+            byte[] encoded = "gzip".equals(contentEncoding) ? gzip(TEXT) : deflate(TEXT, false);
+            EmbeddedChannel channel = channel((ChannelHandler) type.getConstructor(boolean.class, long.class)
+                    .newInstance(false, 0L), allocator());
+            assertDecoded(TEXT, exchange(channel, contentEncoding, encoded, sizes(encoded.length, 100), Kind.DIRECT));
+            channel.finishAndReleaseAll();
+        }
+        // Without the API, the other codings go to Netty's own decoders, as before. A second handler must not try
+        // the API again.
+        byte[] zstd = encode("zstd", TEXT);
+        for (int attempt = 0; attempt < 2; attempt++) {
+            EmbeddedChannel channel = channel((ChannelHandler) type.getConstructor(boolean.class, long.class)
+                    .newInstance(false, 0L), allocator());
+            assertDecoded(TEXT, exchange(channel, "zstd", zstd, sizes(zstd.length, 100), Kind.DIRECT));
+            channel.finishAndReleaseAll();
+        }
+    }
+
+    @Test
+    void aLargeChunkDoesNotInflateIntoOversizedPartBuffers() {
+        // One chunk of 1 MiB: the inflater would like an output buffer twice that size, but a part never holds more
+        // than MAX_PART_SIZE, so its buffer must not either.
+        byte[] encoded = gzip(randomBytes(1024 * 1024, 11));
+        EmbeddedChannel channel = new EmbeddedChannel(new Http1ContentDecompressor(false, 0));
+        channel.writeInbound(response("gzip", encoded.length));
+        channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(encoded)));
+        ReferenceCountUtil.release(channel.readInbound());
+        int parts = 0;
+        for (HttpContent part; (part = channel.readInbound()) != null; ) {
+            try {
+                if (part.content().isReadable()) {
+                    parts++;
+                    assertTrue(part.content().capacity() <= Http1ContentDecompressor.MAX_PART_SIZE,
+                            "a part of " + part.content().readableBytes() + " bytes sits in a buffer of "
+                                    + part.content().capacity());
+                }
+            } finally {
+                part.release();
+            }
+        }
+        assertTrue(parts >= 16, "parts: " + parts);
+        assertFalse(channel.finishAndReleaseAll());
+    }
+
+    /**
+     * Defines the decompressor's own classes afresh, and hides Netty's {@code Decompressor} API and its implementations
+     * from them, as a Netty release older than 4.2.17 would.
+     */
+    private static final class WithoutDecompressorApi extends ClassLoader {
+
+        WithoutDecompressorApi(ClassLoader parent) {
+            super(parent);
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            synchronized (getClassLoadingLock(name)) {
+                // The interface and every class implementing it, such as ZstdDecompressor.
+                if (name.startsWith("io.netty.handler.codec.compression.")
+                        && (name.endsWith("Decompressor") || name.contains("Decompressor$"))) {
+                    throw new ClassNotFoundException(name);
+                }
+                if (!name.startsWith(Http1ContentDecompressor.class.getName())
+                        && !name.startsWith(PullDecompression.class.getName())) {
+                    return super.loadClass(name, resolve);
+                }
+                Class<?> loaded = findLoadedClass(name);
+                if (loaded == null) {
+                    byte[] bytes;
+                    try (InputStream in = getParent().getResourceAsStream(name.replace('.', '/') + ".class")) {
+                        bytes = in.readAllBytes();
+                    } catch (IOException e) {
+                        throw new ClassNotFoundException(name, e);
+                    }
+                    loaded = defineClass(name, bytes, 0, bytes.length);
+                }
+                if (resolve) {
+                    resolveClass(loaded);
+                }
+                return loaded;
+            }
+        }
     }
 
     @Test

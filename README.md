@@ -109,6 +109,12 @@ AsyncHttpClient client = asyncHttpClient(config().setUseNativeTransport(true));
 </dependency>
 ```
 
+AHC decompresses Brotli, Zstd and Snappy response bodies on demand with Netty's pull-based `Decompressor` API, which
+exists since Netty 4.2.17. If you override AHC's Netty version with an older one, these codings are still
+decompressed, but as soon as they are read, so a suspended response does not hold them back. The same applies to Zstd
+if the system property `io.netty.compression.defaultMaxForwardBytes` is set to zero or a negative value. gzip and
+deflate are not affected.
+
 </details>
 
 ## Quick Start

@@ -17,8 +17,11 @@ package org.asynchttpclient.netty.handler;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandler;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.DefaultHttpContent;
@@ -35,9 +38,17 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.internal.SystemPropertyUtil;
+import org.asynchttpclient.ResponseBodyControl;
+import org.asynchttpclient.netty.DiscardEvent;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
+import org.asynchttpclient.netty.NettyResponseFuture;
+import org.asynchttpclient.netty.OnLastHttpContentCallback;
+import org.asynchttpclient.netty.channel.Channels;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.SocketAddress;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
@@ -66,7 +77,26 @@ import java.util.zip.Inflater;
  * encodings no longer go through {@link #newContentDecoder(String)}, and {@code java.util.zip} is used even when
  * {@code io.netty.noJdkZlibDecoder} asks Netty for JZlib.
  * <p>
- * Every other encoding still goes through {@link HttpContentDecompressor}. There the counting is done
+ * Decompression also follows the response's demand. {@link HttpContentDecompressor} decompresses each chunk
+ * completely as soon as it is read: suspending a response through {@link ResponseBodyControl} stops further socket
+ * reads, but not that, so one read of a highly compressible body could become tens of megabytes of body parts nobody
+ * had asked for. This handler hands the body on in parts of at most 64 KiB, for {@code gzip} and {@code deflate} cut
+ * where {@code JdkZlibDecoder} would cut them, and checks before each part whether the response is suspended. If it
+ * is, the input not decompressed yet stays here, together with every message that arrived after it, and the next read
+ * request, such as the one {@code resume()} issues, decompresses that input before it is passed on to the transport.
+ * That is why this handler also sees outbound events; it passes all others through. Only parts with content wait for
+ * a resume: once the body has been decompressed in full, its end, with any trailers, is handed on even to a suspended
+ * response, as for an unencoded body. If the connection closes while input is held back, the rest of it is
+ * decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}.
+ * <p>
+ * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
+ * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
+ * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
+ * {@code zstd} also goes there while {@code io.netty.compression.defaultMaxForwardBytes} is not positive.
+ * {@code gzip} and {@code deflate} never use the API.
+ * <p>
+ * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
+ * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
  * inside the decoder's own {@link EmbeddedChannel} rather than around {@code HttpContentDecoder#decode}:
  * that class forwards decompressed output straight down the outer pipeline through an internal forwarder
  * installed at the end of the embedded pipeline, so the output never passes through the {@code decode}
@@ -75,7 +105,7 @@ import java.util.zip.Inflater;
  * is passed through untouched and is never failed for being large; its size is the caller's own choice,
  * not a bomb.
  */
-public class Http1ContentDecompressor extends HttpContentDecompressor {
+public class Http1ContentDecompressor extends HttpContentDecompressor implements ChannelOutboundHandler {
 
     private static final int FHCRC = 0x02;
     private static final int FEXTRA = 0x04;
@@ -83,10 +113,18 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     private static final int FCOMMENT = 0x10;
     private static final int FRESERVED = 0xE0;
 
-    // Same floor and forwarding threshold as JdkZlibDecoder, so the body is cut into parts the same way.
+    // Largest body part handed on at once, so that a suspension takes effect within one part.
+    static final int MAX_PART_SIZE = 64 * 1024;
+
+    // Same floor and forwarding threshold as JdkZlibDecoder, so the body is cut into parts the same way, except that
+    // a part never grows past MAX_PART_SIZE.
     private static final int MIN_OUTPUT_BUFFER_SIZE = 512;
-    private static final int MAX_FORWARD_BYTES =
-            SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024);
+    static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
+            SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024));
+
+    // Netty added its Decompressor API in 4.2.17. Without it, br, zstd and snappy go to HttpContentDecompressor's own
+    // decoders, as they did before.
+    private static volatile boolean pullAvailable = true;
 
     // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
     // native window on every idle pooled connection.
@@ -137,6 +175,26 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     private boolean lastDecodedBySuper = true;
     private boolean needRead = true;
 
+    // Whether the response was suspended before the body was used up. The rest of the body waits here: the input
+    // not yet inflated, and every message that arrived after it.
+    private boolean paused;
+    // Messages that arrived while paused, in order, each holding a reference.
+    private final ArrayDeque<HttpObject> queued = new ArrayDeque<>();
+    // The input the inflater had not used when the response paused. The inflater may still point into it, so it is
+    // kept until the inflater has used it up.
+    private @Nullable ByteBuf heldInput;
+    // Whether the inflater still held output when the response paused, which it hands out without further input.
+    private boolean heldOutput;
+    // The end of the body, if it arrived with the input that is held.
+    private @Nullable LastHttpContent heldLast;
+    private boolean draining;
+    private boolean readPending;
+    private boolean inputClosed;
+    // Whether nobody reads the rest of the current body, so its input is dropped instead of inflated.
+    private boolean discarding;
+    // The decompressor of a br, zstd or snappy body; null for gzip and deflate, which are inflated here.
+    private @Nullable PullDecompression pull;
+
     public Http1ContentDecompressor(boolean keepEncodingHeader, long maxDecompressedBytes) {
         // maxAllocation=0 is what the no-arg HttpContentDecompressor() constructor passes, so a single
         // decode call behaves exactly as it did before any bound was attempted. The counter below is what
@@ -148,13 +206,27 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, HttpObject msg, List<Object> out) throws Exception {
+        if (paused || draining) {
+            // It waits behind the paused body.
+            lastDecodedBySuper = false;
+            queued.add(ReferenceCountUtil.retain(msg));
+            return;
+        }
+        decodeMessage(ctx, msg, out);
+    }
+
+    private void decodeMessage(ChannelHandlerContext ctx, HttpObject msg, List<Object> out) throws Exception {
         if (msg instanceof HttpResponse) {
             endResponse();
             HttpResponse response = (HttpResponse) msg;
             String contentEncoding = response.headers().get(HttpHeaderNames.CONTENT_ENCODING);
             if (contentEncoding != null && response.status().code() != 100) {
                 contentEncoding = contentEncoding.trim();
-                if (isGzip(contentEncoding) || isDeflate(contentEncoding)) {
+                boolean zlib = isGzip(contentEncoding) || isDeflate(contentEncoding);
+                if (!zlib && isPulled(contentEncoding)) {
+                    pull = newPullDecompression(ctx, contentEncoding);
+                }
+                if (zlib || pull != null) {
                     lastDecodedBySuper = false;
                     activeAtDecode = ctx.channel().isActive();
                     needRead = true;
@@ -179,6 +251,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (paused) {
+            // A read now would let more input in while the response is suspended.
+            needRead = true;
+            ctx.fireChannelReadComplete();
+            return;
+        }
         if (lastDecodedBySuper) {
             super.channelReadComplete(ctx);
             return;
@@ -199,6 +277,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         try {
+            releaseQueued();
             endResponse();
         } finally {
             super.handlerRemoved(ctx);
@@ -207,11 +286,163 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        // The pipeline is about to be torn down, so what is held back is handed on now, even to a suspended
+        // response.
+        inputClosed = true;
         try {
-            endResponse();
+            if (paused && !draining) {
+                readPending = false;
+                resume(ctx);
+            }
+        } catch (Throwable cause) {
+            ctx.fireExceptionCaught(cause);
         } finally {
-            super.channelInactive(ctx);
+            try {
+                releaseQueued();
+                endResponse();
+            } finally {
+                super.channelInactive(ctx);
+            }
         }
+    }
+
+    @Override
+    public void read(ChannelHandlerContext ctx) throws Exception {
+        if (paused || draining) {
+            // Input that was already read is used up before the transport is asked for more.
+            readPending = true;
+            if (!draining) {
+                resume(ctx);
+            }
+        } else {
+            ctx.read();
+        }
+    }
+
+    /**
+     * Hands on what was held back, until the response is suspended again before its next part.
+     */
+    private void resume(ChannelHandlerContext ctx) throws Exception {
+        draining = true;
+        try {
+            activeAtDecode = ctx.channel().isActive();
+            if (continueBody(ctx)) {
+                HttpObject msg;
+                while (!paused && (msg = queued.poll()) != null) {
+                    decodeQueued(ctx, msg);
+                }
+            }
+        } finally {
+            draining = false;
+        }
+        if (!paused && readPending) {
+            readPending = false;
+            ctx.read();
+        }
+    }
+
+    // Returns false if the response was suspended again before the held input was used up.
+    private boolean continueBody(ChannelHandlerContext ctx) {
+        paused = false;
+        ByteBuf in = heldInput;
+        if (in == null && pull == null) {
+            return true;
+        }
+        heldInput = null;
+        int generation = this.generation;
+        boolean usedUp;
+        try {
+            usedUp = in != null ? inflate(ctx, in, true, generation) : decompress(ctx, null, generation);
+        } catch (Throwable t) {
+            failResponse();
+            throw t;
+        }
+        if (abandoned(ctx, generation)) {
+            return true;
+        }
+        if (!usedUp) {
+            paused = true;
+            return false;
+        }
+        LastHttpContent last = heldLast;
+        if (last != null) {
+            heldLast = null;
+            endBody(ctx, last);
+        }
+        return true;
+    }
+
+    // Decodes a message that waited while the response was paused, as channelRead would have.
+    private void decodeQueued(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
+        List<Object> out = new ArrayList<>(1);
+        try {
+            decodeMessage(ctx, msg, out);
+        } finally {
+            ReferenceCountUtil.release(msg);
+            for (Object decoded : out) {
+                ctx.fireChannelRead(decoded);
+            }
+        }
+    }
+
+    private void releaseQueued() {
+        for (HttpObject msg; (msg = queued.poll()) != null; ) {
+            ReferenceCountUtil.release(msg);
+        }
+        paused = false;
+        readPending = false;
+    }
+
+    /**
+     * Whether the rest of the current body is discarded: the exchange is over, or the channel is being drained, for
+     * example after a redirect, an authentication challenge or a replay.
+     */
+    private static boolean isUnwanted(Channel channel) {
+        Object attribute = Channels.getAttribute(channel);
+        return attribute == DiscardEvent.DISCARD || attribute instanceof OnLastHttpContentCallback
+                || attribute instanceof NettyResponseFuture && ((NettyResponseFuture<?>) attribute).isDone();
+    }
+
+    private static boolean isSuspended(Channel channel) {
+        Object attribute = Channels.getAttribute(channel);
+        return attribute instanceof NettyResponseFuture
+                && NettyResponseBodyControl.isSuspended((NettyResponseFuture<?>) attribute, channel);
+    }
+
+    @Override
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) {
+        ctx.bind(localAddress, promise);
+    }
+
+    @Override
+    public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
+                        ChannelPromise promise) {
+        ctx.connect(remoteAddress, localAddress, promise);
+    }
+
+    @Override
+    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) {
+        ctx.disconnect(promise);
+    }
+
+    @Override
+    public void close(ChannelHandlerContext ctx, ChannelPromise promise) {
+        ctx.close(promise);
+    }
+
+    @Override
+    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) {
+        ctx.deregister(promise);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+        ctx.write(msg, promise);
+    }
+
+    @Override
+    public void flush(ChannelHandlerContext ctx) {
+        ctx.flush();
     }
 
     @Override
@@ -240,6 +471,25 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
     private static boolean isDeflate(String contentEncoding) {
         return HttpHeaderValues.DEFLATE.contentEqualsIgnoreCase(contentEncoding)
                 || HttpHeaderValues.X_DEFLATE.contentEqualsIgnoreCase(contentEncoding);
+    }
+
+    // Only called for br, zstd and snappy, so that gzip and deflate never load Netty's newer Decompressor API.
+    private @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+        if (!pullAvailable) {
+            return null;
+        }
+        try {
+            return PullDecompression.create(contentEncoding, ctx.alloc(), maxDecompressedBytes);
+        } catch (LinkageError e) {
+            pullAvailable = false;
+            return null;
+        }
+    }
+
+    private static boolean isPulled(String contentEncoding) {
+        return HttpHeaderValues.BR.contentEqualsIgnoreCase(contentEncoding)
+                || HttpHeaderValues.ZSTD.contentEqualsIgnoreCase(contentEncoding)
+                || HttpHeaderValues.SNAPPY.contentEqualsIgnoreCase(contentEncoding);
     }
 
     /**
@@ -284,10 +534,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             return;
         }
         ByteBuf in = content.content();
-        if (in.isReadable()) {
+        if (in.isReadable() && !discarding) {
             int generation = this.generation;
+            boolean usedUp;
             try {
-                inflate(ctx, in, generation);
+                usedUp = pull != null ? decompress(ctx, in.retain(), generation) : inflate(ctx, in, generation);
             } catch (Throwable t) {
                 failResponse();
                 throw t;
@@ -295,64 +546,130 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
             if (abandoned(ctx, generation)) {
                 return;
             }
+            if (!usedUp) {
+                paused = true;
+                if (content instanceof LastHttpContent) {
+                    heldLast = trailer((LastHttpContent) content);
+                }
+                return;
+            }
         }
         if (content instanceof LastHttpContent) {
-            endResponse();
-            HttpHeaders trailers = ((LastHttpContent) content).trailingHeaders();
-            needRead = false;
-            ctx.fireChannelRead(trailers.isEmpty()
-                    ? LastHttpContent.EMPTY_LAST_CONTENT
-                    : new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, trailers));
+            endBody(ctx, trailer((LastHttpContent) content));
         }
     }
 
-    private void inflate(ChannelHandlerContext ctx, ByteBuf content, int generation) {
-        ByteBuf in = content;
+    private void endBody(ChannelHandlerContext ctx, LastHttpContent last) {
+        endResponse();
+        needRead = false;
+        ctx.fireChannelRead(last);
+    }
+
+    // The end of the body, with its trailers and its decoder result, which marks a chunk HttpObjectDecoder could not
+    // parse. Dropping a failed result would turn a broken body into a complete one.
+    private static LastHttpContent trailer(LastHttpContent last) {
+        HttpHeaders trailers = last.trailingHeaders();
+        if (trailers.isEmpty() && last.decoderResult().isSuccess()) {
+            return LastHttpContent.EMPTY_LAST_CONTENT;
+        }
+        LastHttpContent trailer = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, trailers);
+        trailer.setDecoderResult(last.decoderResult());
+        return trailer;
+    }
+
+    /**
+     * Hands on the output of a br, zstd or snappy body, after taking over {@code input} if there is any. Returns
+     * {@code false} if the response was suspended before the output was used up; the rest stays in the decompressor.
+     */
+    private boolean decompress(ChannelHandlerContext ctx, @Nullable ByteBuf input, int generation) {
+        PullDecompression pull = this.pull;
+        if (input != null) {
+            pull.addInput(input);
+        }
+        while (pull.hasOutput()) {
+            Channel channel = ctx.channel();
+            if (isUnwanted(channel)) {
+                discarding = true;
+                return true;
+            }
+            if (!inputClosed && isSuspended(channel)) {
+                return false;
+            }
+            ByteBuf part = pull.nextPart(ctx.alloc());
+            if (part != null) {
+                fireContent(ctx, part);
+                if (abandoned(ctx, generation)) {
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Inflates {@code content}. Returns {@code false} if the response was suspended before the input was used up;
+     * what is left of it is then held until the response resumes.
+     */
+    private boolean inflate(ChannelHandlerContext ctx, ByteBuf content, int generation) {
         ByteBuf pending = this.pending;
-        if (pending != null) {
-            pending.writeBytes(content);
-            in = pending;
+        if (pending == null) {
+            return inflate(ctx, content, false, generation);
         }
+        this.pending = null;
+        pending.writeBytes(content);
+        return inflate(ctx, pending, true, generation);
+    }
 
-        for (;;) {
-            int readable = in.readableBytes();
-            inflateOnce(ctx, in, generation);
-            if (abandoned(ctx, generation)) {
-                return;
+    // An owned input is released here; one that is not belongs to the message being decoded.
+    private boolean inflate(ChannelHandlerContext ctx, ByteBuf in, boolean owned, int generation) {
+        try {
+            for (;;) {
+                int readable = in.readableBytes();
+                boolean usedUp = inflateOnce(ctx, in, generation);
+                if (abandoned(ctx, generation)) {
+                    return true;
+                }
+                if (discarding) {
+                    in.skipBytes(in.readableBytes());
+                    return true;
+                }
+                if (!usedUp) {
+                    // The inflater may still point into this input, so it is kept, not copied.
+                    heldInput = owned ? in.retain() : in.retainedSlice();
+                    return false;
+                }
+                if (!in.isReadable() || in.readableBytes() == readable) {
+                    break;
+                }
             }
-            if (!in.isReadable() || in.readableBytes() == readable) {
-                break;
+            if (in.isReadable()) {
+                // Only a gzip header or trailer that has not fully arrived, or the first byte of a deflate body, is
+                // left over; the inflater consumes all the deflate data it is given.
+                this.pending = ctx.alloc().heapBuffer(in.readableBytes()).writeBytes(in);
             }
-        }
-
-        if (pending != null) {
-            if (pending.isReadable()) {
-                pending.discardReadBytes();
-            } else {
-                pending.release();
-                this.pending = null;
+            return true;
+        } finally {
+            if (owned) {
+                in.release();
             }
-        } else if (in.isReadable()) {
-            // Only a gzip header or trailer that has not fully arrived, or the first byte of a deflate body, is
-            // left over; the inflater consumes all the deflate data it is given.
-            this.pending = ctx.alloc().heapBuffer(in.readableBytes()).writeBytes(in);
         }
     }
 
     /**
      * One step of {@code JdkZlibDecoder#decode}, which {@code ByteToMessageDecoder} would call again for as
-     * long as it consumes input.
+     * long as it consumes input. Returns {@code false} if it stopped before the next part because the response is
+     * suspended.
      */
-    private void inflateOnce(ChannelHandlerContext ctx, ByteBuf in, int generation) {
+    private boolean inflateOnce(ChannelHandlerContext ctx, ByteBuf in, int generation) {
         if (finished) {
             in.skipBytes(in.readableBytes());
-            return;
+            return true;
         }
 
         Inflater inflater = this.inflater;
         if (inflater == null) {
             if (in.readableBytes() < 2) {
-                return;
+                return true;
             }
             // RFC 1950 says deflate is zlib-wrapped, but some servers send raw deflate.
             inflater = acquireInflater(!looksLikeZlib(in.getShort(in.readerIndex())));
@@ -360,17 +677,18 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
         if (gzip && gzipState != GzipState.HEADER_END) {
             if (gzipState == GzipState.FOOTER_START && !readGzipFooter(in, inflater)) {
-                return;
+                return true;
             }
             if (!readGzipHeader(in) || !in.isReadable()) {
-                return;
+                return true;
             }
         }
 
         int readable = in.readableBytes();
         // The inflater keeps pointing at this input after the chunk is released. That is safe only because
         // nothing reads from it again before the next setInput() or reset(): the loop below runs until the
-        // input is used up or the stream has finished, and a finished gzip member is reset by its trailer.
+        // input is used up, the stream has finished or the response is suspended, a finished gzip member is reset
+        // by its trailer, and input left by a suspension is held and set again before the next inflate().
         if (in.hasArray()) {
             inflater.setInput(in.array(), in.arrayOffset() + in.readerIndex(), readable);
         } else if (in.nioBufferCount() == 1) {
@@ -383,19 +701,38 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
 
         ByteBuf decompressed = null;
         boolean forward = false;
+        boolean suspended = false;
         try {
             boolean readFooter = false;
             // A full output buffer means the inflater may still hold decoded data after it has taken all the
             // input, so needsInput() alone would end the loop too early.
-            boolean pendingOutput = false;
+            boolean pendingOutput = heldOutput;
+            heldOutput = false;
             while (pendingOutput || !inflater.needsInput()) {
                 if (decompressed == null) {
-                    decompressed = ctx.alloc().heapBuffer(preferredOutputBufferSize(inflater));
+                    if (isUnwanted(ctx.channel())) {
+                        // Nobody reads the rest of this body, so inflating it would be wasted work, and could fail
+                        // the drain at the size limit. Its end is still handed on, so a drain callback still runs.
+                        discarding = true;
+                        break;
+                    }
+                    if (!inputClosed && isSuspended(ctx.channel())) {
+                        // The next part waits for a resume, and so does the output the inflater still holds.
+                        suspended = true;
+                        heldOutput = pendingOutput;
+                        break;
+                    }
+                    // No more than a part is ever written into it, so a large chunk does not get a buffer twice its
+                    // size for every part.
+                    decompressed = ctx.alloc().heapBuffer(Math.min(preferredOutputBufferSize(inflater), MAX_PART_SIZE));
                 }
                 byte[] outArray = decompressed.array();
                 int writerIndex = decompressed.writerIndex();
                 int outIndex = decompressed.arrayOffset() + writerIndex;
-                int writable = decompressed.writableBytes();
+                // Never more than is left of a part. Parts are handed on by MAX_PART_SIZE at the latest, so this is
+                // never zero, whatever the forwarding threshold.
+                int writable = Math.min(decompressed.writableBytes(),
+                        MAX_PART_SIZE - decompressed.readableBytes());
                 int outputLength = inflater.inflate(outArray, outIndex, writable);
                 pendingOutput = outputLength == writable;
                 if (outputLength > 0) {
@@ -415,7 +752,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                         fireContent(ctx, buffer);
                         if (abandoned(ctx, generation)) {
                             // The inflater has already been given back.
-                            return;
+                            return true;
                         }
                     }
                 } else if (inflater.needsDictionary()) {
@@ -432,9 +769,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                     break;
                 }
                 // Grown after every unfinished step, as ZlibDecoder.prepareDecompressBuffer does, so a buffer
-                // that cannot grow fails at the same point: since Netty 4.2.19, only once it is also full.
+                // that cannot grow fails at the same point: since Netty 4.2.19, only once it is also full. Never
+                // past what is left of the part, though.
                 if (decompressed != null
-                        && decompressed.ensureWritable(preferredOutputBufferSize(inflater), true) == 1
+                        && decompressed.ensureWritable(Math.min(preferredOutputBufferSize(inflater),
+                                MAX_PART_SIZE - decompressed.readableBytes()), true) == 1
                         && !decompressed.isWritable()) {
                     throw new DecompressionException(
                             "Decompression buffer has reached maximum size: " + decompressed.maxCapacity());
@@ -459,6 +798,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
                 }
             }
         }
+        return !suspended;
     }
 
     /**
@@ -664,6 +1004,16 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         return inflater;
     }
 
+    // Visible for tests: whether the inflater still held output when the response paused, and how much input.
+    boolean holdsInflaterOutput() {
+        return heldOutput;
+    }
+
+    int heldInputBytes() {
+        ByteBuf in = heldInput;
+        return in == null ? -1 : in.readableBytes();
+    }
+
     // Visible for tests.
     static ArrayDeque<Inflater> idleInflaters(boolean nowrap) {
         return (nowrap ? IDLE_NOWRAP_INFLATERS : IDLE_ZLIB_INFLATERS).get();
@@ -687,6 +1037,19 @@ public class Http1ContentDecompressor extends HttpContentDecompressor {
         if (pending != null) {
             pending.release();
             this.pending = null;
+        }
+        ByteBuf heldInput = this.heldInput;
+        if (heldInput != null) {
+            heldInput.release();
+            this.heldInput = null;
+        }
+        heldOutput = false;
+        heldLast = null;
+        discarding = false;
+        PullDecompression pull = this.pull;
+        if (pull != null) {
+            this.pull = null;
+            pull.close();
         }
         inflating = false;
         failed = false;

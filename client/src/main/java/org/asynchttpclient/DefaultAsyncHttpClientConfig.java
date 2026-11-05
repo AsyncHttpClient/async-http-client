@@ -1249,7 +1249,7 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
         }
 
         /*
-         * If true (default), AHC will add a Netty HttpContentDecompressor, so compressed
+         * If true (default), AHC will add a content decompressor, so compressed
          * content will automatically get decompressed.
          *
          * If set to false, response will be delivered as is received. Decompression must
