@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -82,6 +83,11 @@ public class RequestTimeoutTimerTaskTest {
     // When set, the first entry armed runs before the scheduler hands its handle back, as it can when the
     // arming thread is descheduled for longer than the entry's delay.
     private boolean firstEntryRunsBeforeItIsRecorded;
+    // When set, an event loop reports every entry as due as soon as it is scheduled, as it does once the
+    // arming thread has been descheduled for longer than the delay.
+    private boolean entriesAreDueAtOnce;
+    // Runs as each entry is armed, before the scheduler hands its handle back.
+    private Consumer<Armed> onArm = entry -> { };
 
     private HashedWheelTimer senderTimer;
     private ChannelManager channelManager;
@@ -106,7 +112,7 @@ public class RequestTimeoutTimerTaskTest {
             Armed entry = arm(invocation.getArgument(0), delay, scheduled);
             when(scheduled.isDone()).thenAnswer(ignored -> entry.done);
             when(scheduled.getDelay(any())).thenAnswer(ignored ->
-                    entry.ran ? 0L : TimeUnit.MILLISECONDS.toNanos(Math.max(delay, 1L)));
+                    entry.ran || entriesAreDueAtOnce ? 0L : TimeUnit.MILLISECONDS.toNanos(delay));
             when(scheduled.cancel(anyBoolean())).thenAnswer(ignored -> !entry.ran);
             return handBack(entry, scheduled);
         });
@@ -236,6 +242,41 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
+    public void aWallClockStepBackDoesNotPutTheNextReadCheckOutOfReach() {
+        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        holder.startReadTimeout();
+
+        wallClockStepMillis = -ONE_HOUR_MS;
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        assertEquals(2, armed.size());
+        assertEquals(READ_TIMEOUT_MS, armed.get(1).delay, "the read timeout should be checked again within a window");
+        assertTrue(holder.isRequestTimeoutArmedEarly());
+    }
+
+    @Test
+    public void aReadTimeoutStartingWhileTheEntryReArmsGetsItsOwnEntry() {
+        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        // The request is written while the entry, finding no read timeout yet, is re-arming for the deadline.
+        onArm = entry -> {
+            if (armed.size() == 2) {
+                holder.startReadTimeout();
+            }
+        };
+
+        fire(0, READ_TIMEOUT_MS);
+
+        assertEquals(3, armed.size());
+        assertEquals(REQUEST_TIMEOUT_MS - READ_TIMEOUT_MS, armed.get(1).delay);
+        assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(2).task, "the read timeout should not be lost");
+        assertEquals(READ_TIMEOUT_MS, armed.get(2).delay);
+
+        holder.cancel();
+        verify((Timeout) armed.get(1).timeout).cancel();
+        verify((Timeout) armed.get(2).timeout).cancel();
+    }
+
+    @Test
     public void aSuspendedBodyHoldsOffTheReadTimeoutForAWholeWindow() {
         TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
         holder.startReadTimeout();
@@ -284,6 +325,21 @@ public class RequestTimeoutTimerTaskTest {
         TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, true, loop, 0);
         holder.start();
         assertEquals(2, armed.size(), "the first entry should have re-armed while it was still being recorded");
+
+        holder.cancel();
+
+        verify((ScheduledFuture<?>) armed.get(1).timeout).cancel(false);
+    }
+
+    @Test
+    public void aSuccessorAlreadyDueOnTheLoopIsStillRecorded() {
+        entriesAreDueAtOnce = true;
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, true, loop, 0);
+        holder.start();
+        holder.startReadTimeout();
+
+        fire(0, READ_TIMEOUT_MS / 2);
+        assertEquals(2, armed.size());
 
         holder.cancel();
 
@@ -364,6 +420,7 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     private <H> H handBack(Armed entry, H handle) {
+        onArm.accept(entry);
         if (firstEntryRunsBeforeItIsRecorded && armed.size() == 1) {
             run(entry, READ_TIMEOUT_MS);
         }

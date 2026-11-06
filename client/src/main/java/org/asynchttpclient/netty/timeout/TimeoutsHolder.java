@@ -322,8 +322,9 @@ public class TimeoutsHolder {
         if (state == READ_PENDING) {
             untilRead = readTimeoutValue;
         } else if (state == READ_COVERED) {
+            // Capped at a whole window, so a wall clock stepping back cannot put the next check out of reach.
             untilRead = suspended ? readTimeoutValue
-                    : Math.max(nettyResponseFuture.getLastTouch() + readTimeoutValue - now, 0L);
+                    : Math.min(Math.max(nettyResponseFuture.getLastTouch() + readTimeoutValue - now, 0L), readTimeoutValue);
         }
         if (untilRead < untilDeadline) {
             armRequestTimeout(task, untilRead, true);
@@ -384,6 +385,7 @@ public class TimeoutsHolder {
         if (requestSender == null || requestSender.isClosed()) {
             return;
         }
+        int arming = task.beginArming();
         EventExecutor executor = eventExecutor;
         if (executor != null && !executor.isShuttingDown()) {
             ScheduledFuture<?> handle = null;
@@ -398,7 +400,7 @@ public class TimeoutsHolder {
             // Outside the try: only the schedule above may fall back to the timer. Anything thrown while
             // recording or unwinding the entry belongs to an exchange that is already armed.
             if (handle != null) {
-                task.armedOn(handle);
+                task.armedOn(handle, arming);
                 cancelIfRaced(task);
                 return;
             }
@@ -406,7 +408,7 @@ public class TimeoutsHolder {
         if (nettyTimer == null) {
             return;
         }
-        task.armedOn(nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS));
+        task.armedOn(nettyTimer.newTimeout(task, delay, TimeUnit.MILLISECONDS), arming);
         cancelIfRaced(task);
     }
 

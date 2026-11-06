@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
@@ -43,6 +43,8 @@ public abstract class TimeoutTimerTask implements TimerTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
     private static final AtomicReferenceFieldUpdater<TimeoutTimerTask, Object> HANDLE =
             AtomicReferenceFieldUpdater.newUpdater(TimeoutTimerTask.class, Object.class, "handle");
+    private static final AtomicIntegerFieldUpdater<TimeoutTimerTask> ARMINGS =
+            AtomicIntegerFieldUpdater.newUpdater(TimeoutTimerTask.class, "armings");
 
     protected final AtomicBoolean done = new AtomicBoolean();
     protected final NettyRequestSender requestSender;
@@ -54,6 +56,8 @@ public abstract class TimeoutTimerTask implements TimerTask {
     // fires on while the thread that armed it is still recording the previous one. Held here rather than in a
     // wrapper so arming allocates nothing beyond what the scheduler needs.
     private volatile @Nullable Object handle;
+    // How many times this task has been armed, so that an entry recorded late can tell it has been superseded.
+    private volatile int armings;
 
     TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
         this.nettyResponseFuture = nettyResponseFuture;
@@ -61,47 +65,38 @@ public abstract class TimeoutTimerTask implements TimerTask {
         this.timeoutsHolder = timeoutsHolder;
     }
 
-    void armedOn(Timeout handle) {
-        record(handle);
+    /**
+     * Starts arming this task. The value returned identifies the arming to {@code armedOn}.
+     */
+    int beginArming() {
+        return ARMINGS.incrementAndGet(this);
     }
 
-    void armedOn(ScheduledFuture<?> handle) {
-        record(handle);
+    void armedOn(Timeout handle, int arming) {
+        record(handle, arming);
+    }
+
+    void armedOn(ScheduledFuture<?> handle, int arming) {
+        record(handle, arming);
     }
 
     /**
-     * Records {@code entry} in place of whatever entry was recorded before, unless that one can still run and
-     * {@code entry} already has. That is the entry of an arming that lost the race against its own firing:
-     * its run re-armed the task and recorded the newer entry first, and overwriting that one would leave it in
-     * its scheduler with nobody to cancel it, holding the future until a deadline nobody is waiting for.
+     * Records {@code entry}, unless the task has been armed again since {@code arming} began. That is an arming
+     * that lost the race against its own firing: its run re-armed the task, and overwriting the newer entry
+     * would leave it in its scheduler with nobody to cancel it, holding the future until a deadline nobody is
+     * waiting for. The entry passed over has already run, so there is nothing left to cancel on it.
      */
-    private void record(Object entry) {
+    private void record(Object entry, int arming) {
         for (;;) {
             Object current = handle;
-            if (current != null && canStillRun(current) && hasRun(entry)) {
+            if (armings != arming) {
                 return;
             }
+            // Fails when a newer arming recorded its entry after the check above, which the next pass then sees.
             if (HANDLE.compareAndSet(this, current, entry)) {
                 return;
             }
         }
-    }
-
-    private static boolean canStillRun(Object entry) {
-        if (entry instanceof Timeout) {
-            Timeout timeout = (Timeout) entry;
-            return !timeout.isExpired() && !timeout.isCancelled();
-        }
-        return !((ScheduledFuture<?>) entry).isDone();
-    }
-
-    // An event loop marks an entry done only once it has run, so one that is running counts by being due.
-    private static boolean hasRun(Object entry) {
-        if (entry instanceof Timeout) {
-            return ((Timeout) entry).isExpired();
-        }
-        ScheduledFuture<?> scheduled = (ScheduledFuture<?>) entry;
-        return scheduled.isDone() || scheduled.getDelay(TimeUnit.NANOSECONDS) <= 0;
     }
 
     /**
