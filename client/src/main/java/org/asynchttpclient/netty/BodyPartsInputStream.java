@@ -60,7 +60,7 @@ final class BodyPartsInputStream extends InputStream {
                 length += bytes.length;
             }
         }
-        this.chunks = count == chunks.length ? chunks : Arrays.copyOf(chunks, count);
+        this.chunks = count == chunks.length ? chunks : count == 0 ? NO_CHUNKS : Arrays.copyOf(chunks, count);
         remaining = length;
         markRemaining = length;
     }

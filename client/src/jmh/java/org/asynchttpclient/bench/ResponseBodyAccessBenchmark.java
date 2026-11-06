@@ -60,7 +60,7 @@ public class ResponseBodyAccessBenchmark {
 
     private NettyResponseStatus status;
     private List<HttpResponseBodyPart> parts;
-    // What a JSON parser reads into; Jackson's own buffer is close to 8 KiB.
+    // A caller's read buffer, of the order a streaming parser reads into.
     private final byte[] readBuffer = new byte[8000];
 
     @Setup(Level.Trial)
