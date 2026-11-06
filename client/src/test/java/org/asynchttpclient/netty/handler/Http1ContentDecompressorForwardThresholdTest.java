@@ -18,9 +18,11 @@ package org.asynchttpclient.netty.handler;
 import com.github.luben.zstd.Zstd;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
@@ -33,7 +35,8 @@ import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.Channels;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,20 +56,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Netty reads {@code io.netty.compression.defaultMaxForwardBytes} once per JVM, so this test sets it in a fresh JVM. A
- * threshold of 0 hands on the output of every inflate step, as Netty's {@code JdkZlibDecoder} does; the decompressor
- * must still make progress, also while suspending after every part.
+ * threshold of 0 or less hands on the output of every inflate step, as Netty's {@code JdkZlibDecoder} does; the
+ * decompressor must still make progress, also while suspending after every part.
  */
 public class Http1ContentDecompressorForwardThresholdTest {
 
-    @Test
-    public void aZeroForwardingThresholdStillDecodesTheBody() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    public void aNonPositiveForwardingThresholdStillDecodesTheBody(int threshold) throws Exception {
         String java = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
         String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
         // The child writes to a file rather than a pipe, so that a child that hangs cannot block the timed wait.
         Path log = Files.createTempFile("http1-content-decompressor-forward-threshold", ".log");
         Process process = null;
         try {
-            process = new ProcessBuilder(java, "-Dio.netty.compression.defaultMaxForwardBytes=0",
+            process = new ProcessBuilder(java, "-Dio.netty.compression.defaultMaxForwardBytes=" + threshold,
                     "-cp", classPath, Check.class.getName())
                     .redirectErrorStream(true)
                     .redirectOutput(log.toFile())
@@ -93,11 +97,12 @@ public class Http1ContentDecompressorForwardThresholdTest {
             new Random(91).nextBytes(payload);
             byte[] compressed = gzip(payload);
 
-            Exchange whole = new Exchange("gzip", compressed, false);
+            Exchange whole = new Exchange("gzip", compressed, false, 0);
             check(whole.last, "the body did not end");
             check(Arrays.equals(payload, whole.bytes.toByteArray()), "the body differs");
+            whole.checkReleased("the body");
 
-            Exchange suspended = new Exchange("gzip", compressed, true);
+            Exchange suspended = new Exchange("gzip", compressed, true, 0);
             for (int resumes = 0; !suspended.last; resumes++) {
                 check(resumes < 100_000, "the suspended body did not end");
                 int before = suspended.parts;
@@ -108,11 +113,23 @@ public class Http1ContentDecompressorForwardThresholdTest {
             check(Arrays.equals(payload, suspended.bytes.toByteArray()), "the suspended body differs");
             check(suspended.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, "a part of " + suspended.maxPart
                     + " bytes was handed on");
+            suspended.checkReleased("the suspended body");
 
             // At this threshold zstd is left to Netty's decoder, which must still decode it rather than hang.
-            Exchange zstd = new Exchange("zstd", Zstd.compress(payload), false);
+            byte[] zstdCompressed = Zstd.compress(payload);
+            Exchange zstd = new Exchange("zstd", zstdCompressed, false, 0);
             check(zstd.last, "the zstd body did not end");
             check(Arrays.equals(payload, zstd.bytes.toByteArray()), "the zstd body differs");
+            check(zstd.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, "a zstd part of " + zstd.maxPart
+                    + " bytes was handed on");
+            zstd.checkReleased("the zstd body");
+
+            Exchange limited = new Exchange("zstd", zstdCompressed, false, payload.length - 1);
+            check(limited.failure != null && limited.failure.getMessage().startsWith(
+                    "HTTP/1.1 response body exceeds the maximum decompressed size"),
+                    "the zstd body was not failed at the size limit: " + limited.failure);
+            check(!limited.last, "the zstd body over the size limit ended");
+            limited.checkReleased("the zstd body over the size limit");
 
             System.out.println("decoded " + payload.length + " bytes in " + whole.parts + " parts, in "
                     + suspended.parts + " parts while suspending after each, and the zstd body in " + zstd.parts
@@ -138,14 +155,18 @@ public class Http1ContentDecompressorForwardThresholdTest {
 
     /** A compressed response in one chunk, optionally suspended after every body part. */
     private static final class Exchange {
+        final UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(false, true);
         final EmbeddedChannel channel = new EmbeddedChannel();
         final NettyResponseBodyControl control;
         final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        final ByteBuf input;
         int parts;
         int maxPart;
         boolean last;
+        DecompressionException failure;
 
-        Exchange(String contentEncoding, byte[] compressed, boolean suspendEachPart) {
+        Exchange(String contentEncoding, byte[] compressed, boolean suspendEachPart, long limit) {
+            channel.config().setAllocator(allocator);
             NettyResponseFuture<?> future = new NettyResponseFuture<>(
                     new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
                     null, 0, null, null, null);
@@ -153,7 +174,7 @@ public class Http1ContentDecompressorForwardThresholdTest {
             control = NettyResponseBodyControl.create(future, channel, () -> {
             }, ignored -> {
             });
-            channel.pipeline().addLast(new Http1ContentDecompressor(false, 0), new ChannelInboundHandlerAdapter() {
+            channel.pipeline().addLast(new Http1ContentDecompressor(false, limit), new ChannelInboundHandlerAdapter() {
                 @Override
                 public void channelRead(ChannelHandlerContext ctx, Object msg) {
                     try {
@@ -179,8 +200,20 @@ public class Http1ContentDecompressorForwardThresholdTest {
             DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
             response.headers().set(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, compressed.length);
-            channel.writeInbound(response);
-            channel.writeInbound(new DefaultLastHttpContent(Unpooled.wrappedBuffer(compressed)));
+            input = Unpooled.wrappedBuffer(compressed);
+            try {
+                channel.writeInbound(response);
+                channel.writeInbound(new DefaultLastHttpContent(input));
+            } catch (DecompressionException e) {
+                failure = e;
+            }
+        }
+
+        void checkReleased(String name) {
+            channel.finishAndReleaseAll();
+            Check.check(input.refCnt() == 0, name + ": the input was not released");
+            Check.check(allocator.metric().usedHeapMemory() == 0 && allocator.metric().usedDirectMemory() == 0,
+                    name + ": memory was left allocated");
         }
     }
 }
