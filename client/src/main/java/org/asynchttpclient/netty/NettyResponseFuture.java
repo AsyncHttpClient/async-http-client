@@ -270,10 +270,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             }
         }
 
-        // No more retry. A release store is enough: the only other access is the atomic increment in
-        // incrementRetryAndCheck, which reads the latest value of this field whatever the store's ordering, and
-        // whoever sees the completion below also sees this store, which happens-before it.
-        CURRENT_RETRY_UPDATER.lazySet(this, maxRetry);
+        // No more retry
+        CURRENT_RETRY_UPDATER.set(this, maxRetry);
         if (CONTENT_PROCESSED_FIELD.getAndSet(this, 1) == 0) {
             try {
                 future.complete(asyncHandler.onCompleted());
