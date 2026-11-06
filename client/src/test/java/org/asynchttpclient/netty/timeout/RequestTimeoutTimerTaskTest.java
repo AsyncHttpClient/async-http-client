@@ -38,6 +38,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -255,6 +256,25 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
+    public void aRejectedReArmOfAHolderTheFutureNoLongerHoldsAbortsNothing() {
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, false, null, 0);
+        future.setTimeoutsHolder(holder);
+        holder.startReadTimeout();
+        // Completion and the next attempt both take the holder off the future before they cancel it; the
+        // rejection lands in between.
+        onArm = entry -> {
+            if (armed.size() == 2) {
+                detachTimeoutsHolder();
+                throw new RejectedExecutionException("timer full");
+            }
+        };
+
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        assertFalse(future.isDone(), "a holder the future no longer holds should leave the exchange alone");
+    }
+
+    @Test
     public void aRejectedReArmAfterTheExchangeCompletedAbortsNothing() {
         TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, false, null, 0);
         future.setTimeoutsHolder(holder);
@@ -467,6 +487,17 @@ public class RequestTimeoutTimerTaskTest {
         wallOrigin = future.getLastTouch();
         nanoOrigin = future.getStartNanos() + TimeUnit.MILLISECONDS.toNanos(spentMillis);
         return new TimeoutsHolder(timer, executor, future, requestSender, config, null, this::millis, this::nanos);
+    }
+
+    // Takes the holder off the future without cancelling it, as NettyResponseFuture does before it cancels.
+    private void detachTimeoutsHolder() {
+        try {
+            Field field = NettyResponseFuture.class.getDeclaredField("timeoutsHolder");
+            field.setAccessible(true);
+            field.set(future, null);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private static AsyncHttpClientConfig config(long requestTimeoutMs, boolean useEventLoopTimeouts) {
