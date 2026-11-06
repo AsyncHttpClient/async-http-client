@@ -23,8 +23,14 @@ import io.netty.handler.codec.http.HttpVersion;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link NettyRequest#release()} — the idempotent release that lets the HTTP/2
@@ -61,6 +67,82 @@ public class NettyRequestTest {
         request.release();
 
         assertEquals(0, content.refCnt(), "buffer stays released; no double-free");
+    }
+
+    @Test
+    public void releaseLeavesARequestHandedToTheChannelToTheEncoder() {
+        ByteBuf content = Unpooled.buffer().writeBytes("payload".getBytes(StandardCharsets.UTF_8));
+        NettyRequest request = new NettyRequest(postWithBody(content), null);
+
+        assertTrue(request.markHandedToChannel());
+        request.release();
+        request.release();
+
+        assertEquals(1, content.refCnt(), "the encoder owns the release once the request is handed over");
+        assertTrue(request.isHandedToChannel());
+        content.release();
+    }
+
+    @Test
+    public void releasedRequestCannotBeHandedToTheChannel() {
+        ByteBuf content = Unpooled.buffer().writeBytes("payload".getBytes(StandardCharsets.UTF_8));
+        NettyRequest request = new NettyRequest(postWithBody(content), null);
+
+        request.release();
+
+        assertFalse(request.markHandedToChannel(), "a released body must never be written");
+        assertEquals(0, content.refCnt());
+    }
+
+    @Test
+    public void releaseRacingTheHandOffLeavesExactlyOneOwner() throws Exception {
+        int rounds = 20_000;
+        NettyRequest[] requests = new NettyRequest[rounds];
+        ByteBuf[] contents = new ByteBuf[rounds];
+        for (int i = 0; i < rounds; i++) {
+            contents[i] = Unpooled.buffer(1).writeByte(1);
+            requests[i] = new NettyRequest(postWithBody(contents[i]), null);
+        }
+        boolean[] handed = new boolean[rounds];
+        // Both threads spin to the same round before acting, so each pair of calls starts as close together
+        // as two cores allow; a barrier would wake one thread long before the other.
+        AtomicInteger arrived = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread writer = new Thread(() -> {
+            try {
+                for (int i = 0; i < rounds; i++) {
+                    awaitPeer(arrived, i);
+                    handed[i] = requests[i].markHandedToChannel();
+                }
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        }, "event-loop-write");
+        writer.start();
+        for (int i = 0; i < rounds; i++) {
+            awaitPeer(arrived, i);
+            requests[i].release();
+        }
+        writer.join(TimeUnit.SECONDS.toMillis(30));
+        assertFalse(writer.isAlive(), "writer thread did not finish");
+        assertNull(failure.get());
+
+        for (int i = 0; i < rounds; i++) {
+            if (handed[i]) {
+                assertEquals(1, contents[i].refCnt(), "round " + i + ": released a body the encoder now owns");
+                contents[i].release();
+            } else {
+                assertEquals(0, contents[i].refCnt(), "round " + i + ": nobody owns the body");
+            }
+        }
+    }
+
+    private static void awaitPeer(AtomicInteger arrived, int round) {
+        int target = 2 * (round + 1);
+        arrived.incrementAndGet();
+        while (arrived.get() < target) {
+            Thread.onSpinWait();
+        }
     }
 
     @Test

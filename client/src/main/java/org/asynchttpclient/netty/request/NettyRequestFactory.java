@@ -46,7 +46,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.uri.Uri;
-import org.asynchttpclient.util.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -80,6 +80,8 @@ import static org.asynchttpclient.util.AuthenticatorUtils.perRequestAuthorizatio
 import static org.asynchttpclient.util.AuthenticatorUtils.perRequestProxyAuthorizationHeader;
 import static org.asynchttpclient.util.HttpUtils.ACCEPT_ALL_HEADER_VALUE;
 import static org.asynchttpclient.util.HttpUtils.GZIP_DEFLATE;
+import static org.asynchttpclient.util.HttpUtils.cookiePairName;
+import static org.asynchttpclient.util.HttpUtils.cookiePairs;
 import static org.asynchttpclient.util.HttpUtils.filterOutBrotliFromAcceptEncoding;
 import static org.asynchttpclient.util.HttpUtils.filterOutZstdFromAcceptEncoding;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
@@ -90,8 +92,6 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 import static org.asynchttpclient.ws.WebSocketUtils.getWebSocketKey;
 
 public final class NettyRequestFactory {
-
-    private static final Integer ZERO_CONTENT_LENGTH = 0;
 
     /**
      * Known header-name spelling -> a pre-built {@link AsciiString} with the same bytes. Built once. When a
@@ -203,10 +203,9 @@ public final class NettyRequestFactory {
                 merged.append("; ");
             }
             merged.append(callerHeader, start, end);
-            for (String pair : callerHeader.split(";")) {
-                int eq = pair.indexOf('=');
-                // Case-sensitive, but trimmed: "a = 1" still names "a".
-                String name = (eq >= 0 ? pair.substring(0, eq) : pair).trim();
+            for (String pair : cookiePairs(callerHeader)) {
+                // Case-sensitive, unlike CallerCookies, which folds names as the store does.
+                String name = cookiePairName(pair);
                 if (!name.isEmpty()) {
                     callerNames.add(name);
                 }
@@ -235,10 +234,15 @@ public final class NettyRequestFactory {
 
     private final AsyncHttpClientConfig config;
     private final ClientCookieEncoder cookieEncoder;
+    private final @Nullable AsciiString userAgent;
 
     NettyRequestFactory(AsyncHttpClientConfig config) {
         this.config = config;
         cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
+        // An AsciiString is bulk-copied by the encoder; a String is encoded char by char. Same bytes either
+        // way, and the validating request headers still reject an illegal character on every request.
+        String configuredUserAgent = config.getUserAgent();
+        userAgent = configuredUserAgent != null ? new AsciiString(configuredUserAgent) : null;
     }
 
     private NettyBody body(Request request) {
@@ -250,7 +254,7 @@ public final class NettyRequestFactory {
         } else if (request.getCompositeByteData() != null) {
             nettyBody = new NettyCompositeByteArrayBody(request.getCompositeByteData());
         } else if (request.getStringData() != null) {
-            nettyBody = new NettyByteBufferBody(StringUtils.charSequence2ByteBuffer(request.getStringData(), bodyCharset));
+            nettyBody = new NettyByteArrayBody(request.getStringData().getBytes(bodyCharset));
         } else if (request.getByteBufferData() != null) {
             nettyBody = new NettyByteBufferBody(request.getByteBufferData());
         } else if (request.getByteBufData() != null) {
@@ -383,13 +387,17 @@ public final class NettyRequestFactory {
 
         if (!headers.contains(CONTENT_LENGTH)) {
             if (body != null) {
-                if (body.getContentLength() < 0) {
+                long contentLength = body.getContentLength();
+                if (contentLength < 0) {
                     headers.set(TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+                } else if (contentLength <= Integer.MAX_VALUE) {
+                    // setInt skips the Long box; HttpHeaders has no setLong.
+                    headers.setInt(CONTENT_LENGTH, (int) contentLength);
                 } else {
-                    headers.set(CONTENT_LENGTH, body.getContentLength());
+                    headers.set(CONTENT_LENGTH, contentLength);
                 }
             } else if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
-                headers.set(CONTENT_LENGTH, ZERO_CONTENT_LENGTH);
+                headers.set(CONTENT_LENGTH, HttpHeaderValues.ZERO);
             }
         }
 
@@ -456,8 +464,8 @@ public final class NettyRequestFactory {
         }
 
         // Add default user agent
-        if (!headers.contains(USER_AGENT) && config.getUserAgent() != null) {
-            headers.set(USER_AGENT, config.getUserAgent());
+        if (!headers.contains(USER_AGENT) && userAgent != null) {
+            headers.set(USER_AGENT, userAgent);
         }
 
         return nettyRequest;
