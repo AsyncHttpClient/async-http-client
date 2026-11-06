@@ -95,7 +95,10 @@ import java.util.zip.Inflater;
  * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
  * {@code zstd} also goes there while {@code io.netty.compression.defaultMaxForwardBytes} is not positive.
  * {@code gzip} and {@code deflate} never use the API. A body that ends inside its compressed stream fails on the
- * pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}.
+ * pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}. Not every such end is
+ * noticed: {@code snappy} has no end marker, so a body cut between two of its chunks looks complete, and a
+ * {@code zstd} body of several frames completes when it is cut inside a frame that started in the same chunk as the
+ * end of the previous one.
  * <p>
  * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
  * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
@@ -594,7 +597,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     }
 
     // A body without any bytes is complete. So are bytes after a gzip member that are too few to be the header of
-    // another one, as GZIPInputStream accepts them; otherwise the body must end where a member or stream does.
+    // another one, as JdkZlibDecoder leaves them unread; otherwise the body must end where a member or stream does.
     private boolean streamComplete() {
         if (gzip) {
             return gzipState == GzipState.HEADER_START && (gzipMemberEnded || pending == null);

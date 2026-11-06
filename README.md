@@ -117,8 +117,11 @@ deflate are not affected.
 
 Over HTTP/1.1, a compressed response body that ends in the middle of its compressed stream, for example because a
 body delimited by the connection was cut off, fails the request with a `DecompressionException`; a body without any
-bytes completes. HTTP/2 response bodies are not checked, and neither are Brotli, Zstd and Snappy bodies decompressed as
-soon as they are read, as described above.
+bytes completes. Not every such end is noticed: Snappy has no end marker, so a body cut between two of its chunks looks
+complete, and a Zstd body of several frames completes when it is cut inside a frame that started in the same chunk as
+the end of the previous one. HTTP/2 response bodies are not checked, and neither are transfer codings such as
+`Transfer-Encoding: gzip`, nor Brotli, Zstd and Snappy bodies decompressed as soon as they are read, as described
+above.
 
 </details>
 
