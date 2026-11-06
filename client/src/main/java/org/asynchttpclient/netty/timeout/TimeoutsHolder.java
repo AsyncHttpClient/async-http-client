@@ -130,7 +130,10 @@ public class TimeoutsHolder {
             long untilDeadline = absoluteDeadline
                     ? remainingBudget(requestTimeoutInMs, nettyResponseFuture, nanoClock) : requestTimeoutInMs;
             requestTimeoutMillisTime = millisClock.getAsLong() + untilDeadline;
-            requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(untilDeadline);
+            // An absolute deadline straight off the exchange's start rather than off another clock reading, so
+            // that time passing between the two cannot extend it.
+            requestDeadlineNanos = (absoluteDeadline ? nettyResponseFuture.getStartNanos() : nanoClock.getAsLong())
+                    + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
         } else {
             requestTimeoutMillisTime = -1L;

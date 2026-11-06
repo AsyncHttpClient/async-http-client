@@ -100,10 +100,19 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
             }
         }
 
+        // Read before release: a concurrent cancel cleans the field once the task is unclaimed.
+        NettyResponseFuture<?> future = nettyResponseFuture;
         // Released before re-arming: the holder may hand the read timeout an entry of its own, which is only
         // armed while this task is unclaimed.
         done.set(false);
-        timeoutsHolder.rearmRequestTimeout(this, now, suspended);
+        try {
+            timeoutsHolder.rearmRequestTimeout(this, now, suspended);
+        } catch (RuntimeException e) {
+            // A timer that rejects the entry, being full or stopped, would leave the exchange with no deadline
+            // at all, so it is failed instead of left to hang.
+            timeoutsHolder.cancel();
+            requestSender.abort(future.channel(), future, e);
+        }
         return true;
     }
 }

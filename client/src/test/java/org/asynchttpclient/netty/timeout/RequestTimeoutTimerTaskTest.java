@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -83,9 +84,8 @@ public class RequestTimeoutTimerTaskTest {
     // When set, the first entry armed runs before the scheduler hands its handle back, as it can when the
     // arming thread is descheduled for longer than the entry's delay.
     private boolean firstEntryRunsBeforeItIsRecorded;
-    // When set, an event loop reports every entry as due as soon as it is scheduled, as it does once the
-    // arming thread has been descheduled for longer than the delay.
-    private boolean entriesAreDueAtOnce;
+    // When set, the monotonic clock jumps ahead by this much right after it is next read.
+    private long pauseAfterNextNanoReadMillis;
     // Runs as each entry is armed, before the scheduler hands its handle back.
     private Consumer<Armed> onArm = entry -> { };
 
@@ -101,18 +101,13 @@ public class RequestTimeoutTimerTaskTest {
         when(timer.newTimeout(any(), anyLong(), any())).thenAnswer(invocation -> {
             Timeout timeout = mock(Timeout.class);
             Armed entry = arm(invocation.getArgument(0), invocation.getArgument(1), timeout);
-            when(timeout.isExpired()).thenAnswer(ignored -> entry.ran);
             when(timeout.cancel()).thenAnswer(ignored -> !entry.ran);
             return handBack(entry, timeout);
         });
         loop = mock(EventExecutor.class);
         when(loop.schedule(any(Runnable.class), anyLong(), any())).thenAnswer(invocation -> {
             ScheduledFuture<?> scheduled = mock(ScheduledFuture.class);
-            long delay = invocation.getArgument(1);
-            Armed entry = arm(invocation.getArgument(0), delay, scheduled);
-            when(scheduled.isDone()).thenAnswer(ignored -> entry.done);
-            when(scheduled.getDelay(any())).thenAnswer(ignored ->
-                    entry.ran || entriesAreDueAtOnce ? 0L : TimeUnit.MILLISECONDS.toNanos(delay));
+            Armed entry = arm(invocation.getArgument(0), invocation.getArgument(1), scheduled);
             when(scheduled.cancel(anyBoolean())).thenAnswer(ignored -> !entry.ran);
             return handBack(entry, scheduled);
         });
@@ -203,6 +198,37 @@ public class RequestTimeoutTimerTaskTest {
 
         fire(0, REQUEST_TIMEOUT_MS);
         assertTimedOut("Request timeout");
+    }
+
+    @Test
+    public void anAbsoluteDeadlineIsNotExtendedByTimePassingWhileTheHolderIsBuilt() {
+        pauseAfterNextNanoReadMillis = 3_000;
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, true, false, null, 0);
+        holder.start();
+        assertEquals(1, armed.size());
+
+        // The read timeout has not started, so the entry goes back to the request deadline.
+        fire(0, 4_000);
+
+        assertEquals(2, armed.size());
+        assertEquals(REQUEST_TIMEOUT_MS - 4_000, armed.get(1).delay,
+                "the exchange's deadline should stay where its start and budget put it");
+    }
+
+    @Test
+    public void anEntryTheTimerRejectsFailsTheExchangeRatherThanLeaveItWithoutADeadline() {
+        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        holder.startReadTimeout();
+        onArm = entry -> {
+            if (armed.size() == 2) {
+                throw new RejectedExecutionException("timer full");
+            }
+        };
+
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        ExecutionException failure = assertThrows(ExecutionException.class, () -> future.get(0, TimeUnit.MILLISECONDS));
+        assertInstanceOf(RejectedExecutionException.class, failure.getCause());
     }
 
     @Test
@@ -332,8 +358,7 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
-    public void aSuccessorAlreadyDueOnTheLoopIsStillRecorded() {
-        entriesAreDueAtOnce = true;
+    public void cancellingAfterAnEarlyFireOnTheLoopTakesTheNewEntryBackOut() {
         TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, true, loop, 0);
         holder.start();
         holder.startReadTimeout();
@@ -439,7 +464,6 @@ public class RequestTimeoutTimerTaskTest {
         } catch (Exception e) {
             throw new AssertionError(e);
         }
-        entry.done = true;
     }
 
     private void assertTimedOut(String prefix) {
@@ -453,17 +477,17 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     private long nanos() {
-        return nanoOrigin + TimeUnit.MILLISECONDS.toNanos(elapsedMillis);
+        long nanos = nanoOrigin + TimeUnit.MILLISECONDS.toNanos(elapsedMillis);
+        elapsedMillis += pauseAfterNextNanoReadMillis;
+        pauseAfterNextNanoReadMillis = 0;
+        return nanos;
     }
 
     private static final class Armed {
         final TimeoutTimerTask task;
         final long delay;
         final Object timeout;
-        // Set when the entry starts running, as a timer marks it expired; done when it has finished, as an
-        // event loop marks it.
         volatile boolean ran;
-        volatile boolean done;
 
         Armed(TimeoutTimerTask task, long delay, Object timeout) {
             this.task = task;
