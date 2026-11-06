@@ -44,7 +44,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.2.19.Final</netty.version>
+        <netty.version>4.2.20.Final</netty.version>
         <brotli4j.version>1.24.0</brotli4j.version>
         <slf4j.version>2.0.20</slf4j.version>
         <zstd-jni.version>1.5.7-25</zstd-jni.version>
@@ -506,6 +506,12 @@
                                     "configuration": {
                                         "ignore": true,
                                         "differences": [
+                                            {
+                                                "code": "java.method.visibilityIncreased",
+                                                "old": "method void org.asynchttpclient.netty.NettyResponseBodyControl::execute(java.lang.Runnable)",
+                                                "new": "method void org.asynchttpclient.netty.NettyResponseBodyControl::execute(java.lang.Runnable)",
+                                                "justification": "NettyResponseBodyControl implements the new ResponseBodyControl.execute default method with its existing event-loop dispatch, which was private. Making a private method public is binary and source compatible, and the class is final, so no subclass can be affected. Scoped to this exact method."
+                                            },
                                             {
                                                 "code": "java.class.externalClassExposedInAPI",
                                                 "justification": "Netty types are part of the public API by design"

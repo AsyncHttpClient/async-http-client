@@ -55,9 +55,12 @@ jobs:
         with:
           servers: |
             [{
-              "id": "central",
-              "username": "${{ secrets.OSSRH_USERNAME }}",
-              "password": "${{ secrets.OSSRH_PASSWORD }}"
+                "id": "central",
+                "username": "${{ secrets.OSSRH_USERNAME }}",
+                "password": "${{ secrets.OSSRH_PASSWORD }}",
+                "repositoryOrigins": [
+                  "https://central.sonatype.com"
+                ]
             }]
 
       - name: Import GPG

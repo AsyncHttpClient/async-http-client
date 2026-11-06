@@ -242,7 +242,7 @@ public class Http1ContentDecompressorTest {
         bodies.add(new Body("gzip bad header crc", "gzip",
                 flipped(gzipWithHeaderFields(TEXT, FHCRC | FNAME), 24)));
         bodies.add(new Body("gzip bad magic", "gzip", withByte(gzipText, 0, 0x1e)));
-        bodies.add(new Body("gzip second magic byte ignored", "gzip", withByte(gzipText, 1, 0)));
+        bodies.add(new Body("gzip bad second magic byte", "gzip", withByte(gzipText, 1, 0)));
         bodies.add(new Body("gzip bad method", "gzip", withByte(gzipText, 2, 7)));
         bodies.add(new Body("gzip reserved flag", "gzip", withByte(gzipText, 3, 0x20)));
         bodies.add(new Body("gzip corrupt data", "gzip", flipped(gzipRandom, gzipRandom.length / 2)));

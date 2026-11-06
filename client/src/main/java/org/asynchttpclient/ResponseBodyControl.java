@@ -15,15 +15,27 @@
  */
 package org.asynchttpclient;
 
+import java.util.Objects;
+
 /**
  * Controls transport reads for a response body.
  * <p>
  * The control is thread-safe and remains valid until its response completes. Calls made after completion have no
  * effect.
  * <p>
+ * Calls take effect on the event loop that delivers the response body callbacks to the {@link AsyncHandler}. A call
+ * made on that event loop, for example from one of those callbacks, takes effect before it returns. A call made from
+ * any other thread takes effect asynchronously on the event loop, possibly after further callbacks. A
+ * {@link #resume()} always takes effect, even after a {@link #suspend()} that a callback makes before the resume is
+ * applied, so a resume is never lost. A {@link #suspend()} from another thread is skipped if, by the time it would take
+ * effect, the most recent call to {@link #suspend()} or {@link #resume()} was a resume. Calls made concurrently on
+ * different threads are not ordered otherwise.
+ * <p>
  * A control is also supplied when the final response headers end the response without a body. In that case,
  * {@link #suspend()} cannot defer completion: the control becomes inactive when
  * {@link AsyncHandler#onResponseBodyStart(ResponseBodyControl)} returns, and later calls have no effect.
+ * <p>
+ * Unlike calls to the other methods, a task passed to {@link #execute(Runnable)} still runs after completion.
  *
  * @since 3.0.14
  */
@@ -69,4 +81,50 @@ public interface ResponseBodyControl {
      * intended for cancellation after the callback has returned, including from another thread.
      */
     void cancel();
+
+    /**
+     * Runs {@code task} on the event loop that delivers this response's body, in sequence with the {@link AsyncHandler}
+     * callbacks that AHC makes on that event loop, such as
+     * {@link AsyncHandler#onBodyPartReceived(HttpResponseBodyPart)}.
+     * <p>
+     * Called on that event loop, for example from one of those callbacks, the task runs before this method returns.
+     * Called from any other thread, the task is queued to the event loop and runs there after the work already pending
+     * on it; the event loop can deliver further body parts before the task runs. Either way, the task sees every body
+     * part delivered before it runs, and {@link #suspend()}, {@link #resume()} and {@link #cancel()} called from the
+     * task are applied before they return, not queued. As {@link #suspend()} says, parts that were already read can
+     * still be delivered after it. {@link #resume()} can deliver parts, and {@link #resume()} and {@link #cancel()}
+     * can complete the response, before they return.
+     * <p>
+     * {@link AsyncHandler#onThrowable(Throwable)} runs once the control is inactive, so control calls from a task
+     * passed to this method from there have no effect. It runs on the thread that fails the response. For most
+     * failures, such as an I/O error, a closed connection or a reset stream, that is this event loop, and the task runs
+     * before this method returns. A cancel or abort from another thread calls it on that thread, and a timeout on the
+     * client's timer thread unless {@link AsyncHttpClientConfig#isUseEventLoopTimeouts()} is enabled; from there, the
+     * task is queued, and can run while that callback is still running.
+     * <p>
+     * This lets a consumer that buffers body parts on another thread decide whether to resume reads based on everything
+     * delivered so far. Calling {@link #resume()} directly from that thread instead acts on a decision that a body part
+     * delivered in the meantime can make stale, and can let another read through after the consumer's demand is met.
+     * <p>
+     * The task can run on a transport thread and must not block. It also runs after the response has completed. If the
+     * event loop no longer accepts tasks, for example because it is shutting down, the task does not run.
+     * <p>
+     * The task must not throw. An exception from a task that runs before this method returns is thrown from this
+     * method, so a callback that lets it propagate fails the response. An exception from a queued task is logged by the
+     * event loop and does not fail the response. If that task was to resume reads, the response stays suspended until
+     * it is resumed or cancelled, or the request timeout fires. With the request timeout disabled, it can stay
+     * suspended indefinitely, since the read timeout is paused while reads are suspended.
+     * <p>
+     * The default implementation runs the task on the calling thread. That suits implementations that apply control
+     * calls synchronously on the calling thread; it does not order the task with callbacks made on other threads. An
+     * implementation that delegates to another control must delegate this method too, or the task loses the ordering
+     * that control provides.
+     *
+     * @param task the task to run
+     * @since 3.0.15
+     */
+    default void execute(Runnable task) {
+        Objects.requireNonNull(task, "task");
+        task.run();
+    }
 }
