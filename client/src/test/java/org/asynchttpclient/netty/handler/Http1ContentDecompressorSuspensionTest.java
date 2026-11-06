@@ -224,6 +224,12 @@ public class Http1ContentDecompressorSuspensionTest {
          */
         SuspendedExchange(String contentEncoding, byte[] body, int fragmentSize, long maxDecompressedBytes,
                           boolean suspendBeforeBody, boolean autoRead, Input kind) {
+            this(new Http1ContentDecompressor(false, maxDecompressedBytes), contentEncoding, body, fragmentSize,
+                    suspendBeforeBody, autoRead, kind);
+        }
+
+        SuspendedExchange(Http1ContentDecompressor decompressor, String contentEncoding, byte[] body,
+                          int fragmentSize, boolean suspendBeforeBody, boolean autoRead, Input kind) {
             suspendedBeforeBody = suspendBeforeBody;
             channel = new EmbeddedChannel();
             channel.config().setAutoRead(autoRead);
@@ -234,7 +240,7 @@ public class Http1ContentDecompressorSuspensionTest {
             control = NettyResponseBodyControl.create(future, channel, () -> {
             }, ignored -> {
             });
-            decompressor = new Http1ContentDecompressor(false, maxDecompressedBytes);
+            this.decompressor = decompressor;
             channel.pipeline().addLast(decompressor, new ChannelInboundHandlerAdapter() {
                 @Override
                 public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -387,6 +393,24 @@ public class Http1ContentDecompressorSuspensionTest {
             exchange.assertInputReleased();
             exchange.channel.finishAndReleaseAll();
         }
+    }
+
+    @Test
+    public void outputThatOnlyFollowsTheEndOfInputWaitsForResumes() {
+        byte[] payload = new byte[300 * 1024];
+        new Random(19).nextBytes(payload);
+        Http1ContentDecompressor decompressor = new Http1ContentDecompressor(false, 0) {
+            @Override
+            PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+                return new PullDecompression(new OutputAtEndOfInputDecompressor(ctx.alloc()), contentEncoding, 0);
+            }
+        };
+        SuspendedExchange exchange =
+                new SuspendedExchange(decompressor, "br", payload, 8192, false, true, Input.HEAP);
+        Body body = exchange.resumeToTheEnd();
+        assertTrue(body.parts > 1, "the output must be handed on over several resumes");
+        assertEquals("done", body.trailer);
+        assertArrayEquals(payload, body.bytes.toByteArray());
     }
 
     @Test

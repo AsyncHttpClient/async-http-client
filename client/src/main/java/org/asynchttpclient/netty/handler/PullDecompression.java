@@ -54,7 +54,7 @@ final class PullDecompression {
     private boolean inputAdded;
     private boolean inputEnded;
 
-    private PullDecompression(Decompressor decompressor, String coding, long maxDecompressedBytes) {
+    PullDecompression(Decompressor decompressor, String coding, long maxDecompressedBytes) {
         this.decompressor = decompressor;
         this.coding = coding;
         this.maxDecompressedBytes = maxDecompressedBytes;

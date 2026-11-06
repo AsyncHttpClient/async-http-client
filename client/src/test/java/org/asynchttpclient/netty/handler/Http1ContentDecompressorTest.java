@@ -570,6 +570,10 @@ public class Http1ContentDecompressorTest {
         byte[] raw = deflate(TEXT, true);
 
         assertDecoded(TEXT, exchange(channel, "gzip", gzipText, new int[]{gzipText.length}, Kind.DIRECT));
+        // A few bytes of gzip after a complete response are not the tail of its member.
+        Outcome start = exchange(channel, "gzip", Arrays.copyOf(gzipText, 5), new int[]{5}, Kind.DIRECT);
+        assertNotNull(start.failure);
+        assertEquals(TRUNCATED_GZIP, start.failure.getMessage());
         Outcome identity = exchange(channel, null, TEXT, new int[]{100, TEXT.length - 100}, Kind.HEAP);
         assertDecoded(TEXT, identity);
         assertEquals(String.valueOf(TEXT.length), identity.head.headers().get(HttpHeaderNames.CONTENT_LENGTH));
@@ -750,11 +754,13 @@ public class Http1ContentDecompressorTest {
 
     @Test
     void aFailedLastChunkStaysFailed() {
-        // HttpObjectDecoder reports a chunk it cannot parse as a LastHttpContent with a failed result.
+        // HttpObjectDecoder reports a chunk it cannot parse as a LastHttpContent with a failed result. The body is
+        // short of its gzip trailer, so it would fail as truncated if its end were checked.
         IllegalStateException cause = new IllegalStateException("invalid chunk");
         for (boolean withTrailer : new boolean[]{false, true}) {
             EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
-            byte[] encoded = gzip(TEXT);
+            byte[] gzipped = gzip(TEXT);
+            byte[] encoded = Arrays.copyOf(gzipped, gzipped.length - 3);
             channel.writeInbound(response("gzip", -1));
             channel.writeInbound(new DefaultHttpContent(Unpooled.wrappedBuffer(encoded)));
             LastHttpContent last = new DefaultLastHttpContent();
@@ -1271,6 +1277,24 @@ public class Http1ContentDecompressorTest {
             }
         }
         assertTrue(checked > 30, "only " + checked + " scenarios ran");
+    }
+
+    @Test
+    void outputThatOnlyFollowsTheEndOfInputIsHandedOn() {
+        UnpooledByteBufAllocator allocator = allocator();
+        EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0) {
+            @Override
+            PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+                return new PullDecompression(new OutputAtEndOfInputDecompressor(ctx.alloc()), contentEncoding, 0);
+            }
+        }, allocator);
+
+        Outcome outcome = exchange(channel, "br", RANDOM, sizes(RANDOM.length, 4000), Kind.HEAP);
+        assertDecoded(RANDOM, outcome);
+        assertTrue(outcome.parts > 1, "the output must be split into parts");
+        assertFalse(channel.finishAndReleaseAll());
+        assertEquals(0, allocator.metric().usedHeapMemory());
+        assertInputsReleased(outcome, "br");
     }
 
     @Test

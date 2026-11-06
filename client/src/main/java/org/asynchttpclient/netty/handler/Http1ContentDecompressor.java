@@ -477,7 +477,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     }
 
     // Only called for br, zstd and snappy, so that gzip and deflate never load Netty's newer Decompressor API.
-    private @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+    @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
         if (!pullAvailable) {
             return null;
         }
