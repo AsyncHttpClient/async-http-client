@@ -225,6 +225,15 @@ public class HttpUtilsTest {
         assertEquals("", filterOutZstd(" zstd "));
     }
 
+    @Test
+    public void filterOutKeepsARefusalOfTheCoding() {
+        assertEquals("*, br;q=0", filterOutBrotli("*, br;q=0"));
+        assertEquals("*, BR ; Q = 0.000", filterOutBrotli("*, BR ; Q = 0.000"));
+        assertEquals("gzip, zstd;q=0., *", filterOutZstd("gzip, zstd;q=0., *"));
+        assertEquals("gzip, br;q=0", filterOutBrotli("gzip, br;q=0.001, br;q=0"));
+        assertEquals("*", filterOutZstd("*, zstd;q=0.5"));
+    }
+
     private static String filterOutBrotli(String acceptEncoding) {
         return HttpUtils.filterOutBrotliFromAcceptEncoding(acceptEncoding).toString();
     }

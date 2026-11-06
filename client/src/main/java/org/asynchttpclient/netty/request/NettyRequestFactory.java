@@ -495,7 +495,8 @@ public final class NettyRequestFactory {
         if (brotliAvailable && zstdAvailable) {
             return;
         }
-        String acceptEncoding = String.join(", ", headers.getAll(ACCEPT_ENCODING));
+        List<String> values = headers.getAll(ACCEPT_ENCODING);
+        String acceptEncoding = values.size() == 1 ? values.get(0) : String.join(", ", values);
         String filtered = acceptEncoding;
         if (!brotliAvailable) {
             filtered = filterOutBrotliFromAcceptEncoding(filtered).toString();

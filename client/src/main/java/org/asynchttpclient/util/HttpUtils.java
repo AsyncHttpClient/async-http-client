@@ -202,8 +202,9 @@ public final class HttpUtils {
     }
 
     /**
-     * Drops every element naming {@code coding}, which may appear anywhere in the list, in any case and with a weight
+     * Drops every element offering {@code coding}, which may appear anywhere in the list, in any case and with a weight
      * (RFC 9110 section 12.5.3). Dropping the last element leaves an empty value, which accepts no content coding.
+     * An element with weight 0 refuses the coding and is kept, as dropping it would let a "*" element offer it.
      */
     private static String filterOutAcceptEncoding(String acceptEncoding, AsciiString coding) {
         if (!AsciiString.containsIgnoreCase(acceptEncoding, coding)) {
@@ -215,7 +216,7 @@ public final class HttpUtils {
             String trimmed = element.trim();
             int semicolon = trimmed.indexOf(';');
             String token = semicolon < 0 ? trimmed : trimmed.substring(0, semicolon).trim();
-            if (coding.contentEqualsIgnoreCase(token)) {
+            if (coding.contentEqualsIgnoreCase(token) && (semicolon < 0 || !hasZeroWeight(trimmed.substring(semicolon + 1)))) {
                 dropped = true;
             } else if (!trimmed.isEmpty()) {
                 if (kept.length() > 0) {
@@ -225,5 +226,25 @@ public final class HttpUtils {
             }
         }
         return dropped ? kept.toString() : acceptEncoding;
+    }
+
+    private static boolean hasZeroWeight(String parameters) {
+        for (String parameter : parameters.split(";")) {
+            int eq = parameter.indexOf('=');
+            if (eq >= 0 && "q".equalsIgnoreCase(parameter.substring(0, eq).trim())) {
+                String weight = parameter.substring(eq + 1).trim();
+                if (weight.isEmpty() || weight.charAt(0) != '0') {
+                    return false;
+                }
+                for (int i = 1; i < weight.length(); i++) {
+                    char c = weight.charAt(i);
+                    if (c != '0' && (c != '.' || i != 1)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 }
