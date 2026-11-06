@@ -230,7 +230,8 @@ public class NettyResponse implements Response {
             System.arraycopy(bytes, 0, target, offset, bytes.length);
             offset += bytes.length;
         }
-        return ByteBuffer.wrap(target);
+        // Limited to what was copied, should a part's length() over-report its bytes.
+        return ByteBuffer.wrap(target, 0, offset);
     }
 
     @Override

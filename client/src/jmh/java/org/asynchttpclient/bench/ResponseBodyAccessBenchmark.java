@@ -43,7 +43,10 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * {@code 1x4096} is a small body that arrives in one read; {@code 16x8192} is a 128 KiB body cut into
  * {@code httpClientCodecMaxChunkSize}-sized parts. A fresh response wraps the same parts on every operation,
- * so whatever a response computes once is paid once per operation, as it is per real response.
+ * as a real response would.
+ * <p>
+ * {@link #drainStream} measures the stream; {@link #responseBodyTwice} measures the string accessors, which
+ * concatenate a multi-part body on every call.
  * <p>
  * Run with: {@code run-jmh.sh ResponseBodyAccessBenchmark -prof gc -f 2 -wi 5 -w 1 -i 10 -r 1}
  */

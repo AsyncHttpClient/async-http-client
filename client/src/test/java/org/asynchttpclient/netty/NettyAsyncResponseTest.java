@@ -91,6 +91,42 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
+    public void testGetResponseBodyAsByteBufferEndsAtTheBytesCopied() {
+        // HttpResponseBodyPart is public: a part whose length() over-reports must not pad the buffer with zeros.
+        byte[] bytes = "Hello".getBytes(StandardCharsets.UTF_8);
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new HttpResponseBodyPart(true) {
+            @Override
+            public int length() {
+                return bytes.length + 3;
+            }
+
+            @Override
+            public byte[] getBodyPartBytes() {
+                return bytes;
+            }
+
+            @Override
+            public ByteBuffer getBodyByteBuffer() {
+                return ByteBuffer.wrap(bytes);
+            }
+
+            @Override
+            public ByteBuf getBodyByteBuf() {
+                return Unpooled.wrappedBuffer(bytes);
+            }
+        });
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        ByteBuffer body = response.getResponseBodyAsByteBuffer();
+        assertEquals(0, body.position());
+        assertEquals(bytes.length, body.remaining());
+        byte[] read = new byte[body.remaining()];
+        body.get(read);
+        assertArrayEquals(bytes, read);
+    }
+
+    @Test
     public void testGetResponseBodyAsByteBuffer() {
         List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
         bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes()), false));
