@@ -27,8 +27,8 @@ import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -57,6 +57,7 @@ public class NettyResponse implements Response {
     private final HttpHeaders headers;
     private final HttpResponseStatus status;
     private List<Cookie> cookies;
+    private volatile byte @Nullable [] joinedBody;
 
     public NettyResponse(HttpResponseStatus status,
                          HttpHeaders headers,
@@ -198,9 +199,13 @@ public class NettyResponse implements Response {
     /**
      * {@inheritDoc}
      * <p>
-     * Returns a lone body part's array; concatenates into one of its own when there are several, or an empty
-     * array when there are none. Which of those a given response takes is not a property of the body: see
-     * {@link Response#getResponseBodyAsBytesView()}, whose contract is deliberately weaker than this.
+     * Returns a lone body part's array; concatenates into one of its own when there are several, once, and
+     * returns that same array on later calls; or an empty array when there are none. Which of those a given
+     * response takes is not a property of the body: see {@link Response#getResponseBodyAsBytesView()}, whose
+     * contract is deliberately weaker than this.
+     * <p>
+     * {@link #getResponseBodyAsStream()} reads the parts' arrays in place as well, so a write to a lone part's
+     * array also changes what a stream not yet drained reads.
      * <p>
      * Whether a lone part hands over storage of its own is the part's business rather than this response's.
      * {@link EagerResponseBodyPart} returns the array it holds; {@link LazyResponseBodyPart} copies out of its
@@ -213,18 +218,22 @@ public class NettyResponse implements Response {
 
     @Override
     public ByteBuffer getResponseBodyAsByteBuffer() {
+        return ByteBuffer.wrap(concatenateBodyParts());
+    }
 
+    private byte[] concatenateBodyParts() {
         int length = 0;
         for (HttpResponseBodyPart part : bodyParts) {
             length += part.length();
         }
 
-        ByteBuffer target = ByteBuffer.wrap(new byte[length]);
+        byte[] target = new byte[length];
+        int offset = 0;
         for (HttpResponseBodyPart part : bodyParts) {
-            target.put(part.getBodyPartBytes());
+            byte[] bytes = part.getBodyPartBytes();
+            System.arraycopy(bytes, 0, target, offset, bytes.length);
+            offset += bytes.length;
         }
-
-        target.flip();
         return target;
     }
 
@@ -264,7 +273,17 @@ public class NettyResponse implements Response {
             // on every call. Nothing can be written through a zero-length array, so one instance serves them all.
             return EMPTY_BODY;
         }
-        return bodyParts.size() == 1 ? bodyParts.get(0).getBodyPartBytes() : getResponseBodyAsBytes();
+        if (bodyParts.size() == 1) {
+            return bodyParts.get(0).getBodyPartBytes();
+        }
+        // Concatenated once rather than on every call. A race only makes two equal arrays, and the field is
+        // volatile so that a reader on another thread never sees the array before its contents.
+        byte[] joined = joinedBody;
+        if (joined == null) {
+            joined = concatenateBodyParts();
+            joinedBody = joined;
+        }
+        return joined;
     }
 
     @Override
@@ -272,9 +291,16 @@ public class NettyResponse implements Response {
         return new String(sharedBodyBytes(), charset);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Reads the body parts' arrays in place rather than a copy of the whole body, and does not go through
+     * {@link #getResponseBodyAsBytes()}. It copies out of those arrays into whatever it is asked to read into
+     * and never hands one of them to anything, {@link InputStream#transferTo} included.
+     */
     @Override
     public InputStream getResponseBodyAsStream() {
-        return new ByteArrayInputStream(getResponseBodyAsBytes());
+        return new BodyPartsInputStream(bodyParts);
     }
 
     @Override

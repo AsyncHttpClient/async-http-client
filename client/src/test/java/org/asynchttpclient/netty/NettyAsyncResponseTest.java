@@ -180,6 +180,38 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
+    public void testSeveralPartsAreConcatenatedOnceButCopiedForGetResponseBodyAsBytes() {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        byte[] view = response.getResponseBodyAsBytesView();
+        assertArrayEquals("Hello World".getBytes(StandardCharsets.UTF_8), view);
+        assertSame(view, response.getResponseBodyAsBytesView());
+        assertEquals("Hello World", response.getResponseBody());
+
+        byte[] copy = response.getResponseBodyAsBytes();
+        assertArrayEquals(view, copy);
+        assertNotSame(view, copy);
+        assertNotSame(copy, response.getResponseBodyAsBytes());
+    }
+
+    @Test
+    public void testGetResponseBodyAsStreamReadsSeveralParts() throws IOException {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
+        bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
+        // A fresh stream each time, from the start.
+        assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
+        assertEquals(-1, new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>())
+                .getResponseBodyAsStream().read());
+    }
+
+    @Test
     public void testGetResponseBodyAsBytesViewReturnsEmptyArray() {
         NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>());
 
