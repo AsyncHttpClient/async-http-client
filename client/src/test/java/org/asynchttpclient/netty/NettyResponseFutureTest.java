@@ -19,6 +19,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.channel.ChannelPoolPartitioning;
+import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CancellationException;
@@ -38,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -128,6 +130,20 @@ public class NettyResponseFutureTest {
         assertEquals(Boolean.FALSE, doneWhenNotified.get(),
                 "onThrowable must run before the future completes, or a caller released by get() sees a handler that was never told");
         assertSame(cause, assertThrows(ExecutionException.class, future::get).getCause());
+    }
+
+    @Test
+    public void completionCancelsTheTimeoutsOnce() {
+        AsyncHandler<?> asyncHandler = mock(AsyncHandler.class);
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(null, asyncHandler, null, 3, null, null, null);
+        TimeoutsHolder timeoutsHolder = mock(TimeoutsHolder.class);
+        future.setTimeoutsHolder(timeoutsHolder);
+
+        future.cancelTimeouts();
+        future.done();
+
+        verify(timeoutsHolder, times(1)).cancel();
+        assertNull(future.getTimeoutsHolder());
     }
 
     @Test

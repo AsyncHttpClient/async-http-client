@@ -118,7 +118,6 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile int contentProcessed;
     @SuppressWarnings("unused")
     private volatile int onThrowableCalled;
-    @SuppressWarnings("unused")
     private volatile TimeoutsHolder timeoutsHolder;
     @SuppressWarnings("unused")
     private volatile @Nullable NettyResponseBodyControl responseBodyControl;
@@ -370,7 +369,12 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     @Override
     public void touch() {
-        touch = unpreciseMillisTime();
+        // Every read lands here, and many fall within the same millisecond; storing the value already there
+        // would only cost a fence.
+        long now = unpreciseMillisTime();
+        if (touch != now) {
+            touch = now;
+        }
     }
 
     @Override
@@ -409,6 +413,10 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     }
 
     public void cancelTimeouts() {
+        // shortcut, much faster than getAndSet: a completed exchange gets here twice, from finishUpdate and done()
+        if (timeoutsHolder == null) {
+            return;
+        }
         TimeoutsHolder ref = TIMEOUTS_HOLDER_FIELD.getAndSet(this, null);
         if (ref != null) {
             ref.cancel();
