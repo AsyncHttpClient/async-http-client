@@ -37,11 +37,15 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -64,6 +68,7 @@ public class ReadTimeoutTimerTaskTest {
 
     private final AtomicLong elapsedMillis = new AtomicLong();
     private long origin;
+    private NettyResponseFuture<?> future;
 
     private HashedWheelTimer senderTimer;
     private ChannelManager channelManager;
@@ -108,6 +113,29 @@ public class ReadTimeoutTimerTaskTest {
                 "a read timeout that is due before the request timeout should not be dropped");
     }
 
+    @Test
+    public void aWallClockSteppingBackDoesNotStretchTheWindow() {
+        ReadTimeoutTimerTask task = armedReadTimeout(Duration.ofMillis(-1));
+
+        elapsedMillis.set(-SINCE_LAST_READ_MS);
+        task.run((Timeout) null);
+
+        assertEquals(List.of(READ_TIMEOUT_MS, READ_TIMEOUT_MS), armedDelays(2),
+                "a clock stepping back should not re-arm for more than a whole read timeout");
+    }
+
+    @Test
+    public void aReadTimeoutWithNoReadInItsWindowFailsTheExchange() {
+        ReadTimeoutTimerTask task = armedReadTimeout(Duration.ofMillis(-1));
+
+        elapsedMillis.set(READ_TIMEOUT_MS);
+        task.run((Timeout) null);
+
+        armedDelays(1);
+        ExecutionException thrown = assertThrows(ExecutionException.class, () -> future.get(5, TimeUnit.SECONDS));
+        assertInstanceOf(TimeoutException.class, thrown.getCause());
+    }
+
     private ReadTimeoutTimerTask armedReadTimeout(Duration requestTimeout) {
         AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setReadTimeout(Duration.ofMillis(READ_TIMEOUT_MS))
@@ -119,7 +147,7 @@ public class ReadTimeoutTimerTaskTest {
                 mock(AsyncHttpClientState.class));
 
         Request request = new RequestBuilder().setUrl("http://example.com:12345").build();
-        NettyResponseFuture<?> future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
+        future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
             @Override
             public Object onCompleted(Response response) {
                 return null;
