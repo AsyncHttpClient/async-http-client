@@ -114,14 +114,15 @@ public class ReadTimeoutTimerTaskTest {
     }
 
     @Test
-    public void aWallClockSteppingBackDoesNotStretchTheWindow() {
+    public void aReArmNeverOutlastsAWholeWindow() {
         ReadTimeoutTimerTask task = armedReadTimeout(Duration.ofMillis(-1));
 
-        elapsedMillis.set(-SINCE_LAST_READ_MS);
+        // The wall clock stepped back since the last read.
+        elapsedMillis.set(-5_000);
         task.run((Timeout) null);
 
         assertEquals(List.of(READ_TIMEOUT_MS, READ_TIMEOUT_MS), armedDelays(2),
-                "a clock stepping back should not re-arm for more than a whole read timeout");
+                "a single re-arm should never be longer than the read timeout");
     }
 
     @Test

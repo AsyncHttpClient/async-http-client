@@ -78,7 +78,8 @@ public class TimeoutsHolder {
     }
 
     // For tests: a deadline can be checked without letting time pass. nanoClock must read the clock the
-    // future took its start from.
+    // future took its start from, and millisClock the one touch() stamps lastTouch with, since the read
+    // timeout measures its window between the two.
     TimeoutsHolder(Timer nettyTimer, @Nullable EventExecutor eventExecutor, NettyResponseFuture<?> nettyResponseFuture,
                    NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress,
                    LongSupplier millisClock, LongSupplier nanoClock) {

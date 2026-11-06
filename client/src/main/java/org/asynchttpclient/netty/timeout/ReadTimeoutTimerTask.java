@@ -82,7 +82,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
         } else {
             done.set(false);
             // Only what is left of the window: a whole one would let the exchange idle for up to twice the read
-            // timeout. Capped at a whole one so a wall clock stepping back cannot stretch it either.
+            // timeout. Capped at a whole one so that no single re-arm outlasts a window, whatever the wall clock did.
             timeoutsHolder.startReadTimeout(this, Math.min(durationBeforeCurrentReadTimeout, readTimeout));
         }
     }
