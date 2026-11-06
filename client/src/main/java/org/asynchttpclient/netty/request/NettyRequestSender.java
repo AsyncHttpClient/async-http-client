@@ -1336,12 +1336,13 @@ public final class NettyRequestSender {
         // secured origin, or on a cleartext one from an h2c prior-knowledge upgrade, and nothing else (see
         // NettyConnectListener). With neither in play nobody will ever register for this key, so the waiter
         // could only expire: we would hold the request for connectTimeout and then fail it with the permit
-        // exception we already have, ignoring the acquireFreeChannelTimeout the caller asked for.
+        // exception we already have, ignoring the acquireFreeChannelTimeout the caller asked for. h2c is only
+        // spoken directly or through SOCKS: behind an HTTP or HTTPS proxy the peer is the proxy, not the origin.
         //
-        // This rests on every hop we open for a cleartext origin being cleartext itself. We never negotiate
-        // h2 with a proxy, and an h2 connection to one would be registered under this cleartext key, so
-        // revisit here if that ever changes.
-        if (!request.getUri().isSecured() && !channelManager.isHttp2CleartextEnabled()) {
+        // This rests on never speaking HTTP/2 to an HTTP or HTTPS proxy: an h2 connection to one would be
+        // registered under this cleartext key, so revisit here if that ever changes.
+        if (!request.getUri().isSecured()
+                && (!channelManager.isHttp2CleartextEnabled() || proxy != null && !proxy.getProxyType().isSocks())) {
             return null;
         }
         // A secured origin can still turn out to speak HTTP/1.1, which the scheme cannot tell us.
