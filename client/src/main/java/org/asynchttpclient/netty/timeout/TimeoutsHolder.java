@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.LongSupplier;
 
 /**
@@ -42,8 +42,13 @@ public class TimeoutsHolder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutsHolder.class);
 
-    private final AtomicBoolean cancelled = new AtomicBoolean();
-    private final AtomicBoolean started = new AtomicBoolean();
+    private static final AtomicIntegerFieldUpdater<TimeoutsHolder> CANCELLED =
+            AtomicIntegerFieldUpdater.newUpdater(TimeoutsHolder.class, "cancelled");
+    private static final AtomicIntegerFieldUpdater<TimeoutsHolder> STARTED =
+            AtomicIntegerFieldUpdater.newUpdater(TimeoutsHolder.class, "started");
+
+    private volatile int cancelled;
+    private volatile int started;
     private final Timer nettyTimer;
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
@@ -129,7 +134,7 @@ public class TimeoutsHolder {
      * cancel to sit in its scheduler until the full deadline, pinning the task, the future and the channel.
      */
     public void start() {
-        if (!started.compareAndSet(false, true)) {
+        if (!STARTED.compareAndSet(this, 0, 1)) {
             return;
         }
         if (requestTimeoutTask != null) {
@@ -202,7 +207,7 @@ public class TimeoutsHolder {
         }
         eventExecutor = executor;
         RequestTimeoutTimerTask task = requestTimeoutTask;
-        if (task == null || cancelled.get() || task.isClaimed() || !task.cancelArmed()) {
+        if (task == null || cancelled != 0 || task.isClaimed() || !task.cancelArmed()) {
             return;
         }
         arm(task, remainingRequestTimeout());
@@ -240,7 +245,7 @@ public class TimeoutsHolder {
     }
 
     public void cancel() {
-        if (cancelled.compareAndSet(false, true)) {
+        if (CANCELLED.compareAndSet(this, 0, 1)) {
             release(requestTimeoutTask);
             release(readTimeoutTask);
         }
@@ -306,7 +311,7 @@ public class TimeoutsHolder {
      * would sit in the scheduler until the full deadline, waking a loop for a request that is long done.
      */
     private void cancelIfRaced(TimeoutTimerTask task) {
-        if (cancelled.get()) {
+        if (cancelled != 0) {
             release(task);
         }
     }
