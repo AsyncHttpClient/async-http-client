@@ -116,10 +116,9 @@ if the system property `io.netty.compression.defaultMaxForwardBytes` is set to z
 deflate are not affected.
 
 Over HTTP/1.1, a compressed response body that ends in the middle of its compressed stream, for example because a
-body delimited by the connection was cut off, fails the request; a body without any bytes completes. The request fails
-with a `DecompressionException`, except for Zstd: AHC fails a request with the innermost cause, which there is
-zstd-jni's `ZstdIOException`. HTTP/2 response bodies are not checked, and neither are Brotli, Zstd and Snappy bodies
-decompressed as soon as they are read, as described above.
+body delimited by the connection was cut off, fails the request with a `DecompressionException`; a body without any
+bytes completes. HTTP/2 response bodies are not checked, and neither are Brotli, Zstd and Snappy bodies decompressed as
+soon as they are read, as described above.
 
 </details>
 

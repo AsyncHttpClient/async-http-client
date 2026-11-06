@@ -1256,6 +1256,10 @@ public class Http1ContentDecompressorTest {
                             assertTrue(actual.ended, scenario + ": a body without bytes must end");
                         } else {
                             assertInstanceOf(DecompressionException.class, actual.failure, scenario);
+                            for (Throwable cause = actual.failure; cause != null; cause = cause.getCause()) {
+                                // AHC would take an IOException for a failed connection.
+                                assertFalse(cause instanceof IOException, scenario + ": " + cause);
+                            }
                             assertFalse(actual.ended, scenario + ": a truncated body must not end normally");
                         }
                         ahc.finishAndReleaseAll();
