@@ -360,10 +360,21 @@ public class TimeoutsHolder {
     }
 
     public void cancel() {
+        retire();
+    }
+
+    /**
+     * {@link #cancel}, telling whether this call is the one that cancelled, so that a caller acting on the
+     * exchange's behalf can tell a holder still in charge of it from one a completion, a redirect, a retry or
+     * an auth replay has already retired.
+     */
+    boolean retire() {
         if (CANCELLED.compareAndSet(this, 0, 1)) {
             release(requestTimeoutTask);
             release(readTimeoutTask);
+            return true;
         }
+        return false;
     }
 
     private static void release(@Nullable TimeoutTimerTask task) {

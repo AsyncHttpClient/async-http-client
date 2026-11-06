@@ -109,9 +109,12 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
             timeoutsHolder.rearmRequestTimeout(this, now, suspended);
         } catch (RuntimeException e) {
             // A timer that rejects the entry, being full or stopped, would leave the exchange with no deadline
-            // at all, so it is failed instead of left to hang.
-            timeoutsHolder.cancel();
-            requestSender.abort(future.channel(), future, e);
+            // at all, so it is failed instead of left to hang. Only while this holder is still the exchange's:
+            // one that was retired meanwhile no longer speaks for it, and the channel may already be serving
+            // the next attempt or, back in the pool, another exchange.
+            if (timeoutsHolder.retire() && future.getTimeoutsHolder() == timeoutsHolder && !future.isDone()) {
+                requestSender.abort(future.channel(), future, e);
+            }
         }
         return true;
     }

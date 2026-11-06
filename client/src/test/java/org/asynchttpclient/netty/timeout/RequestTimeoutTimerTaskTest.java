@@ -94,6 +94,8 @@ public class RequestTimeoutTimerTaskTest {
     private Timer timer;
     private EventExecutor loop;
     private NettyResponseFuture<?> future;
+    private NettyRequestSender requestSender;
+    private AsyncHttpClientConfig config;
 
     @BeforeEach
     void setUp() {
@@ -217,7 +219,8 @@ public class RequestTimeoutTimerTaskTest {
 
     @Test
     public void anEntryTheTimerRejectsFailsTheExchangeRatherThanLeaveItWithoutADeadline() {
-        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, false, null, 0);
+        future.setTimeoutsHolder(holder);
         holder.startReadTimeout();
         onArm = entry -> {
             if (armed.size() == 2) {
@@ -229,6 +232,43 @@ public class RequestTimeoutTimerTaskTest {
 
         ExecutionException failure = assertThrows(ExecutionException.class, () -> future.get(0, TimeUnit.MILLISECONDS));
         assertInstanceOf(RejectedExecutionException.class, failure.getCause());
+    }
+
+    @Test
+    public void aRejectedReArmOfARetiredHolderLeavesTheNextAttemptAlone() {
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, false, null, 0);
+        future.setTimeoutsHolder(holder);
+        holder.startReadTimeout();
+        // A redirect installs the next attempt's holder while the old entry is re-arming, and then the timer
+        // rejects the old entry.
+        onArm = entry -> {
+            if (armed.size() == 2) {
+                future.setTimeoutsHolder(new TimeoutsHolder(timer, null, future, requestSender, config, null,
+                        this::millis, this::nanos));
+                throw new RejectedExecutionException("timer full");
+            }
+        };
+
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        assertFalse(future.isDone(), "the next attempt should not be failed by the holder it replaced");
+    }
+
+    @Test
+    public void aRejectedReArmAfterTheExchangeCompletedAbortsNothing() {
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, false, null, 0);
+        future.setTimeoutsHolder(holder);
+        holder.startReadTimeout();
+        onArm = entry -> {
+            if (armed.size() == 2) {
+                future.cancelTimeouts();
+                throw new RejectedExecutionException("timer full");
+            }
+        };
+
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        assertFalse(future.isDone(), "a holder retired by completion should leave the exchange alone");
     }
 
     @Test
@@ -411,11 +451,10 @@ public class RequestTimeoutTimerTaskTest {
      */
     private TimeoutsHolder holder(long requestTimeoutMs, boolean absoluteDeadline, boolean useEventLoopTimeouts,
                                   @Nullable EventExecutor executor, long spentMillis) {
-        AsyncHttpClientConfig config = config(requestTimeoutMs, useEventLoopTimeouts);
+        config = config(requestTimeoutMs, useEventLoopTimeouts);
         senderTimer = new HashedWheelTimer();
         channelManager = new ChannelManager(config, senderTimer);
-        NettyRequestSender requestSender = new NettyRequestSender(config, channelManager, senderTimer,
-                mock(AsyncHttpClientState.class));
+        requestSender = new NettyRequestSender(config, channelManager, senderTimer, mock(AsyncHttpClientState.class));
 
         Request request = new RequestBuilder().setUrl("http://example.com:12345").build();
         future = new NettyResponseFuture<>(request, new AsyncCompletionHandler<Object>() {
