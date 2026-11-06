@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  * {@link #drainStream} measures the stream; {@link #responseBodyTwice} measures the string accessors, which
  * concatenate a multi-part body on every call.
  * <p>
- * Run with: {@code run-jmh.sh ResponseBodyAccessBenchmark -prof gc -f 2 -wi 5 -w 1 -i 10 -r 1}
+ * Run with: {@code /tmp/run-jmh.sh ResponseBodyAccessBenchmark -prof gc -f 2 -wi 5 -w 1 -i 10 -r 1}
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)

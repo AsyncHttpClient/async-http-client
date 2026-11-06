@@ -289,7 +289,9 @@ public class NettyResponse implements Response {
      * <p>
      * Reads the body parts' arrays in place rather than a copy of the whole body, and does not go through
      * {@link #getResponseBodyAsBytes()}. It copies out of those arrays into whatever it is asked to read into
-     * and never hands one of them to anything, {@link InputStream#transferTo} included.
+     * and never hands one of them to anything, {@link InputStream#transferTo} included. Since it reads them in
+     * place rather than a snapshot, a write to a part's array, through {@link #getResponseBodyAsBytesView()},
+     * {@link #getResponseBodyAsByteBuf()} or any other holder named there, changes what it reads from then on.
      */
     @Override
     public InputStream getResponseBodyAsStream() {
