@@ -204,7 +204,7 @@ public class NettyResponse implements Response {
      * {@link Response#getResponseBodyAsBytesView()}, whose contract is deliberately weaker than this.
      * <p>
      * {@link #getResponseBodyAsStream()} reads the parts' arrays in place, so a write to a part's array also
-     * changes what a stream not yet drained reads.
+     * changes what a stream reads from then on, re-read bytes after a {@code reset()} included.
      * <p>
      * Whether a lone part hands over storage of its own is the part's business rather than this response's.
      * {@link EagerResponseBodyPart} returns the array it holds; {@link LazyResponseBodyPart} copies out of its

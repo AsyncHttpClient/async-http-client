@@ -136,7 +136,7 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
-    public void testAggregatingAccessorsRejectAPartLongerThanItsLength() {
+    public void testAggregatingAccessorsRejectAPartLongerThanItsLength() throws IOException {
         byte[] bytes = "Hello".getBytes(StandardCharsets.UTF_8);
         List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
         bodyParts.add(partReportingLength(bytes, bytes.length - 1));
@@ -144,6 +144,8 @@ public class NettyAsyncResponseTest {
 
         assertThrows(BufferOverflowException.class, response::getResponseBodyAsByteBuffer);
         assertThrows(BufferOverflowException.class, response::getResponseBodyAsBytes);
+        // The stream reads each part's bytes and never consults length(), so it does not throw.
+        assertArrayEquals(bytes, response.getResponseBodyAsStream().readAllBytes());
     }
 
     @Test
