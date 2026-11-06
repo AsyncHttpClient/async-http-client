@@ -190,17 +190,16 @@ public class Uri {
     }
 
     public String toRelativeUrl() {
+        if (query == null) {
+            return getNonEmptyPath();
+        }
         StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
         if (isNonEmpty(path)) {
             sb.append(path);
         } else {
             sb.append('/');
         }
-        if (query != null) {
-            sb.append('?').append(query);
-        }
-
-        return sb.toString();
+        return sb.append('?').append(query).toString();
     }
 
     public String toFullUrl() {

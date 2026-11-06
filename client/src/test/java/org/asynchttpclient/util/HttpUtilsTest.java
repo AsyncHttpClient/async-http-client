@@ -36,6 +36,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -187,6 +188,14 @@ public class HttpUtilsTest {
     }
 
     @Test
+    public void cookiePairsEndAtEverySemicolonAndKeepTheirText() {
+        assertArrayEquals(new String[]{"X=\"a", " b\"", " flag", " Y = 1", ""}, HttpUtils.cookiePairs("X=\"a; b\"; flag; Y = 1;"));
+        assertEquals("Y", HttpUtils.cookiePairName(" Y = 1"));
+        assertEquals("flag", HttpUtils.cookiePairName(" flag"));
+        assertEquals("", HttpUtils.cookiePairName(""));
+    }
+
+    @Test
     public void filterOutBrotliDropsTheCodingWherever() {
         assertEquals("gzip, deflate", filterOutBrotli("gzip, deflate, br"));
         assertEquals("gzip, deflate, zstd", filterOutBrotli("gzip, deflate, br, zstd"));
@@ -197,7 +206,7 @@ public class HttpUtilsTest {
 
     @Test
     public void filterOutBrotliIgnoresCaseWhitespaceAndWeight() {
-        assertEquals("gzip;q=0.8, deflate", filterOutBrotli("gzip;q=0.8, BR ; q=1.0 ,	deflate"));
+        assertEquals("gzip;q=0.8, deflate", filterOutBrotli("gzip;q=0.8, BR ; q=1.0 ,\tdeflate"));
         assertEquals("gzip", filterOutBrotli("gzip, Br;q=0.5"));
     }
 
