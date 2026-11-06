@@ -231,7 +231,13 @@ public class HttpUtilsTest {
         assertEquals("*, BR ; Q = 0.000", filterOutBrotli("*, BR ; Q = 0.000"));
         assertEquals("gzip, zstd;q=0., *", filterOutZstd("gzip, zstd;q=0., *"));
         assertEquals("gzip, br;q=0", filterOutBrotli("gzip, br;q=0.001, br;q=0"));
-        assertEquals("*", filterOutZstd("*, zstd;q=0.5"));
+    }
+
+    @Test
+    public void filterOutRefusesTheCodingNextToAWildcard() {
+        assertEquals("*, zstd;q=0", filterOutZstd("*, zstd;q=0.5"));
+        assertEquals("gzip, br;q=0, *", filterOutBrotli("gzip, BR, br;q=0.2, *"));
+        assertEquals("*;q=0", filterOutBrotli("*;q=0, br"));
     }
 
     private static String filterOutBrotli(String acceptEncoding) {

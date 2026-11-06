@@ -204,28 +204,46 @@ public final class HttpUtils {
     /**
      * Drops every element offering {@code coding}, which may appear anywhere in the list, in any case and with a weight
      * (RFC 9110 section 12.5.3). Dropping the last element leaves an empty value, which accepts no content coding.
-     * An element with weight 0 refuses the coding and is kept, as dropping it would let a "*" element offer it.
+     * An element with weight 0 refuses the coding and is kept. Next to a "*" element, which would still offer the coding
+     * at its own weight, the dropped elements are replaced by one such refusal.
      */
     private static String filterOutAcceptEncoding(String acceptEncoding, AsciiString coding) {
         if (!AsciiString.containsIgnoreCase(acceptEncoding, coding)) {
             return acceptEncoding;
         }
+        String[] elements = acceptEncoding.split(",");
+        boolean wildcard = false;
+        for (String element : elements) {
+            wildcard |= offers(element.trim(), "*");
+        }
         StringBuilder kept = new StringBuilder(acceptEncoding.length());
         boolean dropped = false;
-        for (String element : acceptEncoding.split(",")) {
+        for (String element : elements) {
             String trimmed = element.trim();
-            int semicolon = trimmed.indexOf(';');
-            String token = semicolon < 0 ? trimmed : trimmed.substring(0, semicolon).trim();
-            if (coding.contentEqualsIgnoreCase(token) && (semicolon < 0 || !hasZeroWeight(trimmed.substring(semicolon + 1)))) {
+            if (offers(trimmed, coding)) {
+                if (wildcard && !dropped) {
+                    appendElement(kept, coding + ";q=0");
+                }
                 dropped = true;
             } else if (!trimmed.isEmpty()) {
-                if (kept.length() > 0) {
-                    kept.append(", ");
-                }
-                kept.append(trimmed);
+                appendElement(kept, trimmed);
             }
         }
         return dropped ? kept.toString() : acceptEncoding;
+    }
+
+    private static boolean offers(String element, CharSequence coding) {
+        int semicolon = element.indexOf(';');
+        String token = semicolon < 0 ? element : element.substring(0, semicolon).trim();
+        return AsciiString.contentEqualsIgnoreCase(token, coding)
+                && (semicolon < 0 || !hasZeroWeight(element.substring(semicolon + 1)));
+    }
+
+    private static void appendElement(StringBuilder list, String element) {
+        if (list.length() > 0) {
+            list.append(", ");
+        }
+        list.append(element);
     }
 
     private static boolean hasZeroWeight(String parameters) {
