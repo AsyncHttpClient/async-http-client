@@ -69,7 +69,9 @@ public final class NettyRequest {
      * Idempotent and thread-safe — extra calls are no-ops.
      */
     public void release() {
-        if (STATE_UPDATER.compareAndSet(this, OWNED_BY_AHC, RELEASED)) {
+        // No state ever returns to OWNED_BY_AHC, so once a read has seen it leave, the CAS could only fail.
+        // On the HTTP/1.1 path every completed request has been handed to the channel.
+        if (state == OWNED_BY_AHC && STATE_UPDATER.compareAndSet(this, OWNED_BY_AHC, RELEASED)) {
             ReferenceCountUtil.release(httpRequest);
         }
     }
