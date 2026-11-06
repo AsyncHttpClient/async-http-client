@@ -82,10 +82,10 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
             return true;
         }
 
-        long now = timeoutsHolder.millisTime();
-        if (now >= timeoutsHolder.requestTimeoutMillisTime()) {
+        if (timeoutsHolder.isRequestDeadlinePassed()) {
             return false;
         }
+        long now = timeoutsHolder.millisTime();
         boolean suspended = NettyResponseBodyControl.isSuspended(nettyResponseFuture);
         if (timeoutsHolder.isReadTimeoutCovered() && !suspended) {
             long readTimeout = timeoutsHolder.readTimeout();

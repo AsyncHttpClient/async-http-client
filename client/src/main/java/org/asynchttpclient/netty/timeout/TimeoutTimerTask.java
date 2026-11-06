@@ -26,8 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A timeout that can be armed either on a {@link io.netty.util.Timer} or on an event loop; which one an
@@ -39,16 +41,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class TimeoutTimerTask implements TimerTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeoutTimerTask.class);
+    private static final AtomicReferenceFieldUpdater<TimeoutTimerTask, Object> HANDLE =
+            AtomicReferenceFieldUpdater.newUpdater(TimeoutTimerTask.class, Object.class, "handle");
 
     protected final AtomicBoolean done = new AtomicBoolean();
     protected final NettyRequestSender requestSender;
     final TimeoutsHolder timeoutsHolder;
     volatile NettyResponseFuture<?> nettyResponseFuture;
-    // The scheduled entry this task is armed on, one field per scheduler so that a scheduler changing its
-    // return type is a compile error rather than a cancellation that silently stops working. At most one is
-    // ever set. Held here rather than in a wrapper so arming allocates nothing beyond what the scheduler needs.
-    private volatile @Nullable Timeout timerHandle;
-    private volatile @Nullable ScheduledFuture<?> loopHandle;
+    // The scheduled entry this task is armed on: a timer's Timeout or an event loop's ScheduledFuture, which
+    // only the typed armedOn overloads below can store. One field, so that recording an entry and taking it
+    // back are each a single atomic step: a task that re-arms itself can record an entry from the thread it
+    // fires on while the thread that armed it is still recording the previous one. Held here rather than in a
+    // wrapper so arming allocates nothing beyond what the scheduler needs.
+    private volatile @Nullable Object handle;
 
     TimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder) {
         this.nettyResponseFuture = nettyResponseFuture;
@@ -57,15 +62,46 @@ public abstract class TimeoutTimerTask implements TimerTask {
     }
 
     void armedOn(Timeout handle) {
-        // Each clears the other, so a handle left over from a previous arming cannot mask the live one and
-        // leave its entry sitting in a scheduler, holding the future until a deadline nobody is waiting for.
-        loopHandle = null;
-        timerHandle = handle;
+        record(handle);
     }
 
     void armedOn(ScheduledFuture<?> handle) {
-        timerHandle = null;
-        loopHandle = handle;
+        record(handle);
+    }
+
+    /**
+     * Records {@code entry} in place of whatever entry was recorded before, unless that one can still run and
+     * {@code entry} already has. That is the entry of an arming that lost the race against its own firing:
+     * its run re-armed the task and recorded the newer entry first, and overwriting that one would leave it in
+     * its scheduler with nobody to cancel it, holding the future until a deadline nobody is waiting for.
+     */
+    private void record(Object entry) {
+        for (;;) {
+            Object current = handle;
+            if (current != null && canStillRun(current) && hasRun(entry)) {
+                return;
+            }
+            if (HANDLE.compareAndSet(this, current, entry)) {
+                return;
+            }
+        }
+    }
+
+    private static boolean canStillRun(Object entry) {
+        if (entry instanceof Timeout) {
+            Timeout timeout = (Timeout) entry;
+            return !timeout.isExpired() && !timeout.isCancelled();
+        }
+        return !((ScheduledFuture<?>) entry).isDone();
+    }
+
+    // An event loop marks an entry done only once it has run, so one that is running counts by being due.
+    private static boolean hasRun(Object entry) {
+        if (entry instanceof Timeout) {
+            return ((Timeout) entry).isExpired();
+        }
+        ScheduledFuture<?> scheduled = (ScheduledFuture<?>) entry;
+        return scheduled.isDone() || scheduled.getDelay(TimeUnit.NANOSECONDS) <= 0;
     }
 
     /**
@@ -75,14 +111,14 @@ public abstract class TimeoutTimerTask implements TimerTask {
      * @return whether an entry was taken back out of its scheduler before it could run
      */
     boolean cancelArmed() {
-        Timeout timer = timerHandle;
-        if (timer != null) {
-            timerHandle = null;
-            return timer.cancel();
+        // Taken in one step: a read followed by a separate clear could clear an entry the task recorded in
+        // between from its own firing, and that one would then never be cancelled.
+        Object entry = HANDLE.getAndSet(this, null);
+        if (entry instanceof Timeout) {
+            return ((Timeout) entry).cancel();
         }
-        ScheduledFuture<?> scheduled = loopHandle;
-        if (scheduled != null) {
-            loopHandle = null;
+        if (entry != null) {
+            ScheduledFuture<?> scheduled = (ScheduledFuture<?>) entry;
             try {
                 return scheduled.cancel(false);
             } catch (RejectedExecutionException e) {

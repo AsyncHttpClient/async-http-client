@@ -65,6 +65,10 @@ public class TimeoutsHolder {
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
     private final long requestTimeoutMillisTime;
+    // The same deadline on nanoClock, for everything that re-arms or checks it after start: a timer entry is
+    // already timed on a monotonic clock, and a deadline re-derived from the wall clock would move with every
+    // step of it.
+    private final long requestDeadlineNanos;
     private final long requestTimeoutValue;
     private final boolean absoluteDeadline;
     private final long readTimeoutValue;
@@ -123,11 +127,14 @@ public class TimeoutsHolder {
             // exchange has already spent bounds it as a whole instead. Which one applies is the caller's
             // choice, per request or per client. Left negative when the deadline is already behind us, which is
             // what stops startReadTimeout arming a sibling for an exchange that is over.
-            requestTimeoutMillisTime = millisClock.getAsLong()
-                    + (absoluteDeadline ? remainingBudget(requestTimeoutInMs, nettyResponseFuture, nanoClock) : requestTimeoutInMs);
+            long untilDeadline = absoluteDeadline
+                    ? remainingBudget(requestTimeoutInMs, nettyResponseFuture, nanoClock) : requestTimeoutInMs;
+            requestTimeoutMillisTime = millisClock.getAsLong() + untilDeadline;
+            requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(untilDeadline);
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
         } else {
             requestTimeoutMillisTime = -1L;
+            requestDeadlineNanos = 0L;
             requestTimeoutTask = null;
         }
     }
@@ -234,6 +241,24 @@ public class TimeoutsHolder {
         return readState == READ_COVERED;
     }
 
+    boolean isRequestDeadlinePassed() {
+        return requestDeadlineNanos - nanoClock.getAsLong() <= 0;
+    }
+
+    /**
+     * What is left until the request deadline in whole milliseconds, rounded up so an entry never runs ahead of
+     * it, and floored at zero: a scheduler has no use for a negative delay, and the task has to run either way,
+     * since running is what fails the exchange.
+     */
+    private long untilRequestDeadline() {
+        long left = requestDeadlineNanos - nanoClock.getAsLong();
+        if (left <= 0) {
+            return 0L;
+        }
+        long millis = TimeUnit.NANOSECONDS.toMillis(left);
+        return TimeUnit.MILLISECONDS.toNanos(millis) == left ? millis : millis + 1;
+    }
+
     /**
      * Moves this exchange's timeouts onto {@code executor}, the loop of the channel it turned out to run on. The
      * connect path arms the request timeout before there is a channel -- deliberately, since it bounds address
@@ -291,9 +316,7 @@ public class TimeoutsHolder {
     }
 
     private void armRequestTimeoutFrom(RequestTimeoutTimerTask task, long now, boolean suspended) {
-        // Floored at zero rather than passed on negative: a scheduler has no use for a negative delay, and the
-        // task has to run either way, since running is what fails the exchange.
-        long untilDeadline = Math.max(requestTimeoutMillisTime - now, 0L);
+        long untilDeadline = untilRequestDeadline();
         long untilRead = Long.MAX_VALUE;
         int state = readState;
         if (state == READ_PENDING) {
