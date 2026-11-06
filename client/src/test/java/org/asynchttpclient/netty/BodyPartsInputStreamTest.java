@@ -265,6 +265,33 @@ public class BodyPartsInputStreamTest {
         assertThrows(IndexOutOfBoundsException.class, () -> in.read(new byte[2], 1, 2));
         assertThrows(IndexOutOfBoundsException.class, () -> in.read(new byte[2], -1, 1));
         assertThrows(IndexOutOfBoundsException.class, () -> in.read(new byte[2], 0, -1));
+        // len is checked against the array, not against what is left: only 4 bytes would be copied here.
+        assertThrows(IndexOutOfBoundsException.class, () -> in.read(new byte[5], 0, 10));
         assertEquals(4, in.available());
+    }
+
+    @Test
+    public void rejectedReadDoesNotMoveThePosition() {
+        // The first part fits the array and the second does not, so a read checked only by arraycopy would
+        // consume the first part before throwing.
+        List<HttpResponseBodyPart> parts = eagerParts(3, 4);
+        BodyPartsInputStream in = new BodyPartsInputStream(parts);
+        assertThrows(IndexOutOfBoundsException.class, () -> in.read(new byte[5], 0, 6));
+        assertEquals(7, in.available());
+        assertArrayEquals(concatenation(parts), in.readAllBytes());
+    }
+
+    @Test
+    public void bulkReadsNeverReturnAPartArray() throws IOException {
+        List<HttpResponseBodyPart> parts = eagerParts(11);
+        byte[] partArray = parts.get(0).getBodyPartBytes();
+
+        byte[] all = new BodyPartsInputStream(parts).readAllBytes();
+        assertArrayEquals(partArray, all);
+        assertNotSame(partArray, all);
+
+        byte[] some = new BodyPartsInputStream(parts).readNBytes(100);
+        assertArrayEquals(partArray, some);
+        assertNotSame(partArray, some);
     }
 }

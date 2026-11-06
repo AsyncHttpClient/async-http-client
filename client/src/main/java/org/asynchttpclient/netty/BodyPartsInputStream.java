@@ -29,6 +29,8 @@ import java.util.Objects;
  * copies into the caller's array, and {@link #transferTo} is {@link InputStream}'s, which goes through a buffer
  * of its own. The arrays are the parts' own storage, so letting them out would let a caller write into the body
  * every other accessor reads.
+ * <p>
+ * Not thread-safe, unlike {@code ByteArrayInputStream}, whose methods are synchronized.
  */
 final class BodyPartsInputStream extends InputStream {
 

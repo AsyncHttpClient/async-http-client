@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -180,24 +181,6 @@ public class NettyAsyncResponseTest {
     }
 
     @Test
-    public void testSeveralPartsAreConcatenatedOnceButCopiedForGetResponseBodyAsBytes() {
-        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
-        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
-        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)), true));
-        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
-
-        byte[] view = response.getResponseBodyAsBytesView();
-        assertArrayEquals("Hello World".getBytes(StandardCharsets.UTF_8), view);
-        assertSame(view, response.getResponseBodyAsBytesView());
-        assertEquals("Hello World", response.getResponseBody());
-
-        byte[] copy = response.getResponseBodyAsBytes();
-        assertArrayEquals(view, copy);
-        assertNotSame(view, copy);
-        assertNotSame(copy, response.getResponseBodyAsBytes());
-    }
-
-    @Test
     public void testGetResponseBodyAsStreamReadsSeveralParts() throws IOException {
         List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
         bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
@@ -209,6 +192,26 @@ public class NettyAsyncResponseTest {
         assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
         assertEquals(-1, new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>())
                 .getResponseBodyAsStream().read());
+    }
+
+    @Test
+    public void testGetResponseBodyAsStreamDoesNotGoThroughTheAggregatingAccessors() throws IOException {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts) {
+            @Override
+            public byte[] getResponseBodyAsBytes() {
+                throw new AssertionError("getResponseBodyAsBytes");
+            }
+
+            @Override
+            public ByteBuffer getResponseBodyAsByteBuffer() {
+                throw new AssertionError("getResponseBodyAsByteBuffer");
+            }
+        };
+
+        assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
     }
 
     @Test
