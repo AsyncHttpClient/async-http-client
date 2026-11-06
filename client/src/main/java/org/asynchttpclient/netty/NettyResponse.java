@@ -30,9 +30,11 @@ import org.asynchttpclient.uri.Uri;
 
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -227,11 +229,15 @@ public class NettyResponse implements Response {
         int offset = 0;
         for (HttpResponseBodyPart part : bodyParts) {
             byte[] bytes = part.getBodyPartBytes();
+            if (bytes.length > target.length - offset) {
+                throw new BufferOverflowException();
+            }
             System.arraycopy(bytes, 0, target, offset, bytes.length);
             offset += bytes.length;
         }
-        // Limited to what was copied, should a part's length() over-report its bytes.
-        return ByteBuffer.wrap(target, 0, offset);
+        // Trimmed to what was copied, should a part's length() over-report its bytes: getResponseBodyAsBytes()
+        // returns the whole backing array, and the stream reads only the bytes themselves.
+        return ByteBuffer.wrap(offset == target.length ? target : Arrays.copyOf(target, offset));
     }
 
     @Override
