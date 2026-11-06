@@ -46,9 +46,21 @@ public class TimeoutsHolder {
             AtomicIntegerFieldUpdater.newUpdater(TimeoutsHolder.class, "cancelled");
     private static final AtomicIntegerFieldUpdater<TimeoutsHolder> STARTED =
             AtomicIntegerFieldUpdater.newUpdater(TimeoutsHolder.class, "started");
+    private static final AtomicIntegerFieldUpdater<TimeoutsHolder> READ_STATE =
+            AtomicIntegerFieldUpdater.newUpdater(TimeoutsHolder.class, "readState");
+
+    // How the read timeout is armed. Separate: on an entry of its own. Pending: start armed the request
+    // timeout's entry for when a read timeout would be due, so that once the read timeout starts that one
+    // entry serves both. Covered: the read timeout has started and rides on the request timeout's entry.
+    private static final int READ_SEPARATE = 0;
+    private static final int READ_PENDING = 1;
+    private static final int READ_COVERED = 2;
 
     private volatile int cancelled;
     private volatile int started;
+    private volatile int readState;
+    // Whether the request timeout's entry is armed ahead of the request deadline, to check the read timeout.
+    private volatile boolean requestTimeoutArmedEarly;
     private final Timer nettyTimer;
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
@@ -142,8 +154,18 @@ public class TimeoutsHolder {
             // reading the clock again would only expose the deadline to a step between the two reads. An
             // absolute deadline was anchored before this holder existed, so there the remainder is the budget,
             // floored at zero: a task armed at zero still runs, and running is how the exchange gets failed.
-            arm(requestTimeoutTask, absoluteDeadline
-                    ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue);
+            long untilDeadline = absoluteDeadline
+                    ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue;
+            if (readTimeoutValue != -1 && readTimeoutValue < untilDeadline) {
+                // The read timeout starts once the request is written, and would then take an entry of its own
+                // that the exchange almost always cancels unfired. Arming this one for when a read timeout
+                // would be due instead lets it serve both: every entry costs a shared timer two queue
+                // operations and a slot on its single thread, and an event loop a wakeup.
+                readState = READ_PENDING;
+                armRequestTimeout(requestTimeoutTask, readTimeoutValue, true);
+            } else {
+                armRequestTimeout(requestTimeoutTask, untilDeadline, false);
+            }
         }
     }
 
@@ -191,8 +213,25 @@ public class TimeoutsHolder {
         return requestTimeoutMillisTime;
     }
 
+    // The clock lastTouch is read against, which tests replace.
+    long millisTime() {
+        return millisClock.getAsLong();
+    }
+
     boolean isRequestTimeoutDisabled() {
         return requestTimeoutTask == null;
+    }
+
+    long readTimeout() {
+        return readTimeoutValue;
+    }
+
+    boolean isRequestTimeoutArmedEarly() {
+        return requestTimeoutArmedEarly;
+    }
+
+    boolean isReadTimeoutCovered() {
+        return readState == READ_COVERED;
     }
 
     /**
@@ -210,7 +249,7 @@ public class TimeoutsHolder {
         if (task == null || cancelled != 0 || task.isClaimed() || !task.cancelArmed()) {
             return;
         }
-        arm(task, remainingRequestTimeout());
+        armRequestTimeoutFrom(task, millisClock.getAsLong(), false);
     }
 
     public void setResolvedRemoteAddress(InetSocketAddress address) {
@@ -222,9 +261,58 @@ public class TimeoutsHolder {
     }
 
     public void startReadTimeout() {
-        if (readTimeoutValue != -1) {
+        if (readTimeoutValue != -1 && !coverReadTimeout()) {
             startReadTimeout(null);
         }
+    }
+
+    /**
+     * Hands the read timeout to the request timeout's entry when {@link #start} armed that one early for it.
+     * Loses to an entry that already fired without finding a read timeout to check, which hands the read
+     * timeout back to an entry of its own.
+     */
+    private boolean coverReadTimeout() {
+        int state = readState;
+        return state == READ_COVERED || state == READ_PENDING && READ_STATE.compareAndSet(this, READ_PENDING, READ_COVERED);
+    }
+
+    /**
+     * Re-arms the request timeout after its entry fired ahead of the request deadline and found no timeout due.
+     *
+     * @param suspended whether response body reads are suspended, which holds off the read timeout for a whole
+     *                  window however long ago the channel was last read from
+     */
+    void rearmRequestTimeout(RequestTimeoutTimerTask task, long now, boolean suspended) {
+        // A read timeout that has not started by now may not start for a long time -- a slow connect or upload
+        // -- and checking for it every window would wake the scheduler for nothing, so it gets its own entry
+        // when it does start.
+        READ_STATE.compareAndSet(this, READ_PENDING, READ_SEPARATE);
+        armRequestTimeoutFrom(task, now, suspended);
+    }
+
+    private void armRequestTimeoutFrom(RequestTimeoutTimerTask task, long now, boolean suspended) {
+        // Floored at zero rather than passed on negative: a scheduler has no use for a negative delay, and the
+        // task has to run either way, since running is what fails the exchange.
+        long untilDeadline = Math.max(requestTimeoutMillisTime - now, 0L);
+        long untilRead = Long.MAX_VALUE;
+        int state = readState;
+        if (state == READ_PENDING) {
+            untilRead = readTimeoutValue;
+        } else if (state == READ_COVERED) {
+            untilRead = suspended ? readTimeoutValue
+                    : Math.max(nettyResponseFuture.getLastTouch() + readTimeoutValue - now, 0L);
+        }
+        if (untilRead < untilDeadline) {
+            armRequestTimeout(task, untilRead, true);
+        } else {
+            armRequestTimeout(task, untilDeadline, false);
+        }
+    }
+
+    private void armRequestTimeout(RequestTimeoutTimerTask task, long delay, boolean early) {
+        // Written before arming: on an event loop the entry can run before arm returns.
+        requestTimeoutArmedEarly = early;
+        arm(task, delay);
     }
 
     void startReadTimeout(@Nullable ReadTimeoutTimerTask task) {
@@ -256,12 +344,6 @@ public class TimeoutsHolder {
             task.cancelArmed();
             task.clean();
         }
-    }
-
-    private long remainingRequestTimeout() {
-        // Floored at zero rather than passed on negative: a scheduler has no use for a negative delay, and the
-        // task has to run either way, since running is what fails the exchange.
-        return Math.max(requestTimeoutMillisTime - millisClock.getAsLong(), 0L);
     }
 
     /**
