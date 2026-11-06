@@ -1,0 +1,296 @@
+/*
+ *    Copyright (c) 2026 AsyncHttpClient Project. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.asynchttpclient.proxy;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
+import io.netty.handler.codec.http2.Http2DataFrame;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2HeadersFrame;
+import io.netty.handler.codec.http2.Http2MultiplexHandler;
+import io.netty.handler.codec.http2.Http2StreamChannel;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.HttpProtocol;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.testserver.SocksProxy;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.proxyServer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Cleartext HTTP/2 (prior knowledge) and proxies.
+ * <p>
+ * {@code http2CleartextEnabled} states prior knowledge (RFC 9113 section 3.3) about origins, so it is only acted
+ * on when the origin is what is on the other end of the socket. Behind an HTTP forward proxy it is not: a
+ * cleartext target needs no {@code CONNECT}, so the request goes to the proxy in absolute-URI HTTP/1.1 form.
+ * Behind a SOCKS proxy it is, because SOCKS tunnels at the transport layer, which is why the guard cannot
+ * simply be {@code proxyServer == null}.
+ */
+public class ProxyH2cTest {
+
+    /** Echoes the method of whatever the client sent, over cleartext HTTP/2. */
+    private static final class H2cHandler extends SimpleChannelInboundHandler<Object> {
+
+        private Http2Headers requestHeaders;
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+            if (msg instanceof Http2HeadersFrame) {
+                Http2HeadersFrame headersFrame = (Http2HeadersFrame) msg;
+                requestHeaders = headersFrame.headers();
+                if (headersFrame.isEndStream()) {
+                    respond(ctx);
+                }
+            } else if (msg instanceof Http2DataFrame && ((Http2DataFrame) msg).isEndStream()) {
+                respond(ctx);
+            }
+        }
+
+        private void respond(ChannelHandlerContext ctx) {
+            String method = requestHeaders.method() != null ? requestHeaders.method().toString() : "?";
+            ctx.write(new DefaultHttp2HeadersFrame(new DefaultHttp2Headers().status("200"), false));
+            ctx.writeAndFlush(new DefaultHttp2DataFrame(
+                    Unpooled.copiedBuffer(method, StandardCharsets.UTF_8), true));
+        }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            ctx.close();
+        }
+    }
+
+    /**
+     * An HTTP forward proxy stub that records the first line it is sent and answers with HTTP/1.1. Enough to
+     * see whether AsyncHttpClient opened with an HTTP/1.1 request or with the HTTP/2 connection preface, and
+     * that the request still completes.
+     */
+    @Test
+    public void h2cIsNotSpokenToAnHttpProxy() throws Exception {
+        List<String> firstLines = new CopyOnWriteArrayList<>();
+        CountDownLatch received = new CountDownLatch(1);
+        ExecutorService pool = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "h2c-probe-proxy");
+            t.setDaemon(true);
+            return t;
+        });
+
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            pool.submit(() -> {
+                try (Socket client = serverSocket.accept()) {
+                    InputStream in = client.getInputStream();
+                    String line = readLine(in);
+                    firstLines.add(line);
+                    while (line != null && !line.isEmpty()) {
+                        line = readLine(in);
+                    }
+                    OutputStream out = client.getOutputStream();
+                    out.write("HTTP/1.1 200 OK\r\nContent-Length: 7\r\nConnection: close\r\n\r\nproxied"
+                            .getBytes(StandardCharsets.US_ASCII));
+                    out.flush();
+                } catch (IOException ignored) {
+                    // the client hung up
+                } finally {
+                    received.countDown();
+                }
+            });
+
+            Response response = null;
+            Exception failure = null;
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setHttp2CleartextEnabled(true)
+                    .setProxyServer(proxyServer("localhost", serverSocket.getLocalPort())))) {
+                try {
+                    response = client.prepareGet("http://example.invalid:8080/probe").execute().get(10, TimeUnit.SECONDS);
+                } catch (ExecutionException | TimeoutException e) {
+                    failure = e;
+                }
+            }
+
+            assertTrue(received.await(10, TimeUnit.SECONDS), "the proxy never saw a request");
+            assertEquals(1, firstLines.size());
+            assertEquals("GET http://example.invalid:8080/probe HTTP/1.1", firstLines.get(0),
+                    "AsyncHttpClient must open an HTTP/1.1 exchange with an HTTP proxy, not an HTTP/2 preface");
+            assertNull(failure, "the request should complete through the proxy");
+            assertEquals(200, response.getStatusCode());
+            assertEquals(HttpProtocol.HTTP_1_1, response.getProtocol());
+            assertEquals("proxied", response.getResponseBody());
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    private static String readLine(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int c;
+        while ((c = in.read()) != -1 && c != '\n') {
+            if (c != '\r') {
+                sb.append((char) c);
+            }
+        }
+        return c == -1 && sb.length() == 0 ? null : sb.toString();
+    }
+
+    /**
+     * SOCKS tunnels at the transport layer, so the peer of everything written after the SOCKS handshake is
+     * the origin: h2c prior knowledge still applies and must not be disabled along with the HTTP-proxy case.
+     */
+    @Test
+    public void h2cIsSpokenThroughASocksProxy() throws Exception {
+        NioEventLoopGroup serverGroup = new NioEventLoopGroup(1);
+        Channel serverChannel = null;
+        SocksProxy socks = new SocksProxy(30_000);
+        Thread socksThread = new Thread(() -> {
+            try {
+                socks.run();
+            } catch (IOException ignored) {
+                // shutting down
+            }
+        });
+        socksThread.setDaemon(true);
+        socksThread.start();
+
+        try {
+            serverChannel = startH2cServer(serverGroup, new AtomicInteger());
+            int serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setHttp2CleartextEnabled(true)
+                    .setProxyServer(proxyServer("localhost", socks.getPort()).setProxyType(ProxyType.SOCKS_V4)))) {
+                Response response = client.prepareGet("http://localhost:" + serverPort + "/probe")
+                        .execute().get(30, TimeUnit.SECONDS);
+                assertEquals(200, response.getStatusCode());
+                assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
+                assertEquals("GET", response.getResponseBody());
+            }
+        } finally {
+            socks.stop();
+            if (serverChannel != null) {
+                serverChannel.close().sync();
+            }
+            serverGroup.shutdownGracefully(0, 100, TimeUnit.MILLISECONDS).sync();
+        }
+    }
+
+    /**
+     * Through SOCKS a cleartext origin can register HTTP/2, so a request that is refused a connection permit
+     * must wait for that connection rather than fail. The SOCKS proxy only starts answering once the second
+     * request has been refused, so the first connection cannot have registered HTTP/2 before.
+     */
+    @Test
+    public void overCapH2cRequestThroughASocksProxyWaitsForTheFirstConnection() throws Exception {
+        NioEventLoopGroup serverGroup = new NioEventLoopGroup(1);
+        Channel serverChannel = null;
+        AtomicInteger serverConnections = new AtomicInteger();
+        // Bound, but nothing is answered until run() starts.
+        SocksProxy socks = new SocksProxy(30_000);
+        Thread socksThread = new Thread(() -> {
+            try {
+                socks.run();
+            } catch (IOException ignored) {
+                // shutting down
+            }
+        });
+        socksThread.setDaemon(true);
+
+        try {
+            serverChannel = startH2cServer(serverGroup, serverConnections);
+            String url = "http://localhost:" + ((InetSocketAddress) serverChannel.localAddress()).getPort();
+
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setMaxConnections(1)
+                    .setHttp2CleartextEnabled(true)
+                    .setConnectTimeout(Duration.ofSeconds(30))
+                    .setProxyServer(proxyServer("localhost", socks.getPort()).setProxyType(ProxyType.SOCKS_V4)))) {
+                Future<Response> first = client.prepareGet(url + "/first").execute();
+                Future<Response> second = client.prepareGet(url + "/second").execute();
+                // A refusal that does not wait fails the future before execute() returns.
+                assertFalse(second.isDone(), "the request over the cap should wait for the first connection");
+                socksThread.start();
+
+                for (Future<Response> future : Arrays.asList(first, second)) {
+                    Response response = future.get(30, TimeUnit.SECONDS);
+                    assertEquals(200, response.getStatusCode());
+                    assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
+                }
+                assertEquals(1, serverConnections.get(), "both requests should share the one h2c connection");
+            }
+        } finally {
+            socks.stop();
+            if (serverChannel != null) {
+                serverChannel.close().sync();
+            }
+            serverGroup.shutdownGracefully(0, 100, TimeUnit.MILLISECONDS).sync();
+        }
+    }
+
+    private static Channel startH2cServer(NioEventLoopGroup group, AtomicInteger connections)
+            throws InterruptedException {
+        return new ServerBootstrap()
+                .group(group)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<Channel>() {
+                    @Override
+                    protected void initChannel(Channel ch) {
+                        connections.incrementAndGet();
+                        ch.pipeline()
+                                .addLast(Http2FrameCodecBuilder.forServer().build())
+                                .addLast(new Http2MultiplexHandler(new ChannelInitializer<Http2StreamChannel>() {
+                                    @Override
+                                    protected void initChannel(Http2StreamChannel streamCh) {
+                                        streamCh.pipeline().addLast(new H2cHandler());
+                                    }
+                                }));
+                    }
+                })
+                .bind(0).sync().channel();
+    }
+}

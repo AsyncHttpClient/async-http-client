@@ -34,12 +34,20 @@ public interface SslEngineFactory {
     /**
      * Creates a new {@link SSLEngine}, optionally permitting HTTP/2 (ALPN {@code h2}) negotiation.
      * <p>
-     * WebSocket connections pass {@code http2Allowed = false}: AsyncHttpClient does not implement RFC 8441
-     * (WebSocket over HTTP/2), so a WebSocket connection must not negotiate {@code h2} — otherwise the
-     * handshake is written as a plain HTTP/2 request and corrupts the connection. The default implementation
-     * ignores the flag and delegates to {@link #newSslEngine(AsyncHttpClientConfig, String, int)} for
-     * backwards compatibility; {@code DefaultSslEngineFactory} overrides it to advertise only {@code http/1.1}
-     * in ALPN when {@code http2Allowed} is {@code false}.
+     * AsyncHttpClient passes {@code http2Allowed = false} for a connection that must stay on HTTP/1.1:
+     * <ul>
+     * <li>a WebSocket connection, since AsyncHttpClient does not implement RFC 8441 (WebSocket over
+     * HTTP/2);</li>
+     * <li>the connection to an HTTPS proxy, which only ever carries an HTTP/1.1 {@code CONNECT} or
+     * absolute-URI request. If it negotiates {@code h2} anyway, the request fails;</li>
+     * <li>a connection that a login authenticates, since every stream of an HTTP/2 connection would share
+     * that login: an NTLM, Kerberos or SPNEGO login, or any proxy login on a {@code CONNECT} tunnel or through
+     * SOCKS.</li>
+     * </ul>
+     * The default implementation ignores the flag and delegates to
+     * {@link #newSslEngine(AsyncHttpClientConfig, String, int)} for backwards compatibility;
+     * {@code DefaultSslEngineFactory} overrides it to advertise only {@code http/1.1} in ALPN when
+     * {@code http2Allowed} is {@code false}.
      *
      * @param config       the client config
      * @param peerHost     the peer hostname

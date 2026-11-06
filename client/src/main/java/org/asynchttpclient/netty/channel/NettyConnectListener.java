@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.ProtocolException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -152,9 +153,13 @@ public final class NettyConnectListener<T> {
         if (proxyServer != null && ProxyType.HTTPS.equals(proxyServer.getProxyType())) {
             SslHandler sslHandler;
             try {
-                sslHandler = channelManager.addSslHandler(channel.pipeline(), 
-                    Uri.create("https://" + proxyServer.getHost() + ":" + proxyServer.getSecuredPort()), 
-                    null, false);
+                // This hop ends at the proxy, and everything written on it is HTTP/1.1: a CONNECT, or an
+                // absolute-URI request for a cleartext target. Advertise only http/1.1, otherwise an
+                // h2-capable proxy selects h2 and then drops the connection on our HTTP/1.1 bytes. The hop
+                // to the origin is set up after CONNECT succeeds and may still negotiate h2.
+                sslHandler = channelManager.addSslHandler(channel.pipeline(),
+                    Uri.create("https://" + proxyServer.getHost() + ":" + proxyServer.getSecuredPort()),
+                    null, false, false);
             } catch (Exception sslError) {
                 onFailure(channel, sslError);
                 return;
@@ -178,6 +183,19 @@ public final class NettyConnectListener<T> {
                     } catch (Exception e) {
                         LOGGER.error("onTlsHandshakeSuccess crashed", e);
                         NettyConnectListener.this.onFailure(channel, e);
+                        return;
+                    }
+                    // The default engine advertises only http/1.1 here, so a conformant proxy cannot have
+                    // selected h2. An engine that still offers it can get it, and the proxy would then reject
+                    // our HTTP/1.1 bytes: fail now with the reason rather than with a bare "Remotely closed".
+                    // Not retried, since a new connection would select h2 again.
+                    if (ApplicationProtocolNames.HTTP_2.equals(sslHandler.applicationProtocol())) {
+                        Channels.silentlyCloseChannel(channel);
+                        abort(new ProtocolException("HTTPS proxy " + proxyServer.getHost() + ':'
+                                + proxyServer.getSecuredPort() + " selected h2, but AsyncHttpClient speaks only "
+                                + "HTTP/1.1 to a proxy. A user-supplied SslContext offers the same protocols on every "
+                                + "connection; to keep h2 to origins, use an SslEngineFactory that offers only "
+                                + "http/1.1 when http2Allowed is false."));
                         return;
                     }
                     // After SSL handshake to proxy, continue with normal proxy request
@@ -277,16 +295,24 @@ public final class NettyConnectListener<T> {
         } else {
             // h2c (cleartext HTTP/2 prior knowledge): upgrade to HTTP/2 without TLS. WebSocket (ws://) is
             // excluded for the same RFC 8441 reason as the TLS path above — it stays on HTTP/1.1.
+            // Prior knowledge (RFC 9113 section 3.3) is about the immediate peer, but http2CleartextEnabled
+            // states it for origins only, so it is acted on only when the origin is the peer of this socket.
+            // With an HTTP proxy configured a cleartext target needs no CONNECT, so the request goes to the
+            // proxy in absolute-URI form and the preface would be written at a peer this flag says nothing
+            // about. A SOCKS proxy tunnels at the transport layer, so its peer is still the origin.
+            boolean peerIsOrigin = proxyServer == null || proxyServer.getProxyType().isSocks();
+            boolean h2c = peerIsOrigin && !uri.isSecured() && channelManager.isHttp2CleartextEnabled()
+                    && !uri.isWebSocket();
             // Upgrading and then withholding it from the registry would only orphan the socket, and the
             // 401 retry needs the one that issued the challenge.
             boolean connectionAuth = PrincipalScopedPartitionKey.anyHopAuthenticatesTheConnection(future);
-            if (connectionAuth && !uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket()) {
+            if (h2c && connectionAuth) {
                 // h2c is prior knowledge (RFC 9113 3.3): there is no negotiation to carry the refusal, so a
                 // server that speaks only h2 sees an HTTP/1.1 request and answers with a preface mismatch.
                 LOGGER.warn("Sending {} over HTTP/1.1 instead of h2c: its login authenticates the connection. "
                         + "Disable http2Cleartext for this client if the server speaks only HTTP/2.", uri);
             }
-            if (!uri.isSecured() && channelManager.isHttp2CleartextEnabled() && !uri.isWebSocket() && !connectionAuth) {
+            if (h2c && !connectionAuth) {
                 try {
                     channelManager.upgradePipelineToHttp2(channel.pipeline());
                 } catch (Exception upgradeError) {
@@ -373,7 +399,10 @@ public final class NettyConnectListener<T> {
         }
 
         LOGGER.debug("Failed to recover from connect exception: {} with channel {}", cause, channel);
+        abort(cause);
+    }
 
+    private void abort(Throwable cause) {
         String message = cause.getMessage() != null ? cause.getMessage() : future.getUri().getBaseUrl();
         ConnectException e = new ConnectException(message);
         e.initCause(cause);
