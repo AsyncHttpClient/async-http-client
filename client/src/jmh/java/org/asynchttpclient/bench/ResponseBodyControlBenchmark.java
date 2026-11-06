@@ -48,13 +48,14 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class ResponseBodyControlBenchmark {
 
+    // Copy of HttpHandler.USES_RESPONSE_BODY_CONTROL, which is not visible from this package.
     private static final ClassValue<Boolean> USES_RESPONSE_BODY_CONTROL = new ClassValue<Boolean>() {
         @Override
         protected Boolean computeValue(Class<?> type) {
             try {
                 return type.getMethod("onResponseBodyStart", ResponseBodyControl.class).getDeclaringClass()
                         != AsyncHandler.class;
-            } catch (NoSuchMethodException e) {
+            } catch (NoSuchMethodException | SecurityException | LinkageError e) {
                 return true;
             }
         }
@@ -80,7 +81,8 @@ public class ResponseBodyControlBenchmark {
     }
 
     /**
-     * The call shape {@code HttpHandler} used on 5542c9fc4: a bound {@code future::touch} and a capturing cancel lambda.
+     * The call shape of the {@code Runnable}/{@code Consumer} create overloads: a bound {@code future::touch} and a
+     * capturing cancel lambda.
      */
     @Benchmark
     public void lambdas(Blackhole bh) {

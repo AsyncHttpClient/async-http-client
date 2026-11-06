@@ -21,14 +21,17 @@ import org.asynchttpclient.channel.ChannelPoolPartitioning;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.get;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -80,6 +83,7 @@ class NettyResponseBodyControlCancelHandlerTest {
     }
 
     @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     void resumeTouchesFutureAndRestoresAutoRead() {
         NettyResponseBodyControl control = create();
         control.suspend();
@@ -87,19 +91,19 @@ class NettyResponseBodyControlCancelHandlerTest {
         assertFalse(channel.config().isAutoRead());
 
         long touchedBefore = future.getLastTouch();
-        // Let the millisecond clock move on so that a touch is observable.
-        while (unpreciseMillisTime() <= touchedBefore) {
+        // Let the millisecond clock move on, in either direction, so that a touch is observable.
+        while (unpreciseMillisTime() == touchedBefore) {
             Thread.onSpinWait();
         }
         control.resume();
 
         assertFalse(NettyResponseBodyControl.isSuspended(future, channel));
         assertTrue(channel.config().isAutoRead());
-        assertTrue(future.getLastTouch() > touchedBefore);
+        assertNotEquals(touchedBefore, future.getLastTouch());
     }
 
     @Test
-    void completeOnEventLoopDetachesInline() {
+    void completeRestoresAutoReadAndClearsControl() {
         NettyResponseBodyControl control = create();
         control.suspend();
 

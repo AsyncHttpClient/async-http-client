@@ -52,7 +52,8 @@ public final class HttpHandler extends AsyncHttpClientHandler {
             try {
                 return type.getMethod("onResponseBodyStart", ResponseBodyControl.class).getDeclaringClass()
                         != AsyncHandler.class;
-            } catch (NoSuchMethodException | SecurityException e) {
+            } catch (NoSuchMethodException | SecurityException | LinkageError e) {
+                // getMethod resolves every public signature of the hierarchy, so a type missing at runtime throws.
                 return true;
             }
         }
@@ -80,8 +81,8 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
-    private boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
-                                                   AsyncHandler<?> handler) throws Exception {
+    boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
+                                           AsyncHandler<?> handler) throws Exception {
         if (!usesResponseBodyControl(handler)) {
             // The inherited onResponseBodyStart only returns CONTINUE. Release a control left by an earlier response
             // of this future, as creating a new one would.

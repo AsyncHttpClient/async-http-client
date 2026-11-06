@@ -163,6 +163,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
         this.resumeAction = resumeAction;
         this.cancelAction = cancelAction;
         this.cancelHandler = cancelHandler;
+        assert (cancelAction == null) != (cancelHandler == null);
         previousAutoRead = channel.config().isAutoRead();
     }
 
@@ -244,11 +245,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
             return;
         }
         future.clearResponseBodyControl(this);
-        if (channel.eventLoop().inEventLoop()) {
-            detach0(restoreAutoRead);
-        } else {
-            execute(() -> detach0(restoreAutoRead));
-        }
+        execute(() -> detach0(restoreAutoRead));
     }
 
     private void detach0(boolean restoreAutoRead) {
