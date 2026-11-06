@@ -18,6 +18,7 @@ package org.asynchttpclient.netty;
 import org.asynchttpclient.HttpResponseBodyPart;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,7 +37,8 @@ final class BodyPartsInputStream extends InputStream {
 
     private static final byte[][] NO_CHUNKS = new byte[0][];
 
-    // Never holds an empty array, so that the current chunk has a byte to read whenever remaining is not 0.
+    // Only the non-empty arrays, with no slot left over, so that the current chunk has a byte to read whenever
+    // remaining is not 0.
     private final byte[][] chunks;
     private int index;
     private int offset;
@@ -58,7 +60,7 @@ final class BodyPartsInputStream extends InputStream {
                 length += bytes.length;
             }
         }
-        this.chunks = chunks;
+        this.chunks = count == chunks.length ? chunks : Arrays.copyOf(chunks, count);
         remaining = length;
         markRemaining = length;
     }

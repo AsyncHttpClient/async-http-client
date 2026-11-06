@@ -66,9 +66,9 @@ public interface Response {
      * {@link org.asynchttpclient.handler.TransferCompletionHandler}, the one
      * {@link HttpResponseBodyPart#getBodyByteBuffer()} wraps for a
      * {@link org.asynchttpclient.handler.resumable.ResumableListener}, and the one
-     * {@link #getResponseBodyAsByteBuf()} wraps. Writing to it changes what all of those see, and may change
-     * what a stream from {@link #getResponseBodyAsStream()} reads afterwards; a write through any of those
-     * changes what this returns.
+     * {@link #getResponseBodyAsByteBuf()} wraps. Writing to it changes what all of those see, and a write
+     * through any of them changes what this returns; it may also change what a stream from
+     * {@link #getResponseBodyAsStream()} reads afterwards.
      *
      * <p>Whether anything is shared at all is not something to rely on. It depends on how the body happened to
      * arrive - how the origin chunked it, whether a proxy re-chunked it, whether it was compressed - on how the
