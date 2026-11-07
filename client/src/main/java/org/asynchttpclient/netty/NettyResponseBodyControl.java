@@ -18,10 +18,11 @@ package org.asynchttpclient.netty;
 import io.netty.channel.Channel;
 import org.asynchttpclient.ResponseBodyControl;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 
 /**
@@ -30,18 +31,51 @@ import java.util.function.Consumer;
 @ApiStatus.Internal
 public final class NettyResponseBodyControl implements ResponseBodyControl {
 
+    /**
+     * Receives the cancellation of a response body control. One instance can serve every response of a handler, so
+     * creating a control does not allocate a callback per response.
+     */
+    @ApiStatus.Internal
+    @FunctionalInterface
+    public interface CancelHandler {
+
+        /**
+         * Invoked on the channel event loop once the control has been cancelled and detached.
+         *
+         * @param future        the future the control belonged to
+         * @param channel       the channel the control was created for
+         * @param bodyFullyRead whether the complete response had been read before the cancellation
+         */
+        void onCancel(NettyResponseFuture<?> future, Channel channel, boolean bodyFullyRead);
+    }
+
+    private static final AtomicIntegerFieldUpdater<NettyResponseBodyControl> ACTIVE_FIELD =
+            AtomicIntegerFieldUpdater.newUpdater(NettyResponseBodyControl.class, "active");
+
     private final NettyResponseFuture<?> future;
     private final Channel channel;
     private final Runnable suspensionStartedAction;
     private final Runnable suspensionEndedAction;
-    private final Runnable resumeAction;
-    private final Consumer<Boolean> cancelAction;
+    // Null resumes by touching the future.
+    private final @Nullable Runnable resumeAction;
+    // Exactly one of the two is set.
+    private final @Nullable Consumer<Boolean> cancelAction;
+    private final @Nullable CancelHandler cancelHandler;
     private final boolean previousAutoRead;
 
-    private final AtomicBoolean active = new AtomicBoolean(true);
+    private volatile int active = 1;
     private volatile boolean suspendRequested;
     private volatile boolean suspended;
     private volatile boolean bodyFullyRead;
+
+    /**
+     * Creates the control for a response whose resumption only touches {@code future}.
+     */
+    public static NettyResponseBodyControl create(NettyResponseFuture<?> future, Channel channel,
+                                                  CancelHandler cancelHandler) {
+        return create0(future, channel, NettyResponseBodyControl::noop, NettyResponseBodyControl::noop, null, null,
+                Objects.requireNonNull(cancelHandler, "cancelHandler"));
+    }
 
     public static NettyResponseBodyControl create(NettyResponseFuture<?> future, Channel channel,
                                                   Runnable resumeAction, Consumer<Boolean> cancelAction) {
@@ -53,12 +87,24 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
                                                   Runnable suspensionStartedAction,
                                                   Runnable suspensionEndedAction,
                                                   Runnable resumeAction, Consumer<Boolean> cancelAction) {
+        return create0(future, channel, suspensionStartedAction, suspensionEndedAction,
+                Objects.requireNonNull(resumeAction, "resumeAction"),
+                Objects.requireNonNull(cancelAction, "cancelAction"), null);
+    }
+
+    private static NettyResponseBodyControl create0(NettyResponseFuture<?> future, Channel channel,
+                                                    Runnable suspensionStartedAction,
+                                                    Runnable suspensionEndedAction,
+                                                    @Nullable Runnable resumeAction,
+                                                    @Nullable Consumer<Boolean> cancelAction,
+                                                    @Nullable CancelHandler cancelHandler) {
         if (!channel.eventLoop().inEventLoop()) {
             throw new IllegalStateException("A response body control must be initialized on its channel event loop");
         }
 
         NettyResponseBodyControl control = new NettyResponseBodyControl(
-                future, channel, suspensionStartedAction, suspensionEndedAction, resumeAction, cancelAction);
+                future, channel, suspensionStartedAction, suspensionEndedAction, resumeAction, cancelAction,
+                cancelHandler);
         NettyResponseBodyControl previous = future.replaceResponseBodyControl(control);
         if (previous != null) {
             previous.deactivate(true);
@@ -85,7 +131,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
      */
     public static boolean isSuspended(NettyResponseFuture<?> future) {
         NettyResponseBodyControl control = future.responseBodyControl();
-        return control != null && control.active.get() && control.suspended;
+        return control != null && control.active != 0 && control.suspended;
     }
 
     /**
@@ -93,7 +139,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
      */
     public static boolean isSuspended(NettyResponseFuture<?> future, Channel channel) {
         NettyResponseBodyControl control = future.responseBodyControl();
-        return control != null && control.channel == channel && control.active.get() && control.suspended;
+        return control != null && control.channel == channel && control.active != 0 && control.suspended;
     }
 
     /**
@@ -108,13 +154,16 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
 
     private NettyResponseBodyControl(NettyResponseFuture<?> future, Channel channel,
                                      Runnable suspensionStartedAction, Runnable suspensionEndedAction,
-                                     Runnable resumeAction, Consumer<Boolean> cancelAction) {
+                                     @Nullable Runnable resumeAction, @Nullable Consumer<Boolean> cancelAction,
+                                     @Nullable CancelHandler cancelHandler) {
         this.future = Objects.requireNonNull(future, "future");
         this.channel = Objects.requireNonNull(channel, "channel");
         this.suspensionStartedAction = Objects.requireNonNull(suspensionStartedAction, "suspensionStartedAction");
         this.suspensionEndedAction = Objects.requireNonNull(suspensionEndedAction, "suspensionEndedAction");
-        this.resumeAction = Objects.requireNonNull(resumeAction, "resumeAction");
-        this.cancelAction = Objects.requireNonNull(cancelAction, "cancelAction");
+        this.resumeAction = resumeAction;
+        this.cancelAction = cancelAction;
+        this.cancelHandler = cancelHandler;
+        assert (cancelAction == null) != (cancelHandler == null);
         previousAutoRead = channel.config().isAutoRead();
     }
 
@@ -149,7 +198,7 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private void suspend0() {
-        if (active.get() && !suspended) {
+        if (active != 0 && !suspended) {
             suspensionStartedAction.run();
             suspended = true;
             channel.config().setAutoRead(false);
@@ -157,12 +206,17 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private void resume0() {
-        if (!active.get() || !suspended) {
+        if (active == 0 || !suspended) {
             return;
         }
 
         endSuspension();
-        resumeAction.run();
+        Runnable resumeAction = this.resumeAction;
+        if (resumeAction != null) {
+            resumeAction.run();
+        } else {
+            future.touch();
+        }
         if (previousAutoRead) {
             channel.config().setAutoRead(true);
         } else {
@@ -171,17 +225,23 @@ public final class NettyResponseBodyControl implements ResponseBodyControl {
     }
 
     private void cancel0() {
-        if (!active.compareAndSet(true, false)) {
+        if (!ACTIVE_FIELD.compareAndSet(this, 1, 0)) {
             return;
         }
 
         future.clearResponseBodyControl(this);
+        boolean bodyFullyRead = this.bodyFullyRead;
         detach0(bodyFullyRead);
-        cancelAction.accept(bodyFullyRead);
+        CancelHandler cancelHandler = this.cancelHandler;
+        if (cancelHandler != null) {
+            cancelHandler.onCancel(future, channel, bodyFullyRead);
+        } else {
+            Objects.requireNonNull(cancelAction).accept(bodyFullyRead);
+        }
     }
 
     private void deactivate(boolean restoreAutoRead) {
-        if (!active.compareAndSet(true, false)) {
+        if (!ACTIVE_FIELD.compareAndSet(this, 1, 0)) {
             return;
         }
         future.clearResponseBodyControl(this);

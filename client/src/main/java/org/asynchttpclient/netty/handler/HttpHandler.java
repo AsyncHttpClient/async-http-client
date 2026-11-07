@@ -29,6 +29,7 @@ import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHandler.State;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.ResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.NettyResponseStatus;
@@ -44,8 +45,29 @@ import java.net.InetSocketAddress;
 @Sharable
 public final class HttpHandler extends AsyncHttpClientHandler {
 
+    // Whether a handler class overrides onResponseBodyStart. One that does not can never reach the control.
+    private static final ClassValue<Boolean> USES_RESPONSE_BODY_CONTROL = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            try {
+                return type.getMethod("onResponseBodyStart", ResponseBodyControl.class).getDeclaringClass()
+                        != AsyncHandler.class;
+            } catch (NoSuchMethodException | SecurityException | LinkageError e) {
+                // getMethod resolves every public signature of the hierarchy, so a type missing at runtime throws.
+                return true;
+            }
+        }
+    };
+
+    private final NettyResponseBodyControl.CancelHandler responseBodyCancelHandler =
+            (future, channel, bodyFullyRead) -> finishUpdate(future, channel, !bodyFullyRead || !future.isKeepAlive());
+
     public HttpHandler(AsyncHttpClientConfig config, ChannelManager channelManager, NettyRequestSender requestSender) {
         super(config, channelManager, requestSender);
+    }
+
+    static boolean usesResponseBodyControl(AsyncHandler<?> handler) {
+        return USES_RESPONSE_BODY_CONTROL.get(handler.getClass());
     }
 
     private static boolean abortAfterHandlingStatus(AsyncHandler<?> handler, HttpMethod httpMethod, NettyResponseStatus status) throws Exception {
@@ -59,11 +81,15 @@ public final class HttpHandler extends AsyncHttpClientHandler {
         return !responseHeaders.isEmpty() && handler.onHeadersReceived(responseHeaders) == State.ABORT;
     }
 
-    private boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
-                                                   AsyncHandler<?> handler) throws Exception {
-        NettyResponseBodyControl control = NettyResponseBodyControl.create(
-                future, channel, future::touch,
-                bodyFullyRead -> finishUpdate(future, channel, !bodyFullyRead || !future.isKeepAlive()));
+    boolean abortAfterStartingResponseBody(Channel channel, NettyResponseFuture<?> future,
+                                           AsyncHandler<?> handler) throws Exception {
+        if (!usesResponseBodyControl(handler)) {
+            // The inherited onResponseBodyStart only returns CONTINUE. Release a control left by an earlier response
+            // of this future, as creating a new one would.
+            NettyResponseBodyControl.complete(future);
+            return false;
+        }
+        NettyResponseBodyControl control = NettyResponseBodyControl.create(future, channel, responseBodyCancelHandler);
         return handler.onResponseBodyStart(control) == State.ABORT;
     }
 
