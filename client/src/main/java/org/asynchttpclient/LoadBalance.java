@@ -69,8 +69,8 @@ public enum LoadBalance {
      *       large as the resolved-IP count for full per-IP spreading. The default is unlimited, so this
      *       bound only applies when a finite per-host limit is configured.</li>
      *   <li>Since the per-host permit is held for the connection's lifetime, each live round-robin HTTP/2
-     *       connection also occupies a global {@code maxConnections} slot until it stops taking new
-     *       requests. These connections live in the HTTP/2 registry rather than the pool, so idle reaping
+     *       connection also occupies a global {@code maxConnections} slot until it is retired or
+     *       drained. These connections live in the HTTP/2 registry rather than the pool, so idle reaping
      *       does not apply: one stays open until the server closes it, a GOAWAY drains it, or it reaches
      *       {@link AsyncHttpClientConfig#getConnectionTtl() connectionTtl}, and HTTP/2 PING, when enabled,
      *       keeps an idle one alive. When a GOAWAY or {@code connectionTtl} retires a connection its permit

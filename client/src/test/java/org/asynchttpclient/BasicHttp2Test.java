@@ -90,6 +90,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -893,6 +895,72 @@ public class BasicHttp2Test {
             assertNull(queued.opened.get(), "it was served on the retired connection, not on a new one");
             assertTrue(connection.closeFuture().await(10, SECONDS),
                     "the retired connection must close once both exchanges are done");
+        }
+    }
+
+    /**
+     * Holds an exchange between its pool lookup and its write, for as long as the connection it was handed for the
+     * first time is open, and counts retries.
+     */
+    private static final class IdleCloseRacer extends AsyncCompletionHandlerBase {
+
+        private final Channel heldUntilClosed;
+        private final AtomicInteger retries;
+        private final AtomicBoolean pooledOnIt = new AtomicBoolean();
+
+        private IdleCloseRacer(Channel heldUntilClosed, AtomicInteger retries) {
+            this.heldUntilClosed = heldUntilClosed;
+            this.retries = retries;
+        }
+
+        @Override
+        public void onConnectionPooled(Channel connection) {
+            if (connection == heldUntilClosed) {
+                pooledOnIt.set(true);
+                connection.closeFuture().awaitUninterruptibly(10, SECONDS);
+            }
+        }
+
+        @Override
+        public void onRetry() {
+            retries.incrementAndGet();
+        }
+    }
+
+    /**
+     * Issue #2370: requests that looked the connection up just before it reached {@code connectionTtl}, and reach
+     * their write only after it was closed idle, are sent on a new connection. Nothing was written, so they are
+     * neither failed nor retried, and none is left waiting for its request timeout.
+     */
+    @Test
+    public void http2RequestsRacingTheIdleCloseAtConnectionTtlAreSentOnANewConnection() throws Exception {
+        ExecutorService callers = Executors.newFixedThreadPool(2);
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setConnectionTtl(Duration.ofSeconds(1))
+                .setMaxRequestRetry(0))) {
+            ConnectionRecorder first = new ConnectionRecorder();
+            client.prepareGet(httpsUrl("/ok")).execute(first).get(10, SECONDS);
+            Channel idle = first.connection();
+            AtomicInteger retries = new AtomicInteger();
+
+            // Two, because only the first request to find the closed connection can take its one active token, and the
+            // closed-channel path completes nothing for any later one.
+            List<IdleCloseRacer> racers = List.of(new IdleCloseRacer(idle, retries), new IdleCloseRacer(idle, retries));
+            List<Future<ListenableFuture<Response>>> submitted = new ArrayList<>();
+            for (IdleCloseRacer racer : racers) {
+                submitted.add(callers.submit(() -> client.prepareGet(httpsUrl("/ok")).execute(racer)));
+            }
+            for (Future<ListenableFuture<Response>> request : submitted) {
+                assertEquals(200, request.get(10, SECONDS).get(10, SECONDS).getStatusCode());
+            }
+
+            for (IdleCloseRacer racer : racers) {
+                assertTrue(racer.pooledOnIt.get(),
+                        "each request must have been handed the connection before it closed");
+            }
+            assertFalse(idle.isOpen());
+            assertEquals(0, retries.get(), "nothing was sent, so nothing may count as a retry");
+        } finally {
+            callers.shutdownNow();
         }
     }
 

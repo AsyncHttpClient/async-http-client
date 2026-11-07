@@ -226,7 +226,14 @@ public class ChannelManager {
         // Null was never rejected, and only DefaultChannelPool dereferences it, so a client with its own pool or
         // without keep-alive could be built with it.
         Duration connectionTtl = config.getConnectionTtl();
-        http2ConnectionTtl = connectionTtl != null ? connectionTtl.toMillis() : -1;
+        long connectionTtlMillis;
+        try {
+            connectionTtlMillis = connectionTtl != null ? connectionTtl.toMillis() : -1;
+        } catch (ArithmeticException tooLongForMillis) {
+            // A Duration beyond Long.MAX_VALUE milliseconds (ChronoUnit.FOREVER's, say) is as good as unbounded.
+            connectionTtlMillis = -1;
+        }
+        http2ConnectionTtl = connectionTtlMillis;
 
         // check if external EventLoopGroup is defined
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
@@ -1327,10 +1334,13 @@ public class ChannelManager {
         state.releasePermitOnce();
         LOGGER.debug("HTTP/2 connection {} reached connectionTtl, retiring it", channel);
         // No GOAWAY now. RFC 9113 section 6.8 asks for one before closing, and Netty's close() sends GOAWAY(NO_ERROR)
-        // when this connection is closed idle; section 9.1 lets the client open a replacement in the meantime. An
-        // early one would cost requests and buy nothing: a request that looked this connection up just before it was
-        // retired still opens a stream on it, and a server may treat a client GOAWAY as the start of its own shutdown
-        // and drop streams opened after it, as Go's HTTP/2 server does.
+        // when this connection is closed idle. An early one would cost requests and buy nothing: a request that looked
+        // this connection up just before it was retired still opens a stream on it, and a server may treat a client
+        // GOAWAY as the start of its own shutdown and drop streams opened after it, as Go's HTTP/2 server does.
+        // Until then a replacement may be open alongside. Section 9.1 asks clients not to open more than one
+        // connection per origin and lists replacements only for stream-identifier exhaustion, TLS rekeying and
+        // errors, so this overlap is a deliberate deviation of the kind LoadBalance.ROUND_ROBIN already documents,
+        // bounded by the streams still in flight here.
         if (state.closeIfRetiredAndIdle()) {
             closeChannel(channel);
         }

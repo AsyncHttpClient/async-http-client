@@ -393,12 +393,13 @@ public interface AsyncHttpClientConfig {
      * The maximum age of a connection, or a value that is not positive (the default is negative) to keep connections
      * for as long as they last. Resolution is milliseconds.
      * <p>
-     * An HTTP/1.1 connection older than this is closed instead of being returned to the pool; its age counts from
-     * the first time it was pooled. An HTTP/2 connection is retired once it has been open for between 90% and 100% of
-     * this value, the spread keeping connections opened together from being replaced together: new requests then go
-     * to a new connection, while the streams already open on it, and the requests already waiting for one of its
-     * stream slots, finish on it before it closes. No exchange is cut short in either case, so a long-lived response
-     * keeps its connection open past this age.
+     * An HTTP/1.1 connection older than this is closed instead of being returned to the pool, and the pool cleaner
+     * closes one that passes it while idle in the pool; its age counts from the first time it was pooled. An HTTP/2
+     * connection is retired once it has been open for between 90% and 100% of this value, the spread keeping
+     * connections opened together from being replaced together: new requests then go to a new connection, while the
+     * streams already open on it, and the requests already waiting for one of its stream slots, finish on it before
+     * it closes. Retirement never interrupts an exchange in flight, so a long-lived response keeps its connection
+     * open past this age.
      *
      * @return the maximum age of a pooled HTTP/1.1 or multiplexed HTTP/2 connection
      */

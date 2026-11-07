@@ -42,6 +42,8 @@ import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,7 +97,11 @@ class NettyRequestSenderHttp2RetiredTest {
     }
 
     private NettyResponseFuture<Response> futureFor(Request request) {
-        return new NettyResponseFuture<>(request, new AsyncCompletionHandlerBase(),
+        return futureFor(request, new AsyncCompletionHandlerBase());
+    }
+
+    private NettyResponseFuture<Response> futureFor(Request request, AsyncCompletionHandlerBase handler) {
+        return new NettyResponseFuture<>(request, handler,
                 new NettyRequestFactory(config).newNettyRequest(request, false, null, null, null), 0,
                 ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
     }
@@ -151,6 +157,133 @@ class NettyRequestSenderHttp2RetiredTest {
         Throwable cause = failureOf(future);
         assertInstanceOf(IOException.class, cause);
         assertFalse(cause instanceof ConnectException, "a second refusal must fail, not be sent yet again");
+    }
+
+    @Test
+    void requestFindingTheRetiredConnectionAlreadyClosedIsSentOnAnotherConnection() {
+        // The idle close ran between this request's lookup and its write: it never reaches the stream admission, and
+        // since nothing stores a request on an HTTP/2 connection, no channelInactive would ever complete it.
+        Http2ConnectionState state = http2State();
+        state.retire();
+        assertTrue(state.closeIfRetiredAndIdle());
+        parent.close();
+        NettyResponseFuture<Response> future = futureFor(get());
+
+        sender.writeRequest(future, parent);
+
+        assertInstanceOf(ConnectException.class, failureOf(future),
+                "the request must have been sent again on a new connection");
+    }
+
+    @Test
+    void requestRefusedByARetiredConnectionThatSinceDrainedIsSentOnAnotherConnection() {
+        // A server GOAWAY after retirement: the request was still never written, so it is re-sent rather than failed
+        // the way a refusal by a connection that is only draining is.
+        Http2ConnectionState state = http2State();
+        state.retire();
+        state.setDraining(0);
+        NettyResponseFuture<Response> future = futureFor(get());
+
+        sender.writeRequest(future, parent);
+
+        assertInstanceOf(ConnectException.class, failureOf(future));
+    }
+
+    @Test
+    void requestRefusedASlotThenFindingTheConnectionRetiredIsSentOnAnotherConnection() {
+        // Retired after this request was refused a slot but before it queued: only the check after the refused
+        // enqueue can see it.
+        RetiresWhenAskedIfDraining state = new RetiresWhenAskedIfDraining();
+        parent.attr(Http2ConnectionState.HTTP2_STATE_KEY).set(state);
+        state.setClientMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        state.armed.set(true);
+        NettyResponseFuture<Response> future = futureFor(get());
+
+        sender.writeRequest(future, parent);
+
+        assertInstanceOf(ConnectException.class, failureOf(future));
+    }
+
+    /** Retires itself when asked whether it is draining, which the sender asks only after refusing a slot. */
+    private static final class RetiresWhenAskedIfDraining extends Http2ConnectionState {
+
+        private final AtomicBoolean armed = new AtomicBoolean();
+
+        @Override
+        public boolean isDraining() {
+            boolean draining = super.isDraining();
+            if (armed.get()) {
+                retire();
+            }
+            return draining;
+        }
+    }
+
+    @Test
+    void retiredConnectionWhoseLastStreamFailsToOpenIsClosed() {
+        // Retired but not yet closed, so the request gets a slot; the stream then fails to open, since this bare
+        // parent has no Http2MultiplexHandler. No stream close is left to close the connection, and its one-shot
+        // expiry has already run.
+        Http2ConnectionState state = http2State();
+        state.retire();
+        NettyResponseFuture<Response> future = futureFor(get());
+
+        sender.writeRequest(future, parent);
+
+        assertTrue(future.isDone());
+        assertEquals(0, state.getActiveStreams());
+        assertFalse(parent.isOpen(), "the retired connection lost its last stream and must close");
+    }
+
+    @Test
+    void completedRequestIsNotSentAgain() {
+        // Completed by a timeout or cancel before the re-dispatch. Sent anyway, it would be attached to the healthy
+        // connection now registered for its origin, and attaching a done future closes the channel it is given.
+        Request request = get();
+        EmbeddedChannel replacement = new EmbeddedChannel();
+        try {
+            replacement.attr(Http2ConnectionState.HTTP2_STATE_KEY).set(new Http2ConnectionState());
+            channelManager.registerHttp2Connection(
+                    request.getChannelPoolPartitioning().getPartitionKey(request.getUri(), null, null), replacement);
+            Http2ConnectionState state = http2State();
+            state.retire();
+            assertTrue(state.closeIfRetiredAndIdle());
+            NettyResponseFuture<Response> future = futureFor(request);
+            assertTrue(future.cancel(true));
+
+            sender.writeRequest(future, parent);
+
+            assertTrue(replacement.isOpen(), "a done request must not reach the replacement connection");
+        } finally {
+            replacement.finishAndReleaseAll();
+        }
+    }
+
+    @Test
+    void cancellingTheReDispatchedRequestLeavesTheRetiredConnectionOpen() {
+        // The retired connection is full and still carries a stream. The request it refused is cancelled while its
+        // new attempt is still looking for a connection; that must not close the retired one under its stream.
+        AtomicReference<NettyResponseFuture<Response>> cancelled = new AtomicReference<>();
+        AsyncCompletionHandlerBase cancelOnNextAttempt = new AsyncCompletionHandlerBase() {
+            @Override
+            public void onConnectionPoolAttempt() {
+                cancelled.get().cancel(true);
+            }
+        };
+        Http2ConnectionState state = http2State();
+        state.setClientMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        state.retire();
+        NettyResponseFuture<Response> future = futureFor(get(), cancelOnNextAttempt);
+        cancelled.set(future);
+        // As the pooled path leaves it: the request is attached to the connection it looked up.
+        future.attachChannel(parent, false);
+
+        sender.writeRequest(future, parent);
+
+        assertTrue(future.isCancelled());
+        assertTrue(parent.isOpen(), "the stream still running on the retired connection must be left to finish");
     }
 
     @Test

@@ -33,6 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.InetAddress;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -109,6 +110,9 @@ class ChannelManagerHttp2LifetimeTest {
         assertNoTtlHandler(config().setConnectionTtl(Duration.ofMillis(-1)).build());
         // Below a millisecond counts as unset, as it does for the HTTP/1.1 pool.
         assertNoTtlHandler(config().setConnectionTtl(Duration.ofNanos(500_000)).build());
+        // Too long for milliseconds counts as unbounded rather than failing the client's construction. Keep-alive is
+        // off because DefaultChannelPool, which the HTTP/1.1 pool uses otherwise, cannot take such a value either.
+        assertNoTtlHandler(config().setKeepAlive(false).setConnectionTtl(ChronoUnit.FOREVER.getDuration()).build());
     }
 
     private static void assertNoTtlHandler(AsyncHttpClientConfig config) {
@@ -220,15 +224,17 @@ class ChannelManagerHttp2LifetimeTest {
     }
 
     @Test
-    void closingBeforeTheTtlCancelsTheExpiry() {
+    void removingTheHandlerCancelsTheExpiry() {
+        // handlerRemoved is what the pipeline teardown of a real close runs. Closing an EmbeddedChannel would prove
+        // nothing here, since it cancels every task scheduled on its own loop by itself.
         EmbeddedChannel channel = http2Connection(BASE);
-        Http2ConnectionState state = stateOf(channel);
+        channel.pipeline().remove(TTL_HANDLER);
 
-        channel.close();
         advance(channel, 2 * TTL_MILLIS);
 
-        assertFalse(state.isRetired(), "the expiry must not run for a connection that already closed");
-        assertEquals(-1, channel.runScheduledPendingTasks(), "and nothing may stay scheduled for it");
+        assertFalse(stateOf(channel).isRetired(), "the expiry of a removed handler must not run");
+        assertSame(channel, channelManager.pollHttp2Connection(BASE));
+        assertTrue(channel.isOpen());
     }
 
     /**
