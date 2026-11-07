@@ -23,14 +23,17 @@ import org.asynchttpclient.util.StringBuilderPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimeoutTimerTask.class);
 
+    private static final AtomicIntegerFieldUpdater<ReadTimeoutTimerTask> INDEFINITE_SUSPENSION_WARNING_LOGGED =
+            AtomicIntegerFieldUpdater.newUpdater(ReadTimeoutTimerTask.class, "indefiniteSuspensionWarningLogged");
+
     private final long readTimeout;
-    private final AtomicBoolean indefiniteSuspensionWarningLogged = new AtomicBoolean();
+    private volatile int indefiniteSuspensionWarningLogged;
 
     ReadTimeoutTimerTask(NettyResponseFuture<?> nettyResponseFuture, NettyRequestSender requestSender, TimeoutsHolder timeoutsHolder, long readTimeout) {
         super(nettyResponseFuture, requestSender, timeoutsHolder);
@@ -89,7 +92,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
     void warnIfIndefinitelySuspended() {
         if (timeoutsHolder.isRequestTimeoutDisabled()
-                && indefiniteSuspensionWarningLogged.compareAndSet(false, true)) {
+                && INDEFINITE_SUSPENSION_WARNING_LOGGED.compareAndSet(this, 0, 1)) {
             LOGGER.warn("Response body reads for {} remain suspended while the request timeout is disabled; "
                             + "the exchange retains its transport resources until it is resumed or canceled",
                     nettyResponseFuture.getUri().toUrlWithoutUserInfo());
