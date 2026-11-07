@@ -416,6 +416,10 @@ public class MultipartUploadTest extends AbstractBasicTest {
                 } catch (FileUploadException e) {
                     //
                 }
+                // The parser stops at the closing boundary, before a chunked body's terminating chunk if that has
+                // not arrived yet. Jetty then aborts the connection for unconsumed input once the response is
+                // done, and on Windows the reset discards the response before the client has read it.
+                request.getInputStream().transferTo(OutputStream.nullOutputStream());
                 try (Writer w = response.getWriter()) {
                     w.write(Integer.toString(getFilesProcessed()));
                     resetFilesProcessed();
