@@ -1005,6 +1005,134 @@ public class Http2ConnectionStateTest {
         assertEquals(rounds, totalReleases.get(), "exactly one release per round");
     }
 
+    // -------------------------------------------------------------------------
+    // Retirement at connectionTtl
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void retireTakesEffectOnce() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        assertFalse(state.isRetired());
+
+        assertTrue(state.retire(), "the first retire() is the one that retires the connection");
+        assertFalse(state.retire(), "later calls must not run the retirement again");
+        assertTrue(state.isRetired());
+    }
+
+    @Test
+    public void retiredConnectionStillOpensStreamsWhileSlotsAreFree() {
+        Http2ConnectionState retired = new Http2ConnectionState();
+        retired.retire();
+        assertTrue(retired.tryAcquireStream(),
+                "the server has refused nothing, so a request already holding a retired connection still gets a slot");
+        assertEquals(1, retired.getActiveStreams());
+
+        // The contrast that keeps retirement from being implemented as draining.
+        Http2ConnectionState draining = new Http2ConnectionState();
+        draining.setDraining(0);
+        assertFalse(draining.tryAcquireStream());
+    }
+
+    @Test
+    public void retiredConnectionAcceptsNoNewQueuedWork() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.setClientMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        state.retire();
+
+        AtomicInteger ran = new AtomicInteger();
+        assertFalse(state.offerPendingOpener(ran::incrementAndGet),
+                "a full retired connection must turn work away, so the caller can send it elsewhere");
+        state.releaseStream();
+        assertEquals(0, ran.get(), "a rejected opener must never run");
+        assertEquals(0, state.getActiveStreams());
+    }
+
+    @Test
+    public void openerQueuedBeforeRetirementStillRunsOnTheRetiredConnection() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        state.setClientMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        AtomicInteger ran = new AtomicInteger();
+        assertTrue(state.offerPendingOpener(ran::incrementAndGet));
+        assertEquals(0, ran.get(), "queued behind the stream holding the only slot");
+
+        state.retire();
+        state.releaseStream();
+
+        assertEquals(1, ran.get(), "an opener queued before retirement must get the freed slot, not be dropped");
+        assertEquals(1, state.getActiveStreams());
+        assertFalse(state.closeIfRetiredAndIdle(), "the opener's stream keeps the connection open");
+    }
+
+    @Test
+    public void idleCloseNeedsRetirementNoStreamsAndAnEmptyQueue() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        assertFalse(state.closeIfRetiredAndIdle(), "a connection that is not retired is never closed by this");
+
+        state.setClientMaxConcurrentStreams(1);
+        assertTrue(state.tryAcquireStream());
+        assertTrue(state.offerPendingOpener(() -> { }));
+        state.retire();
+        assertFalse(state.closeIfRetiredAndIdle(), "not idle while a stream is open");
+
+        // Releasing the stream hands its slot to the queued opener, whose stream then ends too.
+        state.releaseStream();
+        assertEquals(1, state.getActiveStreams());
+        assertFalse(state.closeIfRetiredAndIdle(), "not idle while the queued opener's stream is open");
+        state.releaseStream();
+
+        assertTrue(state.closeIfRetiredAndIdle(), "retired, no stream and nothing queued: the caller must close it");
+        assertEquals(0, state.getActiveStreams(), "the closed marker must not leak through the stream count");
+        assertFalse(state.tryAcquireStream(), "once closed it must refuse every further stream");
+        assertFalse(state.closeIfRetiredAndIdle(), "and only one caller may close it");
+    }
+
+    @Test
+    public void idleCloseIsRefusedWhileAnOpenerIsQueued() {
+        Http2ConnectionState state = new Http2ConnectionState();
+        // A server that grants no slot at all: the opener stays queued with no stream open.
+        state.updateMaxConcurrentStreams(0);
+        assertTrue(state.offerPendingOpener(() -> { }));
+        state.retire();
+
+        assertEquals(0, state.getActiveStreams());
+        assertFalse(state.closeIfRetiredAndIdle(), "a queued request must not lose its connection to the idle close");
+    }
+
+    @Test
+    public void idleCloseAndStreamAdmissionNeverBothWin() throws Exception {
+        // A request that looked up the connection before it was retired races the close of the now idle connection.
+        // Exactly one may win: a stream opened on a connection that is being closed would fail after it was sent.
+        int rounds = 20_000;
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            for (int i = 0; i < rounds; i++) {
+                Http2ConnectionState state = new Http2ConnectionState();
+                state.retire();
+                CyclicBarrier barrier = new CyclicBarrier(2);
+                Future<Boolean> admitted = executor.submit(() -> {
+                    barrier.await();
+                    return state.tryAcquireStream();
+                });
+                Future<Boolean> closed = executor.submit(() -> {
+                    barrier.await();
+                    return state.closeIfRetiredAndIdle();
+                });
+                boolean streamWon = admitted.get(10, TimeUnit.SECONDS);
+                boolean closeWon = closed.get(10, TimeUnit.SECONDS);
+                if (streamWon == closeWon) {
+                    throw new AssertionError("round " + i + ": stream admitted=" + streamWon + ", idle close=" + closeWon
+                            + "; exactly one of them must win");
+                }
+                assertEquals(streamWon ? 1 : 0, state.getActiveStreams());
+            }
+        } finally {
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+        }
+    }
+
     private static Runnable blockingOpener(CountDownLatch started, CountDownLatch release) {
         return () -> {
             started.countDown();

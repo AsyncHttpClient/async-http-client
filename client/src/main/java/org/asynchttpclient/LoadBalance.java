@@ -63,17 +63,19 @@ public enum LoadBalance {
      *       IPs, and a request pinned to any further IP cannot acquire a per-host permit — it multiplexes
      *       onto one of those K sibling connections (multiplexing onto an existing connection takes no
      *       permit) instead of opening another, failing with {@code TooManyConnectionsPerHostException}
-     *       only if none is available. Those K connections are held open (kept alive by HTTP/2 PING), so
-     *       they stay pinned to their K IPs rather than rotating across all of them; set
-     *       {@code maxConnectionsPerHost} at least as large as the resolved-IP count for full per-IP
-     *       spreading. The default is unlimited, so this bound only applies when a finite per-host limit is
-     *       configured.</li>
+     *       only if none is available. Those K connections stay pinned to their K IPs for as long as they
+     *       are open, rather than rotating across all of them; {@code connectionTtl}, when set, retires them
+     *       so that the set moves across the IPs over time. Set {@code maxConnectionsPerHost} at least as
+     *       large as the resolved-IP count for full per-IP spreading. The default is unlimited, so this
+     *       bound only applies when a finite per-host limit is configured.</li>
      *   <li>Since the per-host permit is held for the connection's lifetime, each live round-robin HTTP/2
-     *       connection also occupies a global {@code maxConnections} slot until it closes, and pool
-     *       {@code connectionTtl}/idle reaping do not apply (these connections live in the HTTP/2 registry,
-     *       kept alive by PING, until GOAWAY or the connection drops). When a GOAWAY starts draining a
-     *       connection its permit is released immediately, so a replacement can be opened without waiting
-     *       for in-flight streams to finish.</li>
+     *       connection also occupies a global {@code maxConnections} slot until it stops taking new
+     *       requests. These connections live in the HTTP/2 registry rather than the pool, so idle reaping
+     *       does not apply: one stays open until the server closes it, a GOAWAY drains it, or it reaches
+     *       {@link AsyncHttpClientConfig#getConnectionTtl() connectionTtl}, and HTTP/2 PING, when enabled,
+     *       keeps an idle one alive. When a GOAWAY or {@code connectionTtl} retires a connection its permit
+     *       is released immediately, so a replacement can be opened without waiting for in-flight streams to
+     *       finish; until they do, the old and the new connection are both open.</li>
      *   <li>The address order comes straight from the configured
      *       {@link io.netty.resolver.InetNameResolver}; this mode does not re-sort it. For the
      *       rotation to map consistently across requests, use a resolver that returns the addresses
