@@ -189,6 +189,18 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
+    public void anEarlyFireReadsTheMonotonicClockOnce() {
+        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        holder.startReadTimeout();
+        nanoReads = 0;
+
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        assertEquals(2, armed.size());
+        assertEquals(1, nanoReads, "one reading should both check the request deadline and time the next entry");
+    }
+
+    @Test
     public void aRequestDeadlineAheadOfTheReadTimeoutTakesTheEntryAlone() {
         TimeoutsHolder holder = startedHolder(READ_TIMEOUT_MS / 2);
         holder.startReadTimeout();

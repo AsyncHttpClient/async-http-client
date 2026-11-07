@@ -250,16 +250,13 @@ public class TimeoutsHolder {
         return readState == READ_COVERED;
     }
 
-    boolean isRequestDeadlinePassed() {
-        return requestDeadlineNanos - nanoClock.getAsLong() <= 0;
-    }
-
     /**
      * What is left until the request deadline in whole milliseconds, rounded up so an entry never runs ahead of
      * it, and floored at zero: a scheduler has no use for a negative delay, and the task has to run either way,
-     * since running is what fails the exchange.
+     * since running is what fails the exchange. Zero exactly when the deadline has passed. One clock reading
+     * answers both whether it has and how long to re-arm for, so an entry that fires early reads it once.
      */
-    private long untilRequestDeadline() {
+    long untilRequestDeadline() {
         long left = requestDeadlineNanos - nanoClock.getAsLong();
         if (left <= 0) {
             return 0L;
@@ -283,7 +280,7 @@ public class TimeoutsHolder {
         if (task == null || cancelled != 0 || task.isClaimed() || !task.cancelArmed()) {
             return;
         }
-        armRequestTimeoutFrom(task, millisClock.getAsLong(), false);
+        armRequestTimeoutFrom(task, millisClock.getAsLong(), untilRequestDeadline(), false);
     }
 
     public void setResolvedRemoteAddress(InetSocketAddress address) {
@@ -313,19 +310,22 @@ public class TimeoutsHolder {
     /**
      * Re-arms the request timeout after its entry fired ahead of the request deadline and found no timeout due.
      *
-     * @param suspended whether response body reads are suspended, which holds off the read timeout for a whole
-     *                  window however long ago the channel was last read from
+     * @param untilDeadline what {@link #untilRequestDeadline} returned when the entry fired
+     * @param suspended     whether response body reads are suspended, which holds off the read timeout for a
+     *                      whole window however long ago the channel was last read from
      */
-    void rearmRequestTimeout(RequestTimeoutTimerTask task, long now, boolean suspended) {
+    void rearmRequestTimeout(RequestTimeoutTimerTask task, long now, long untilDeadline, boolean suspended) {
         // A read timeout that has not started by now may not start for a long time -- a slow connect or upload
         // -- and checking for it every window would wake the scheduler for nothing, so it gets its own entry
-        // when it does start.
-        READ_STATE.compareAndSet(this, READ_PENDING, READ_SEPARATE);
-        armRequestTimeoutFrom(task, now, suspended);
+        // when it does start. Read first: on most fires the read timeout is long covered, and a failed CAS
+        // costs as much as one that succeeds.
+        if (readState == READ_PENDING) {
+            READ_STATE.compareAndSet(this, READ_PENDING, READ_SEPARATE);
+        }
+        armRequestTimeoutFrom(task, now, untilDeadline, suspended);
     }
 
-    private void armRequestTimeoutFrom(RequestTimeoutTimerTask task, long now, boolean suspended) {
-        long untilDeadline = untilRequestDeadline();
+    private void armRequestTimeoutFrom(RequestTimeoutTimerTask task, long now, long untilDeadline, boolean suspended) {
         long untilRead = Long.MAX_VALUE;
         int state = readState;
         if (state == READ_PENDING) {
@@ -343,8 +343,11 @@ public class TimeoutsHolder {
     }
 
     private void armRequestTimeout(RequestTimeoutTimerTask task, long delay, boolean early) {
-        // Written before arming: on an event loop the entry can run before arm returns.
-        requestTimeoutArmedEarly = early;
+        // Written before arming: on an event loop the entry can run before arm returns. Only when it changes,
+        // since an entry that keeps re-arming early would otherwise pay a volatile write on every fire.
+        if (requestTimeoutArmedEarly != early) {
+            requestTimeoutArmedEarly = early;
+        }
         arm(task, delay);
     }
 

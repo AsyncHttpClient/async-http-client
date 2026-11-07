@@ -82,7 +82,8 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
             return true;
         }
 
-        if (timeoutsHolder.isRequestDeadlinePassed()) {
+        long untilDeadline = timeoutsHolder.untilRequestDeadline();
+        if (untilDeadline == 0) {
             return false;
         }
         long now = timeoutsHolder.millisTime();
@@ -106,7 +107,7 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
         // armed while this task is unclaimed.
         done.set(false);
         try {
-            timeoutsHolder.rearmRequestTimeout(this, now, suspended);
+            timeoutsHolder.rearmRequestTimeout(this, now, untilDeadline, suspended);
         } catch (RuntimeException e) {
             // A timer that rejects the entry, being full or stopped, would leave the exchange with no deadline
             // at all, so it is failed instead of left to hang. Only while this holder is still the exchange's:
