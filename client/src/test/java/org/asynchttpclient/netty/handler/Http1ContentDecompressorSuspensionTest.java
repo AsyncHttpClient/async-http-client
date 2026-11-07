@@ -23,6 +23,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.compression.SnappyFrameEncoder;
@@ -165,6 +166,7 @@ public class Http1ContentDecompressorSuspensionTest {
         int maxPart;
         boolean last;
         String trailer;
+        DecoderResult lastResult;
 
         Body drain(EmbeddedChannel channel) {
             Object msg;
@@ -180,6 +182,7 @@ public class Http1ContentDecompressorSuspensionTest {
                     last = msg instanceof LastHttpContent;
                     if (last) {
                         trailer = ((LastHttpContent) msg).trailingHeaders().get("x-trailer");
+                        lastResult = ((LastHttpContent) msg).decoderResult();
                     }
                 }
                 ReferenceCountUtil.release(msg);
@@ -230,6 +233,15 @@ public class Http1ContentDecompressorSuspensionTest {
 
         SuspendedExchange(Http1ContentDecompressor decompressor, String contentEncoding, byte[] body,
                           int fragmentSize, boolean suspendBeforeBody, boolean autoRead, Input kind) {
+            this(decompressor, contentEncoding, body, fragmentSize, suspendBeforeBody, autoRead, kind, true);
+        }
+
+        /**
+         * Without {@code ended}, every fragment is an {@link HttpContent}, so the body has not ended, as one that the
+         * connection cuts off.
+         */
+        SuspendedExchange(Http1ContentDecompressor decompressor, String contentEncoding, byte[] body,
+                          int fragmentSize, boolean suspendBeforeBody, boolean autoRead, Input kind, boolean ended) {
             suspendedBeforeBody = suspendBeforeBody;
             channel = new EmbeddedChannel();
             channel.config().setAutoRead(autoRead);
@@ -261,7 +273,7 @@ public class Http1ContentDecompressorSuspensionTest {
                 ByteBuf fragment = input(body, offset, length, kind);
                 input.add(fragment);
                 offset += length;
-                if (offset < body.length) {
+                if (offset < body.length || !ended) {
                     channel.writeInbound(new DefaultHttpContent(fragment));
                 } else {
                     LastHttpContent last = new DefaultLastHttpContent(fragment);
@@ -452,6 +464,71 @@ public class Http1ContentDecompressorSuspensionTest {
         assertEquals(List.of("inactive"), events);
         assertEquals(0, exchange.compressed.refCnt());
         exchange.channel.finishAndReleaseAll();
+    }
+
+    /**
+     * A body that the connection cuts off fails anyway, so what is held back of it is dropped at the close instead of
+     * decompressed, even if decompressing it would have failed the body first.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void inputHeldBackOfABodyThatTheCloseCutsOffIsDropped(String contentEncoding) {
+        // Decompressing what is held back would exceed the limit.
+        SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 256 * 1024),
+                contentEncoding, compress(contentEncoding, new byte[1024 * 1024]), 4096, false, true, Input.HEAP,
+                false);
+        List<Object> events = new ArrayList<>();
+        exchange.channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelInactive(ChannelHandlerContext ctx) {
+                events.add("inactive");
+            }
+        });
+        Body body = new Body().drain(exchange.channel);
+        assertEquals(1, body.parts);
+
+        exchange.channel.pipeline().fireChannelInactive();
+        body.drain(exchange.channel);
+        exchange.channel.checkException();
+        assertEquals(1, body.parts, contentEncoding + ": nothing held back may be handed on");
+        assertFalse(body.last);
+        assertEquals(List.of("inactive"), events);
+        exchange.assertInputReleased();
+        assertFalse(exchange.channel.finishAndReleaseAll());
+    }
+
+    /**
+     * Once the end of the body has arrived, what is held back is handed on at the close. That includes the end of a body
+     * delimited by the connection, which arrives just before the close, and the failed end of a body whose last chunk
+     * could not be parsed, which still fails the exchange with the parser's error.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"delimited", "failed"})
+    public void inputHeldBackOfABodyThatHasEndedIsHandedOnAtTheClose(String end) {
+        byte[] payload = concat(TEXT, new byte[400_000], TEXT);
+        for (String contentEncoding : List.of("gzip", "zstd")) {
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0),
+                    contentEncoding, compress(contentEncoding, payload), 4096, false, true, Input.HEAP, false);
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+
+            LastHttpContent last = new DefaultLastHttpContent();
+            if ("failed".equals(end)) {
+                last.setDecoderResult(DecoderResult.failure(new IllegalArgumentException("bad chunk")));
+            }
+            exchange.channel.writeInbound(last);
+            body.drain(exchange.channel);
+            assertEquals(1, body.parts, contentEncoding + ": the end must wait behind the input held back");
+
+            exchange.channel.pipeline().fireChannelInactive();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertTrue(body.last, contentEncoding);
+            assertArrayEquals(payload, body.bytes.toByteArray(), contentEncoding);
+            assertEquals("failed".equals(end), body.lastResult.isFailure(), contentEncoding);
+            exchange.assertInputReleased();
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        }
     }
 
     @Test

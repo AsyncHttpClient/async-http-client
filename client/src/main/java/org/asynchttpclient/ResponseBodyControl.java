@@ -52,9 +52,12 @@ public interface ResponseBodyControl {
      * waits for demand only while the system property {@code io.netty.compression.defaultMaxForwardBytes} is positive,
      * as it is by default. Once the body has been decompressed in full, the final empty part, trailing headers and
      * completion can still arrive while reads are suspended. If the connection closes while compressed input is held
-     * back, the rest of it is decompressed and delivered at once, bounded only by
-     * {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. A transfer coding, such as
-     * {@code Transfer-Encoding: gzip}, is decompressed as soon as it is read.
+     * back, the rest of a body that has ended is decompressed and delivered at once, bounded only by
+     * {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. The rest of a body that the close cut off is
+     * dropped, and the request fails as for any connection closed before the end of the body. Native transports such
+     * as epoll notice an orderly close by the server (a TCP FIN) even while reads are suspended; NIO notices it only
+     * once the input held back has been used up. A transfer coding, such as {@code Transfer-Encoding: gzip}, is
+     * decompressed as soon as it is read.
      * <p>
      * While reads are suspended, the read timeout is paused but the request timeout remains active. If the request
      * timeout is disabled, failing to resume or cancel the response can retain its transport resources indefinitely.

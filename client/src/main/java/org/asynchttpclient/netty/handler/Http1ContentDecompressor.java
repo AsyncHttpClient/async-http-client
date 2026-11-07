@@ -88,8 +88,9 @@ import java.util.zip.Inflater;
  * request, such as the one {@code resume()} issues, decompresses that input before it is passed on to the transport.
  * That is why this handler also sees outbound events; it passes all others through. Only parts with content wait for
  * a resume: once the body has been decompressed in full, its end, with any trailers, is handed on even to a suspended
- * response, as for an unencoded body. If the connection closes while input is held back, the rest of it is
- * decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}.
+ * response, as for an unencoded body. If the connection closes while input is held back and the body has ended, the
+ * rest of it is decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}. If the close cut the
+ * body off, the response fails anyway, and the input held back is dropped without being decompressed.
  * <p>
  * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
  * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
@@ -293,11 +294,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        // The pipeline is about to be torn down, so what is held back is handed on now, even to a suspended
-        // response.
+        // The pipeline is about to be torn down, so what is held back of a body that has ended is handed on now, even
+        // to a suspended response. A body that the close cut off fails anyway, so what is held back of it is dropped.
         inputClosed = true;
         try {
-            if (paused && !draining) {
+            if (paused && !draining && bodyEnded()) {
                 readPending = false;
                 resume(ctx);
             }
@@ -390,6 +391,20 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 ctx.fireChannelRead(decoded);
             }
         }
+    }
+
+    // Whether the end of the paused body has arrived, with the input that is held or behind it. HttpObjectDecoder hands
+    // on the end of a body delimited by the connection before the connection's close.
+    private boolean bodyEnded() {
+        if (heldLast != null) {
+            return true;
+        }
+        for (HttpObject msg : queued) {
+            if (msg instanceof LastHttpContent) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void releaseQueued() {

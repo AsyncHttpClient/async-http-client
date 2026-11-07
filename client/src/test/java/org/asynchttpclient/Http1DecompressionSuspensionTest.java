@@ -24,6 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.epoll.Epoll;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -45,6 +46,8 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.channel.ChannelPool;
+import org.asynchttpclient.exception.ChannelClosedException;
+import org.asynchttpclient.exception.RemotelyClosedException;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.filter.ResponseFilter;
@@ -53,7 +56,11 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -65,6 +72,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,9 +90,12 @@ import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * A suspended HTTP/1.1 response must not keep inflating the compressed bytes it has already read. A highly
@@ -265,6 +276,43 @@ public class Http1DecompressionSuspensionTest {
 
             assertNull(handler.failure.get());
             assertArrayEquals(TEXT, handler.body.toByteArray());
+        }
+    }
+
+    /**
+     * Native transports read the close of a connection even while reads are suspended. What is held back of a body
+     * that the close cuts off is dropped, so the request fails as a closed connection, without the rest of the body
+     * and without the size limit that inflating it would have hit first.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"/zeros-cut", "/zeros-cut-chunked"})
+    @EnabledOnOs(OS.LINUX)
+    public void aSuspendedBodyThatTheConnectionCutsOffFailsWithoutTheRestOfIt(String path) throws Exception {
+        assumeTrue(Epoll.isAvailable(), "epoll is not available");
+        List<IOException> filtered = new CopyOnWriteArrayList<>();
+        IOExceptionFilter filter = new IOExceptionFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                filtered.add(ctx.getIOException());
+                return ctx;
+            }
+        };
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseNativeTransport(true)
+                .setUseOnlyEpollNativeTransport(true)
+                .setMaxRequestRetry(0)
+                .setMaxDecompressedResponseSize(1024 * 1024)
+                .addIOExceptionFilter(filter)
+                .setRequestTimeout(Duration.ofSeconds(60)))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(path)).execute(handler);
+
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> response.get(10, SECONDS));
+            assertInstanceOf(RemotelyClosedException.class, failure.getCause());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered after the close");
+            assertFalse(handler.corrupt.get());
+            assertEquals(1, filtered.size());
+            assertInstanceOf(ChannelClosedException.class, filtered.get(0));
         }
     }
 
@@ -610,6 +658,20 @@ public class Http1DecompressionSuspensionTest {
                     LastHttpContent last = new DefaultLastHttpContent();
                     last.trailingHeaders().set("x-trailer", "done");
                     ctx.writeAndFlush(last);
+                    break;
+                }
+                case "/zeros-cut":
+                case "/zeros-cut-chunked": {
+                    HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+                    response.headers().set(HttpHeaderNames.CONTENT_ENCODING, HttpHeaderValues.GZIP);
+                    if ("/zeros-cut".equals(request.uri())) {
+                        HttpUtil.setContentLength(response, ZEROS_GZIP.length);
+                    } else {
+                        HttpUtil.setTransferEncodingChunked(response, true);
+                    }
+                    ctx.write(response);
+                    ctx.writeAndFlush(new DefaultHttpContent(Unpooled.wrappedBuffer(ZEROS_GZIP, 0, ZEROS_GZIP.length / 2)))
+                            .addListener(ChannelFutureListener.CLOSE);
                     break;
                 }
                 case "/text-close": {
