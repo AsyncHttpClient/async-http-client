@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +52,7 @@ import static org.asynchttpclient.util.HttpConstants.Methods.PATCH;
 import static org.asynchttpclient.util.HttpConstants.Methods.POST;
 import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.asynchttpclient.util.HttpConstants.Methods.TRACE;
+import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
  * Default and threadsafe implementation of {@link AsyncHttpClient}.
@@ -286,7 +288,8 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             return requestBuilder.build();
         }
 
-        List<Cookie> requestCookies = request.getCookies();
+        // A DefaultRequest from the public constructor may carry null, which the builder path treated as empty.
+        List<Cookie> requestCookies = isNonEmpty(request.getCookies()) ? request.getCookies() : Collections.emptyList();
         List<Cookie> cookies = null;
         for (Cookie cookie : storedCookies) {
             if (!hasCookieNamed(cookies == null ? requestCookies : cookies, cookie.name())) {

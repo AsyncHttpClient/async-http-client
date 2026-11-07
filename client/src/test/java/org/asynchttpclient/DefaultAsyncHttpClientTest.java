@@ -434,6 +434,21 @@ public class DefaultAsyncHttpClientTest {
         assertEquals(List.of("a=request", "b=store"), cookieStrings(sent));
     }
 
+    @Test
+    public void testStoredCookiesAddedToRequestWithNullCookieList() throws IOException {
+        Request built = get("http://localhost/").build();
+        Request request = new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(), built.getLocalAddress(),
+                built.getHeaders(), null, built.getByteData(), built.getCompositeByteData(), built.getStringData(),
+                built.getByteBufferData(), built.getByteBufData(), built.getStreamData(), built.getBodyGenerator(),
+                built.getFormParams(), built.getBodyParts(), built.getVirtualHost(), built.getProxyServer(), built.getRealm(),
+                built.getFile(), built.getFollowRedirect(), built.getRequestTimeout(), built.getReadTimeout(),
+                built.getRangeOffset(), built.getCharset(), built.getChannelPoolPartitioning(), built.getNameResolver());
+
+        Request sent = sendWithStoredCookies(request, cookie("session", "s"));
+
+        assertEquals(List.of("session=s"), cookieStrings(sent));
+    }
+
     /** Executes the request on a client whose store holds these cookies for localhost and returns what reached the filters. */
     private static Request sendWithStoredCookies(Request request, Cookie... storedCookies) throws IOException {
         CookieStore cookieStore = new ThreadSafeCookieStore();
