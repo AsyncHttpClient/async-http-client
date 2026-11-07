@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
-
 public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimeoutTimerTask.class);
@@ -66,7 +64,7 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
             return;
         }
 
-        long now = unpreciseMillisTime();
+        long now = timeoutsHolder.millisTime();
 
         long currentReadTimeoutInstant = readTimeout + nettyResponseFuture.getLastTouch();
         long durationBeforeCurrentReadTimeout = currentReadTimeoutInstant - now;
@@ -83,7 +81,9 @@ public class ReadTimeoutTimerTask extends TimeoutTimerTask implements Runnable {
 
         } else {
             done.set(false);
-            timeoutsHolder.startReadTimeout(this);
+            // Only what is left of the window: a whole one would let the exchange idle for up to twice the read
+            // timeout. Capped at a whole one so that no single re-arm outlasts a window, whatever the wall clock did.
+            timeoutsHolder.startReadTimeout(this, Math.min(durationBeforeCurrentReadTimeout, readTimeout));
         }
     }
 

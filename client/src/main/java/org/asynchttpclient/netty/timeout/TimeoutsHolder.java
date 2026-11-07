@@ -78,7 +78,8 @@ public class TimeoutsHolder {
     }
 
     // For tests: a deadline can be checked without letting time pass. nanoClock must read the clock the
-    // future took its start from.
+    // future took its start from, and millisClock the one touch() stamps lastTouch with, since the read
+    // timeout measures its window between the two.
     TimeoutsHolder(Timer nettyTimer, @Nullable EventExecutor eventExecutor, NettyResponseFuture<?> nettyResponseFuture,
                    NettyRequestSender requestSender, AsyncHttpClientConfig config, InetSocketAddress originalRemoteAddress,
                    LongSupplier millisClock, LongSupplier nanoClock) {
@@ -186,6 +187,11 @@ public class TimeoutsHolder {
         return requestTimeoutMillisTime;
     }
 
+    // The clock lastTouch is read against, which tests replace.
+    long millisTime() {
+        return millisClock.getAsLong();
+    }
+
     boolean isRequestTimeoutDisabled() {
         return requestTimeoutTask == null;
     }
@@ -223,15 +229,19 @@ public class TimeoutsHolder {
     }
 
     void startReadTimeout(@Nullable ReadTimeoutTimerTask task) {
+        startReadTimeout(task, readTimeoutValue);
+    }
+
+    void startReadTimeout(@Nullable ReadTimeoutTimerTask task, long delay) {
         if (requestTimeoutTask == null
-                || !requestTimeoutTask.isClaimed() && readTimeoutValue < requestTimeoutMillisTime - millisClock.getAsLong()) {
+                || !requestTimeoutTask.isClaimed() && delay < requestTimeoutMillisTime - millisClock.getAsLong()) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)
                 task = new ReadTimeoutTimerTask(nettyResponseFuture, requestSender, this, readTimeoutValue);
             }
             readTimeoutTask = task;
-            arm(task, readTimeoutValue);
+            arm(task, delay);
 
         } else if (task != null) {
             // read timeout couldn't re-scheduling itself, clean up
