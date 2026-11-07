@@ -135,9 +135,9 @@ public class RealmTest {
 
     @Test
     public void digestHashesNonAsciiInputAsCharsetEncodeDoes() throws Exception {
-        String user = "пользователь";
-        String pass = "päss\ud800w€😀";
-        String realmName = "réalm";
+        String user = "\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c";
+        String pass = "p\u00e4ss\ud800w\u20ac\ud83d\ude00";
+        String realmName = "r\u00e9alm";
         String nonce = "nonce";
         String method = "GET";
         Uri uri = Uri.create("http://ahc.io/foo");

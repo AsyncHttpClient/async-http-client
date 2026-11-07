@@ -38,23 +38,23 @@ public class StringUtilsTest {
     private static final String[] INPUTS = {
             "",
             "hello",
-            "café",
-            "€ 100",
-            "中文",
-            "\u0000\u007f\u0080ÿĀ",
+            "caf\u00e9",
+            "\u20ac 100",
+            "\u4e2d\u6587",
+            "\u0000\u007f\u0080\u00ff\u0100",
             // supplementary character (surrogate pair)
-            "x😀y",
+            "x\ud83d\ude00y",
             // lone high surrogate at the end, at the start and before another high surrogate
             "a\ud800",
             "\ud800a",
-            "\ud800𐀀",
+            "\ud800\ud800\udc00",
             // lone low surrogate, and a low surrogate followed by a high one
             "\udc00a",
             "a\udc00\ud800b",
-            "😀\ud800",
+            "\ud83d\ude00\ud800",
             // byte order mark and replacement character as content
-            "﻿bom",
-            "�",
+            "\ufeffbom",
+            "\ufffd",
     };
 
     @Test
@@ -83,12 +83,12 @@ public class StringUtilsTest {
         assertArrayEquals(new byte[]{'?', 'a'}, StringUtils.charSequence2Bytes(new StringBuilder("\udc00a"), StandardCharsets.US_ASCII));
         // a valid pair is one unmappable character in a single byte charset
         assertArrayEquals(new byte[]{'x', '?', 'y'},
-                remaining(StringUtils.charSequence2ByteBuffer(new StringBuilder("x😀y"), StandardCharsets.ISO_8859_1)));
+                remaining(StringUtils.charSequence2ByteBuffer(new StringBuilder("x\ud83d\ude00y"), StandardCharsets.ISO_8859_1)));
     }
 
     private static List<CharSequence> sequences(String input) {
         // a recycled StringBuilder keeps a UTF-16 coder after it once held a char above U+00FF
-        StringBuilder inflated = new StringBuilder("Ā");
+        StringBuilder inflated = new StringBuilder("\u0100");
         inflated.setLength(0);
         inflated.append(input);
         return Arrays.asList(input, new StringBuilder(input), inflated, CharBuffer.wrap(input));

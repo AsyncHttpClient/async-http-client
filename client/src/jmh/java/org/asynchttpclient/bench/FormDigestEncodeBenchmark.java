@@ -46,8 +46,8 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class FormDigestEncodeBenchmark {
 
-    private static final String UTF8_USER = "пользователь";
-    private static final String UTF8_PASSWORD = "пароль";
+    private static final String UTF8_USER = "\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c";
+    private static final String UTF8_PASSWORD = "\u043f\u0430\u0440\u043e\u043b\u044c";
 
     private List<Param> smallForm;
     private List<Param> largeForm;

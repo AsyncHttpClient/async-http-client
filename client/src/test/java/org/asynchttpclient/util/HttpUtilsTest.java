@@ -161,9 +161,9 @@ public class HttpUtilsTest {
     @Test
     public void formParamBytesMatchCharsetEncodeOfTheEncodedForm() {
         List<Param> params = new ArrayList<>();
-        params.add(new Param("a b", "café"));
-        params.add(new Param("中文", null));
-        params.add(new Param("x😀y", "a\ud800b"));
+        params.add(new Param("a b", "caf\u00e9"));
+        params.add(new Param("\u4e2d\u6587", null));
+        params.add(new Param("x\ud83d\ude00y", "a\ud800b"));
         params.add(new Param("\udc00", ""));
         for (Charset charset : new Charset[]{UTF_8, ISO_8859_1, Charset.forName("GBK")}) {
             StringBuilder form = new StringBuilder();
@@ -178,7 +178,7 @@ public class HttpUtilsTest {
             ByteBuffer expected = US_ASCII.encode(CharBuffer.wrap(form));
 
             // the pooled builder keeps a UTF-16 coder once it has held a char above U+00FF
-            StringBuilderPool.DEFAULT.stringBuilder().append('Ā');
+            StringBuilderPool.DEFAULT.stringBuilder().append('\u0100');
             assertEquals(expected, HttpUtils.urlEncodeFormParams(params, charset), charset.name());
         }
     }
