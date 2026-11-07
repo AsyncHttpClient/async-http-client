@@ -235,9 +235,17 @@ public final class NettyRequestFactory {
     private final AsyncHttpClientConfig config;
     private final ClientCookieEncoder cookieEncoder;
     private final @Nullable AsciiString userAgent;
+    private final boolean brotliAvailable;
+    private final boolean zstdAvailable;
 
     NettyRequestFactory(AsyncHttpClientConfig config) {
+        this(config, Brotli.isAvailable(), Zstd.isAvailable());
+    }
+
+    NettyRequestFactory(AsyncHttpClientConfig config, boolean brotliAvailable, boolean zstdAvailable) {
         this.config = config;
+        this.brotliAvailable = brotliAvailable;
+        this.zstdAvailable = zstdAvailable;
         cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
         // An AsciiString is bulk-copied by the encoder; a String is encoded char by char. Same bytes either
         // way, and the validating request headers still reject an illegal character on every request.
@@ -362,15 +370,15 @@ public final class NettyRequestFactory {
             if (headers.contains(ACCEPT_ENCODING)) {
                 // For manual decompression by the user any encoding may suit, so leave it untouched
                 if (config.isEnableAutomaticDecompression()) {
-                    filterOutUndecodableAcceptEncodings(headers, Brotli.isAvailable(), Zstd.isAvailable());
+                    filterOutUndecodableAcceptEncodings(headers, brotliAvailable, zstdAvailable);
                 }
             } else if (config.isCompressionEnforced()) {
                 // Add Accept Encoding header if compression is enforced
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
-                if (Brotli.isAvailable()) {
+                if (brotliAvailable) {
                     headers.add(ACCEPT_ENCODING, HttpHeaderValues.BR);
                 }
-                if (Zstd.isAvailable()) {
+                if (zstdAvailable) {
                     headers.add(ACCEPT_ENCODING, HttpHeaderValues.ZSTD);
                 }
             }

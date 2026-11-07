@@ -17,6 +17,9 @@ package org.asynchttpclient.netty.request;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.RequestBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -27,8 +30,8 @@ import static org.asynchttpclient.netty.request.NettyRequestFactory.filterOutUnd
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Brotli and zstd are both on the test classpath, so the availability flags are passed in rather than taken from
- * Netty's {@code Brotli.isAvailable()} and {@code Zstd.isAvailable()}.
+ * Brotli and zstd are both on the test classpath, so the availability flags are passed in, to the helper or to the
+ * factory, rather than taken from Netty's {@code Brotli.isAvailable()} and {@code Zstd.isAvailable()}.
  */
 public class NettyRequestFactoryAcceptEncodingTest {
 
@@ -57,6 +60,43 @@ public class NettyRequestFactoryAcceptEncodingTest {
     @Test
     public void filtersEveryHeaderFieldAndKeepsTheOthers() {
         assertEquals(List.of("gzip, deflate"), filter(false, false, "gzip", "br", "deflate, zstd"));
+    }
+
+    @Test
+    public void newRequestDropsTheUnavailableCodingsWithAutomaticDecompression() {
+        assertEquals(List.of("gzip, deflate"), newRequest(true, false, false, "gzip, deflate, br, zstd"));
+        assertEquals(List.of("gzip, deflate, zstd"), newRequest(true, false, true, "gzip, deflate, br, zstd"));
+        assertEquals(List.of("gzip, deflate, br"), newRequest(true, true, false, "gzip, deflate, br, zstd"));
+        assertEquals(List.of("gzip, deflate, br, zstd"), newRequest(true, true, true, "gzip, deflate, br, zstd"));
+    }
+
+    @Test
+    public void newRequestLeavesTheHeaderToTheUserWithoutAutomaticDecompression() {
+        assertEquals(List.of("gzip, deflate, br, zstd"), newRequest(false, false, false, "gzip, deflate, br, zstd"));
+    }
+
+    @Test
+    public void newRequestOffersOnlyAvailableCodingsWhenCompressionIsEnforced() {
+        assertEquals(List.of("gzip,deflate"), newRequest(true, false, false));
+        assertEquals(List.of("gzip,deflate", "br"), newRequest(true, true, false));
+        assertEquals(List.of("gzip,deflate", "zstd"), newRequest(true, false, true));
+    }
+
+    private static List<String> newRequest(boolean automaticDecompression, boolean brotliAvailable, boolean zstdAvailable,
+                                           String... acceptEncodings) {
+        AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setEnableAutomaticDecompression(automaticDecompression)
+                .setCompressionEnforced(true)
+                .build();
+        RequestBuilder request = new RequestBuilder("GET").setUrl("http://example.com/");
+        for (String acceptEncoding : acceptEncodings) {
+            request.addHeader(ACCEPT_ENCODING, acceptEncoding);
+        }
+        return new NettyRequestFactory(config, brotliAvailable, zstdAvailable)
+                .newNettyRequest(request.build(), false, null, null, null)
+                .getHttpRequest()
+                .headers()
+                .getAll(ACCEPT_ENCODING);
     }
 
     private static List<String> filter(boolean brotliAvailable, boolean zstdAvailable, String... acceptEncodings) {
