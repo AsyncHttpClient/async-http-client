@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -87,6 +90,62 @@ public class NettyAsyncResponseTest {
 
         Cookie cookie = cookies.get(0);
         assertEquals(Long.MIN_VALUE, cookie.maxAge());
+    }
+
+    private static HttpResponseBodyPart partReportingLength(byte[] bytes, int length) {
+        return new HttpResponseBodyPart(true) {
+            @Override
+            public int length() {
+                return length;
+            }
+
+            @Override
+            public byte[] getBodyPartBytes() {
+                return bytes;
+            }
+
+            @Override
+            public ByteBuffer getBodyByteBuffer() {
+                return ByteBuffer.wrap(bytes);
+            }
+
+            @Override
+            public ByteBuf getBodyByteBuf() {
+                return Unpooled.wrappedBuffer(bytes);
+            }
+        };
+    }
+
+    @Test
+    public void testAggregatingAccessorsEndAtTheBytesCopied() throws IOException {
+        // HttpResponseBodyPart is public: a part whose length() over-reports must not pad the body with zeros,
+        // and every accessor must agree on what the body is.
+        byte[] bytes = "Hello".getBytes(StandardCharsets.UTF_8);
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(partReportingLength(bytes, bytes.length + 3));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        ByteBuffer body = response.getResponseBodyAsByteBuffer();
+        assertEquals(0, body.position());
+        assertEquals(bytes.length, body.remaining());
+        byte[] read = new byte[body.remaining()];
+        body.get(read);
+        assertArrayEquals(bytes, read);
+        assertArrayEquals(bytes, response.getResponseBodyAsBytes());
+        assertArrayEquals(bytes, response.getResponseBodyAsStream().readAllBytes());
+    }
+
+    @Test
+    public void testAggregatingAccessorsRejectAPartLongerThanItsLength() throws IOException {
+        byte[] bytes = "Hello".getBytes(StandardCharsets.UTF_8);
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(partReportingLength(bytes, bytes.length - 1));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        assertThrows(BufferOverflowException.class, response::getResponseBodyAsByteBuffer);
+        assertThrows(BufferOverflowException.class, response::getResponseBodyAsBytes);
+        // The stream reads each part's bytes and never consults length(), so it does not throw.
+        assertArrayEquals(bytes, response.getResponseBodyAsStream().readAllBytes());
     }
 
     @Test
@@ -177,6 +236,40 @@ public class NettyAsyncResponseTest {
         firstCopy[0] = 'X';
         assertArrayEquals(expected, response.getResponseBodyAsBytes());
         assertArrayEquals(expected, response.getResponseBodyAsBytesView());
+    }
+
+    @Test
+    public void testGetResponseBodyAsStreamReadsSeveralParts() throws IOException {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
+        bodyParts.add(new LazyResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts);
+
+        assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
+        // A fresh stream each time, from the start.
+        assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
+        assertEquals(-1, new NettyResponse(new NettyResponseStatus(null, null, null), null, new LinkedList<>())
+                .getResponseBodyAsStream().read());
+    }
+
+    @Test
+    public void testGetResponseBodyAsStreamDoesNotGoThroughTheAggregatingAccessors() throws IOException {
+        List<HttpResponseBodyPart> bodyParts = new LinkedList<>();
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("Hello ".getBytes(StandardCharsets.UTF_8)), false));
+        bodyParts.add(new EagerResponseBodyPart(Unpooled.wrappedBuffer("World".getBytes(StandardCharsets.UTF_8)), true));
+        NettyResponse response = new NettyResponse(new NettyResponseStatus(null, null, null), null, bodyParts) {
+            @Override
+            public byte[] getResponseBodyAsBytes() {
+                throw new AssertionError("getResponseBodyAsBytes");
+            }
+
+            @Override
+            public ByteBuffer getResponseBodyAsByteBuffer() {
+                throw new AssertionError("getResponseBodyAsByteBuffer");
+            }
+        };
+
+        assertEquals("Hello World", new String(response.getResponseBodyAsStream().readAllBytes(), StandardCharsets.UTF_8));
     }
 
     @Test

@@ -28,12 +28,13 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -202,6 +203,9 @@ public class NettyResponse implements Response {
      * array when there are none. Which of those a given response takes is not a property of the body: see
      * {@link Response#getResponseBodyAsBytesView()}, whose contract is deliberately weaker than this.
      * <p>
+     * {@link #getResponseBodyAsStream()} reads the parts' arrays in place, so a write to a part's array also
+     * changes what a stream reads from then on, re-read bytes after a {@code reset()} included.
+     * <p>
      * Whether a lone part hands over storage of its own is the part's business rather than this response's.
      * {@link EagerResponseBodyPart} returns the array it holds; {@link LazyResponseBodyPart} copies out of its
      * buffer on every call, so a response made of lazy parts never shares whatever this says.
@@ -213,19 +217,27 @@ public class NettyResponse implements Response {
 
     @Override
     public ByteBuffer getResponseBodyAsByteBuffer() {
-
-        int length = 0;
+        long length = 0;
         for (HttpResponseBodyPart part : bodyParts) {
             length += part.length();
         }
-
-        ByteBuffer target = ByteBuffer.wrap(new byte[length]);
-        for (HttpResponseBodyPart part : bodyParts) {
-            target.put(part.getBodyPartBytes());
+        if (length > Integer.MAX_VALUE - 8) {
+            throw new OutOfMemoryError("Required array size too large");
         }
 
-        target.flip();
-        return target;
+        byte[] target = new byte[(int) length];
+        int offset = 0;
+        for (HttpResponseBodyPart part : bodyParts) {
+            byte[] bytes = part.getBodyPartBytes();
+            if (bytes.length > target.length - offset) {
+                throw new BufferOverflowException();
+            }
+            System.arraycopy(bytes, 0, target, offset, bytes.length);
+            offset += bytes.length;
+        }
+        // Trimmed to what was copied, should a part's length() over-report its bytes: getResponseBodyAsBytes()
+        // returns the whole backing array, and the stream reads only the bytes themselves.
+        return ByteBuffer.wrap(offset == target.length ? target : Arrays.copyOf(target, offset));
     }
 
     @Override
@@ -272,9 +284,18 @@ public class NettyResponse implements Response {
         return new String(sharedBodyBytes(), charset);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Reads the body parts' arrays in place rather than a copy of the whole body, and does not go through
+     * {@link #getResponseBodyAsBytes()}. It copies out of those arrays into whatever it is asked to read into
+     * and never hands one of them to anything, {@link InputStream#transferTo} included. Since it reads them in
+     * place rather than a snapshot, a write to a part's array, through {@link #getResponseBodyAsBytesView()},
+     * {@link #getResponseBodyAsByteBuf()} or any other holder named there, changes what it reads from then on.
+     */
     @Override
     public InputStream getResponseBodyAsStream() {
-        return new ByteArrayInputStream(getResponseBodyAsBytes());
+        return new BodyPartsInputStream(bodyParts);
     }
 
     @Override
