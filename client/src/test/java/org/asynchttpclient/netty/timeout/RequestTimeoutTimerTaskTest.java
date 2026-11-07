@@ -339,6 +339,22 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
+    public void aRequestTimeoutPastWhatTheMonotonicClockCanHoldIsNotTakenForPassed() {
+        TimeoutsHolder holder = holder(Long.MAX_VALUE, false, false, null, 0);
+        // Any positive reading plus the longest timeout overflows, which only a comparison by subtraction
+        // survives.
+        nanoOrigin = ONE_HOUR_MS;
+        holder.start();
+        holder.startReadTimeout();
+
+        fire(0, READ_TIMEOUT_MS / 2);
+
+        assertFalse(future.isDone(), "the request deadline is nowhere near");
+        assertEquals(2, armed.size());
+        assertTrue(holder.isRequestTimeoutArmedEarly());
+    }
+
+    @Test
     public void aWallClockStepBackDoesNotPutTheNextReadCheckOutOfReach() {
         TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
         holder.startReadTimeout();
@@ -465,7 +481,8 @@ public class RequestTimeoutTimerTaskTest {
         holder.startReadTimeout();
         future.done();
 
-        fire(0, READ_TIMEOUT_MS);
+        // Inside the read window, where an exchange still running would be re-armed.
+        fire(0, READ_TIMEOUT_MS / 2);
 
         assertEquals(1, armed.size(), "a finished exchange should arm nothing more");
         assertTrue(((RequestTimeoutTimerTask) armed.get(0).task).isClaimed());
