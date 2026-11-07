@@ -532,6 +532,13 @@
                                                 "new": "method void org.asynchttpclient.netty.handler.Http2Handler::userEventTriggered(io.netty.channel.ChannelHandlerContext, java.lang.Object) throws java.lang.Exception",
                                                 "annotationType": "io.netty.channel.ChannelHandlerMask.Skip",
                                                 "justification": "Http2Handler overrides userEventTriggered to handle RST_STREAM (Http2ResetFrame); Netty's internal @ChannelHandlerMask.Skip no-op marker is correctly dropped because the method now does real work. Http2Handler is public final and internal-package, so there is no binary, source, or behavioral change for consumers. Scoped to this exact method so any real future change to it is still flagged."
+                                            },
+                                            {
+                                                "code": "java.annotation.removed",
+                                                "old": "method void io.netty.channel.ChannelInboundHandlerAdapter::userEventTriggered(io.netty.channel.ChannelHandlerContext, java.lang.Object) throws java.lang.Exception @ org.asynchttpclient.netty.handler.Http1ContentDecompressor",
+                                                "new": "method void org.asynchttpclient.netty.handler.Http1ContentDecompressor::userEventTriggered(io.netty.channel.ChannelHandlerContext, java.lang.Object) throws java.lang.Exception",
+                                                "annotationType": "io.netty.channel.ChannelHandlerMask.Skip",
+                                                "justification": "Http1ContentDecompressor overrides userEventTriggered to handle ChannelInputShutdownEvent while it holds compressed input back; Netty's internal @ChannelHandlerMask.Skip no-op marker is correctly dropped because the method now does real work. Every other event is passed on as before, and the class is internal-package, so removing the marker is binary and source compatible. Scoped to this exact method so any real future change to it is still flagged."
                                             }
                                         ]
                                     }
