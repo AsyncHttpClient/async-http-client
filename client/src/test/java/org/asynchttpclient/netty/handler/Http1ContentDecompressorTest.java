@@ -51,6 +51,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -93,6 +94,8 @@ public class Http1ContentDecompressorTest {
     private static final int FCOMMENT = 0x10;
 
     private static final byte[] EMPTY = new byte[0];
+    private static final String TRUNCATED_GZIP = "Truncated gzip stream";
+    private static final String TRUNCATED_DEFLATE = "Truncated deflate stream";
     private static final byte[] TEXT = "{\"id\":\"1\",\"seatbid\":[{\"bid\":[{\"price\":1.5}]}]}".repeat(200)
             .getBytes(StandardCharsets.US_ASCII);
     // Large and incompressible, so one chunk inflates past the 64 KiB forwarding threshold only when it is
@@ -207,11 +210,18 @@ public class Http1ContentDecompressorTest {
         final String name;
         final String contentEncoding;
         final byte[] encoded;
+        // The failure of a body that ends inside its compressed stream, which Netty's decoder ends quietly.
+        final @Nullable String truncation;
 
         Body(String name, String contentEncoding, byte[] encoded) {
+            this(name, contentEncoding, encoded, null);
+        }
+
+        Body(String name, String contentEncoding, byte[] encoded, @Nullable String truncation) {
             this.name = name;
             this.contentEncoding = contentEncoding;
             this.encoded = encoded;
+            this.truncation = truncation;
         }
     }
 
@@ -246,14 +256,31 @@ public class Http1ContentDecompressorTest {
         bodies.add(new Body("gzip bad method", "gzip", withByte(gzipText, 2, 7)));
         bodies.add(new Body("gzip reserved flag", "gzip", withByte(gzipText, 3, 0x20)));
         bodies.add(new Body("gzip corrupt data", "gzip", flipped(gzipRandom, gzipRandom.length / 2)));
-        bodies.add(new Body("gzip truncated data", "gzip", Arrays.copyOf(gzipRandom, gzipRandom.length / 2)));
-        bodies.add(new Body("gzip truncated trailer", "gzip", Arrays.copyOf(gzipText, gzipText.length - 3)));
-        bodies.add(new Body("gzip truncated header", "gzip", Arrays.copyOf(gzipText, 6)));
+        bodies.add(new Body("gzip truncated header", "gzip", Arrays.copyOf(gzipText, 6), TRUNCATED_GZIP));
+        bodies.add(new Body("gzip truncated header name", "gzip",
+                Arrays.copyOf(gzipWithHeaderFields(TEXT, FNAME | FCOMMENT), 14), TRUNCATED_GZIP));
+        bodies.add(new Body("gzip truncated data", "gzip", Arrays.copyOf(gzipRandom, gzipRandom.length / 2),
+                TRUNCATED_GZIP));
+        bodies.add(new Body("gzip missing trailer", "gzip", Arrays.copyOf(gzipText, gzipText.length - 8),
+                TRUNCATED_GZIP));
+        bodies.add(new Body("gzip truncated trailer", "gzip", Arrays.copyOf(gzipText, gzipText.length - 3),
+                TRUNCATED_GZIP));
+        bodies.add(new Body("gzip truncated second member", "gzip",
+                concat(gzipText, Arrays.copyOf(gzipRandom, gzipRandom.length / 2)), TRUNCATED_GZIP));
         bodies.add(new Body("gzip short garbage after member", "gzip", concat(gzipText, new byte[]{'\r', '\n'})));
         bodies.add(new Body("gzip long garbage after member", "gzip", concat(gzipText, TEXT)));
         bodies.add(new Body("deflate corrupt data", "deflate", flipped(deflate(RANDOM, false), 1000)));
         bodies.add(new Body("deflate bad adler", "deflate", flipped(deflate(TEXT, false), -1)));
-        bodies.add(new Body("deflate one byte", "deflate", new byte[]{0x78}));
+        bodies.add(new Body("deflate one byte", "deflate", new byte[]{0x78}, TRUNCATED_DEFLATE));
+        byte[] zlibRandom = deflate(RANDOM, false);
+        byte[] rawRandom = deflate(RANDOM, true);
+        byte[] zlibText = deflate(TEXT, false);
+        bodies.add(new Body("deflate zlib truncated", "deflate", Arrays.copyOf(zlibRandom, zlibRandom.length / 2),
+                TRUNCATED_DEFLATE));
+        bodies.add(new Body("deflate raw truncated", "deflate", Arrays.copyOf(rawRandom, rawRandom.length / 2),
+                TRUNCATED_DEFLATE));
+        bodies.add(new Body("deflate missing adler", "deflate", Arrays.copyOf(zlibText, zlibText.length - 4),
+                TRUNCATED_DEFLATE));
         bodies.add(new Body("deflate preset dictionary", "deflate", new byte[]{0x78, (byte) 0xbb, 0, 0, 0, 1, 1, 1}));
         return bodies;
     }
@@ -432,7 +459,13 @@ public class Http1ContentDecompressorTest {
                     Outcome expected = exchange(netty, body.contentEncoding, body.encoded, sizes, kind);
                     Outcome actual = exchange(ahc, body.contentEncoding, body.encoded, sizes, kind);
 
-                    assertSameOutcome(expected, actual, scenario);
+                    if (body.truncation != null) {
+                        assertInstanceOf(DecompressionException.class, actual.failure, scenario);
+                        assertEquals(body.truncation, actual.failure.getMessage(), scenario + ": failure message");
+                        assertFalse(actual.ended, scenario + ": a truncated body must not end normally");
+                    } else {
+                        assertSameOutcome(expected, actual, scenario);
+                    }
                     ahc.finishAndReleaseAll();
                     try {
                         netty.finishAndReleaseAll();
@@ -537,6 +570,10 @@ public class Http1ContentDecompressorTest {
         byte[] raw = deflate(TEXT, true);
 
         assertDecoded(TEXT, exchange(channel, "gzip", gzipText, new int[]{gzipText.length}, Kind.DIRECT));
+        // A few bytes of gzip after a complete response are not the tail of its member.
+        Outcome start = exchange(channel, "gzip", Arrays.copyOf(gzipText, 5), new int[]{5}, Kind.DIRECT);
+        assertNotNull(start.failure);
+        assertEquals(TRUNCATED_GZIP, start.failure.getMessage());
         Outcome identity = exchange(channel, null, TEXT, new int[]{100, TEXT.length - 100}, Kind.HEAP);
         assertDecoded(TEXT, identity);
         assertEquals(String.valueOf(TEXT.length), identity.head.headers().get(HttpHeaderNames.CONTENT_LENGTH));
@@ -544,7 +581,7 @@ public class Http1ContentDecompressorTest {
         assertDecoded(TEXT, exchange(channel, "deflate", raw, sizes(raw.length, 3), Kind.HEAP));
         // A response cut short leaves state behind that the next one must not see.
         Outcome cut = exchange(channel, "gzip", Arrays.copyOf(gzipText, 40), new int[]{40}, Kind.DIRECT);
-        assertNull(cut.failure);
+        assertEquals(TRUNCATED_GZIP, cut.failure.getMessage());
         assertDecoded(TEXT, exchange(channel, "gzip", gzipText, sizes(gzipText.length, 5), Kind.DIRECT));
         // So does a corrupt one.
         Outcome corrupt = exchange(channel, "gzip", flipped(gzipText, -8), new int[]{gzipText.length}, Kind.DIRECT);
@@ -717,11 +754,13 @@ public class Http1ContentDecompressorTest {
 
     @Test
     void aFailedLastChunkStaysFailed() {
-        // HttpObjectDecoder reports a chunk it cannot parse as a LastHttpContent with a failed result.
+        // HttpObjectDecoder reports a chunk it cannot parse as a LastHttpContent with a failed result. The body is
+        // short of its gzip trailer, so it would fail as truncated if its end were checked.
         IllegalStateException cause = new IllegalStateException("invalid chunk");
         for (boolean withTrailer : new boolean[]{false, true}) {
             EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator());
-            byte[] encoded = gzip(TEXT);
+            byte[] gzipped = gzip(TEXT);
+            byte[] encoded = Arrays.copyOf(gzipped, gzipped.length - 3);
             channel.writeInbound(response("gzip", -1));
             channel.writeInbound(new DefaultHttpContent(Unpooled.wrappedBuffer(encoded)));
             LastHttpContent last = new DefaultLastHttpContent();
@@ -1203,6 +1242,62 @@ public class Http1ContentDecompressorTest {
     }
 
     @Test
+    void truncatedBrZstdAndSnappyBodiesFailAndBodiesWithoutBytesEnd() {
+        int checked = 0;
+        for (String contentEncoding : List.of("br", "zstd", "snappy")) {
+            byte[] encoded = encode(contentEncoding, RANDOM);
+            for (byte[] body : List.of(Arrays.copyOf(encoded, encoded.length / 2),
+                    Arrays.copyOf(encoded, encoded.length - 1), EMPTY)) {
+                List<int[]> splits = body.length == 0 ? List.of(new int[]{0}) : splits(body.length);
+                for (int[] sizes : splits) {
+                    for (Kind kind : List.of(Kind.HEAP, Kind.DIRECT)) {
+                        String scenario = contentEncoding + ", " + body.length + " of " + encoded.length + " bytes, "
+                                + sizes.length + " chunks, " + kind;
+                        UnpooledByteBufAllocator ahcAllocator = allocator();
+                        EmbeddedChannel ahc = channel(new Http1ContentDecompressor(false, 0), ahcAllocator);
+                        Outcome actual = exchange(ahc, contentEncoding, body, sizes, kind);
+
+                        if (body.length == 0) {
+                            assertNull(actual.failure, scenario);
+                            assertTrue(actual.ended, scenario + ": a body without bytes must end");
+                        } else {
+                            assertInstanceOf(DecompressionException.class, actual.failure, scenario);
+                            for (Throwable cause = actual.failure; cause != null; cause = cause.getCause()) {
+                                // AHC would take an IOException for a failed connection.
+                                assertFalse(cause instanceof IOException, scenario + ": " + cause);
+                            }
+                            assertFalse(actual.ended, scenario + ": a truncated body must not end normally");
+                        }
+                        ahc.finishAndReleaseAll();
+                        assertEquals(0, ahcAllocator.metric().usedHeapMemory(), scenario + ": heap left allocated");
+                        assertInputsReleased(actual, scenario);
+                        checked++;
+                    }
+                }
+            }
+        }
+        assertTrue(checked > 30, "only " + checked + " scenarios ran");
+    }
+
+    @Test
+    void outputThatOnlyFollowsTheEndOfInputIsHandedOn() {
+        UnpooledByteBufAllocator allocator = allocator();
+        EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0) {
+            @Override
+            PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+                return new PullDecompression(new OutputAtEndOfInputDecompressor(ctx.alloc()), contentEncoding, 0);
+            }
+        }, allocator);
+
+        Outcome outcome = exchange(channel, "br", RANDOM, sizes(RANDOM.length, 4000), Kind.HEAP);
+        assertDecoded(RANDOM, outcome);
+        assertTrue(outcome.parts > 1, "the output must be split into parts");
+        assertFalse(channel.finishAndReleaseAll());
+        assertEquals(0, allocator.metric().usedHeapMemory());
+        assertInputsReleased(outcome, "br");
+    }
+
+    @Test
     void limitAppliesToBrZstdAndSnappy() {
         for (String contentEncoding : List.of("br", "zstd", "snappy")) {
             byte[] encoded = encode(contentEncoding, ZEROS);
@@ -1341,9 +1436,12 @@ public class Http1ContentDecompressorTest {
 
     @Test
     void aBufferThatCannotGrowFailsLikeNetty() {
-        // Since Netty 4.2.19 (netty/netty#17692), output that still fits into the capped buffer is decoded.
-        Outcome fits = cappedBufferOutcome(flushedRawDeflate(randomBytes(900, 7)), "capped buffer, output fits");
-        assertNull(fits.failure, "capped buffer, output fits");
+        // Since Netty 4.2.19 (netty/netty#17692), output that still fits into the capped buffer is decoded. The stream
+        // is not finished, so the end of the body then fails it as truncated, which Netty's decoder does not check.
+        byte[] payload = randomBytes(900, 7);
+        Outcome fits = cappedBufferOutcome(flushedRawDeflate(payload), "capped buffer, output fits");
+        assertArrayEquals(payload, fits.body.toByteArray(), "capped buffer, output fits");
+        assertEquals(TRUNCATED_DEFLATE, fits.failure.getMessage(), "capped buffer, output fits");
         Outcome overflows = cappedBufferOutcome(flushedRawDeflate(new byte[64 * 1024]),
                 "capped buffer, output overflows");
         assertEquals("Decompression buffer has reached maximum size: 1024", overflows.failure.getMessage());
@@ -1361,9 +1459,16 @@ public class Http1ContentDecompressorTest {
                 // Netty's decoder runs once more when its channel is torn down.
             }
         }
-        assertSameOutcome(outcomes.get(0), outcomes.get(1), scenario);
-        assertInputsReleased(outcomes.get(1), scenario);
-        return outcomes.get(1);
+        Outcome netty = outcomes.get(0);
+        Outcome ahc = outcomes.get(1);
+        if (ahc.failure != null && TRUNCATED_DEFLATE.equals(ahc.failure.getMessage())) {
+            assertNull(netty.failure, scenario);
+            assertArrayEquals(netty.body.toByteArray(), ahc.body.toByteArray(), scenario + ": body");
+        } else {
+            assertSameOutcome(netty, ahc, scenario);
+        }
+        assertInputsReleased(ahc, scenario);
+        return ahc;
     }
 
     // A raw deflate stream flushed but not finished, so the inflater wants more room after its output.

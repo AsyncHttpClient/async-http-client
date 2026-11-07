@@ -51,7 +51,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -222,6 +224,12 @@ public class Http1ContentDecompressorSuspensionTest {
          */
         SuspendedExchange(String contentEncoding, byte[] body, int fragmentSize, long maxDecompressedBytes,
                           boolean suspendBeforeBody, boolean autoRead, Input kind) {
+            this(new Http1ContentDecompressor(false, maxDecompressedBytes), contentEncoding, body, fragmentSize,
+                    suspendBeforeBody, autoRead, kind);
+        }
+
+        SuspendedExchange(Http1ContentDecompressor decompressor, String contentEncoding, byte[] body,
+                          int fragmentSize, boolean suspendBeforeBody, boolean autoRead, Input kind) {
             suspendedBeforeBody = suspendBeforeBody;
             channel = new EmbeddedChannel();
             channel.config().setAutoRead(autoRead);
@@ -232,7 +240,7 @@ public class Http1ContentDecompressorSuspensionTest {
             control = NettyResponseBodyControl.create(future, channel, () -> {
             }, ignored -> {
             });
-            decompressor = new Http1ContentDecompressor(false, maxDecompressedBytes);
+            this.decompressor = decompressor;
             channel.pipeline().addLast(decompressor, new ChannelInboundHandlerAdapter() {
                 @Override
                 public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -351,6 +359,77 @@ public class Http1ContentDecompressorSuspensionTest {
         assertEquals(0, emptyBody.parts);
         assertTrue(emptyBody.last, "a suspended response without body bytes must still end");
         assertFalse(empty.channel.finishAndReleaseAll());
+    }
+
+    /**
+     * The end of the compressed stream is only checked once the body has been decompressed in full, after the resumes
+     * that hand on its parts, so a truncated body still delivers everything it holds before it fails.
+     */
+    @Test
+    public void aTruncatedBodyFailsAtItsEndAfterTheResumes() {
+        // Incompressible, so that zstd has several blocks and the ones before the cut can be decoded.
+        byte[] payload = new byte[300 * 1024];
+        new Random(17).nextBytes(payload);
+        for (String contentEncoding : List.of("gzip", "zstd")) {
+            byte[] compressed = compress(contentEncoding, payload);
+            byte[] truncated = Arrays.copyOf(compressed, compressed.length - 3);
+            SuspendedExchange exchange =
+                    new SuspendedExchange(contentEncoding, truncated, 8192, 0, false, true, Input.HEAP);
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts, contentEncoding + ": the response must be suspended after its first part");
+            assertThrows(DecompressionException.class, () -> {
+                for (int resumes = 0; resumes < 1_000; resumes++) {
+                    exchange.control.resume();
+                    body.drain(exchange.channel);
+                    exchange.channel.checkException();
+                }
+            }, contentEncoding);
+            assertFalse(body.last, contentEncoding + ": a truncated body must not end normally");
+            if ("gzip".equals(contentEncoding)) {
+                assertArrayEquals(payload, body.bytes.toByteArray(), "only the gzip trailer is missing");
+            } else {
+                assertTrue(body.parts > 1, "the parts before the cut must still be handed on");
+            }
+            exchange.assertInputReleased();
+            exchange.channel.finishAndReleaseAll();
+        }
+    }
+
+    @Test
+    public void outputThatOnlyFollowsTheEndOfInputWaitsForResumes() {
+        byte[] payload = new byte[300 * 1024];
+        new Random(19).nextBytes(payload);
+        Http1ContentDecompressor decompressor = new Http1ContentDecompressor(false, 0) {
+            @Override
+            PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+                return new PullDecompression(new OutputAtEndOfInputDecompressor(ctx.alloc()), contentEncoding, 0);
+            }
+        };
+        SuspendedExchange exchange =
+                new SuspendedExchange(decompressor, "br", payload, 8192, false, true, Input.HEAP);
+        Body body = exchange.resumeToTheEnd();
+        assertTrue(body.parts > 1, "the output must be handed on over several resumes");
+        assertEquals("done", body.trailer);
+        assertArrayEquals(payload, body.bytes.toByteArray());
+    }
+
+    @Test
+    public void aTruncatedBodyHeldWhenTheConnectionClosesFails() {
+        byte[] compressed = gzip(TEXT);
+        byte[] truncated = Arrays.copyOf(compressed, compressed.length - 3);
+        SuspendedExchange exchange =
+                new SuspendedExchange("gzip", truncated, truncated.length, 0, false, true, Input.HEAP);
+        Body body = new Body().drain(exchange.channel);
+        assertEquals(1, body.parts);
+        exchange.channel.pipeline().fireChannelInactive();
+        body.drain(exchange.channel);
+        DecompressionException failure =
+                assertThrows(DecompressionException.class, () -> exchange.channel.checkException());
+        assertEquals("Truncated gzip stream", failure.getMessage());
+        assertFalse(body.last, "a truncated body must not end normally");
+        assertArrayEquals(TEXT, body.bytes.toByteArray(), "what the body holds is still handed on at the close");
+        exchange.assertInputReleased();
+        exchange.channel.finishAndReleaseAll();
     }
 
     @Test
@@ -513,6 +592,43 @@ public class Http1ContentDecompressorSuspensionTest {
         assertEquals("done", body.trailer);
         assertEquals(0, input.refCnt());
         assertFalse(channel.finishAndReleaseAll());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void aShortBodyThatIsNotWantedEndsEvenIfItIsCutOff(String contentEncoding) {
+        // Too short for any output, so it never reaches the check that discards a body while it is decompressed.
+        NettyResponseFuture<?> drained = new NettyResponseFuture<>(
+                new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
+                null, 0, null, null, null);
+        NettyResponseFuture<?> over = new NettyResponseFuture<>(
+                new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
+                null, 0, null, null, null);
+        over.abort(new IOException("the exchange is over"));
+        Map<String, Object> unwanted = Map.of("discarded", DiscardEvent.DISCARD,
+                "drained", new OnLastHttpContentCallback(drained) {
+                    @Override
+                    public void call() {
+                    }
+                }, "over", over);
+        byte[] compressed = compress(contentEncoding, TEXT);
+        for (Map.Entry<String, Object> attribute : unwanted.entrySet()) {
+            for (int length = 1; length <= 12; length++) {
+                String scenario = attribute.getKey() + ", " + length + " bytes";
+                EmbeddedChannel channel = new EmbeddedChannel(new Http1ContentDecompressor(false, 0));
+                Channels.setAttribute(channel, attribute.getValue());
+                channel.writeInbound(response(contentEncoding, length));
+                ReferenceCountUtil.release(channel.readInbound());
+                ByteBuf input = Unpooled.wrappedBuffer(compressed, 0, length);
+                channel.writeInbound(new DefaultLastHttpContent(input));
+
+                Body body = new Body().drain(channel);
+                assertEquals(0, body.parts, scenario);
+                assertTrue(body.last, scenario);
+                assertEquals(0, input.refCnt(), scenario);
+                assertFalse(channel.finishAndReleaseAll(), scenario);
+            }
+        }
     }
 
     @Test

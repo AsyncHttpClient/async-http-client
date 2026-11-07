@@ -73,10 +73,11 @@ import java.util.zip.Inflater;
  * onto the heap before inflating it. This handler borrows a reset {@link Inflater} from a small pool kept
  * per event loop for the length of one response, and feeds it the input buffer as it is. The format
  * handling (header and trailer checks, concatenated gzip members, zlib-or-raw detection for
- * {@code deflate}, a truncated stream ending quietly) follows {@code JdkZlibDecoder} as
- * {@link HttpContentDecompressor} configures it, so the decoded body and the errors are unchanged. These
- * encodings no longer go through {@link #newContentDecoder(String)}, and {@code java.util.zip} is used even when
- * {@code io.netty.noJdkZlibDecoder} asks Netty for JZlib.
+ * {@code deflate}) follows {@code JdkZlibDecoder} as {@link HttpContentDecompressor} configures it, so the
+ * decoded body and the errors are unchanged, except that a body that ends inside a gzip member or a deflate
+ * stream fails instead of ending quietly. These encodings no longer go through
+ * {@link #newContentDecoder(String)}, and {@code java.util.zip} is used even when {@code io.netty.noJdkZlibDecoder}
+ * asks Netty for JZlib.
  * <p>
  * Decompression also follows the response's demand. {@link HttpContentDecompressor} decompresses each chunk
  * completely as soon as it is read: suspending a response through {@link ResponseBodyControl} stops further socket
@@ -94,7 +95,11 @@ import java.util.zip.Inflater;
  * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
  * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
  * {@code zstd} also goes there while {@code io.netty.compression.defaultMaxForwardBytes} is not positive.
- * {@code gzip} and {@code deflate} never use the API.
+ * {@code gzip} and {@code deflate} never use the API. A body that ends inside its compressed stream fails on the
+ * pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}. Not every such end is
+ * noticed: {@code snappy} has no end marker, so a body cut between two of its chunks looks complete, and a
+ * {@code zstd} body of several frames completes when it is cut inside a frame that started in the same chunk as the
+ * end of the previous one.
  * <p>
  * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
  * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
@@ -165,6 +170,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private boolean failed;
     private boolean finished;
     private GzipState gzipState = GzipState.HEADER_START;
+    private boolean gzipMemberEnded;
     private int flags = -1;
     private int xlen = -1;
     private long decompressedBytes;
@@ -368,7 +374,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         LastHttpContent last = heldLast;
         if (last != null) {
             heldLast = null;
-            endBody(ctx, last);
+            finishBody(ctx, last);
         }
         return true;
     }
@@ -481,7 +487,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     }
 
     // Only called for br, zstd and snappy, so that gzip and deflate never load Netty's newer Decompressor API.
-    private @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
+    @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
         if (!pullAvailable) {
             return null;
         }
@@ -562,8 +568,48 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             }
         }
         if (content instanceof LastHttpContent) {
-            endBody(ctx, trailer((LastHttpContent) content));
+            finishBody(ctx, trailer((LastHttpContent) content));
         }
+    }
+
+    /**
+     * Ends the body once all of it has been decompressed, failing it if the compressed stream is incomplete. A pull
+     * decompressor told that the input has ended may still hand on output, which waits for a resume like any other
+     * part. A body that is discarded, or whose last chunk failed to parse, is ended as it is.
+     */
+    private void finishBody(ChannelHandlerContext ctx, LastHttpContent last) {
+        // A body too short to produce output never reached the check that sets discarding.
+        if (!discarding && !isUnwanted(ctx.channel()) && last.decoderResult().isSuccess()) {
+            int generation = this.generation;
+            try {
+                if (pull != null) {
+                    pull.endOfInput();
+                    if (!decompress(ctx, null, generation)) {
+                        paused = true;
+                        heldLast = last;
+                        return;
+                    }
+                    if (abandoned(ctx, generation)) {
+                        return;
+                    }
+                } else if (!streamComplete()) {
+                    throw new DecompressionException("Truncated " + (gzip ? "gzip" : "deflate") + " stream");
+                }
+            } catch (Throwable t) {
+                failResponse();
+                throw t;
+            }
+        }
+        endBody(ctx, last);
+    }
+
+    // A body without any bytes is complete. So are bytes after a gzip member that are too few to be the header of
+    // another one, as JdkZlibDecoder leaves them unread; otherwise the body must end where a member or stream does.
+    private boolean streamComplete() {
+        if (gzip) {
+            return gzipState == GzipState.HEADER_START && (gzipMemberEnded || pending == null);
+        }
+        return finished || inflater == null && pending == null;
     }
 
     private void endBody(ChannelHandlerContext ctx, LastHttpContent last) {
@@ -968,6 +1014,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         crc.reset();
         xlen = -1;
         gzipState = GzipState.HEADER_START;
+        gzipMemberEnded = true;
         return true;
     }
 
@@ -1061,6 +1108,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         failed = false;
         finished = false;
         gzipState = GzipState.HEADER_START;
+        gzipMemberEnded = false;
         flags = -1;
         xlen = -1;
         decompressedBytes = 0;

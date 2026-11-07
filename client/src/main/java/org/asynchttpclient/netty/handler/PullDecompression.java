@@ -28,6 +28,8 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+
 import static org.asynchttpclient.netty.handler.Http1ContentDecompressor.MAX_FORWARD_BYTES;
 import static org.asynchttpclient.netty.handler.Http1ContentDecompressor.MAX_PART_SIZE;
 
@@ -43,14 +45,18 @@ import static org.asynchttpclient.netty.handler.Http1ContentDecompressor.MAX_PAR
 final class PullDecompression {
 
     private final Decompressor decompressor;
+    private final String coding;
     // Maximum cumulative decompressed bytes for the body; 0 disables the limit.
     private final long maxDecompressedBytes;
     private long decompressedBytes;
     // Output already taken from the decompressor that did not fit into the previous part.
     private @Nullable ByteBuf carriedOutput;
+    private boolean inputAdded;
+    private boolean inputEnded;
 
-    private PullDecompression(Decompressor decompressor, long maxDecompressedBytes) {
+    PullDecompression(Decompressor decompressor, String coding, long maxDecompressedBytes) {
         this.decompressor = decompressor;
+        this.coding = coding;
         this.maxDecompressedBytes = maxDecompressedBytes;
     }
 
@@ -61,11 +67,13 @@ final class PullDecompression {
     static @Nullable PullDecompression create(String contentEncoding, ByteBufAllocator alloc,
                                               long maxDecompressedBytes) {
         Decompressor decompressor;
+        String coding;
         if (HttpHeaderValues.BR.contentEqualsIgnoreCase(contentEncoding)) {
             if (!Brotli.isAvailable()) {
                 return null;
             }
             decompressor = BrotliDecompressor.builder().maxOutputChunkSize(MAX_PART_SIZE).build(alloc);
+            coding = "br";
         } else if (HttpHeaderValues.ZSTD.contentEqualsIgnoreCase(contentEncoding)) {
             // Netty's ZstdDecompressor hands out buffers of io.netty.compression.defaultMaxForwardBytes. At 0 it hands
             // out nothing while reporting more, so zstd is left to Netty's push decoder then, as before.
@@ -73,12 +81,14 @@ final class PullDecompression {
                 return null;
             }
             decompressor = ZstdDecompressor.builder().build(alloc);
+            coding = "zstd";
         } else if (HttpHeaderValues.SNAPPY.contentEqualsIgnoreCase(contentEncoding)) {
             decompressor = SnappyFrameDecompressor.builder().build(alloc);
+            coding = "snappy";
         } else {
             throw new IllegalArgumentException(contentEncoding);
         }
-        return new PullDecompression(decompressor, maxDecompressedBytes);
+        return new PullDecompression(decompressor, coding, maxDecompressedBytes);
     }
 
     /**
@@ -87,9 +97,33 @@ final class PullDecompression {
      */
     void addInput(ByteBuf input) {
         if (decompressor.status() == Decompressor.Status.NEED_INPUT) {
+            inputAdded = true;
             decompressor.addInput(input);
         } else {
             input.release();
+        }
+    }
+
+    /**
+     * Tells the decompressor that the body has ended, which fails a truncated stream. Only called once all output has
+     * been taken; there may be more afterwards. A body without any bytes is left alone, as Netty's decoders leave it.
+     */
+    void endOfInput() {
+        if (inputAdded && !inputEnded && decompressor.status() == Decompressor.Status.NEED_INPUT) {
+            inputEnded = true;
+            try {
+                decompressor.endOfInput();
+            } catch (DecompressionException e) {
+                // zstd-jni reports a truncated stream with an IOException, which AHC would take for a failed
+                // connection.
+                if (e.getCause() instanceof IOException) {
+                    DecompressionException truncated =
+                            new DecompressionException("Truncated " + coding + " stream");
+                    truncated.addSuppressed(e);
+                    throw truncated;
+                }
+                throw e;
+            }
         }
     }
 
