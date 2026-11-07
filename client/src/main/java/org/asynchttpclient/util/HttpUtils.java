@@ -41,8 +41,6 @@ public final class HttpUtils {
     public static final AsciiString GZIP_DEFLATE_HPACK = new AsciiString(HttpHeaderValues.GZIP + ", " + HttpHeaderValues.DEFLATE);
     private static final String CONTENT_TYPE_CHARSET_ATTRIBUTE = "charset=";
     private static final String CONTENT_TYPE_BOUNDARY_ATTRIBUTE = "boundary=";
-    private static final String BROTLY_ACCEPT_ENCODING_SUFFIX = ", br";
-    private static final String ZSTD_ACCEPT_ENCODING_SUFFIX = ", zstd";
 
     private HttpUtils() {
         // Prevent outside initialization
@@ -196,18 +194,75 @@ public final class HttpUtils {
     }
 
     public static CharSequence filterOutBrotliFromAcceptEncoding(String acceptEncoding) {
-        // we don't support Brotly ATM
-        if (acceptEncoding.endsWith(BROTLY_ACCEPT_ENCODING_SUFFIX)) {
-            return acceptEncoding.subSequence(0, acceptEncoding.length() - BROTLY_ACCEPT_ENCODING_SUFFIX.length());
-        }
-        return acceptEncoding;
+        return filterOutAcceptEncoding(acceptEncoding, HttpHeaderValues.BR);
     }
 
     public static CharSequence filterOutZstdFromAcceptEncoding(String acceptEncoding) {
-        // we don't support zstd ATM
-        if (acceptEncoding.endsWith(ZSTD_ACCEPT_ENCODING_SUFFIX)) {
-            return acceptEncoding.subSequence(0, acceptEncoding.length() - ZSTD_ACCEPT_ENCODING_SUFFIX.length());
+        return filterOutAcceptEncoding(acceptEncoding, HttpHeaderValues.ZSTD);
+    }
+
+    /**
+     * Drops every element offering {@code coding}, which may appear anywhere in the list, in any case and with a weight
+     * (RFC 9110 section 12.5.3). Dropping the last element leaves an empty value, which accepts no content coding.
+     * An element with weight 0 refuses the coding and is kept. Next to a "*" element, which would still offer the coding
+     * at its own weight, the dropped elements are replaced by one such refusal.
+     */
+    private static String filterOutAcceptEncoding(String acceptEncoding, AsciiString coding) {
+        if (!AsciiString.containsIgnoreCase(acceptEncoding, coding)) {
+            return acceptEncoding;
         }
-        return acceptEncoding;
+        String[] elements = acceptEncoding.split(",");
+        boolean wildcard = false;
+        for (String element : elements) {
+            wildcard |= offers(element.trim(), "*");
+        }
+        StringBuilder kept = new StringBuilder(acceptEncoding.length());
+        boolean dropped = false;
+        for (String element : elements) {
+            String trimmed = element.trim();
+            if (offers(trimmed, coding)) {
+                if (wildcard && !dropped) {
+                    appendElement(kept, coding + ";q=0");
+                }
+                dropped = true;
+            } else if (!trimmed.isEmpty()) {
+                appendElement(kept, trimmed);
+            }
+        }
+        return dropped ? kept.toString() : acceptEncoding;
+    }
+
+    private static boolean offers(String element, CharSequence coding) {
+        int semicolon = element.indexOf(';');
+        String token = semicolon < 0 ? element : element.substring(0, semicolon).trim();
+        return AsciiString.contentEqualsIgnoreCase(token, coding)
+                && (semicolon < 0 || !hasZeroWeight(element.substring(semicolon + 1)));
+    }
+
+    private static void appendElement(StringBuilder list, String element) {
+        if (list.length() > 0) {
+            list.append(", ");
+        }
+        list.append(element);
+    }
+
+    private static boolean hasZeroWeight(String parameters) {
+        for (String parameter : parameters.split(";")) {
+            int eq = parameter.indexOf('=');
+            if (eq >= 0 && "q".equalsIgnoreCase(parameter.substring(0, eq).trim())) {
+                String weight = parameter.substring(eq + 1).trim();
+                if (weight.isEmpty() || weight.charAt(0) != '0') {
+                    return false;
+                }
+                for (int i = 1; i < weight.length(); i++) {
+                    char c = weight.charAt(i);
+                    if (c != '0' && (c != '.' || i != 1)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 }
