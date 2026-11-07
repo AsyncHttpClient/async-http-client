@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -233,11 +234,7 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
             try {
                 List<Cookie> cookies = config.getCookieStore().get(request.getUri());
                 if (!cookies.isEmpty()) {
-                    RequestBuilder requestBuilder = request.toBuilder();
-                    for (Cookie cookie : cookies) {
-                        requestBuilder.addCookieIfUnset(cookie);
-                    }
-                    request = requestBuilder.build();
+                    request = addCookiesIfUnset(request, cookies);
                 }
             } catch (Exception e) {
                 handler.onThrowable(e);
@@ -273,6 +270,43 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     @Override
     public ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder) {
         return executeRequest(requestBuilder.build());
+    }
+
+    /**
+     * Adds each stored cookie whose name the request does not carry yet, keeping the first of a name. A
+     * {@link DefaultRequest} is copied with only its cookie list replaced, which leaves its URI as built; any other
+     * {@link Request} goes through {@link Request#toBuilder()}, as it may override what the builder copies.
+     */
+    private static Request addCookiesIfUnset(Request request, List<Cookie> storedCookies) {
+        if (request.getClass() != DefaultRequest.class) {
+            RequestBuilder requestBuilder = request.toBuilder();
+            for (Cookie cookie : storedCookies) {
+                requestBuilder.addCookieIfUnset(cookie);
+            }
+            return requestBuilder.build();
+        }
+
+        List<Cookie> requestCookies = request.getCookies();
+        List<Cookie> cookies = null;
+        for (Cookie cookie : storedCookies) {
+            if (!hasCookieNamed(cookies == null ? requestCookies : cookies, cookie.name())) {
+                if (cookies == null) {
+                    cookies = new ArrayList<>(requestCookies.size() + storedCookies.size());
+                    cookies.addAll(requestCookies);
+                }
+                cookies.add(cookie);
+            }
+        }
+        return cookies == null ? request : ((DefaultRequest) request).withCookies(cookies);
+    }
+
+    private static boolean hasCookieNamed(List<Cookie> cookies, String name) {
+        for (Cookie cookie : cookies) {
+            if (cookie.name().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) {
