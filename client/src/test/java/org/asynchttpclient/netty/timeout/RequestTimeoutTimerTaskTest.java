@@ -87,6 +87,7 @@ public class RequestTimeoutTimerTaskTest {
     private boolean firstEntryRunsBeforeItIsRecorded;
     // When set, the monotonic clock jumps ahead by this much right after it is next read.
     private long pauseAfterNextNanoReadMillis;
+    private int nanoReads;
     // Runs as each entry is armed, before the scheduler hands its handle back.
     private Consumer<Armed> onArm = entry -> { };
 
@@ -175,6 +176,16 @@ public class RequestTimeoutTimerTaskTest {
         assertEquals(3, armed.size());
         assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(2).task);
         assertEquals(READ_TIMEOUT_MS, armed.get(2).delay);
+    }
+
+    @Test
+    public void anAttemptWithNothingToReArmDoesNotReadTheMonotonicClock() {
+        // The default: a read timeout no shorter than the request timeout, on the timer.
+        TimeoutsHolder holder = startedHolder(READ_TIMEOUT_MS);
+        holder.startReadTimeout();
+        holder.cancel();
+
+        assertEquals(0, nanoReads, "only an entry that may be re-armed needs the request deadline on the nano clock");
     }
 
     @Test
@@ -547,6 +558,7 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     private long nanos() {
+        nanoReads++;
         long nanos = nanoOrigin + TimeUnit.MILLISECONDS.toNanos(elapsedMillis);
         elapsedMillis += pauseAfterNextNanoReadMillis;
         pauseAfterNextNanoReadMillis = 0;

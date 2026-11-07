@@ -67,8 +67,9 @@ public class TimeoutsHolder {
     private final long requestTimeoutMillisTime;
     // The same deadline on nanoClock, for everything that re-arms or checks it after start: a timer entry is
     // already timed on a monotonic clock, and a deadline re-derived from the wall clock would move with every
-    // step of it.
-    private final long requestDeadlineNanos;
+    // step of it. Set only where something will read it -- an entry armed early, or one rehomeOn may move --
+    // since reading the clock is a measurable part of what an attempt that needs neither costs.
+    private volatile long requestDeadlineNanos;
     private final long requestTimeoutValue;
     private final boolean absoluteDeadline;
     private final long readTimeoutValue;
@@ -130,14 +131,14 @@ public class TimeoutsHolder {
             long untilDeadline = absoluteDeadline
                     ? remainingBudget(requestTimeoutInMs, nettyResponseFuture, nanoClock) : requestTimeoutInMs;
             requestTimeoutMillisTime = millisClock.getAsLong() + untilDeadline;
-            // An absolute deadline straight off the exchange's start rather than off another clock reading, so
-            // that time passing between the two cannot extend it.
-            requestDeadlineNanos = (absoluteDeadline ? nettyResponseFuture.getStartNanos() : nanoClock.getAsLong())
-                    + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
+            if (absoluteDeadline) {
+                // Straight off the exchange's start rather than off another clock reading, so that time passing
+                // between the two cannot extend it.
+                requestDeadlineNanos = nettyResponseFuture.getStartNanos() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
+            }
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
         } else {
             requestTimeoutMillisTime = -1L;
-            requestDeadlineNanos = 0L;
             requestTimeoutTask = null;
         }
     }
@@ -166,7 +167,12 @@ public class TimeoutsHolder {
             // floored at zero: a task armed at zero still runs, and running is how the exchange gets failed.
             long untilDeadline = absoluteDeadline
                     ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue;
-            if (readTimeoutValue != -1 && readTimeoutValue < untilDeadline) {
+            boolean early = readTimeoutValue != -1 && readTimeoutValue < untilDeadline;
+            if (!absoluteDeadline && (early || useEventLoopTimeouts)) {
+                // Anchored where the entry is armed, from the same duration.
+                requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutValue);
+            }
+            if (early) {
                 // The read timeout starts once the request is written, and would then take an entry of its own
                 // that the exchange almost always cancels unfired. Arming this one for when a read timeout
                 // would be due instead lets it serve both: every entry costs a shared timer two queue
