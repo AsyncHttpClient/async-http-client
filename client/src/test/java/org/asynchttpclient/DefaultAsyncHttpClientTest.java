@@ -49,6 +49,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -336,49 +337,101 @@ public class DefaultAsyncHttpClientTest {
     }
 
     @Test
-    public void testStoredCookiesKeepEveryOtherRequestField() throws Exception {
-        Request request = post("http://localhost/path?x=1")
-                .setAddress(InetAddress.getByAddress("localhost", new byte[]{127, 0, 0, 1}))
-                .setLocalAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 2}))
-                .setHeader("X-Custom", "v")
+    public void testStoredCookiesKeepFirstStoredCookieOfAName() throws IOException {
+        Request request = get("http://localhost/x/y").build();
+        DefaultCookie longerPath = new DefaultCookie("a", "longer-path");
+        longerPath.setPath("/x");
+
+        Request sent = sendWithStoredCookies(request, cookie("a", "root-path"), longerPath);
+
+        assertEquals(List.of("a=longer-path"), cookieStrings(sent));
+    }
+
+    @Test
+    public void testStoredCookiesKeepOtherRequestFields() throws Exception {
+        // The flags are adjacent Boolean parameters of DefaultRequest: each pair differs in one of the two requests.
+        RequestBuilder stringBody = post("http://localhost/path?x=1")
                 .setHeader(CONTENT_TYPE, "text/plain")
                 .setBody("body")
-                .setVirtualHost("vhost")
-                .setProxyServer(proxyServer("proxy", 8080))
-                .setRealm(basicAuthRealm("user", "pass"))
                 .setFollowRedirect(true)
+                .setUseAbsoluteRequestDeadline(false)
+                .setRefuseCrossOriginBodyOnRedirect(true);
+        RequestBuilder formBody = post("http://localhost/path?x=1")
+                .addFormParam("p", "v")
                 .setUseAbsoluteRequestDeadline(true)
-                .setRefuseSchemeDowngradeOnRedirect(true)
-                .setRefuseCrossOriginBodyOnRedirect(true)
-                .setRequestTimeout(Duration.ofSeconds(3))
-                .setReadTimeout(Duration.ofSeconds(2))
-                .setCharset(UTF_16)
-                .build();
+                .setRefuseSchemeDowngradeOnRedirect(false)
+                .setRefuseCrossOriginBodyOnRedirect(false);
 
-        Request sent = sendWithStoredCookies(request, cookie("session", "s"));
+        for (RequestBuilder builder : List.of(stringBody, formBody)) {
+            Request request = builder
+                    .setAddress(InetAddress.getByAddress("localhost", new byte[]{127, 0, 0, 1}))
+                    .setLocalAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 2}))
+                    .setHeader("X-Custom", "v")
+                    .setVirtualHost("vhost")
+                    .setProxyServer(proxyServer("proxy", 8080))
+                    .setRealm(basicAuthRealm("user", "pass"))
+                    .setRequestTimeout(Duration.ofSeconds(3))
+                    .setReadTimeout(Duration.ofSeconds(2))
+                    .setCharset(UTF_16)
+                    .build();
 
-        assertNotSame(request, sent);
-        assertEquals(List.of("session=s"), cookieStrings(sent));
-        assertEquals(request.getMethod(), sent.getMethod());
-        assertEquals(request.getUri(), sent.getUri());
-        assertEquals(request.getAddress(), sent.getAddress());
-        assertEquals(request.getLocalAddress(), sent.getLocalAddress());
-        assertEquals(request.getHeaders().entries().toString(), sent.getHeaders().entries().toString());
-        assertEquals(request.getStringData(), sent.getStringData());
-        assertEquals(request.getVirtualHost(), sent.getVirtualHost());
-        assertSame(request.getProxyServer(), sent.getProxyServer());
-        assertSame(request.getRealm(), sent.getRealm());
-        assertEquals(request.getFollowRedirect(), sent.getFollowRedirect());
-        assertEquals(request.getUseAbsoluteRequestDeadline(), sent.getUseAbsoluteRequestDeadline());
-        assertEquals(request.getRefuseSchemeDowngradeOnRedirect(), sent.getRefuseSchemeDowngradeOnRedirect());
-        assertEquals(request.getRefuseCrossOriginBodyOnRedirect(), sent.getRefuseCrossOriginBodyOnRedirect());
-        assertEquals(request.getRequestTimeout(), sent.getRequestTimeout());
-        assertEquals(request.getReadTimeout(), sent.getReadTimeout());
-        assertEquals(request.getRangeOffset(), sent.getRangeOffset());
-        assertEquals(request.getCharset(), sent.getCharset());
-        assertSame(request.getChannelPoolPartitioning(), sent.getChannelPoolPartitioning());
-        assertSame(request.getNameResolver(), sent.getNameResolver());
-        assertEquals(request.getQueryParams(), sent.getQueryParams());
+            Request sent = sendWithStoredCookies(request, cookie("session", "s"));
+
+            assertNotSame(request, sent);
+            assertEquals(List.of("session=s"), cookieStrings(sent));
+            assertEquals(request.getMethod(), sent.getMethod());
+            assertEquals(request.getUri(), sent.getUri());
+            assertEquals(request.getAddress(), sent.getAddress());
+            assertEquals(request.getLocalAddress(), sent.getLocalAddress());
+            assertEquals(request.getHeaders().entries().toString(), sent.getHeaders().entries().toString());
+            assertSame(request.getByteData(), sent.getByteData());
+            assertSame(request.getCompositeByteData(), sent.getCompositeByteData());
+            assertSame(request.getStringData(), sent.getStringData());
+            assertSame(request.getByteBufferData(), sent.getByteBufferData());
+            assertSame(request.getByteBufData(), sent.getByteBufData());
+            assertSame(request.getStreamData(), sent.getStreamData());
+            assertSame(request.getBodyGenerator(), sent.getBodyGenerator());
+            assertEquals(request.getFormParams(), sent.getFormParams());
+            assertEquals(request.getBodyParts(), sent.getBodyParts());
+            assertEquals(request.getVirtualHost(), sent.getVirtualHost());
+            assertSame(request.getProxyServer(), sent.getProxyServer());
+            assertSame(request.getRealm(), sent.getRealm());
+            assertSame(request.getFile(), sent.getFile());
+            assertEquals(request.getFollowRedirect(), sent.getFollowRedirect());
+            assertEquals(request.getUseAbsoluteRequestDeadline(), sent.getUseAbsoluteRequestDeadline());
+            assertEquals(request.getRefuseSchemeDowngradeOnRedirect(), sent.getRefuseSchemeDowngradeOnRedirect());
+            assertEquals(request.getRefuseCrossOriginBodyOnRedirect(), sent.getRefuseCrossOriginBodyOnRedirect());
+            assertEquals(request.getRequestTimeout(), sent.getRequestTimeout());
+            assertEquals(request.getReadTimeout(), sent.getReadTimeout());
+            assertEquals(request.getRangeOffset(), sent.getRangeOffset());
+            assertEquals(request.getCharset(), sent.getCharset());
+            assertSame(request.getChannelPoolPartitioning(), sent.getChannelPoolPartitioning());
+            assertSame(request.getNameResolver(), sent.getNameResolver());
+            assertEquals(request.getQueryParams(), sent.getQueryParams());
+        }
+    }
+
+    @Test
+    public void testStoredCookiesGoThroughToBuilderForRequestSubclass() throws IOException {
+        Request built = get("http://localhost/").addCookie(cookie("a", "request")).build();
+        AtomicInteger toBuilderCalls = new AtomicInteger();
+        Request request = new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(), built.getLocalAddress(),
+                built.getHeaders(), built.getCookies(), built.getByteData(), built.getCompositeByteData(), built.getStringData(),
+                built.getByteBufferData(), built.getByteBufData(), built.getStreamData(), built.getBodyGenerator(),
+                built.getFormParams(), built.getBodyParts(), built.getVirtualHost(), built.getProxyServer(), built.getRealm(),
+                built.getFile(), built.getFollowRedirect(), built.getRequestTimeout(), built.getReadTimeout(),
+                built.getRangeOffset(), built.getCharset(), built.getChannelPoolPartitioning(), built.getNameResolver()) {
+            @Override
+            public RequestBuilder toBuilder() {
+                toBuilderCalls.incrementAndGet();
+                return super.toBuilder();
+            }
+        };
+
+        Request sent = sendWithStoredCookies(request, cookie("a", "store"), cookie("b", "store"));
+
+        assertEquals(1, toBuilderCalls.get());
+        assertEquals(List.of("a=request", "b=store"), cookieStrings(sent));
     }
 
     /** Executes the request on a client whose store holds these cookies for localhost and returns what reached the filters. */
