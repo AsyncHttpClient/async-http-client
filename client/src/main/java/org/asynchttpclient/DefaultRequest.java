@@ -181,6 +181,19 @@ public class DefaultRequest implements Request {
         this.nameResolver = nameResolver;
     }
 
+    /**
+     * Returns a request that differs from this one only by its cookies. Unlike a round trip through
+     * {@link #toBuilder()}, the URI is kept as built rather than encoded again, so a request built with URL
+     * encoding disabled is sent as written, and the other fields are shared rather than copied.
+     */
+    DefaultRequest withCookies(List<Cookie> cookies) {
+        return new DefaultRequest(method, uri, address, localAddress, headers, cookies, byteData, compositeByteData,
+                stringData, byteBufferData, byteBufData, streamData, bodyGenerator, formParams, bodyParts, virtualHost,
+                proxyServer, realm, file, followRedirect, requestTimeout, readTimeout, rangeOffset, charset,
+                channelPoolPartitioning, nameResolver, useAbsoluteRequestDeadline, refuseSchemeDowngradeOnRedirect,
+                refuseCrossOriginBodyOnRedirect);
+    }
+
     @Override
     public String getUrl() {
         return uri.toUrl();
