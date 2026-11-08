@@ -105,7 +105,7 @@ AsyncHttpClient client = asyncHttpClient(config().setUseNativeTransport(true));
 <dependency>
     <groupId>com.github.luben</groupId>
     <artifactId>zstd-jni</artifactId>
-    <version>1.5.7-7</version>
+    <version>1.5.7-26</version>
 </dependency>
 ```
 
@@ -118,10 +118,11 @@ deflate are not affected.
 Over HTTP/1.1, a compressed response body that ends in the middle of its compressed stream, for example because a
 body delimited by the connection was cut off, fails the request with a `DecompressionException`; a body without any
 bytes completes. Not every such end is noticed: Snappy has no end marker, so a body cut between two of its chunks looks
-complete, and a Zstd body of several frames completes when it is cut inside a frame that started in the same chunk as
-the end of the previous one. HTTP/2 response bodies are not checked, and neither are transfer codings such as
-`Transfer-Encoding: gzip`, nor Brotli, Zstd and Snappy bodies decompressed as soon as they are read, as described
-above.
+complete. With zstd-jni older than 1.5.7-26, a Zstd body of several frames also completes when it is cut inside a frame
+that started in the same chunk as the end of the previous one. zstd-jni is an optional dependency, so the version your
+application declares is the one used: use 1.5.7-26 or later. HTTP/2 response bodies are not checked, and neither are
+transfer codings such as `Transfer-Encoding: gzip`, nor Brotli, Zstd and Snappy bodies decompressed as soon as they are
+read, as described above.
 
 </details>
 

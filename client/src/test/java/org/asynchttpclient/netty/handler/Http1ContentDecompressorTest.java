@@ -1279,6 +1279,52 @@ public class Http1ContentDecompressorTest {
         assertTrue(checked > 30, "only " + checked + " scenarios ran");
     }
 
+    private static final byte[] FIRST_ZSTD_FRAME = Zstd.compress(Arrays.copyOf(RANDOM, 20_000));
+    private static final byte[] SECOND_ZSTD_FRAME = Zstd.compress(Arrays.copyOfRange(RANDOM, 20_000, 40_000));
+
+    // Each ends the first frame and starts the second in the same chunk.
+    private static List<int[]> splitsAcrossTheFirstZstdFrameEnd(int length) {
+        int half = FIRST_ZSTD_FRAME.length / 2;
+        return List.of(new int[]{length}, new int[]{length, 0}, new int[]{half, length - half});
+    }
+
+    @Test
+    void zstdBodyCutInAFrameThatStartedInTheChunkThatEndedThePreviousOneFails() {
+        byte[] cut = concat(FIRST_ZSTD_FRAME, Arrays.copyOf(SECOND_ZSTD_FRAME, SECOND_ZSTD_FRAME.length / 2));
+        for (int[] sizes : splitsAcrossTheFirstZstdFrameEnd(cut.length)) {
+            for (Kind kind : List.of(Kind.HEAP, Kind.DIRECT)) {
+                String scenario = Arrays.toString(sizes) + ", " + kind;
+                UnpooledByteBufAllocator allocator = allocator();
+                EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator);
+                Outcome outcome = exchange(channel, "zstd", cut, sizes, kind);
+                assertInstanceOf(DecompressionException.class, outcome.failure, scenario);
+                assertFalse(outcome.ended, scenario + ": a truncated body must not end normally");
+                channel.finishAndReleaseAll();
+                assertEquals(0, allocator.metric().usedHeapMemory(), scenario + ": heap left allocated");
+                assertInputsReleased(outcome, scenario);
+            }
+        }
+    }
+
+    @Test
+    void zstdFramesThatShareAChunkDecodeInFull() {
+        byte[] body = concat(FIRST_ZSTD_FRAME, SECOND_ZSTD_FRAME);
+        for (int[] sizes : splitsAcrossTheFirstZstdFrameEnd(body.length)) {
+            for (Kind kind : List.of(Kind.HEAP, Kind.DIRECT)) {
+                String scenario = Arrays.toString(sizes) + ", " + kind;
+                UnpooledByteBufAllocator allocator = allocator();
+                EmbeddedChannel channel = channel(new Http1ContentDecompressor(false, 0), allocator);
+                Outcome outcome = exchange(channel, "zstd", body, sizes, kind);
+                assertNull(outcome.failure, scenario);
+                assertTrue(outcome.ended, scenario);
+                assertArrayEquals(Arrays.copyOf(RANDOM, 40_000), outcome.body.toByteArray(), scenario);
+                assertFalse(channel.finishAndReleaseAll(), scenario);
+                assertEquals(0, allocator.metric().usedHeapMemory(), scenario + ": heap left allocated");
+                assertInputsReleased(outcome, scenario);
+            }
+        }
+    }
+
     @Test
     void outputThatOnlyFollowsTheEndOfInputIsHandedOn() {
         UnpooledByteBufAllocator allocator = allocator();

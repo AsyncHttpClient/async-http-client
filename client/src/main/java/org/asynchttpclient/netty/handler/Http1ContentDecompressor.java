@@ -97,9 +97,9 @@ import java.util.zip.Inflater;
  * {@code zstd} also goes there while {@code io.netty.compression.defaultMaxForwardBytes} is not positive.
  * {@code gzip} and {@code deflate} never use the API. A body that ends inside its compressed stream fails on the
  * pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}. Not every such end is
- * noticed: {@code snappy} has no end marker, so a body cut between two of its chunks looks complete, and a
- * {@code zstd} body of several frames completes when it is cut inside a frame that started in the same chunk as the
- * end of the previous one.
+ * noticed: {@code snappy} has no end marker, so a body cut between two of its chunks looks complete, and with
+ * zstd-jni before 1.5.7-26, a {@code zstd} body of several frames completes when it is cut inside a frame that started
+ * in the same chunk as the end of the previous one.
  * <p>
  * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
  * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
