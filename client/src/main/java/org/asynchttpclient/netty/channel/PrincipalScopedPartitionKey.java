@@ -22,6 +22,7 @@ import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.uri.Uri;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -57,14 +58,24 @@ public final class PrincipalScopedPartitionKey {
         }
     });
 
+    static final int CACHED_IDENTITIES = 16;
+
+    // Element 2i holds a WeakReference to a realm and 2i + 1 one to its identity. JDK types only: a thread-local
+    // value of a class of ours would keep this library's class loader alive for as long as the thread lives.
+    private static final ThreadLocal<Object[]> IDENTITIES =
+            ThreadLocal.withInitial(() -> new Object[2 * CACHED_IDENTITIES]);
+
     private final Object baseKey;
     private final Realm.AuthScheme scheme;
-    private final String identity;
+    private final @Nullable String originIdentity;
+    private final @Nullable String proxyIdentity;
 
-    private PrincipalScopedPartitionKey(Object baseKey, Realm.AuthScheme scheme, String identity) {
+    private PrincipalScopedPartitionKey(Object baseKey, Realm.AuthScheme scheme, @Nullable String originIdentity,
+                                        @Nullable String proxyIdentity) {
         this.baseKey = baseKey;
         this.scheme = scheme;
-        this.identity = identity;
+        this.originIdentity = originIdentity;
+        this.proxyIdentity = proxyIdentity;
     }
 
     /**
@@ -104,8 +115,63 @@ public final class PrincipalScopedPartitionKey {
             return baseKey;
         }
         Realm.AuthScheme scheme = originScoped ? realm.getScheme() : proxyRealm.getScheme();
-        String identity = (originScoped ? identityOf(realm) : "") + '/' + (proxyScoped ? identityOf(proxyRealm) : "");
-        return new PrincipalScopedPartitionKey(baseKey, scheme, identity);
+        return new PrincipalScopedPartitionKey(baseKey, scheme, originScoped ? identityOf(realm) : null,
+                proxyScoped ? identityOf(proxyRealm) : null);
+    }
+
+    /**
+     * The digest of {@code realm}, computed once per realm instance and thread. Every input but the login
+     * config is a final field of the realm. The config is the caller's own map, which they can still change
+     * after build(), so a realm that has one is digested every time.
+     */
+    static String identityOf(Realm realm) {
+        if (realm.getCustomLoginConfig() != null) {
+            return digest(realm);
+        }
+        Object[] cache = IDENTITIES.get();
+        int slot = System.identityHashCode(realm) & (CACHED_IDENTITIES - 1);
+        // Two ways per set, the most recently used in slot, so an origin and a proxy realm that collide both
+        // stay cached.
+        int other = slot ^ 1;
+        String identity = cached(cache, slot, realm);
+        if (identity != null) {
+            return identity;
+        }
+        identity = cached(cache, other, realm);
+        if (identity != null) {
+            swapWays(cache, slot, other);
+            return identity;
+        }
+        identity = digest(realm);
+        // Unless slot already names this realm, whose digest was collected, keep what it held in the other way.
+        if (!holdsRealm(cache, slot, realm)) {
+            swapWays(cache, slot, other);
+        }
+        // Both weak: the cache keeps neither the realm, and with it the password, nor the digest alive. A digest
+        // no pool key holds is computed again after the next collection.
+        cache[2 * slot] = new WeakReference<>(realm);
+        cache[2 * slot + 1] = new WeakReference<>(identity);
+        return identity;
+    }
+
+    // A cleared reference never matches, so a realm allocated after another was collected cannot pick up its
+    // identity even if it lands in the same slot.
+    private static @Nullable String cached(Object[] cache, int slot, Realm realm) {
+        return holdsRealm(cache, slot, realm) ? (String) ((WeakReference<?>) cache[2 * slot + 1]).get() : null;
+    }
+
+    private static boolean holdsRealm(Object[] cache, int slot, Realm realm) {
+        Object realmReference = cache[2 * slot];
+        return realmReference != null && ((WeakReference<?>) realmReference).get() == realm;
+    }
+
+    private static void swapWays(Object[] cache, int slot, int other) {
+        Object realmReference = cache[2 * slot];
+        Object identityReference = cache[2 * slot + 1];
+        cache[2 * slot] = cache[2 * other];
+        cache[2 * slot + 1] = cache[2 * other + 1];
+        cache[2 * other] = realmReference;
+        cache[2 * other + 1] = identityReference;
     }
 
     /**
@@ -113,7 +179,7 @@ public final class PrincipalScopedPartitionKey {
      * principal: {@code CORP\alice} is not {@code OTHER\alice}. Leaving one out shares a socket between two
      * identities, while an extra one only costs a pool miss. Hashed so the key does not hold the password.
      */
-    private static String identityOf(Realm realm) {
+    static String digest(Realm realm) {
         MessageDigest digest = DIGEST.get();
         digest.reset();
         // The key's own scheme field is the origin's, so without this an NTLM proxy login and a Negotiate
@@ -208,12 +274,15 @@ public final class PrincipalScopedPartitionKey {
         PrincipalScopedPartitionKey that = (PrincipalScopedPartitionKey) o;
         return Objects.equals(baseKey, that.baseKey)
                 && scheme == that.scheme
-                && Objects.equals(identity, that.identity);
+                && Objects.equals(originIdentity, that.originIdentity)
+                && Objects.equals(proxyIdentity, that.proxyIdentity);
     }
 
     @Override
     public int hashCode() {
-        return 31 * (31 * Objects.hashCode(baseKey) + Objects.hashCode(scheme)) + Objects.hashCode(identity);
+        int result = 31 * Objects.hashCode(baseKey) + Objects.hashCode(scheme);
+        result = 31 * result + Objects.hashCode(originIdentity);
+        return 31 * result + Objects.hashCode(proxyIdentity);
     }
 
     @Override
