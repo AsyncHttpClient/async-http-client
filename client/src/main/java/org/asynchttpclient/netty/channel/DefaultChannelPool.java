@@ -203,7 +203,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
     /**
      * Unmap a partition and hand any channel still linked into it to a live partition. Run by the cleaner
-     * for a partition that has stayed empty, which a concurrent offer may just have refilled.
+     * for a partition that has stayed empty, which a concurrent offer may just have refilled. A channel in
+     * transit is in no deque, so a poll() in that window misses it and opens a connection instead.
      */
     void retire(Partition partition) {
         // Unmap before raising the flag, so an offer that sees the flag cannot read this partition back

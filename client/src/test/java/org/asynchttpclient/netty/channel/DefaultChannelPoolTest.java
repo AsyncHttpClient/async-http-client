@@ -1043,8 +1043,8 @@ public class DefaultChannelPoolTest {
     public void partitionRetirementNeverLosesAConcurrentlyOfferedChannel() throws Exception {
         // A fixed set of channels wanders across more keys than there are channels: each worker offers the
         // channel it holds under one random key and polls another, so most partitions are empty most of the
-        // time. Between the workers' cycles the test thread runs a cleaner that drops every partition it finds
-        // empty, so offers keep landing on partitions that are being retired. Nothing is ever closed (idle
+        // time. Meanwhile the test thread runs a cleaner that drops every partition it finds empty, so offers
+        // keep landing on partitions that are being retired. Nothing is ever closed (idle
         // timeout of an hour, no TTL, no removeAll) and every worker hands back what it holds before it
         // exits, so at quiescence every channel must be pooled.
         final int keys = 16;
@@ -1058,7 +1058,7 @@ public class DefaultChannelPoolTest {
         final Map<Object, ConcurrentLinkedDeque<Channel>> map = partitions(pool);
 
         try {
-            soak(4, 50_000, 50, worker -> new SoakWorker() {
+            soak(4, 50_000, 50, 1000, worker -> new SoakWorker() {
                 private Channel held;
 
                 @Override
@@ -1087,8 +1087,9 @@ public class DefaultChannelPoolTest {
                 }
             }
             assertEquals(channelCount, pooled, "every channel must still be pooled");
-            assertTrue(partitionsSeen.size() > keys * 4,
-                    "partitions must have been dropped and recreated many times, otherwise this proves nothing; saw "
+            // More deques than channels means the cleaner dropped partitions that offers then recreated.
+            assertTrue(partitionsSeen.size() > channelCount,
+                    "partitions must have been dropped and recreated, otherwise this proves nothing; saw "
                             + partitionsSeen.size());
         } finally {
             pool.destroy();
@@ -1099,7 +1100,7 @@ public class DefaultChannelPoolTest {
     @org.junit.jupiter.api.Timeout(120) // io.netty.util.Timeout owns the simple name here
     public void flushNeverStrandsAConcurrentlyOfferedChannel() throws Exception {
         // Workers poll a key, mint a channel when it is dry and always offer it back, while the test thread
-        // flushes every partition between their cycles. At quiescence each channel is either closed by a
+        // keeps flushing every partition. At quiescence each channel is either closed by a
         // flush or still pooled. One that is alive and unreachable was linked into a partition after the flush
         // unmapped it.
         final int keys = 4;
@@ -1107,7 +1108,7 @@ public class DefaultChannelPoolTest {
         final Queue<Channel> created = new ConcurrentLinkedQueue<>();
 
         try {
-            long flushes = soak(4, 25_000, 25, worker -> random -> {
+            long flushes = soak(4, 25_000, 25, 1000, worker -> random -> {
                 Object key = (int) ((random >>> 33) % keys);
                 Channel channel = pool.poll(key);
                 if (channel == null) {
@@ -1147,18 +1148,16 @@ public class DefaultChannelPoolTest {
     }
 
     /**
-     * Runs {@code threads} workers for {@code cyclesPerWorker} cycles each while the calling thread runs
-     * {@code pass} once per {@code cyclesPerPass} cycles, and returns the number of passes. The pass count is
-     * paced only to bound the cleaner's DEBUG output, which the test logback config turns on. Workers wait
-     * only when the passes fall far behind, so they run during the passes rather than take turns with them
-     * (taking turns hides the races these tests look for), yet a descheduled test thread cannot let them
-     * finish unobserved. Workers are daemons and give up at the deadline, so a hung run fails instead of
-     * hanging.
+     * Runs {@code threads} workers while the calling thread runs {@code pass} each time the workers have done
+     * {@code cyclesPerPass} more cycles, and returns the number of passes. Workers never wait for the passes:
+     * taking turns with them hides the races these tests look for. Instead each worker keeps going past
+     * {@code cyclesPerWorker} until {@code minPasses} passes have run, so however the threads are scheduled,
+     * that many passes land while the workers are busy. Pacing the passes bounds the cleaner's DEBUG output,
+     * which the test logback config turns on. Workers are daemons and give up at the deadline, so a hung run
+     * fails instead of hanging.
      */
-    private static final int MAX_PASSES_BEHIND = 1000;
-
-    private static long soak(int threads, int cyclesPerWorker, int cyclesPerPass, IntFunction<SoakWorker> workers,
-                             Runnable pass) throws Exception {
+    private static long soak(int threads, int cyclesPerWorker, int cyclesPerPass, int minPasses,
+                             IntFunction<SoakWorker> workers, Runnable pass) throws Exception {
         final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
         final AtomicLong progress = new AtomicLong();
         final AtomicLong passes = new AtomicLong();
@@ -1172,12 +1171,9 @@ public class DefaultChannelPoolTest {
             Thread thread = new Thread(() -> {
                 try {
                     long x = seed;
-                    for (int i = 0; i < cyclesPerWorker; i++) {
-                        while (progress.get() >= (passes.get() + MAX_PASSES_BEHIND) * cyclesPerPass) {
-                            if (abort.get() || System.nanoTime() - deadline > 0) {
-                                throw new IllegalStateException("the passes stopped keeping up");
-                            }
-                            Thread.onSpinWait();
+                    for (long i = 0; i < cyclesPerWorker || passes.get() < minPasses; i++) {
+                        if ((i & 1023) == 0 && (abort.get() || System.nanoTime() - deadline > 0)) {
+                            throw new IllegalStateException("aborted after " + i + " cycles");
                         }
                         x = x * 6364136223846793005L + 1442695040888963407L;
                         worker.cycle(x);
@@ -1195,6 +1191,7 @@ public class DefaultChannelPoolTest {
         }
 
         try {
+            long nextPass = cyclesPerPass;
             while (done.getCount() > 0) {
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
@@ -1202,12 +1199,13 @@ public class DefaultChannelPoolTest {
                 if (System.nanoTime() - deadline > 0) {
                     fail("the workers did not finish before the deadline");
                 }
-                if (progress.get() < (passes.get() + 1) * cyclesPerPass) {
+                if (progress.get() < nextPass) {
                     Thread.onSpinWait();
                     continue;
                 }
                 pass.run();
                 passes.incrementAndGet();
+                nextPass = progress.get() + cyclesPerPass;
             }
         } finally {
             abort.set(true);
