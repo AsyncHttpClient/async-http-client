@@ -461,6 +461,28 @@ public class PrincipalScopedPartitionKeyTest {
                 "a realm with a login config must be digested on every call");
     }
 
+    /** An origin and a proxy realm can fall into one set; alternating between them must not evict either. */
+    @Test
+    public void twoRealmsInOneSetBothStayCached() {
+        // The same slot, not just the same set, so a cache with one way per slot would fail.
+        int slot = PrincipalScopedPartitionKey.CACHED_IDENTITIES - 1;
+        Realm first = realm(Realm.AuthScheme.NTLM, "first");
+        Realm second = null;
+        for (int i = 0; second == null; i++) {
+            Realm candidate = realm(Realm.AuthScheme.NTLM, "second" + i);
+            if ((System.identityHashCode(candidate) & slot) == (System.identityHashCode(first) & slot)) {
+                second = candidate;
+            }
+        }
+        String firstIdentity = PrincipalScopedPartitionKey.identityOf(first);
+        String secondIdentity = PrincipalScopedPartitionKey.identityOf(second);
+        assertNotEquals(firstIdentity, secondIdentity);
+        for (int i = 0; i < 4; i++) {
+            assertSame(firstIdentity, PrincipalScopedPartitionKey.identityOf(first));
+            assertSame(secondIdentity, PrincipalScopedPartitionKey.identityOf(second));
+        }
+    }
+
     private static List<WeakReference<?>> digestAndForget() {
         Realm realm = new Realm.Builder("gone", "secret").setScheme(Realm.AuthScheme.NTLM).build();
         String identity = PrincipalScopedPartitionKey.identityOf(realm);
@@ -472,8 +494,14 @@ public class PrincipalScopedPartitionKeyTest {
     public void theCacheKeepsNeitherTheRealmNorItsIdentityAlive() {
         List<WeakReference<?>> references = digestAndForget();
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        List<byte[]> garbage = new ArrayList<>();
         while (references.stream().anyMatch(reference -> reference.get() != null) && System.nanoTime() < deadline) {
             System.gc();
+            // Allocation drives collections too where System.gc() is disabled.
+            garbage.add(new byte[1 << 20]);
+            if (garbage.size() == 16) {
+                garbage.clear();
+            }
         }
         assertNull(references.get(0).get(), "the realm");
         assertNull(references.get(1).get(), "its identity");

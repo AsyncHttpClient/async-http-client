@@ -58,7 +58,7 @@ public final class PrincipalScopedPartitionKey {
         }
     });
 
-    private static final int CACHED_IDENTITIES = 16;
+    static final int CACHED_IDENTITIES = 16;
 
     // Element 2i holds a WeakReference to a realm and 2i + 1 one to its identity. JDK types only: a thread-local
     // value of a class of ours would keep this library's class loader alive for as long as the thread lives.
@@ -130,18 +130,23 @@ public final class PrincipalScopedPartitionKey {
         }
         Object[] cache = IDENTITIES.get();
         int slot = System.identityHashCode(realm) & (CACHED_IDENTITIES - 1);
-        // Two ways per set, so an origin and a proxy realm that collide both stay cached.
+        // Two ways per set, the most recently used in slot, so an origin and a proxy realm that collide both
+        // stay cached.
         int other = slot ^ 1;
         String identity = cached(cache, slot, realm);
-        if (identity == null) {
-            identity = cached(cache, other, realm);
-        }
         if (identity != null) {
             return identity;
         }
+        identity = cached(cache, other, realm);
+        if (identity != null) {
+            swapWays(cache, slot, other);
+            return identity;
+        }
         identity = digest(realm);
-        cache[2 * other] = cache[2 * slot];
-        cache[2 * other + 1] = cache[2 * slot + 1];
+        // Unless slot already names this realm, whose digest was collected, keep what it held in the other way.
+        if (!holdsRealm(cache, slot, realm)) {
+            swapWays(cache, slot, other);
+        }
         // Both weak: the cache keeps neither the realm, and with it the password, nor the digest alive. A digest
         // no pool key holds is computed again after the next collection.
         cache[2 * slot] = new WeakReference<>(realm);
@@ -152,11 +157,21 @@ public final class PrincipalScopedPartitionKey {
     // A cleared reference never matches, so a realm allocated after another was collected cannot pick up its
     // identity even if it lands in the same slot.
     private static @Nullable String cached(Object[] cache, int slot, Realm realm) {
+        return holdsRealm(cache, slot, realm) ? (String) ((WeakReference<?>) cache[2 * slot + 1]).get() : null;
+    }
+
+    private static boolean holdsRealm(Object[] cache, int slot, Realm realm) {
         Object realmReference = cache[2 * slot];
-        if (realmReference == null || ((WeakReference<?>) realmReference).get() != realm) {
-            return null;
-        }
-        return (String) ((WeakReference<?>) cache[2 * slot + 1]).get();
+        return realmReference != null && ((WeakReference<?>) realmReference).get() == realm;
+    }
+
+    private static void swapWays(Object[] cache, int slot, int other) {
+        Object realmReference = cache[2 * slot];
+        Object identityReference = cache[2 * slot + 1];
+        cache[2 * slot] = cache[2 * other];
+        cache[2 * slot + 1] = cache[2 * other + 1];
+        cache[2 * other] = realmReference;
+        cache[2 * other + 1] = identityReference;
     }
 
     /**
