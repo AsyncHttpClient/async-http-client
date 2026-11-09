@@ -17,10 +17,12 @@ package org.asynchttpclient;
 
 import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -115,6 +117,7 @@ public class Http1DecompressionSuspensionTest {
     private static final byte[] TEXT_GZIP = gzip(TEXT);
 
     private final AtomicInteger connectionCount = new AtomicInteger();
+    private final AtomicInteger requestCount = new AtomicInteger();
 
     private NioEventLoopGroup serverGroup;
     private Channel serverChannel;
@@ -156,6 +159,13 @@ public class Http1DecompressionSuspensionTest {
                         channel.pipeline()
                                 .addLast(new HttpServerCodec())
                                 .addLast(new HttpObjectAggregator(1024))
+                                .addLast(new ChannelInboundHandlerAdapter() {
+                                    @Override
+                                    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                                        requestCount.incrementAndGet();
+                                        ctx.fireChannelRead(msg);
+                                    }
+                                })
                                 .addLast(new CompressedResponseHandler());
                     }
                 })
@@ -313,6 +323,55 @@ public class Http1DecompressionSuspensionTest {
             assertFalse(handler.corrupt.get());
             assertEquals(1, filtered.size());
             assertInstanceOf(ChannelClosedException.class, filtered.get(0));
+        }
+    }
+
+    /**
+     * With the default retries, a body that the close cuts off is retried like any body cut off by a closed connection,
+     * where inflating what is held back used to fail the request with the size limit first.
+     */
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    public void aSuspendedBodyThatTheConnectionCutsOffIsRetried() throws Exception {
+        assumeTrue(Epoll.isAvailable(), "epoll is not available");
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseNativeTransport(true)
+                .setUseOnlyEpollNativeTransport(true)
+                .setMaxDecompressedResponseSize(1024 * 1024)
+                .setRequestTimeout(Duration.ofSeconds(60)))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url("/zeros-cut")).execute(handler);
+
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> response.get(10, SECONDS));
+            assertInstanceOf(RemotelyClosedException.class, failure.getCause());
+            int requests = 1 + client.getConfig().getMaxRequestRetry();
+            assertEquals(requests, requestCount.get());
+            assertEquals(requests, handler.partCount.get(), "each request may deliver its first part only");
+            assertFalse(handler.corrupt.get());
+        }
+    }
+
+    /**
+     * A last chunk that cannot be parsed fails the request with the parser's error, without the rest of the body and
+     * without the size limit that inflating what is held back would hit first, and without a retry.
+     */
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    public void aSuspendedBodyWhoseLastChunkCannotBeParsedFailsWithTheParsersError() throws Exception {
+        assumeTrue(Epoll.isAvailable(), "epoll is not available");
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseNativeTransport(true)
+                .setUseOnlyEpollNativeTransport(true)
+                .setMaxDecompressedResponseSize(1024 * 1024)
+                .setRequestTimeout(Duration.ofSeconds(60)))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url("/zeros-bad-chunk")).execute(handler);
+
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> response.get(10, SECONDS));
+            assertInstanceOf(NumberFormatException.class, failure.getCause());
+            assertEquals(1, requestCount.get());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered after the close");
+            assertFalse(handler.corrupt.get());
         }
     }
 
@@ -670,7 +729,19 @@ public class Http1DecompressionSuspensionTest {
                         HttpUtil.setTransferEncodingChunked(response, true);
                     }
                     ctx.write(response);
-                    ctx.writeAndFlush(new DefaultHttpContent(Unpooled.wrappedBuffer(ZEROS_GZIP, 0, ZEROS_GZIP.length / 2)))
+                    ByteBuf half = Unpooled.wrappedBuffer(ZEROS_GZIP, 0, ZEROS_GZIP.length / 2);
+                    ctx.writeAndFlush(new DefaultHttpContent(half)).addListener(ChannelFutureListener.CLOSE);
+                    break;
+                }
+                case "/zeros-bad-chunk": {
+                    HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+                    response.headers().set(HttpHeaderNames.CONTENT_ENCODING, HttpHeaderValues.GZIP);
+                    HttpUtil.setTransferEncodingChunked(response, true);
+                    ctx.write(response);
+                    ctx.write(new DefaultHttpContent(Unpooled.wrappedBuffer(ZEROS_GZIP, 0, ZEROS_GZIP.length / 2)));
+                    // Past the encoder: a chunk size that is not hexadecimal.
+                    ctx.pipeline().firstContext()
+                            .writeAndFlush(Unpooled.copiedBuffer("zz\r\n", StandardCharsets.US_ASCII))
                             .addListener(ChannelFutureListener.CLOSE);
                     break;
                 }

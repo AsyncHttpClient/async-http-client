@@ -90,7 +90,8 @@ import java.util.zip.Inflater;
  * a resume: once the body has been decompressed in full, its end, with any trailers, is handed on even to a suspended
  * response, as for an unencoded body. If the connection closes while input is held back and the body has ended, the
  * rest of it is decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}. If the close cut the
- * body off, the response fails anyway, and the input held back is dropped without being decompressed.
+ * body off, or its last chunk failed to parse, the response fails anyway, and the input held back is dropped without
+ * being decompressed; a failed last chunk is still handed on, so that the response fails with its error.
  * <p>
  * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
  * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
@@ -295,12 +296,18 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         // The pipeline is about to be torn down, so what is held back of a body that has ended is handed on now, even
-        // to a suspended response. A body that the close cut off fails anyway, so what is held back of it is dropped.
+        // to a suspended response. A body that the close cut off, or whose last chunk failed to parse, fails anyway,
+        // so what is held back of it is dropped; a failed last chunk is still handed on, to fail it with its error.
         inputClosed = true;
         try {
-            if (paused && !draining && bodyEnded()) {
-                readPending = false;
-                resume(ctx);
+            if (paused && !draining) {
+                LastHttpContent end = bodyEnd();
+                if (end != null && end.decoderResult().isSuccess()) {
+                    readPending = false;
+                    resume(ctx);
+                } else if (end != null) {
+                    endBody(ctx, trailer(end));
+                }
             }
         } catch (Throwable cause) {
             ctx.fireExceptionCaught(cause);
@@ -393,18 +400,18 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         }
     }
 
-    // Whether the end of the paused body has arrived, with the input that is held or behind it. HttpObjectDecoder hands
+    // The end of the paused body, if it has arrived with the input that is held or behind it. HttpObjectDecoder hands
     // on the end of a body delimited by the connection before the connection's close.
-    private boolean bodyEnded() {
+    private @Nullable LastHttpContent bodyEnd() {
         if (heldLast != null) {
-            return true;
+            return heldLast;
         }
         for (HttpObject msg : queued) {
             if (msg instanceof LastHttpContent) {
-                return true;
+                return (LastHttpContent) msg;
             }
         }
-        return false;
+        return null;
     }
 
     private void releaseQueued() {
@@ -1080,6 +1087,11 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     int heldInputBytes() {
         ByteBuf in = heldInput;
         return in == null ? -1 : in.readableBytes();
+    }
+
+    // Visible for tests: how many messages wait behind the paused body.
+    int queuedMessages() {
+        return queued.size();
     }
 
     // Visible for tests.

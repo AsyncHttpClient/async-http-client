@@ -473,10 +473,7 @@ public class Http1ContentDecompressorSuspensionTest {
     @ParameterizedTest
     @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
     public void inputHeldBackOfABodyThatTheCloseCutsOffIsDropped(String contentEncoding) {
-        // Decompressing what is held back would exceed the limit.
-        SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 256 * 1024),
-                contentEncoding, compress(contentEncoding, new byte[1024 * 1024]), 4096, false, true, Input.HEAP,
-                false);
+        SuspendedExchange exchange = heldBackOverTheLimit(contentEncoding);
         List<Object> events = new ArrayList<>();
         exchange.channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
@@ -498,13 +495,52 @@ public class Http1ContentDecompressorSuspensionTest {
     }
 
     /**
-     * Once the end of the body has arrived, what is held back is handed on at the close. That includes the end of a body
-     * delimited by the connection, which arrives just before the close, and the failed end of a body whose last chunk
-     * could not be parsed, which still fails the exchange with the parser's error.
+     * A body that has not ended, with input held back that would exceed the limit if it were decompressed. The payload
+     * barely compresses, so input is also queued behind what is held, for every coding.
+     */
+    private static SuspendedExchange heldBackOverTheLimit(String contentEncoding) {
+        byte[] payload = new byte[512 * 1024];
+        new Random(31).nextBytes(payload);
+        SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 256 * 1024),
+                contentEncoding, compress(contentEncoding, payload), 4096, false, true, Input.HEAP, false);
+        assertTrue(exchange.decompressor.queuedMessages() > 0, contentEncoding + ": nothing is queued");
+        return exchange;
+    }
+
+    /**
+     * A last chunk that could not be parsed fails the exchange anyway, so what is held back of its body is dropped at
+     * the close, and the failed end is handed on so that the exchange fails with the parser's error.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"delimited", "failed"})
-    public void inputHeldBackOfABodyThatHasEndedIsHandedOnAtTheClose(String end) {
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void inputHeldBackOfABodyWhoseLastChunkFailedIsDroppedAtTheClose(String contentEncoding) {
+        SuspendedExchange exchange = heldBackOverTheLimit(contentEncoding);
+        Body body = new Body().drain(exchange.channel);
+        assertEquals(1, body.parts);
+
+        IllegalArgumentException parserError = new IllegalArgumentException("bad chunk");
+        LastHttpContent last = new DefaultLastHttpContent();
+        last.setDecoderResult(DecoderResult.failure(parserError));
+        exchange.channel.writeInbound(last);
+        body.drain(exchange.channel);
+        assertFalse(body.last, contentEncoding + ": the end must wait behind the input held back");
+
+        exchange.channel.pipeline().fireChannelInactive();
+        body.drain(exchange.channel);
+        exchange.channel.checkException();
+        assertEquals(1, body.parts, contentEncoding + ": nothing held back may be handed on");
+        assertTrue(body.last, contentEncoding);
+        assertEquals(parserError, body.lastResult.cause(), contentEncoding);
+        exchange.assertInputReleased();
+        assertFalse(exchange.channel.finishAndReleaseAll());
+    }
+
+    /**
+     * Once the end of the body has arrived, what is held back is handed on at the close. That includes the end of a
+     * body delimited by the connection, which arrives just before the close.
+     */
+    @Test
+    public void inputHeldBackOfABodyThatHasEndedIsHandedOnAtTheClose() {
         byte[] payload = concat(TEXT, new byte[400_000], TEXT);
         for (String contentEncoding : List.of("gzip", "zstd")) {
             SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0),
@@ -512,11 +548,7 @@ public class Http1ContentDecompressorSuspensionTest {
             Body body = new Body().drain(exchange.channel);
             assertEquals(1, body.parts);
 
-            LastHttpContent last = new DefaultLastHttpContent();
-            if ("failed".equals(end)) {
-                last.setDecoderResult(DecoderResult.failure(new IllegalArgumentException("bad chunk")));
-            }
-            exchange.channel.writeInbound(last);
+            exchange.channel.writeInbound(new DefaultLastHttpContent());
             body.drain(exchange.channel);
             assertEquals(1, body.parts, contentEncoding + ": the end must wait behind the input held back");
 
@@ -525,7 +557,7 @@ public class Http1ContentDecompressorSuspensionTest {
             exchange.channel.checkException();
             assertTrue(body.last, contentEncoding);
             assertArrayEquals(payload, body.bytes.toByteArray(), contentEncoding);
-            assertEquals("failed".equals(end), body.lastResult.isFailure(), contentEncoding);
+            assertTrue(body.lastResult.isSuccess(), contentEncoding);
             exchange.assertInputReleased();
             assertFalse(exchange.channel.finishAndReleaseAll());
         }
