@@ -22,9 +22,17 @@ import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -300,5 +308,149 @@ public class PrincipalScopedPartitionKeyTest {
 
         assertNotEquals(PrincipalScopedPartitionKey.scope("host-a:443", alice),
                 PrincipalScopedPartitionKey.scope("host-b:443", alice));
+    }
+
+    private static Realm.Builder fullKerberos() {
+        return new Realm.Builder("alice", "secret")
+                .setScheme(Realm.AuthScheme.KERBEROS)
+                .setRealmName("CORP.EXAMPLE")
+                .setNtlmDomain("CORP")
+                .setNtlmHost("ws1")
+                .setLoginContextName("ctx")
+                .setServicePrincipalName("HTTP/svc")
+                .setUseCanonicalHostname(true);
+    }
+
+    private static Object scopeOnAnotherThread(Object baseKey, Realm realm, Realm proxyRealm) throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            return executor.submit(() -> PrincipalScopedPartitionKey.scope(baseKey, realm, proxyRealm, true))
+                    .get(10, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    /**
+     * A realm with a login config is digested on every call, so it is the uncached reference: an empty config
+     * adds nothing to the digest, and the same realm without one must reach exactly the same key.
+     */
+    @Test
+    public void aCachedIdentityMatchesAnUncachedOne() throws Exception {
+        for (Realm.AuthScheme scheme : new Realm.AuthScheme[]{
+                Realm.AuthScheme.NTLM, Realm.AuthScheme.KERBEROS, Realm.AuthScheme.SPNEGO}) {
+            Realm cached = fullKerberos().setScheme(scheme).build();
+            Realm uncached = fullKerberos().setScheme(scheme).setCustomLoginConfig(new HashMap<>()).build();
+            Object reference = PrincipalScopedPartitionKey.scope(BASE, uncached, uncached, true);
+
+            Object computed = PrincipalScopedPartitionKey.scope(BASE, cached, cached, true);
+            Object hit = PrincipalScopedPartitionKey.scope(BASE, cached, cached, true);
+            assertEquals(reference, computed, scheme + ": first call");
+            assertEquals(reference, hit, scheme + ": cached call");
+            assertEquals(reference.hashCode(), hit.hashCode());
+            assertEquals(reference, scopeOnAnotherThread(BASE, cached, cached), scheme + ": another thread's cache");
+        }
+    }
+
+    /**
+     * Each variant differs from the warmed base in one keyed field, so a cache that answered by anything
+     * looser than the realm instance would hand it the base identity.
+     */
+    @Test
+    public void aWarmCacheStillSeparatesEveryKeyedField() {
+        Realm base = fullKerberos().build();
+        Object reference = PrincipalScopedPartitionKey.scope(BASE, base);
+        assertEquals(reference, PrincipalScopedPartitionKey.scope(BASE, base));
+
+        Map<String, Realm> variants = new LinkedHashMap<>();
+        variants.put("scheme", fullKerberos().setScheme(Realm.AuthScheme.SPNEGO).build());
+        variants.put("principal", new Realm.Builder("bob", "secret").setScheme(Realm.AuthScheme.KERBEROS)
+                .setRealmName("CORP.EXAMPLE").setNtlmDomain("CORP").setNtlmHost("ws1").setLoginContextName("ctx")
+                .setServicePrincipalName("HTTP/svc").setUseCanonicalHostname(true).build());
+        variants.put("password", new Realm.Builder("alice", "other").setScheme(Realm.AuthScheme.KERBEROS)
+                .setRealmName("CORP.EXAMPLE").setNtlmDomain("CORP").setNtlmHost("ws1").setLoginContextName("ctx")
+                .setServicePrincipalName("HTTP/svc").setUseCanonicalHostname(true).build());
+        variants.put("realmName", fullKerberos().setRealmName("OTHER.EXAMPLE").build());
+        variants.put("ntlmDomain", fullKerberos().setNtlmDomain("OTHER").build());
+        variants.put("ntlmHost", fullKerberos().setNtlmHost("ws2").build());
+        variants.put("loginContextName", fullKerberos().setLoginContextName("ctx2").build());
+        variants.put("servicePrincipalName", fullKerberos().setServicePrincipalName("HTTP/other").build());
+        variants.put("useCanonicalHostname", fullKerberos().setUseCanonicalHostname(false).build());
+        variants.put("customLoginConfig", fullKerberos()
+                .setCustomLoginConfig(Collections.singletonMap("keyTab", "/etc/a.keytab")).build());
+
+        for (Map.Entry<String, Realm> variant : variants.entrySet()) {
+            Realm realm = variant.getValue();
+            assertNotEquals(reference, PrincipalScopedPartitionKey.scope(BASE, realm),
+                    variant.getKey() + " must change the pool key");
+            assertNotEquals(reference, PrincipalScopedPartitionKey.scope(BASE, realm),
+                    variant.getKey() + " must change the pool key on a cached call too");
+            assertNotEquals(PrincipalScopedPartitionKey.scope(BASE, null, base, true),
+                    PrincipalScopedPartitionKey.scope(BASE, null, realm, true),
+                    variant.getKey() + " must change the key as a proxy login");
+        }
+        assertEquals(reference, PrincipalScopedPartitionKey.scope(BASE, base), "the base keeps its own key");
+    }
+
+    @Test
+    public void equalRealmsBuiltSeparatelyShareAKey() throws Exception {
+        Realm first = fullKerberos().build();
+        Realm second = fullKerberos().build();
+        Realm proxyFirst = new Realm.Builder("proxy", "p").setScheme(Realm.AuthScheme.NTLM).setNtlmDomain("CORP").build();
+        Realm proxySecond = new Realm.Builder("proxy", "p").setScheme(Realm.AuthScheme.NTLM).setNtlmDomain("CORP").build();
+
+        Object key = PrincipalScopedPartitionKey.scope(BASE, first, proxyFirst, true);
+        assertEquals(key, PrincipalScopedPartitionKey.scope(BASE, second, proxySecond, true));
+        assertEquals(key, PrincipalScopedPartitionKey.scope(BASE, second, proxySecond, true));
+        assertEquals(key.hashCode(), PrincipalScopedPartitionKey.scope(BASE, second, proxySecond, true).hashCode());
+        assertEquals(key, scopeOnAnotherThread(BASE, second, proxySecond));
+    }
+
+    /** The caller still holds the config map it passed in, and the SPNEGO login reads it when it runs. */
+    @Test
+    public void aLoginConfigChangedAfterBuildMovesTheKey() {
+        Map<String, String> config = new HashMap<>();
+        config.put("keyTab", "/etc/a.keytab");
+        Realm realm = fullKerberos().setCustomLoginConfig(config).build();
+        Object before = PrincipalScopedPartitionKey.scope(BASE, realm);
+        assertEquals(before, PrincipalScopedPartitionKey.scope(BASE, realm));
+
+        config.put("keyTab", "/etc/b.keytab");
+        Object after = PrincipalScopedPartitionKey.scope(BASE, realm);
+        assertNotEquals(before, after, "the key must follow the login the realm now runs as");
+        assertEquals(PrincipalScopedPartitionKey.scope(BASE,
+                fullKerberos().setCustomLoginConfig(Collections.singletonMap("keyTab", "/etc/b.keytab")).build()), after);
+    }
+
+    /** More realms than the cache has slots: evictions must recompute, never answer for a neighbour. */
+    @Test
+    public void manyRealmsKeepTheirOwnKeys() {
+        List<Realm> realms = new ArrayList<>();
+        for (int i = 0; i < 200; i++) {
+            realms.add(new Realm.Builder("user" + i, "secret").setScheme(Realm.AuthScheme.NTLM).build());
+        }
+        List<Object> keys = new ArrayList<>();
+        for (Realm realm : realms) {
+            keys.add(PrincipalScopedPartitionKey.scope(BASE, realm));
+        }
+        Set<Object> distinct = new HashSet<>(keys);
+        assertEquals(realms.size(), distinct.size());
+        for (int round = 0; round < 3; round++) {
+            for (int i = realms.size() - 1; i >= 0; i--) {
+                assertEquals(keys.get(i), PrincipalScopedPartitionKey.scope(BASE, realms.get(i)), "realm " + i);
+                assertEquals(keys.get(i), PrincipalScopedPartitionKey.scope(BASE,
+                        new Realm.Builder("user" + i, "secret").setScheme(Realm.AuthScheme.NTLM).build()), "rebuilt realm " + i);
+            }
+        }
+    }
+
+    /** One login on the origin hop is not the same connection as that login on the proxy hop. */
+    @Test
+    public void anOriginLoginAndTheSameProxyLoginDoNotShareAKey() {
+        Realm alice = realm(Realm.AuthScheme.NTLM, "alice");
+        assertNotEquals(PrincipalScopedPartitionKey.scope(BASE, alice, null, true),
+                PrincipalScopedPartitionKey.scope(BASE, null, alice, true));
+        assertNotEquals(PrincipalScopedPartitionKey.scope(BASE, alice, null, true),
+                PrincipalScopedPartitionKey.scope(BASE, alice, alice, true));
     }
 }
