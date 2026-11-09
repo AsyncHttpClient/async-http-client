@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.timeout;
 
 import io.netty.util.Timeout;
+import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.NettyRequestSender;
 import org.asynchttpclient.util.StringBuilderPool;
@@ -49,6 +50,10 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
             return;
         }
 
+        if (timeoutsHolder.isRequestTimeoutArmedEarly() && checkReadTimeout()) {
+            return;
+        }
+
         // in any case, cancel possible readTimeout sibling
         timeoutsHolder.cancel();
 
@@ -61,5 +66,57 @@ public class RequestTimeoutTimerTask extends TimeoutTimerTask implements Runnabl
         String message = sb.append(" after ").append(requestTimeout).append(" ms").toString();
         long age = unpreciseMillisTime() - nettyResponseFuture.getStart();
         expire(message, age);
+    }
+
+    /**
+     * Runs when this entry was armed ahead of the request deadline, for when the read timeout could be due, so
+     * that one entry serves both. Fails the exchange with a read timeout when it is due, and otherwise arms
+     * the entry again for whichever of the two comes next.
+     *
+     * @return {@code false} when the request deadline has passed as well, which leaves the request timeout to
+     *         be delivered as though the entry had been armed for it
+     */
+    private boolean checkReadTimeout() {
+        if (nettyResponseFuture.isDone()) {
+            timeoutsHolder.cancel();
+            return true;
+        }
+
+        long untilDeadline = timeoutsHolder.untilRequestDeadline();
+        if (untilDeadline == 0) {
+            return false;
+        }
+        long now = timeoutsHolder.millisTime();
+        boolean suspended = NettyResponseBodyControl.isSuspended(nettyResponseFuture);
+        if (timeoutsHolder.isReadTimeoutCovered() && !suspended) {
+            long readTimeout = timeoutsHolder.readTimeout();
+            long sinceLastTouch = now - nettyResponseFuture.getLastTouch();
+            if (sinceLastTouch >= readTimeout) {
+                StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder().append("Read timeout to ");
+                appendRemoteAddress(sb);
+                String message = sb.append(" after ").append(readTimeout).append(" ms").toString();
+                expire(message, sinceLastTouch);
+                timeoutsHolder.cancel();
+                return true;
+            }
+        }
+
+        // Read before release: a concurrent cancel cleans the field once the task is unclaimed.
+        NettyResponseFuture<?> future = nettyResponseFuture;
+        // Released before re-arming: the holder may hand the read timeout an entry of its own, which is only
+        // armed while this task is unclaimed.
+        done.set(false);
+        try {
+            timeoutsHolder.rearmRequestTimeout(this, now, untilDeadline, suspended);
+        } catch (RuntimeException e) {
+            // A timer that rejects the entry, being full or stopped, would leave the exchange with no deadline
+            // at all, so it is failed instead of left to hang. Only while this holder is still the exchange's:
+            // one that was retired meanwhile no longer speaks for it, and the channel may already be serving
+            // the next attempt or, back in the pool, another exchange.
+            if (timeoutsHolder.retire() && future.getTimeoutsHolder() == timeoutsHolder && !future.isDone()) {
+                requestSender.abort(future.channel(), future, e);
+            }
+        }
+        return true;
     }
 }
