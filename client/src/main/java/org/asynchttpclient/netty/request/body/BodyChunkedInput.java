@@ -59,7 +59,14 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         }
 
         ByteBuf buffer = alloc.buffer(chunkSize);
-        Body.BodyState state = body.transferTo(buffer);
+        Body.BodyState state;
+        try {
+            state = body.transferTo(buffer);
+        } catch (Throwable t) {
+            // ChunkedWriteHandler only releases chunks it is handed, so a failed read would leak this one.
+            buffer.release();
+            throw t;
+        }
         progress += buffer.writerIndex();
         switch (state) {
             case STOP:
