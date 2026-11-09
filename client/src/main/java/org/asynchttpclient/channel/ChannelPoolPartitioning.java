@@ -37,10 +37,11 @@ public interface ChannelPoolPartitioning {
                 return new PartitionKey(uri.getScheme(), uri.getHost(), uri.getExplicitPort());
             }
 
-            String targetHostBaseUrl = uri.getBaseUrl();
             if (proxyServer != null) {
                 return new CompositePartitionKey(
-                        targetHostBaseUrl,
+                        uri.getScheme(),
+                        uri.getHost(),
+                        uri.getExplicitPort(),
                         virtualHost,
                         proxyServer.getHost(),
                         uri.isSecured() && proxyServer.getProxyType().isHttp() ?
@@ -50,7 +51,9 @@ public interface ChannelPoolPartitioning {
             }
 
             return new CompositePartitionKey(
-                    targetHostBaseUrl,
+                    uri.getScheme(),
+                    uri.getHost(),
+                    uri.getExplicitPort(),
                     virtualHost,
                     null,
                     0,
@@ -89,14 +92,21 @@ public interface ChannelPoolPartitioning {
     }
 
     class CompositePartitionKey {
-        private final String targetHostBaseUrl;
+        // The target's scheme, host and port rather than Uri.getBaseUrl(), which would build a string on
+        // every lookup only to compare and hash it.
+        private final String scheme;
+        private final String host;
+        private final int port;
         private final @Nullable String virtualHost;
         private final @Nullable String proxyHost;
         private final int proxyPort;
         private final @Nullable ProxyType proxyType;
 
-        CompositePartitionKey(String targetHostBaseUrl, @Nullable String virtualHost, @Nullable String proxyHost, int proxyPort, @Nullable ProxyType proxyType) {
-            this.targetHostBaseUrl = targetHostBaseUrl;
+        CompositePartitionKey(String scheme, String host, int port, @Nullable String virtualHost, @Nullable String proxyHost, int proxyPort,
+                              @Nullable ProxyType proxyType) {
+            this.scheme = scheme;
+            this.host = host;
+            this.port = port;
             this.virtualHost = virtualHost;
             this.proxyHost = proxyHost;
             this.proxyPort = proxyPort;
@@ -114,10 +124,10 @@ public interface ChannelPoolPartitioning {
 
             CompositePartitionKey that = (CompositePartitionKey) o;
 
-            if (proxyPort != that.proxyPort) {
+            if (port != that.port || proxyPort != that.proxyPort) {
                 return false;
             }
-            if (!Objects.equals(targetHostBaseUrl, that.targetHostBaseUrl)) {
+            if (!Objects.equals(host, that.host) || !Objects.equals(scheme, that.scheme)) {
                 return false;
             }
             if (!Objects.equals(virtualHost, that.virtualHost)) {
@@ -131,13 +141,21 @@ public interface ChannelPoolPartitioning {
 
         @Override
         public int hashCode() {
-            return Objects.hash(targetHostBaseUrl, virtualHost, proxyHost, proxyPort, proxyType);
+            // Spelled out: Objects.hash would allocate a varargs array and box proxyPort on every lookup.
+            int result = Objects.hashCode(scheme);
+            result = 31 * result + Objects.hashCode(host);
+            result = 31 * result + port;
+            result = 31 * result + Objects.hashCode(virtualHost);
+            result = 31 * result + Objects.hashCode(proxyHost);
+            result = 31 * result + proxyPort;
+            result = 31 * result + Objects.hashCode(proxyType);
+            return result;
         }
 
         @Override
         public String toString() {
             return "CompositePartitionKey(" +
-                    "targetHostBaseUrl=" + targetHostBaseUrl +
+                    "targetHostBaseUrl=" + scheme + "://" + host + ':' + port +
                     ", virtualHost=" + virtualHost +
                     ", proxyHost=" + proxyHost +
                     ", proxyPort=" + proxyPort +
