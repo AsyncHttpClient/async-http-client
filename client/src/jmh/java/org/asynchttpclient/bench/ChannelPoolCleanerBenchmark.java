@@ -100,17 +100,24 @@ public class ChannelPoolCleanerBenchmark {
 
     @Benchmark
     public void cycle() {
-        for (Object key : liveKeys) {
-            pool.offer(pool.poll(key), key);
-        }
+        cycleLiveHosts();
     }
 
     @Benchmark
     public void cleanerPass() {
-        for (Object key : liveKeys) {
-            pool.offer(pool.poll(key), key);
-        }
+        cycleLiveHosts();
         timer.fire();
+    }
+
+    private void cycleLiveHosts() {
+        for (Object key : liveKeys) {
+            Channel channel = pool.poll(key);
+            if (channel == null) {
+                // A pause longer than the idle timeout let the cleaner close it; keep the host live.
+                channel = new EmbeddedChannel();
+            }
+            pool.offer(channel, key);
+        }
     }
 
     private static final class CapturingTimer implements Timer {

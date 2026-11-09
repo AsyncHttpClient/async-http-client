@@ -599,6 +599,26 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
+    public void retiringLeavesAPartitionSomebodyElseUnmappedAlone() throws Exception {
+        // A flush that unmapped the partition first owns its channels and closes them; the cleaner must not
+        // move one of them to a new partition where it would outlive the flush.
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+        Channel channel = new EmbeddedChannel();
+        assertTrue(pool.offer(channel, KEY));
+        DefaultChannelPool.Partition partition = partition(pool, KEY);
+        partitions(pool).remove(KEY);
+
+        pool.retire(partition);
+
+        assertTrue(partition.contains(channel), "the channel belongs to whoever unmapped the partition");
+        assertFalse(partition.retired);
+        assertFalse(hasPartition(pool, KEY));
+
+        pool.destroy();
+    }
+
+    @Test
     public void retiringAPartitionDropsAClaimedChannel() throws Exception {
         CapturingTimer timer = new CapturingTimer();
         DefaultChannelPool pool = retiringPool(timer, Duration.ofHours(1));
@@ -642,7 +662,7 @@ public class DefaultChannelPoolTest {
         // Same stale read against flushPartitions, which unmaps a partition before it closes what it holds.
         // A channel linked into it afterwards used to sit in a deque nothing reached any more: never leased,
         // never reaped, never closed. The flush's iterator can also miss a node the offer takes back, so the
-        // offer closes the channel itself: one offered while a flush runs does not outlive it.
+        // offer closes the channel itself rather than move it to a new partition.
         DefaultChannelPool pool = noReaperPool();
         Channel flushed = new EmbeddedChannel();
         Channel late = new EmbeddedChannel();

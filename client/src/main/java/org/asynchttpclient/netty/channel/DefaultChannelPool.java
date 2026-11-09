@@ -216,9 +216,12 @@ public final class DefaultChannelPool implements ChannelPool {
      * transit is in no deque, so a poll() in that window misses it and opens a connection instead.
      */
     void retire(Partition partition) {
-        // Unmap before raising the flag, so an offer that sees the flag cannot read this partition back
-        // from the map and spin on it.
-        partitions.remove(partition.key, partition);
+        // Whoever unmaps a partition owns what is left in it. Losing to a flush leaves the channels to the
+        // flush, which closes them. Unmapping before raising the flag also means an offer that sees the flag
+        // cannot read this partition back from the map and spin on it.
+        if (!partitions.remove(partition.key, partition)) {
+            return;
+        }
         partition.retired = true;
         Channel channel;
         while ((channel = partition.pollLast()) != null) {
@@ -302,7 +305,11 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private void flushPartition(Partition partition) {
-        partitions.remove(partition.key, partition);
+        // As in retire(): losing the unmapping to the cleaner leaves the channels to it, which moves them to a
+        // live partition, the same as if they had been offered right after this flush.
+        if (!partitions.remove(partition.key, partition)) {
+            return;
+        }
         // An offer that read the partition before the unmapping, and whose node this iterator may therefore
         // miss, sees the flags and closes its channel, instead of leaving it in a deque nothing reaches.
         partition.flushed = true;
@@ -387,7 +394,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
         final transient Object key;
         transient volatile boolean retired;
-        // Written before retired, so whoever reads retired as true also sees it.
+        // Written before retired, by the flush that unmapped the partition, so whoever reads retired as true
+        // also sees it.
         transient boolean flushed;
         // Only the cleaner reads and writes this, and its passes run one after another.
         transient long emptySince = NOT_EMPTY;
