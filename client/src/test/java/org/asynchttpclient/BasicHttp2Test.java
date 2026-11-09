@@ -60,6 +60,7 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.test.EventCollectingHandler;
@@ -89,6 +90,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -114,7 +117,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -770,6 +775,222 @@ public class BasicHttp2Test {
             assertEquals(200, replacement.getStatusCode(),
                     "a request after GOAWAY must open a replacement connection, not fail with "
                             + "TooManyConnectionsPerHostException while the draining connection pins the permit");
+        }
+    }
+
+    /**
+     * Records which connection an exchange ran on: {@link #opened} when it opened one, {@link #pooled} when it
+     * reused one, and when it was written.
+     */
+    private static final class ConnectionRecorder extends AsyncCompletionHandlerBase {
+
+        private final AtomicReference<Channel> opened = new AtomicReference<>();
+        private final AtomicReference<Channel> pooled = new AtomicReference<>();
+        private final CountDownLatch sent = new CountDownLatch(1);
+
+        @Override
+        public void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel connection) {
+            opened.set(connection);
+        }
+
+        @Override
+        public void onConnectionPooled(Channel connection) {
+            pooled.set(connection);
+        }
+
+        @Override
+        public void onRequestSend(NettyRequest request) {
+            sent.countDown();
+        }
+
+        private Channel connection() {
+            Channel channel = opened.get() != null ? opened.get() : pooled.get();
+            assertNotNull(channel, "the exchange ran on no connection");
+            return channel;
+        }
+    }
+
+    /**
+     * Issue #2370: an HTTP/2 connection is retired once it reaches {@code connectionTtl}. Idle, it closes at that
+     * point, and the next request opens a new connection.
+     */
+    @Test
+    public void http2ConnectionIsReplacedAfterConnectionTtl() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setConnectionTtl(Duration.ofMillis(300)))) {
+            ConnectionRecorder first = new ConnectionRecorder();
+            Response firstResponse = client.prepareGet(httpsUrl("/ok")).execute(first).get(10, SECONDS);
+            assertEquals(HttpProtocol.HTTP_2, firstResponse.getProtocol());
+            Channel firstConnection = first.connection();
+
+            assertTrue(firstConnection.closeFuture().await(10, SECONDS),
+                    "an idle HTTP/2 connection must close by itself once it reaches connectionTtl");
+
+            ConnectionRecorder second = new ConnectionRecorder();
+            Response secondResponse = client.prepareGet(httpsUrl("/ok")).execute(second).get(10, SECONDS);
+            assertEquals(200, secondResponse.getStatusCode());
+            assertEquals(HttpProtocol.HTTP_2, secondResponse.getProtocol());
+            assertNotNull(second.opened.get(), "the next request must open a new connection");
+            assertNotSame(firstConnection, second.connection());
+        }
+    }
+
+    /**
+     * Issue #2370: a stream in flight when its connection reaches {@code connectionTtl} finishes normally on it,
+     * while requests sent after the expiry already go to a new connection; the retired one closes once the stream
+     * ends.
+     */
+    @Test
+    public void http2StreamInFlightAtConnectionTtlCompletesWhileNewRequestsMove() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setConnectionTtl(Duration.ofSeconds(1)))) {
+            ConnectionRecorder longRunning = new ConnectionRecorder();
+            ListenableFuture<Response> longResponse = client.prepareGet(httpsUrl("/delay/3000")).execute(longRunning);
+            assertTrue(longRunning.sent.await(10, SECONDS));
+            Channel retiring = longRunning.connection();
+
+            // Sequential requests ride the connection until it is retired; the first one after that opens another.
+            // Each round trip paces the loop, which the long-running stream's 3 s bounds well past the 1 s TTL.
+            ConnectionRecorder moved = null;
+            long deadline = System.nanoTime() + SECONDS.toNanos(10);
+            while (moved == null && System.nanoTime() < deadline) {
+                ConnectionRecorder next = new ConnectionRecorder();
+                client.prepareGet(httpsUrl("/ok")).execute(next).get(10, SECONDS);
+                if (next.connection() != retiring) {
+                    moved = next;
+                }
+            }
+            assertNotNull(moved, "requests sent after connectionTtl must move to a new connection");
+            assertNotNull(moved.opened.get(), "by opening one");
+            assertFalse(longResponse.isDone(), "the long-running stream is still in flight on the retired connection");
+            assertTrue(retiring.isActive(), "and the retired connection stays open for it");
+
+            assertEquals(200, longResponse.get(10, SECONDS).getStatusCode(),
+                    "a stream in flight at connectionTtl must complete normally");
+            assertTrue(retiring.closeFuture().await(10, SECONDS),
+                    "the retired connection must close once its last stream has ended");
+        }
+    }
+
+    /**
+     * Issue #2370: a request queued for a stream slot when its connection reaches {@code connectionTtl} is served on
+     * that connection once a slot frees up, rather than being failed.
+     */
+    @Test
+    public void http2RequestQueuedAtConnectionTtlIsServedOnTheRetiredConnection() throws Exception {
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setConnectionTtl(Duration.ofSeconds(1))
+                .setHttp2MaxConcurrentStreams(1))) {
+            ConnectionRecorder holder = new ConnectionRecorder();
+            ListenableFuture<Response> holderResponse = client.prepareGet(httpsUrl("/delay/3000")).execute(holder);
+            assertTrue(holder.sent.await(10, SECONDS));
+            Channel connection = holder.connection();
+
+            // The only slot is held for 3 s, so this waits in the queue across the 1 s expiry.
+            ConnectionRecorder queued = new ConnectionRecorder();
+            ListenableFuture<Response> queuedResponse = client.prepareGet(httpsUrl("/ok")).execute(queued);
+            assertSame(connection, queued.pooled.get(), "queued on the connection the long stream holds");
+            assertEquals(1, queued.sent.getCount(), "and not yet sent, since there is no free slot");
+
+            assertEquals(200, queuedResponse.get(10, SECONDS).getStatusCode(),
+                    "a request queued at connectionTtl must be served, not failed");
+            assertEquals(200, holderResponse.get(10, SECONDS).getStatusCode());
+            assertNull(queued.opened.get(), "it was served on the retired connection, not on a new one");
+            assertTrue(connection.closeFuture().await(10, SECONDS),
+                    "the retired connection must close once both exchanges are done");
+        }
+    }
+
+    /**
+     * Holds an exchange between its pool lookup and its write, for as long as the connection it was handed for the
+     * first time is open, and counts retries.
+     */
+    private static final class IdleCloseRacer extends AsyncCompletionHandlerBase {
+
+        private final Channel heldUntilClosed;
+        private final AtomicInteger retries;
+        private final AtomicBoolean pooledOnIt = new AtomicBoolean();
+
+        private IdleCloseRacer(Channel heldUntilClosed, AtomicInteger retries) {
+            this.heldUntilClosed = heldUntilClosed;
+            this.retries = retries;
+        }
+
+        @Override
+        public void onConnectionPooled(Channel connection) {
+            if (connection == heldUntilClosed) {
+                pooledOnIt.set(true);
+                connection.closeFuture().awaitUninterruptibly(10, SECONDS);
+            }
+        }
+
+        @Override
+        public void onRetry() {
+            retries.incrementAndGet();
+        }
+    }
+
+    /**
+     * Issue #2370: requests that looked the connection up just before it reached {@code connectionTtl}, and reach
+     * their write only after it was closed idle, are sent on a new connection. Nothing was written, so they are
+     * neither failed nor retried, and none is left waiting for its request timeout.
+     */
+    @Test
+    public void http2RequestsRacingTheIdleCloseAtConnectionTtlAreSentOnANewConnection() throws Exception {
+        ExecutorService callers = Executors.newFixedThreadPool(2);
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setConnectionTtl(Duration.ofSeconds(1))
+                .setMaxRequestRetry(0))) {
+            ConnectionRecorder first = new ConnectionRecorder();
+            client.prepareGet(httpsUrl("/ok")).execute(first).get(10, SECONDS);
+            Channel idle = first.connection();
+            AtomicInteger retries = new AtomicInteger();
+
+            // Two, because only the first request to find the closed connection can take its one active token, and the
+            // closed-channel path completes nothing for any later one.
+            List<IdleCloseRacer> racers = List.of(new IdleCloseRacer(idle, retries), new IdleCloseRacer(idle, retries));
+            List<Future<ListenableFuture<Response>>> submitted = new ArrayList<>();
+            for (IdleCloseRacer racer : racers) {
+                submitted.add(callers.submit(() -> client.prepareGet(httpsUrl("/ok")).execute(racer)));
+            }
+            for (Future<ListenableFuture<Response>> request : submitted) {
+                assertEquals(200, request.get(10, SECONDS).get(10, SECONDS).getStatusCode());
+            }
+
+            for (IdleCloseRacer racer : racers) {
+                assertTrue(racer.pooledOnIt.get(),
+                        "each request must have been handed the connection before it closed");
+            }
+            assertFalse(idle.isOpen());
+            assertEquals(0, retries.get(), "nothing was sent, so nothing may count as a retry");
+        } finally {
+            callers.shutdownNow();
+        }
+    }
+
+    /**
+     * Issue #2370 with {@link LoadBalance#ROUND_ROBIN}: each per-IP connection is retired on its own, and replaced.
+     */
+    @Test
+    public void http2RoundRobinConnectionsAreEachReplacedAfterConnectionTtl() throws Exception {
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setConnectionTtl(Duration.ofMillis(300)))) {
+            List<Channel> firstConnections = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                ConnectionRecorder recorder = new ConnectionRecorder();
+                client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), recorder).get(10, SECONDS);
+                firstConnections.add(recorder.connection());
+            }
+            assertNotSame(firstConnections.get(0), firstConnections.get(1), "one connection per IP");
+
+            for (Channel connection : firstConnections) {
+                assertTrue(connection.closeFuture().await(10, SECONDS),
+                        "every per-IP connection must be retired at connectionTtl");
+            }
+            for (int i = 0; i < 2; i++) {
+                ConnectionRecorder recorder = new ConnectionRecorder();
+                Response response = client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), recorder)
+                        .get(10, SECONDS);
+                assertEquals(200, response.getStatusCode());
+                assertNotNull(recorder.opened.get(), "each IP gets a new connection");
+            }
         }
     }
 

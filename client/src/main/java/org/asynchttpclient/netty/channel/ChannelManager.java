@@ -67,6 +67,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
 import io.netty.util.internal.PlatformDependent;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -101,6 +102,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -108,6 +110,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -146,6 +149,9 @@ public class ChannelManager {
     // initializer instead of via Bootstrap#option to avoid Netty's synchronized per-connect options map (issue #2218).
     private final Map.Entry<ChannelOption<?>, Object>[] channelOptions;
     private final long handshakeTimeout;
+    // connectionTtl in milliseconds, bounding the age of every HTTP/2 connection; not positive means unbounded,
+    // the same conversion and test DefaultChannelPool applies to HTTP/1.1 connections.
+    private final long http2ConnectionTtl;
     private final @Nullable AddressResolverGroup<InetSocketAddress> addressResolverGroup;
 
     private final ChannelPool channelPool;
@@ -217,6 +223,17 @@ public class ChannelManager {
         this.channelPool = channelPool;
         openChannels = new DefaultChannelGroup("asyncHttpClient", GlobalEventExecutor.INSTANCE);
         handshakeTimeout = config.getHandshakeTimeout();
+        // Null was never rejected, and only DefaultChannelPool dereferences it, so a client with its own pool or
+        // without keep-alive could be built with it.
+        Duration connectionTtl = config.getConnectionTtl();
+        long connectionTtlMillis;
+        try {
+            connectionTtlMillis = connectionTtl != null ? connectionTtl.toMillis() : -1;
+        } catch (ArithmeticException tooLongForMillis) {
+            // A Duration beyond Long.MAX_VALUE milliseconds (ChronoUnit.FOREVER's, say) is as good as unbounded.
+            connectionTtlMillis = -1;
+        }
+        http2ConnectionTtl = connectionTtlMillis;
 
         // check if external EventLoopGroup is defined
         ThreadFactory threadFactory = config.getThreadFactory() != null ? config.getThreadFactory() : new DefaultThreadFactory(config.getThreadPoolName());
@@ -1280,6 +1297,53 @@ public class ChannelManager {
             pipeline.addLast("http2-idle-state", new IdleStateHandler(0, 0, pingIntervalMs, TimeUnit.MILLISECONDS));
             pipeline.addLast("http2-ping", new Http2PingHandler());
         }
+
+        // Bound the connection's age by connectionTtl. Nothing else would: the registry has no idle reaper, and PING,
+        // when enabled, keeps an idle connection alive. Up to a tenth earlier than configured, never later, so that
+        // connections opened together (one per IP in LoadBalance.ROUND_ROBIN, or a fleet started at once) are not all
+        // replaced at the same instant every time.
+        if (http2ConnectionTtl > 0) {
+            long delayMillis = http2ConnectionTtl - ThreadLocalRandom.current().nextLong(http2ConnectionTtl / 10 + 1);
+            pipeline.addLast("http2-connection-ttl", new Http2ConnectionTtlHandler(delayMillis));
+        }
+    }
+
+    /**
+     * Retires an HTTP/2 connection that reached {@code connectionTtl}. It is no longer handed out, the streams open
+     * on it and the openers queued for it still run on it, and it closes once it has neither. Runs on the
+     * connection's event loop.
+     */
+    private void retireHttp2Connection(Channel channel) {
+        Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        if (state == null) {
+            return;
+        }
+        // Must leave the registry, not just be flagged. While it is registered and active it stays the canonical
+        // connection for its key, and registerHttp2Connection marks any newcomer for that key redundant: the
+        // replacement would serve one request and close, and so would every connection after it until this one closed.
+        // Removed before it is marked retired, so that a request which sees it retired and is sent again cannot find
+        // it in the registry.
+        Object partitionKey = state.getPartitionKey();
+        if (partitionKey != null) {
+            removeHttp2Connection(partitionKey, channel);
+        }
+        if (!state.retire()) {
+            return;
+        }
+        // As at GOAWAY: free the round-robin permit now, so a replacement can open while streams finish here.
+        state.releasePermitOnce();
+        LOGGER.debug("HTTP/2 connection {} reached connectionTtl, retiring it", channel);
+        // No GOAWAY now. RFC 9113 section 6.8 asks for one before closing, and Netty's close() sends GOAWAY(NO_ERROR)
+        // when this connection is closed idle. An early one would cost requests and buy nothing: a request that looked
+        // this connection up just before it was retired still opens a stream on it, and a server may treat a client
+        // GOAWAY as the start of its own shutdown and drop streams opened after it, as Go's HTTP/2 server does.
+        // Until then a replacement may be open alongside. Section 9.1 asks clients not to open more than one
+        // connection per origin and lists replacements only for stream-identifier exhaustion, TLS rekeying and
+        // errors, so this overlap is a deliberate deviation of the kind LoadBalance.ROUND_ROBIN already documents,
+        // bounded by the streams still in flight here.
+        if (state.closeIfRetiredAndIdle()) {
+            closeChannel(channel);
+        }
     }
 
     /**
@@ -1410,6 +1474,36 @@ public class ChannelManager {
 
         private long totalConnectionCount;
         private long idleConnectionCount;
+    }
+
+    /**
+     * Retires its HTTP/2 connection once it has been open for the given delay. The task runs on the connection's own
+     * event loop, so it is serialized with the GOAWAY and stream-close handling there, and it is cancelled when the
+     * pipeline is torn down on close, so it never outlives the connection.
+     */
+    private final class Http2ConnectionTtlHandler extends ChannelInboundHandlerAdapter {
+
+        private final long delayMillis;
+        private @Nullable ScheduledFuture<?> expiry;
+
+        private Http2ConnectionTtlHandler(long delayMillis) {
+            this.delayMillis = delayMillis;
+        }
+
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) {
+            expiry = ctx.executor().schedule(() -> retireHttp2Connection(ctx.channel()),
+                    delayMillis, TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public void handlerRemoved(ChannelHandlerContext ctx) {
+            ScheduledFuture<?> scheduled = expiry;
+            if (scheduled != null) {
+                scheduled.cancel(false);
+                expiry = null;
+            }
+        }
     }
 
     private static final class ClientHttp2FrameCodecBuilder extends Http2FrameCodecBuilder {

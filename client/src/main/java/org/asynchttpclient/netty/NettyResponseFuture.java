@@ -86,6 +86,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private static final AtomicIntegerFieldUpdater<NettyResponseFuture> ON_THROWABLE_CALLED_FIELD = AtomicIntegerFieldUpdater
             .newUpdater(NettyResponseFuture.class, "onThrowableCalled");
     @SuppressWarnings("rawtypes")
+    private static final AtomicIntegerFieldUpdater<NettyResponseFuture> HTTP2_REDISPATCHED_FIELD = AtomicIntegerFieldUpdater
+            .newUpdater(NettyResponseFuture.class, "http2Redispatched");
+    @SuppressWarnings("rawtypes")
     private static final AtomicReferenceFieldUpdater<NettyResponseFuture, TimeoutsHolder> TIMEOUTS_HOLDER_FIELD = AtomicReferenceFieldUpdater
             .newUpdater(NettyResponseFuture.class, TimeoutsHolder.class, "timeoutsHolder");
     @SuppressWarnings("rawtypes")
@@ -118,6 +121,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private volatile int contentProcessed;
     @SuppressWarnings("unused")
     private volatile int onThrowableCalled;
+    @SuppressWarnings("unused")
+    private volatile int http2Redispatched;
     private volatile TimeoutsHolder timeoutsHolder;
     @SuppressWarnings("unused")
     private volatile @Nullable NettyResponseBodyControl responseBodyControl;
@@ -620,6 +625,17 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public boolean incrementRetryAndCheck() {
         return maxRetry > 0 && CURRENT_RETRY_UPDATER.incrementAndGet(this) <= maxRetry;
+    }
+
+    /**
+     * Claims the one re-dispatch this exchange is allowed when the HTTP/2 connection it was bound for was retired at
+     * {@code connectionTtl} before a stream could be opened. Separate from the retry count: the request was never
+     * sent, so re-sending it is not a retry.
+     *
+     * @return {@code true} the first time only
+     */
+    public boolean claimHttp2Redispatch() {
+        return HTTP2_REDISPATCHED_FIELD.compareAndSet(this, 0, 1);
     }
 
     /**

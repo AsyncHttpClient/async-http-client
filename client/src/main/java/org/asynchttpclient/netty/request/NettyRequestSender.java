@@ -436,6 +436,11 @@ public final class NettyRequestSender {
 
         if (Channels.isChannelActive(channel)) {
             writeRequest(future, channel);
+        } else if (isRetiredHttp2Connection(channel)) {
+            // A retired connection, usually closed idle at connectionTtl after this request looked it up. Nothing was
+            // written, and the closed-channel path below would spend a retry, or, once the parent's one active token
+            // is gone, complete nothing.
+            redispatchUnsentHttp2Request(future);
         } else {
             // bad luck, the channel was closed in-between
             // there's a very good chance onClose was already notified but the
@@ -695,6 +700,11 @@ public final class NettyRequestSender {
         // if the channel is dead because it was pooled and the remote server decided to close it,
         // we just let it go and the channelInactive do its work
         if (!Channels.isChannelActive(channel)) {
+            // Except for a retired HTTP/2 connection, usually closed idle at connectionTtl: nothing stores this request
+            // on it, so no channelInactive would ever complete it. Nothing was written, so send it on a fresh one.
+            if (isRetiredHttp2Connection(channel)) {
+                redispatchUnsentHttp2Request(future);
+            }
             return;
         }
 
@@ -775,6 +785,14 @@ public final class NettyRequestSender {
      */
     private <T> void writeHttp2Request(NettyResponseFuture<T> future, Channel parentChannel, Http2ConnectionState state) {
         if (!state.tryAcquireStream()) {
+            if (state.isRetired()) {
+                // Retired at connectionTtl after this request looked the connection up: it is closing, or full and
+                // on its way out. Nothing has been written, so send the request on a fresh connection instead.
+                // Checked before draining on purpose: a retired connection that a server GOAWAY has since drained
+                // still never received this request, so it is re-sent rather than failed like a draining refusal.
+                redispatchUnsentHttp2Request(future);
+                return;
+            }
             if (state.isDraining()) {
                 // Connection is draining from GOAWAY — fail the future so it retries on a new connection.
                 // Don't close the parent channel since it may still have active streams. sendHttp2Frames
@@ -788,6 +806,10 @@ public final class NettyRequestSender {
             // tryAcquireStream() above and this enqueue — such an opener would never run, so fail the
             // request now instead of leaving it to be completed only by the request timeout (Issue #2160).
             if (!state.offerPendingOpener(future, () -> openHttp2Stream(future, parentChannel, state))) {
+                if (state.isRetired()) {
+                    redispatchUnsentHttp2Request(future);
+                    return;
+                }
                 releaseHttp2Request(future);
                 // Fail ONLY this future (future.abort, not abort(parentChannel, ...)): the parent may be
                 // draining-but-still-active with healthy sibling streams, and abort(channel, ...) would close
@@ -807,6 +829,50 @@ public final class NettyRequestSender {
             return;
         }
         openHttp2Stream(future, parentChannel, state);
+    }
+
+    /**
+     * Sends again, on another connection, a request that was bound for an HTTP/2 connection retired at
+     * {@code connectionTtl} but could not get a stream on it: the connection was closing, or every slot was taken.
+     * <p>
+     * Nothing of the request reached the wire, so this is not a replay: unlike {@link #retry}, it spends none of the
+     * {@code maxRequestRetry} budget and does not call {@link AsyncHandler#onRetry()}. The attempt goes through
+     * {@link #sendNextRequest} like a retry does, so it picks the proxy again, re-polls the pool
+     * ({@code onConnectionPoolAttempt}, then {@code onConnectionPooled} or the resolution, connect and TLS callbacks
+     * of a new connection), rebuilds the request from the current {@link Request}, and re-arms its timeouts: the
+     * attempt gets a fresh {@code requestTimeout}, or what is left of the exchange's budget when the request
+     * timeout is an absolute deadline ({@code useAbsoluteRequestDeadline}). Request filters do not run again; they
+     * ran once, before the first attempt. The retired connection left the registry before it was marked retired, so
+     * the attempt cannot land on it again. It is allowed once per exchange; a second refusal fails it as before.
+     */
+    private <T> void redispatchUnsentHttp2Request(NettyResponseFuture<T> future) {
+        releaseHttp2Request(future);
+        if (future.isDone()) {
+            // A timeout or cancel got there first. Sending it anyway could reach attachChannel on a done future, which
+            // closes the channel it is handed: that can be a healthy connection shared with other requests.
+            return;
+        }
+        if (isClosed() || !future.claimHttp2Redispatch()) {
+            future.abort(new IOException("HTTP/2 connection reached connectionTtl before the request could be sent"));
+            return;
+        }
+        // The future still points at the retired connection until the new attempt attaches its own. A timeout or
+        // cancel in between, during the replacement's DNS lookup and connect, would close that connection under the
+        // streams still finishing on it.
+        future.attachChannel(null, false);
+        try {
+            sendNextRequest(future.getCurrentRequest(), future);
+        } catch (Exception e) {
+            abort(null, future, e);
+        }
+    }
+
+    private static boolean isRetiredHttp2Connection(@Nullable Channel channel) {
+        if (channel == null) {
+            return false;
+        }
+        Http2ConnectionState state = channel.attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
+        return state != null && state.isRetired();
     }
 
     private <T> void openHttp2Stream(NettyResponseFuture<T> future, Channel parentChannel, Http2ConnectionState state) {
@@ -840,7 +906,8 @@ public final class NettyRequestSender {
                         // NettyConnectListener does for the HTTP/1.1 connection semaphore) is the one place
                         // guaranteed to run exactly once per opened stream, so activeStreams cannot leak and
                         // wedge the connection. (The open-FAILURE branch below has no channel and releases
-                        // inline.) The listener also closes a draining connection once its last stream ends.
+                        // inline.) The listener also closes a draining or retired connection once its last stream
+                        // ends.
                         streamChannel.closeFuture().addListener(closed -> {
                             // Safety net: free the request body when the stream ends, however it ends —
                             // covers an Expect/100-continue request whose server answered the final response
@@ -852,8 +919,11 @@ public final class NettyRequestSender {
                             state.releaseStream();
                             // Close the parent once it has no active streams AND it is either draining
                             // (GOAWAY) or a redundant duplicate (#10 thundering-herd loser) — neither
-                            // will serve further requests, so it must not linger open.
-                            if ((state.isDraining() || state.isRedundant()) && state.getActiveStreams() <= 0) {
+                            // will serve further requests, so it must not linger open. A retired one (it
+                            // reached connectionTtl) still admits late streams, so it closes only through
+                            // the atomic idle check, which a concurrent tryAcquireStream cannot slip past.
+                            if (((state.isDraining() || state.isRedundant()) && state.getActiveStreams() <= 0)
+                                    || state.closeIfRetiredAndIdle()) {
                                 channelManager.closeChannel(parentChannel);
                             }
                         });
@@ -892,8 +962,12 @@ public final class NettyRequestSender {
                         }
                     } else {
                         // Stream channel was never opened — no closeFuture will fire, so release the
-                        // acquired slot and the unsent request body inline.
+                        // acquired slot and the unsent request body inline. If that was the last slot of a
+                        // retired connection, no stream close is left to close it, so do it here.
                         state.releaseStream();
+                        if (state.closeIfRetiredAndIdle()) {
+                            channelManager.closeChannel(parentChannel);
+                        }
                         releaseHttp2Request(future);
                         // Fail ONLY this future (future.abort, not abort(parentChannel, ...)): opening one stream
                         // can fail for a stream-local reason (e.g. Netty rejecting it as the outbound max-streams
