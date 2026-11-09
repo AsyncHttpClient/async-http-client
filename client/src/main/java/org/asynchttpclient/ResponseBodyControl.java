@@ -51,13 +51,20 @@ public interface ResponseBodyControl {
      * once it has taken effect, no further body part with content is delivered until {@link #resume()}. {@code zstd}
      * waits for demand only while the system property {@code io.netty.compression.defaultMaxForwardBytes} is positive,
      * as it is by default. Once the body has been decompressed in full, the final empty part, trailing headers and
-     * completion can still arrive while reads are suspended. If the connection closes while compressed input is held
-     * back, the rest of a body that has ended is decompressed and delivered at once, bounded only by
-     * {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. The rest of a body that the close cut off is
-     * dropped, and the request fails as for any connection closed before the end of the body. Native transports such
-     * as epoll notice an orderly close by the server (a TCP FIN) even while reads are suspended; NIO notices it only
-     * once the input held back has been used up. A transfer coding, such as {@code Transfer-Encoding: gzip}, is
-     * decompressed as soon as it is read.
+     * completion can still arrive while reads are suspended. A transfer coding, such as
+     * {@code Transfer-Encoding: gzip}, is decompressed as soon as it is read.
+     * <p>
+     * If the connection closes while compressed input is held back, the rest of a body that has ended is decompressed
+     * and delivered at once, bounded only by {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. That
+     * includes a body delimited by the connection, which ends with it; if its compressed stream is incomplete, the
+     * request then fails with a {@code DecompressionException}. The rest of a {@code Content-Length} or chunked body
+     * that the close cut off is dropped, and the request is retried or fails as for any connection closed before the
+     * end of the body. If its last chunk could not be parsed, the request fails with that error instead.
+     * <p>
+     * After an orderly close by the server (a TCP FIN), native transports such as epoll, io_uring and kqueue read what
+     * is left even while reads are suspended. A body without a content coding that arrived before the close is then
+     * delivered in full, and compressed input is handled as described above. NIO reads nothing while reads are
+     * suspended, so it sees the close only once reads are resumed.
      * <p>
      * While reads are suspended, the read timeout is paused but the request timeout remains active. If the request
      * timeout is disabled, failing to resume or cancel the response can retain its transport resources indefinitely.
