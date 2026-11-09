@@ -49,7 +49,21 @@ import java.util.TreeMap;
 public final class PrincipalScopedPartitionKey {
 
     // Per thread, since scope() runs on the event loop for every poll and offer.
-    private static final ThreadLocal<IdentityCache> IDENTITIES = ThreadLocal.withInitial(IdentityCache::new);
+    private static final ThreadLocal<MessageDigest> DIGEST = ThreadLocal.withInitial(() -> {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            // Every Java SE implementation is required to provide SHA-256.
+            throw new IllegalStateException(e);
+        }
+    });
+
+    private static final int CACHED_IDENTITIES = 16;
+
+    // Element 2i holds a WeakReference to a realm and 2i + 1 one to its identity. JDK types only: a thread-local
+    // value of a class of ours would keep this library's class loader alive for as long as the thread lives.
+    private static final ThreadLocal<Object[]> IDENTITIES =
+            ThreadLocal.withInitial(() -> new Object[2 * CACHED_IDENTITIES]);
 
     private final Object baseKey;
     private final Realm.AuthScheme scheme;
@@ -110,21 +124,39 @@ public final class PrincipalScopedPartitionKey {
      * config is a final field of the realm. The config is the caller's own map, which they can still change
      * after build(), so a realm that has one is digested every time.
      */
-    private static String identityOf(Realm realm) {
-        IdentityCache cache = IDENTITIES.get();
+    static String identityOf(Realm realm) {
         if (realm.getCustomLoginConfig() != null) {
-            return digest(cache.digest, realm);
+            return digest(realm);
         }
-        int slot = System.identityHashCode(realm) & (IdentityCache.SLOTS - 1);
-        CachedIdentity cached = cache.entries[slot];
-        // A cleared reference never matches, so a realm allocated after another was collected cannot pick up
-        // its identity even if it lands in the same slot.
-        if (cached != null && cached.get() == realm) {
-            return cached.identity;
+        Object[] cache = IDENTITIES.get();
+        int slot = System.identityHashCode(realm) & (CACHED_IDENTITIES - 1);
+        // Two ways per set, so an origin and a proxy realm that collide both stay cached.
+        int other = slot ^ 1;
+        String identity = cached(cache, slot, realm);
+        if (identity == null) {
+            identity = cached(cache, other, realm);
         }
-        String identity = digest(cache.digest, realm);
-        cache.entries[slot] = new CachedIdentity(realm, identity);
+        if (identity != null) {
+            return identity;
+        }
+        identity = digest(realm);
+        cache[2 * other] = cache[2 * slot];
+        cache[2 * other + 1] = cache[2 * slot + 1];
+        // Both weak: the cache keeps neither the realm, and with it the password, nor the digest alive. A digest
+        // no pool key holds is computed again after the next collection.
+        cache[2 * slot] = new WeakReference<>(realm);
+        cache[2 * slot + 1] = new WeakReference<>(identity);
         return identity;
+    }
+
+    // A cleared reference never matches, so a realm allocated after another was collected cannot pick up its
+    // identity even if it lands in the same slot.
+    private static @Nullable String cached(Object[] cache, int slot, Realm realm) {
+        Object realmReference = cache[2 * slot];
+        if (realmReference == null || ((WeakReference<?>) realmReference).get() != realm) {
+            return null;
+        }
+        return (String) ((WeakReference<?>) cache[2 * slot + 1]).get();
     }
 
     /**
@@ -132,7 +164,8 @@ public final class PrincipalScopedPartitionKey {
      * principal: {@code CORP\alice} is not {@code OTHER\alice}. Leaving one out shares a socket between two
      * identities, while an extra one only costs a pool miss. Hashed so the key does not hold the password.
      */
-    private static String digest(MessageDigest digest, Realm realm) {
+    static String digest(Realm realm) {
+        MessageDigest digest = DIGEST.get();
         digest.reset();
         // The key's own scheme field is the origin's, so without this an NTLM proxy login and a Negotiate
         // one would share a socket.
@@ -241,31 +274,5 @@ public final class PrincipalScopedPartitionKey {
     public String toString() {
         // No identity: it digests the password too, and an unsalted digest in a debug log can be guessed offline.
         return "PrincipalScopedPartitionKey(baseKey=" + baseKey + ", scheme=" + scheme + ')';
-    }
-
-    private static final class IdentityCache {
-        static final int SLOTS = 16;
-
-        final MessageDigest digest;
-        final CachedIdentity[] entries = new CachedIdentity[SLOTS];
-
-        IdentityCache() {
-            try {
-                digest = MessageDigest.getInstance("SHA-256");
-            } catch (NoSuchAlgorithmException e) {
-                // Every Java SE implementation is required to provide SHA-256.
-                throw new IllegalStateException(e);
-            }
-        }
-    }
-
-    // Weak, so the cache never keeps a realm, and with it a password, alive.
-    private static final class CachedIdentity extends WeakReference<Realm> {
-        final String identity;
-
-        CachedIdentity(Realm realm, String identity) {
-            super(realm);
-            this.identity = identity;
-        }
     }
 }

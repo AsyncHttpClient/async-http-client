@@ -35,6 +35,10 @@ import java.util.concurrent.TimeUnit;
  * {@link PrincipalScopedPartitionKey#scope(Object, Realm, Realm, boolean)} runs for every pool poll and offer
  * of a connection-authenticated exchange: an NTLM or Negotiate origin, or HTTPS through a proxy that asks
  * for a login. {@code lookup} also hashes the key into a map, as the pool does.
+ *
+ * <p>{@code realms = 1} reuses one realm instance per hop, as a client-wide or reused request realm does.
+ * {@code realms = 1024} cycles through that many equal but separately built instances, as building a realm
+ * per request does, so every call misses a per-instance cache.
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
@@ -48,41 +52,52 @@ public class PrincipalScopedPartitionKeyBenchmark {
     @Param({"ntlm", "proxyTunnel", "both"})
     public String hops;
 
+    @Param({"1", "1024"})
+    public int realms;
+
     private final Object baseKey = "https://intranet.example.com:443";
-    private Realm realm;
-    private Realm proxyRealm;
+    private Realm[] originRealms;
+    private Realm[] proxyRealms;
     private Map<Object, Object> pool;
+    private int next;
 
     @Setup(Level.Trial)
     public void setup() {
-        Realm ntlm = new Realm.Builder("alice", "secret")
-                .setScheme(Realm.AuthScheme.NTLM)
-                .setNtlmDomain("CORP")
-                .setNtlmHost("workstation")
-                .build();
-        Realm basic = new Realm.Builder("alice", "secret").setScheme(Realm.AuthScheme.BASIC).build();
-        Realm proxyLogin = new Realm.Builder("proxyuser", "proxysecret").setScheme(Realm.AuthScheme.BASIC).build();
-        switch (hops) {
-            case "ntlm":
-                realm = ntlm;
-                break;
-            case "proxyTunnel":
-                realm = basic;
-                proxyRealm = proxyLogin;
-                break;
-            case "both":
-                realm = ntlm;
-                proxyRealm = proxyLogin;
-                break;
-            default:
-                throw new IllegalArgumentException(hops);
+        originRealms = new Realm[realms];
+        proxyRealms = new Realm[realms];
+        for (int i = 0; i < realms; i++) {
+            Realm ntlm = new Realm.Builder("alice", "secret")
+                    .setScheme(Realm.AuthScheme.NTLM)
+                    .setNtlmDomain("CORP")
+                    .setNtlmHost("workstation")
+                    .build();
+            Realm basic = new Realm.Builder("alice", "secret").setScheme(Realm.AuthScheme.BASIC).build();
+            Realm proxyLogin = new Realm.Builder("proxyuser", "proxysecret").setScheme(Realm.AuthScheme.BASIC).build();
+            switch (hops) {
+                case "ntlm":
+                    originRealms[i] = ntlm;
+                    break;
+                case "proxyTunnel":
+                    originRealms[i] = basic;
+                    proxyRealms[i] = proxyLogin;
+                    break;
+                case "both":
+                    originRealms[i] = ntlm;
+                    proxyRealms[i] = proxyLogin;
+                    break;
+                default:
+                    throw new IllegalArgumentException(hops);
+            }
         }
         pool = new HashMap<>();
         pool.put(scope(), Boolean.TRUE);
     }
 
     private Object scope() {
-        return PrincipalScopedPartitionKey.scope(baseKey, realm, proxyRealm, proxyRealm != null);
+        int i = next;
+        next = i + 1 == realms ? 0 : i + 1;
+        Realm proxyRealm = proxyRealms[i];
+        return PrincipalScopedPartitionKey.scope(baseKey, originRealms[i], proxyRealm, proxyRealm != null);
     }
 
     @Benchmark

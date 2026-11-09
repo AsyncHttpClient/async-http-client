@@ -22,7 +22,9 @@ import org.asynchttpclient.proxy.ProxyType;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -442,6 +445,38 @@ public class PrincipalScopedPartitionKeyTest {
                         new Realm.Builder("user" + i, "secret").setScheme(Realm.AuthScheme.NTLM).build()), "rebuilt realm " + i);
             }
         }
+    }
+
+    @Test
+    public void aCachedIdentityIsTheDigestItself() {
+        Realm realm = fullKerberos().build();
+        String first = PrincipalScopedPartitionKey.identityOf(realm);
+        assertEquals(PrincipalScopedPartitionKey.digest(realm), first);
+        assertSame(first, PrincipalScopedPartitionKey.identityOf(realm), "a second call must be served from the cache");
+
+        Realm configured = fullKerberos().setCustomLoginConfig(new HashMap<>()).build();
+        String uncached = PrincipalScopedPartitionKey.identityOf(configured);
+        assertEquals(first, uncached, "an empty login config adds nothing to the digest");
+        assertNotSame(uncached, PrincipalScopedPartitionKey.identityOf(configured),
+                "a realm with a login config must be digested on every call");
+    }
+
+    private static List<WeakReference<?>> digestAndForget() {
+        Realm realm = new Realm.Builder("gone", "secret").setScheme(Realm.AuthScheme.NTLM).build();
+        String identity = PrincipalScopedPartitionKey.identityOf(realm);
+        return Arrays.asList(new WeakReference<>(realm), new WeakReference<>(identity));
+    }
+
+    /** The realm holds the password and the identity is a guessable digest of it: the cache must keep neither. */
+    @Test
+    public void theCacheKeepsNeitherTheRealmNorItsIdentityAlive() {
+        List<WeakReference<?>> references = digestAndForget();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (references.stream().anyMatch(reference -> reference.get() != null) && System.nanoTime() < deadline) {
+            System.gc();
+        }
+        assertNull(references.get(0).get(), "the realm");
+        assertNull(references.get(1).get(), "its identity");
     }
 
     /** One login on the origin hop is not the same connection as that login on the proxy hop. */
