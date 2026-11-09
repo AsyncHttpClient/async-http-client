@@ -78,8 +78,9 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, Duration cleanerPeriod) {
-        // An empty partition is dropped once it has stayed empty for as long as an idle channel may stay
-        // pooled: a host that is still in use keeps its deque, one that went quiet stops costing the cleaner.
+        // An empty partition is dropped once every cleaner tick for as long as an idle channel may stay pooled
+        // has found it empty, so a host that went quiet stops costing the cleaner. A busy host whose channels
+        // happen to be leased at every tick is dropped too; offer() then just creates its deque again.
         this(maxIdleTime, connectionTtl, poolLeaseStrategy, nettyTimer, cleanerPeriod,
                 maxIdleTime.toMillis() > 0 ? maxIdleTime : connectionTtl);
     }

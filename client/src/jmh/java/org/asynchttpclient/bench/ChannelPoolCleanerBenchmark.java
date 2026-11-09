@@ -44,6 +44,10 @@ import java.util.concurrent.TimeUnit;
  * plus {@code liveHosts} partitions whose channel is leased and returned on every invocation, which keeps
  * them from expiring. {@code cycle} is that lease and return alone, so {@code cleanerPass - cycle} is the
  * pass. The cleaner is fired synchronously through a capturing {@link Timer}.
+ *
+ * <p>Meant as an A/B against a pool that keeps every partition it ever created, where the pass walks all the
+ * dormant deques. Where empty partitions are dropped, {@code dormantHosts} still matters a little: the map's
+ * table keeps the capacity it grew to, and the pass walks its bins.
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
@@ -63,7 +67,7 @@ public class ChannelPoolCleanerBenchmark {
     private Object[] liveKeys;
 
     @Setup(Level.Trial)
-    public void setup() throws InterruptedException {
+    public void setup() {
         timer = new CapturingTimer();
         pool = new DefaultChannelPool(Duration.ofMillis(IDLE_MILLIS), Duration.ZERO, PoolLeaseStrategy.LIFO, timer,
                 Duration.ofMillis(IDLE_MILLIS));
@@ -75,8 +79,11 @@ public class ChannelPoolCleanerBenchmark {
             pool.poll(key);
         }
         // Let the dormant hosts stay quiet for longer than the idle timeout, with the cleaner ticking.
-        timer.fire();
-        Thread.sleep(2 * IDLE_MILLIS);
+        long quietUntil = System.currentTimeMillis() + 2 * IDLE_MILLIS;
+        do {
+            timer.fire();
+            Thread.onSpinWait();
+        } while (System.currentTimeMillis() < quietUntil);
         timer.fire();
 
         liveKeys = new Object[liveHosts];

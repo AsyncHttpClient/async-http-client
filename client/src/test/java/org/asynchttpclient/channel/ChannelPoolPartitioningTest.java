@@ -49,7 +49,9 @@ public class ChannelPoolPartitioningTest {
     @Test
     public void everyComponentSeparatesKeys() {
         Object base = key("http://a.example:8080/", "vhost", HTTP_PROXY);
-        assertNotEquals(base, key("https://a.example:8080/", "vhost", HTTP_PROXY), "scheme");
+        // Without a proxy: through one, the scheme also picks the proxy port.
+        assertNotEquals(key("http://a.example:8080/", "vhost", null), key("https://a.example:8080/", "vhost", null),
+                "scheme");
         assertNotEquals(base, key("http://b.example:8080/", "vhost", HTTP_PROXY), "host");
         assertNotEquals(base, key("http://a.example:8081/", "vhost", HTTP_PROXY), "port");
         assertNotEquals(base, key("http://a.example:8080/", "other", HTTP_PROXY), "virtual host");
