@@ -638,10 +638,11 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
-    public void offerRacingAFlushIsNotStranded() throws Exception {
+    public void offerRacingAFlushIsClosedNotStranded() throws Exception {
         // Same stale read against flushPartitions, which unmaps a partition before it closes what it holds.
         // A channel linked into it afterwards used to sit in a deque nothing reached any more: never leased,
-        // never reaped, never closed.
+        // never reaped, never closed. The flush's iterator can also miss a node the offer takes back, so the
+        // offer closes the channel itself: one offered while a flush runs does not outlive it.
         DefaultChannelPool pool = noReaperPool();
         Channel flushed = new EmbeddedChannel();
         Channel late = new EmbeddedChannel();
@@ -654,9 +655,9 @@ public class DefaultChannelPoolTest {
         assertTrue(pool.offer(late, KEY));
 
         assertFalse(stale.contains(late), "the offer must take its channel back out of the flushed partition");
-        assertNotSame(stale, partition(pool, KEY), "the stale mapping must be replaced");
-        assertSame(late, pool.poll(KEY), "a channel offered after the flush must be leasable");
-        assertTrue(late.isActive());
+        assertFalse(late.isActive(), "a channel offered into a flushed partition must be closed like the rest");
+        assertFalse(hasPartition(pool, KEY), "the stale mapping must be gone");
+        assertNull(pool.poll(KEY));
 
         pool.destroy();
     }
@@ -1087,8 +1088,8 @@ public class DefaultChannelPoolTest {
                 }
             }
             assertEquals(channelCount, pooled, "every channel must still be pooled");
-            // More deques than channels means the cleaner dropped partitions that offers then recreated.
-            assertTrue(partitionsSeen.size() > channelCount,
+            // Without retirement there is at most one deque per key, ever.
+            assertTrue(partitionsSeen.size() > keys,
                     "partitions must have been dropped and recreated, otherwise this proves nothing; saw "
                             + partitionsSeen.size());
         } finally {

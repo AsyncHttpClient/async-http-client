@@ -198,6 +198,15 @@ public final class DefaultChannelPool implements ChannelPool {
             if (!partition.removeFirstOccurrence(channel) || !isLeasable(channel)) {
                 return;
             }
+            if (partition.flushed) {
+                // The flush may have missed the node this thread just took back, so close the channel the
+                // way the flush would have, rather than let it outlive the flush in a new partition.
+                IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+                if (idleState == null || idleState.takeOwnership()) {
+                    close(channel);
+                }
+                return;
+            }
         }
     }
 
@@ -294,8 +303,9 @@ public final class DefaultChannelPool implements ChannelPool {
 
     private void flushPartition(Partition partition) {
         partitions.remove(partition.key, partition);
-        // An offer that read the partition before the unmapping takes its channel back and links it into a
-        // live partition, instead of leaving it in a deque nothing reaches any more.
+        // An offer that read the partition before the unmapping, and whose node this iterator may therefore
+        // miss, sees the flags and closes its channel, instead of leaving it in a deque nothing reaches.
+        partition.flushed = true;
         partition.retired = true;
         for (Channel channel : partition) {
             // Claim before closing, the same rule the idle cleaner follows. Removing the partition
@@ -368,7 +378,7 @@ public final class DefaultChannelPool implements ChannelPool {
     /**
      * A partition's deque, plus what dropping it safely needs. {@code retired} is raised once the partition
      * has been unmapped (by the cleaner or a flush), after which an offer that still links into it takes
-     * its channel back. A subclass rather than a holder, so offer and poll pay no extra indirection.
+     * its channel back, and closes it if {@code flushed} says a flush unmapped it. A subclass rather than a holder, so offer and poll pay no extra indirection.
      */
     static final class Partition extends ConcurrentLinkedDeque<Channel> {
 
@@ -377,6 +387,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
         final transient Object key;
         transient volatile boolean retired;
+        // Written before retired, so whoever reads retired as true also sees it.
+        transient boolean flushed;
         // Only the cleaner reads and writes this, and its passes run one after another.
         transient long emptySince = NOT_EMPTY;
 
