@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -46,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -480,6 +483,164 @@ public class DefaultChannelPoolTest {
         pool.destroy();
     }
 
+    // ---- empty partitions are dropped ----
+
+    private static DefaultChannelPool retiringPool(CapturingTimer timer, Duration connectionTtl) {
+        // Idle timeout long enough never to trip; an empty partition is dropped on the first tick it is seen.
+        return new DefaultChannelPool(Duration.ofHours(1), connectionTtl, PoolLeaseStrategy.LIFO, timer,
+                Duration.ofMillis(1), Duration.ZERO);
+    }
+
+    private static DefaultChannelPool.Partition partition(DefaultChannelPool pool, Object key) throws Exception {
+        return (DefaultChannelPool.Partition) partitions(pool).get(key);
+    }
+
+    @Test
+    public void cleanerDropsAPartitionThatStayedEmpty() throws Exception {
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+        Channel channel = new EmbeddedChannel();
+
+        assertTrue(pool.offer(channel, KEY));
+        assertSame(channel, pool.poll(KEY));
+        DefaultChannelPool.Partition emptied = partition(pool, KEY);
+        assertTrue(hasPartition(pool, KEY), "polling the last channel leaves the partition mapped");
+
+        timer.fire();
+
+        assertFalse(hasPartition(pool, KEY), "the cleaner must drop a partition that stayed empty");
+        assertTrue(emptied.retired);
+
+        assertTrue(pool.offer(channel, KEY));
+        assertSame(channel, pool.poll(KEY), "a later offer must recreate the partition");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void cleanerKeepsAPartitionThatHoldsChannels() throws Exception {
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+        Channel channel = new EmbeddedChannel();
+
+        assertTrue(pool.offer(channel, KEY));
+        timer.fire();
+
+        assertTrue(hasPartition(pool, KEY));
+        assertSame(channel, pool.poll(KEY));
+
+        pool.destroy();
+    }
+
+    @Test
+    public void emptyPartitionLingersForTheIdleTimeoutByDefault() throws Exception {
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = idlePool(timer, Duration.ofHours(1));
+        Channel channel = new EmbeddedChannel();
+
+        assertTrue(pool.offer(channel, KEY));
+        assertSame(channel, pool.poll(KEY));
+        timer.fire();
+        timer.fire();
+
+        assertTrue(hasPartition(pool, KEY), "a host that just went quiet must keep its partition");
+        assertNotEquals(-1, partition(pool, KEY).emptySince, "the cleaner must have noted it empty");
+
+        assertTrue(pool.offer(channel, KEY));
+        timer.fire();
+        assertEquals(-1, partition(pool, KEY).emptySince, "refilling the partition must restart the clock");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void retiringAPartitionHandsItsChannelsToALiveOne() throws Exception {
+        // The drain side of the race: an offer linked a channel into the partition after the cleaner saw it
+        // empty and before the cleaner raised the flag, so the offer itself did not see it.
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+        Channel first = new EmbeddedChannel();
+        Channel second = new EmbeddedChannel();
+        assertTrue(pool.offer(first, KEY));
+        assertTrue(pool.offer(second, KEY));
+        DefaultChannelPool.Partition retired = partition(pool, KEY);
+
+        pool.retire(retired);
+
+        assertTrue(retired.isEmpty(), "retiring must drain the partition");
+        DefaultChannelPool.Partition live = partition(pool, KEY);
+        assertNotNull(live);
+        assertNotSame(retired, live);
+        assertSame(second, pool.poll(KEY), "the drain must keep the LIFO order");
+        assertSame(first, pool.poll(KEY));
+        assertNull(pool.poll(KEY));
+
+        pool.destroy();
+    }
+
+    @Test
+    public void retiringAPartitionDropsAClaimedChannel() throws Exception {
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ofHours(1));
+        Channel channel = new EmbeddedChannel();
+        assertTrue(pool.offer(channel, KEY));
+        assertTrue(pool.removeAll(channel));
+
+        pool.retire(partition(pool, KEY));
+
+        assertFalse(hasPartition(pool, KEY), "a tombstone must not be moved into a new partition");
+        assertTrue(channel.isActive(), "a tombstone belongs to whoever claimed it");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void offerIntoARetiredPartitionRelinksTheChannel() throws Exception {
+        // The offer side of the race: the offer read the partition from the map before the cleaner unmapped
+        // it, and links into it afterwards. Mapping the retired partition back stands in for that stale read.
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+        Channel channel = new EmbeddedChannel();
+        assertTrue(pool.offer(channel, KEY));
+        assertSame(channel, pool.poll(KEY));
+        DefaultChannelPool.Partition retired = partition(pool, KEY);
+        timer.fire();
+        assertTrue(retired.retired);
+        partitions(pool).put(KEY, retired);
+
+        assertTrue(pool.offer(channel, KEY));
+
+        assertTrue(retired.isEmpty(), "the offer must take its channel back out of the retired partition");
+        assertNotSame(retired, partition(pool, KEY), "the stale mapping must be replaced");
+        assertSame(channel, pool.poll(KEY), "the channel must still be leasable");
+
+        pool.destroy();
+    }
+
+    @Test
+    public void offerRacingAFlushIsNotStranded() throws Exception {
+        // Same stale read against flushPartitions, which unmaps a partition before it closes what it holds.
+        // A channel linked into it afterwards used to sit in a deque nothing reached any more: never leased,
+        // never reaped, never closed.
+        DefaultChannelPool pool = noReaperPool();
+        Channel flushed = new EmbeddedChannel();
+        Channel late = new EmbeddedChannel();
+        assertTrue(pool.offer(flushed, KEY));
+        DefaultChannelPool.Partition stale = partition(pool, KEY);
+        pool.flushPartitions(KEY::equals);
+        assertFalse(flushed.isActive());
+        partitions(pool).put(KEY, stale);
+
+        assertTrue(pool.offer(late, KEY));
+
+        assertFalse(stale.contains(late), "the offer must take its channel back out of the flushed partition");
+        assertNotSame(stale, partition(pool, KEY), "the stale mapping must be replaced");
+        assertSame(late, pool.poll(KEY), "a channel offered after the flush must be leasable");
+        assertTrue(late.isActive());
+
+        pool.destroy();
+    }
+
     @Test
     public void cleanerReapsExpiredButKeepsHealthyInSameTick() throws Exception {
         // A single reap pass must drop the expired channels AND keep the fresh ones leasable: the
@@ -854,6 +1015,161 @@ public class DefaultChannelPoolTest {
             if (!timerStopped) {
                 timer.stop();
             }
+        }
+    }
+
+    @Test
+    @org.junit.jupiter.api.Timeout(120) // io.netty.util.Timeout owns the simple name here
+    public void partitionRetirementNeverLosesAConcurrentlyOfferedChannel() throws Exception {
+        // A fixed set of channels wanders across more keys than there are channels: each worker offers the
+        // channel it holds under one random key and polls another, so most partitions are empty most of the
+        // time. A cleaner that drops every partition it finds empty runs on the test thread meanwhile, so
+        // offers keep landing on partitions that are being retired. Nothing is ever closed (idle timeout of
+        // an hour, no TTL, no removeAll) and every worker hands back what it holds before it exits, so at
+        // quiescence every channel must be pooled. The cleaner is paced by the workers' progress only to
+        // bound its DEBUG output, which the test logback config turns on.
+        final int keys = 16;
+        final int threads = 4;
+        final int channelCount = 8;
+        final int cyclesPerWorker = 50_000;
+        final int cyclesPerPass = 50;
+        CapturingTimer timer = new CapturingTimer();
+        DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+
+        for (int i = 0; i < channelCount; i++) {
+            assertTrue(pool.offer(new EmbeddedChannel(), i % keys));
+        }
+        final AtomicReference<Throwable> failure = new AtomicReference<>();
+        final CountDownLatch done = new CountDownLatch(threads);
+        final Set<Object> partitionsSeen = Collections.newSetFromMap(new IdentityHashMap<>());
+        final AtomicLong progress = new AtomicLong();
+
+        try {
+            for (int t = 0; t < threads; t++) {
+                final int seed = t;
+                Thread worker = new Thread(() -> {
+                    try {
+                        long x = seed + 1;
+                        Channel held = null;
+                        for (int i = 0; i < cyclesPerWorker; i++) {
+                            x = x * 6364136223846793005L + 1442695040888963407L;
+                            if (held != null) {
+                                pool.offer(held, (int) ((x >>> 33) % keys));
+                            }
+                            held = pool.poll((int) ((x >>> 17) % keys));
+                            progress.incrementAndGet();
+                        }
+                        if (held != null) {
+                            pool.offer(held, 0);
+                        }
+                    } catch (Throwable th) {
+                        failure.compareAndSet(null, th);
+                    } finally {
+                        done.countDown();
+                    }
+                }, "partition-race-" + t);
+                worker.start();
+            }
+
+            Map<Object, ConcurrentLinkedDeque<Channel>> map = partitions(pool);
+            long nextPass = 0;
+            while (done.getCount() > 0) {
+                if (progress.get() < nextPass) {
+                    Thread.onSpinWait();
+                    continue;
+                }
+                timer.fire();
+                partitionsSeen.addAll(map.values());
+                nextPass = progress.get() + cyclesPerPass;
+            }
+            assertTrue(done.await(30, TimeUnit.SECONDS), "workers must finish");
+            if (failure.get() != null) {
+                fail("worker threw: " + failure.get(), failure.get());
+            }
+
+            long pooled = 0;
+            for (int key = 0; key < keys; key++) {
+                while (pool.poll(key) != null) {
+                    pooled++;
+                }
+            }
+            assertEquals(channelCount, pooled, "every channel must still be pooled");
+            assertTrue(partitionsSeen.size() > keys * 4,
+                    "partitions must have been dropped and recreated many times, otherwise this proves nothing; saw "
+                            + partitionsSeen.size());
+        } finally {
+            pool.destroy();
+        }
+    }
+
+    @Test
+    @org.junit.jupiter.api.Timeout(120) // io.netty.util.Timeout owns the simple name here
+    public void flushNeverStrandsAConcurrentlyOfferedChannel() throws Exception {
+        // Same accounting against a thread that flushes every partition back to back: at quiescence each
+        // channel is either closed by a flush or still pooled. One that is alive and unreachable was linked
+        // into a partition after the flush unmapped it.
+        final int keys = 4;
+        final int threads = 4;
+        final int cyclesPerWorker = 100_000;
+        DefaultChannelPool pool = noReaperPool();
+
+        final Queue<Channel> created = new ConcurrentLinkedQueue<>();
+        final AtomicReference<Throwable> failure = new AtomicReference<>();
+        final CountDownLatch done = new CountDownLatch(threads);
+        long flushes = 0;
+
+        try {
+            for (int t = 0; t < threads; t++) {
+                final int seed = t;
+                Thread worker = new Thread(() -> {
+                    try {
+                        long x = seed + 1;
+                        for (int i = 0; i < cyclesPerWorker; i++) {
+                            x = x * 6364136223846793005L + 1442695040888963407L;
+                            Object key = (int) ((x >>> 33) % keys);
+                            Channel channel = pool.poll(key);
+                            if (channel == null) {
+                                channel = new EmbeddedChannel();
+                                created.add(channel);
+                            }
+                            pool.offer(channel, key);
+                        }
+                    } catch (Throwable th) {
+                        failure.compareAndSet(null, th);
+                    } finally {
+                        done.countDown();
+                    }
+                }, "flush-race-" + t);
+                worker.start();
+            }
+
+            while (done.getCount() > 0) {
+                pool.flushPartitions(key -> true);
+                flushes++;
+            }
+            assertTrue(done.await(30, TimeUnit.SECONDS), "workers must finish");
+            if (failure.get() != null) {
+                fail("worker threw: " + failure.get(), failure.get());
+            }
+
+            long closed = 0;
+            for (Channel channel : created) {
+                if (!channel.isActive()) {
+                    closed++;
+                }
+            }
+            long pooled = 0;
+            for (int key = 0; key < keys; key++) {
+                while (pool.poll(key) != null) {
+                    pooled++;
+                }
+            }
+            assertTrue(closed > 0, "the flushes must have closed channels, otherwise this proves nothing ("
+                    + flushes + " flushes)");
+            assertEquals(created.size(), closed + pooled, "a live channel is in no partition (created="
+                    + created.size() + " closed=" + closed + " pooled=" + pooled + ")");
+        } finally {
+            pool.destroy();
         }
     }
 

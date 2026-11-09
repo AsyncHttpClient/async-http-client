@@ -54,7 +54,7 @@ public final class DefaultChannelPool implements ChannelPool {
     // The partition deques hold the bare Channel; per-checkout idle state (start timestamp + the
     // ownership/generation word) lives on the channel's IDLE_STATE_ATTRIBUTE_KEY attribute, which is
     // allocated once per physical connection and reused across every pool cycle (no per-offer holder).
-    private final ConcurrentHashMap<Object, ConcurrentLinkedDeque<Channel>> partitions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Object, Partition> partitions = new ConcurrentHashMap<>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean rejectedOfferLogged = new AtomicBoolean(false);
     private final Timer nettyTimer;
@@ -63,6 +63,7 @@ public final class DefaultChannelPool implements ChannelPool {
     private final long maxIdleTime;
     private final boolean maxIdleTimeEnabled;
     private final long cleanerPeriod;
+    private final long emptyPartitionTtl;
     private final PoolLeaseStrategy poolLeaseStrategy;
 
     public DefaultChannelPool(AsyncHttpClientConfig config, Timer hashedWheelTimer) {
@@ -77,6 +78,14 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     public DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, Duration cleanerPeriod) {
+        // An empty partition is dropped once it has stayed empty for as long as an idle channel may stay
+        // pooled: a host that is still in use keeps its deque, one that went quiet stops costing the cleaner.
+        this(maxIdleTime, connectionTtl, poolLeaseStrategy, nettyTimer, cleanerPeriod,
+                maxIdleTime.toMillis() > 0 ? maxIdleTime : connectionTtl);
+    }
+
+    DefaultChannelPool(Duration maxIdleTime, Duration connectionTtl, PoolLeaseStrategy poolLeaseStrategy, Timer nettyTimer, Duration cleanerPeriod,
+                       Duration emptyPartitionTtl) {
         final long maxIdleTimeInMs = maxIdleTime.toMillis();
         final long connectionTtlInMs = connectionTtl.toMillis();
         final long cleanerPeriodInMs = cleanerPeriod.toMillis();
@@ -86,6 +95,7 @@ public final class DefaultChannelPool implements ChannelPool {
         this.nettyTimer = nettyTimer;
         maxIdleTimeEnabled = maxIdleTimeInMs > 0;
         this.poolLeaseStrategy = poolLeaseStrategy;
+        this.emptyPartitionTtl = emptyPartitionTtl.toMillis();
 
         this.cleanerPeriod = Math.min(cleanerPeriodInMs, Math.min(connectionTtlEnabled ? connectionTtlInMs : Integer.MAX_VALUE,
                 maxIdleTimeEnabled ? maxIdleTimeInMs : Integer.MAX_VALUE));
@@ -161,14 +171,51 @@ public final class DefaultChannelPool implements ChannelPool {
         }
 
         // Resolve the partition only once the generation transfer succeeded, so a rejected offer cannot
-        // leave an empty deque behind for the cleaner to walk on every tick. Keep the plain get() fast
-        // path: computeIfAbsent only returns lock-free when the key is its bin's head node, and otherwise
-        // locks the bin (or joins a resize), which get() never does.
-        ConcurrentLinkedDeque<Channel> partition = partitions.get(partitionKey);
-        if (partition == null) {
-            partition = partitions.computeIfAbsent(partitionKey, pk -> new ConcurrentLinkedDeque<>());
+        // leave an empty deque behind for the cleaner to walk on every tick.
+        link(partitionKey, channel);
+        return true;
+    }
+
+    private void link(Object partitionKey, Channel channel) {
+        for (; ; ) {
+            // Keep the plain get() fast path: computeIfAbsent only returns lock-free when the key is its
+            // bin's head node, and otherwise locks the bin (or joins a resize), which get() never does.
+            Partition partition = partitions.get(partitionKey);
+            if (partition == null) {
+                partition = partitions.computeIfAbsent(partitionKey, Partition::new);
+            }
+            partition.offerFirst(channel);
+            // Pairs with retire(): the link above and the flag read below, against the flag write and the
+            // drain there. Either this thread sees the flag, or the drain sees the node.
+            if (!partition.retired) {
+                return;
+            }
+            // The partition was unmapped after this thread read it. Take the node back and link it into a
+            // live partition. If it is gone, the drain or a poll() took it and the channel is theirs; if it
+            // is no longer leasable, whoever claimed it meanwhile handles it.
+            partitions.remove(partitionKey, partition);
+            if (!partition.removeFirstOccurrence(channel) || !isLeasable(channel)) {
+                return;
+            }
         }
-        return partition.offerFirst(channel);
+    }
+
+    /**
+     * Unmap a partition and hand any channel still linked into it to a live partition. Run by the cleaner
+     * for a partition that has stayed empty, which a concurrent offer may just have refilled.
+     */
+    void retire(Partition partition) {
+        // Unmap before raising the flag, so an offer that sees the flag cannot read this partition back
+        // from the map and spin on it.
+        partitions.remove(partition.key, partition);
+        partition.retired = true;
+        Channel channel;
+        while ((channel = partition.pollLast()) != null) {
+            // Owned nodes are dropped as reapPartition drops them: their owner handles the channel.
+            if (isLeasable(channel)) {
+                link(partition.key, channel);
+            }
+        }
     }
 
     private static void registerChannelCreation(Channel channel, Object partitionKey, long now) {
@@ -243,32 +290,32 @@ public final class DefaultChannelPool implements ChannelPool {
         Channels.silentlyCloseChannel(channel);
     }
 
-    private void flushPartition(Object partitionKey, ConcurrentLinkedDeque<Channel> partition) {
-        if (partition != null) {
-            partitions.remove(partitionKey);
-            for (Channel channel : partition) {
-                // Claim before closing, the same rule the idle cleaner follows. Removing the partition
-                // from the map does not stop a concurrent poll(): a caller that read the deque reference
-                // first can still lease out of it, and this iterator can still see a node that poll has
-                // unlinked. Closing unconditionally would then kill a connection a request is already
-                // using. Losing the claim means somebody else owns the channel -- a lessee, a removeAll
-                // tombstone, or the cleaner -- and closing it is their responsibility, not ours.
-                // Winning the claim also leaves the channel owned, so the pool never holds a channel that
-                // is closed yet still reads as leasable.
-                IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
-                if (idleState == null || idleState.takeOwnership()) {
-                    close(channel);
-                }
+    private void flushPartition(Partition partition) {
+        partitions.remove(partition.key, partition);
+        // An offer that read the partition before the unmapping takes its channel back and links it into a
+        // live partition, instead of leaving it in a deque nothing reaches any more.
+        partition.retired = true;
+        for (Channel channel : partition) {
+            // Claim before closing, the same rule the idle cleaner follows. Removing the partition
+            // from the map does not stop a concurrent poll(): a caller that read the deque reference
+            // first can still lease out of it, and this iterator can still see a node that poll has
+            // unlinked. Closing unconditionally would then kill a connection a request is already
+            // using. Losing the claim means somebody else owns the channel -- a lessee, a removeAll
+            // tombstone, or the cleaner -- and closing it is their responsibility, not ours.
+            // Winning the claim also leaves the channel owned, so the pool never holds a channel that
+            // is closed yet still reads as leasable.
+            IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+            if (idleState == null || idleState.takeOwnership()) {
+                close(channel);
             }
         }
     }
 
     @Override
     public void flushPartitions(Predicate<Object> predicate) {
-        for (Map.Entry<Object, ConcurrentLinkedDeque<Channel>> partitionsEntry : partitions.entrySet()) {
-            Object partitionKey = partitionsEntry.getKey();
-            if (predicate.test(partitionKey)) {
-                flushPartition(partitionKey, partitionsEntry.getValue());
+        for (Partition partition : partitions.values()) {
+            if (predicate.test(partition.key)) {
+                flushPartition(partition);
             }
         }
     }
@@ -314,6 +361,26 @@ public final class DefaultChannelPool implements ChannelPool {
         };
 
         abstract <E> E lease(Deque<E> d);
+    }
+
+    /**
+     * A partition's deque, plus what dropping it safely needs. {@code retired} is raised once the partition
+     * has been unmapped (by the cleaner or a flush), after which an offer that still links into it takes
+     * its channel back. A subclass rather than a holder, so offer and poll pay no extra indirection.
+     */
+    static final class Partition extends ConcurrentLinkedDeque<Channel> {
+
+        private static final long serialVersionUID = 1L;
+        private static final long NOT_EMPTY = -1;
+
+        final transient Object key;
+        transient volatile boolean retired;
+        // Only the cleaner reads and writes this, and its passes run one after another.
+        transient long emptySince = NOT_EMPTY;
+
+        Partition(Object key) {
+            this.key = key;
+        }
     }
 
     private static final class ChannelCreation {
@@ -445,7 +512,7 @@ public final class DefaultChannelPool implements ChannelPool {
             }
 
             if (LOGGER.isDebugEnabled()) {
-                for (Map.Entry<Object, ConcurrentLinkedDeque<Channel>> entry : partitions.entrySet()) {
+                for (Map.Entry<Object, Partition> entry : partitions.entrySet()) {
                     int size = entry.getValue().size();
                     if (size > 0) {
                         LOGGER.debug("Entry count for : {} : {}", entry.getKey(), size);
@@ -457,15 +524,26 @@ public final class DefaultChannelPool implements ChannelPool {
             int closedCount = 0;
             int totalCount = 0;
 
-            for (ConcurrentLinkedDeque<Channel> partition : partitions.values()) {
+            for (Partition partition : partitions.values()) {
                 if (LOGGER.isDebugEnabled()) {
                     totalCount += partition.size();
                 }
 
                 if (partition.isEmpty()) {
+                    // Without this the map only grows: every host ever contacted would keep a deque that
+                    // each tick walks, for the life of the client.
+                    if (partition.emptySince == Partition.NOT_EMPTY) {
+                        partition.emptySince = start;
+                    }
+                    if (start - partition.emptySince >= emptyPartitionTtl) {
+                        retire(partition);
+                    }
                     continue;
                 }
 
+                if (partition.emptySince != Partition.NOT_EMPTY) {
+                    partition.emptySince = Partition.NOT_EMPTY;
+                }
                 closedCount += reapPartition(partition, start);
             }
 
