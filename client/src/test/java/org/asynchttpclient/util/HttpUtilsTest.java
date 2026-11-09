@@ -194,4 +194,57 @@ public class HttpUtilsTest {
         assertEquals("flag", HttpUtils.cookiePairName(" flag"));
         assertEquals("", HttpUtils.cookiePairName(""));
     }
+
+    @Test
+    public void filterOutBrotliDropsTheCodingWherever() {
+        assertEquals("gzip, deflate", filterOutBrotli("gzip, deflate, br"));
+        assertEquals("gzip, deflate, zstd", filterOutBrotli("gzip, deflate, br, zstd"));
+        assertEquals("gzip, deflate", filterOutBrotli("br, gzip, deflate"));
+        assertEquals("gzip, deflate", filterOutBrotli("gzip,br,deflate"));
+        assertEquals("", filterOutBrotli("br"));
+    }
+
+    @Test
+    public void filterOutBrotliIgnoresCaseWhitespaceAndWeight() {
+        assertEquals("gzip;q=0.8, deflate", filterOutBrotli("gzip;q=0.8, BR ; q=1.0 ,\tdeflate"));
+        assertEquals("gzip", filterOutBrotli("gzip, Br;q=0.5"));
+    }
+
+    @Test
+    public void filterOutBrotliKeepsOtherCodings() {
+        assertEquals("gzip,deflate", filterOutBrotli("gzip,deflate"));
+        assertEquals("gzip, brotli, x-br", filterOutBrotli("gzip, brotli, x-br"));
+    }
+
+    @Test
+    public void filterOutZstdDropsTheCodingWherever() {
+        assertEquals("gzip, deflate", filterOutZstd("gzip, deflate, zstd"));
+        assertEquals("gzip, deflate, br", filterOutZstd("gzip, deflate, zstd, br"));
+        assertEquals("gzip;q=0.8, br", filterOutZstd("ZSTD;q=1, gzip;q=0.8, br"));
+        assertEquals("gzip, zstd-x", filterOutZstd("gzip, zstd-x"));
+        assertEquals("", filterOutZstd(" zstd "));
+    }
+
+    @Test
+    public void filterOutKeepsARefusalOfTheCoding() {
+        assertEquals("*, br;q=0", filterOutBrotli("*, br;q=0"));
+        assertEquals("*, BR ; Q = 0.000", filterOutBrotli("*, BR ; Q = 0.000"));
+        assertEquals("gzip, zstd;q=0., *", filterOutZstd("gzip, zstd;q=0., *"));
+        assertEquals("gzip, br;q=0", filterOutBrotli("gzip, br;q=0.001, br;q=0"));
+    }
+
+    @Test
+    public void filterOutRefusesTheCodingNextToAWildcard() {
+        assertEquals("*, zstd;q=0", filterOutZstd("*, zstd;q=0.5"));
+        assertEquals("gzip, br;q=0, *", filterOutBrotli("gzip, BR, br;q=0.2, *"));
+        assertEquals("*;q=0", filterOutBrotli("*;q=0, br"));
+    }
+
+    private static String filterOutBrotli(String acceptEncoding) {
+        return HttpUtils.filterOutBrotliFromAcceptEncoding(acceptEncoding).toString();
+    }
+
+    private static String filterOutZstd(String acceptEncoding) {
+        return HttpUtils.filterOutZstdFromAcceptEncoding(acceptEncoding).toString();
+    }
 }

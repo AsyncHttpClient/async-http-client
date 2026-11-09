@@ -235,9 +235,17 @@ public final class NettyRequestFactory {
     private final AsyncHttpClientConfig config;
     private final ClientCookieEncoder cookieEncoder;
     private final @Nullable AsciiString userAgent;
+    private final boolean brotliAvailable;
+    private final boolean zstdAvailable;
 
     NettyRequestFactory(AsyncHttpClientConfig config) {
+        this(config, Brotli.isAvailable(), Zstd.isAvailable());
+    }
+
+    NettyRequestFactory(AsyncHttpClientConfig config, boolean brotliAvailable, boolean zstdAvailable) {
         this.config = config;
+        this.brotliAvailable = brotliAvailable;
+        this.zstdAvailable = zstdAvailable;
         cookieEncoder = config.isUseLaxCookieEncoder() ? ClientCookieEncoder.LAX : ClientCookieEncoder.STRICT;
         // An AsciiString is bulk-copied by the encoder; a String is encoded char by char. Same bytes either
         // way, and the validating request headers still reject an illegal character on every request.
@@ -359,27 +367,18 @@ public final class NettyRequestFactory {
             // Unconditional: it also folds several caller-set Cookie fields into one.
             mergeCookies(request.getCookies(), headers);
 
-            String userDefinedAcceptEncoding = headers.get(ACCEPT_ENCODING);
-            if (userDefinedAcceptEncoding != null) {
+            if (headers.contains(ACCEPT_ENCODING)) {
+                // For manual decompression by the user any encoding may suit, so leave it untouched
                 if (config.isEnableAutomaticDecompression()) {
-                    if (!Brotli.isAvailable()) {
-                        // Brotli is not available.
-                        // For manual decompression by user, any encoding may suite, so leave untouched
-                        headers.set(ACCEPT_ENCODING, filterOutBrotliFromAcceptEncoding(userDefinedAcceptEncoding));
-                    }
-                    if (!Zstd.isAvailable()) {
-                        // zstd is not available.
-                        // For manual decompression by user, any encoding may suit, so leave untouched
-                        headers.set(ACCEPT_ENCODING, filterOutZstdFromAcceptEncoding(userDefinedAcceptEncoding));
-                    }
+                    filterOutUndecodableAcceptEncodings(headers, brotliAvailable, zstdAvailable);
                 }
             } else if (config.isCompressionEnforced()) {
                 // Add Accept Encoding header if compression is enforced
                 headers.set(ACCEPT_ENCODING, GZIP_DEFLATE);
-                if (Brotli.isAvailable()) {
+                if (brotliAvailable) {
                     headers.add(ACCEPT_ENCODING, HttpHeaderValues.BR);
                 }
-                if (Zstd.isAvailable()) {
+                if (zstdAvailable) {
                     headers.add(ACCEPT_ENCODING, HttpHeaderValues.ZSTD);
                 }
             }
@@ -493,6 +492,28 @@ public final class NettyRequestFactory {
             return keepAlive ? null : HttpHeaderValues.CLOSE;
         } else {
             return keepAlive ? HttpHeaderValues.KEEP_ALIVE : null;
+        }
+    }
+
+    /**
+     * Without its library a coding would reach the user still compressed, so it is not offered. Several fields are
+     * filtered as their comma-joined list, which means the same (RFC 9110 section 5.3).
+     */
+    static void filterOutUndecodableAcceptEncodings(HttpHeaders headers, boolean brotliAvailable, boolean zstdAvailable) {
+        if (brotliAvailable && zstdAvailable) {
+            return;
+        }
+        List<String> values = headers.getAll(ACCEPT_ENCODING);
+        String acceptEncoding = values.size() == 1 ? values.get(0) : String.join(", ", values);
+        String filtered = acceptEncoding;
+        if (!brotliAvailable) {
+            filtered = filterOutBrotliFromAcceptEncoding(filtered).toString();
+        }
+        if (!zstdAvailable) {
+            filtered = filterOutZstdFromAcceptEncoding(filtered).toString();
+        }
+        if (!filtered.equals(acceptEncoding)) {
+            headers.set(ACCEPT_ENCODING, filtered);
         }
     }
 }
