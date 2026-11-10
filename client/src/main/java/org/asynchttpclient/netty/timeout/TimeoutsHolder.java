@@ -369,9 +369,9 @@ public class TimeoutsHolder {
      * Whether a read timeout armed now for {@code delay} would be due before the request deadline, measured on
      * nanoClock like every other check of that deadline. A delay no shorter than the whole request timeout never
      * is, and is answered without a clock read: that is the default path, on which the deadline need not be on
-     * nanoClock. Below that it always is: the constructor puts an absolute deadline there, and a per-attempt one
-     * whenever the read timeout is the shorter, and a delay shorter than the read timeout only comes from a read
-     * timeout that has already passed this check in full.
+     * nanoClock. Below that the deadline always is: the constructor puts an absolute one there, and a per-attempt
+     * one whenever the read timeout is the shorter, and a delay shorter than the read timeout only comes from a
+     * read timeout that has already passed this check in full.
      */
     private boolean dueBeforeRequestDeadline(long delay) {
         return delay < requestTimeoutValue && delay < untilRequestDeadline();

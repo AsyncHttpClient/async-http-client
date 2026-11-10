@@ -599,6 +599,8 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     // Any positive reading plus the longest timeout overflows, which only a comparison by subtraction survives.
+    // holder() sets up what the holder runs against; the one it builds is dropped, having read the clock too
+    // early to overflow.
     private TimeoutsHolder holderWithTheLongestRequestTimeout() {
         holder(Long.MAX_VALUE, false, false, null, 0);
         nanoOrigin = ONE_HOUR_MS;
