@@ -183,8 +183,8 @@ public class DefaultRequest implements Request {
 
     /**
      * Returns a request that differs from this one only by its cookies. Unlike a round trip through
-     * {@link #toBuilder()}, the URI is kept as built rather than encoded again, so a request built with URL
-     * encoding disabled is sent as written, and the other fields are shared rather than copied.
+     * {@link #toBuilder()}, the URI is kept as built rather than encoded again, and the other fields are shared
+     * rather than copied.
      */
     DefaultRequest withCookies(List<Cookie> cookies) {
         return new DefaultRequest(method, uri, address, localAddress, headers, cookies, byteData, compositeByteData,
