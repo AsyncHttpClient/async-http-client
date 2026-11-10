@@ -64,11 +64,11 @@ public class TimeoutsHolder {
     private final Timer nettyTimer;
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
-    // The request deadline on nanoClock, for everything that re-arms or checks it after start: a timer entry
-    // is already timed on a monotonic clock, and a deadline re-derived from the wall clock would move with
-    // every step of it. Set only where something will read it -- an entry armed early, one rehomeOn may move,
-    // or a read timeout shorter than the request timeout asking whether it needs an entry of its own -- since
-    // reading the clock is a measurable part of what an attempt that needs none of them costs.
+    // The request deadline on nanoClock, for everything that re-arms or checks it: a timer entry is already
+    // timed on a monotonic clock, and a deadline re-derived from the wall clock would move with every step of
+    // it. Set only where something will read it -- an entry armed early, one rehomeOn may move, or a read
+    // timeout shorter than the request timeout asking whether it needs an entry of its own -- since reading
+    // the clock is a measurable part of what an attempt that needs none of them costs.
     private volatile long requestDeadlineNanos;
     private final long requestTimeoutValue;
     private final boolean absoluteDeadline;
@@ -131,6 +131,10 @@ public class TimeoutsHolder {
                 // caller's choice, per request or per client. Straight off the start rather than off a clock
                 // reading, so that time passing while the holder is built cannot extend it.
                 requestDeadlineNanos = nettyResponseFuture.getStartNanos() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
+            } else if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
+                // Here rather than in start(), which arms the entry early in this same case: startReadTimeout
+                // reads it too, and can reach this holder through its future before start() has run.
+                requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
             }
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
         } else {
@@ -162,9 +166,9 @@ public class TimeoutsHolder {
             long untilDeadline = absoluteDeadline
                     ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue;
             boolean early = readTimeoutValue != -1 && readTimeoutValue < untilDeadline;
-            if (!absoluteDeadline && (early || useEventLoopTimeouts)) {
-                // Anchored where the entry is armed, from the same duration. Whenever the read timeout is the
-                // shorter, which is also when startReadTimeout reads it.
+            if (!absoluteDeadline && !early && useEventLoopTimeouts) {
+                // For rehomeOn to re-arm from, anchored where the entry is armed, from the same duration. An
+                // entry armed early has it from the constructor.
                 requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutValue);
             }
             if (early) {
@@ -365,11 +369,9 @@ public class TimeoutsHolder {
      * Whether a read timeout armed now for {@code delay} would be due before the request deadline, measured on
      * nanoClock like every other check of that deadline. A delay no shorter than the whole request timeout never
      * is, and is answered without a clock read: that is the default path, on which the deadline is not on
-     * nanoClock. Below that it always is: the constructor puts an absolute deadline there, and {@link #start} a
-     * per-attempt one whenever the read timeout is the shorter, and a delay shorter than the read timeout only
-     * comes from a read timeout that has already passed this check in full. That takes start() to have run,
-     * which it has: a read timeout is started through the future, and a holder is started as the future takes
-     * it.
+     * nanoClock. Below that it always is: the constructor puts an absolute deadline there, and a per-attempt one
+     * whenever the read timeout is the shorter, and a delay shorter than the read timeout only comes from a read
+     * timeout that has already passed this check in full.
      */
     private boolean dueBeforeRequestDeadline(long delay) {
         return delay < requestTimeoutValue && delay < untilRequestDeadline();

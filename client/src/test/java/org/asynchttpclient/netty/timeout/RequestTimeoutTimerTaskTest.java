@@ -352,10 +352,7 @@ public class RequestTimeoutTimerTaskTest {
 
     @Test
     public void aRequestTimeoutPastWhatTheMonotonicClockCanHoldIsNotTakenForPassed() {
-        TimeoutsHolder holder = holder(Long.MAX_VALUE, false, false, null, 0);
-        // Any positive reading plus the longest timeout overflows, which only a comparison by subtraction
-        // survives.
-        nanoOrigin = ONE_HOUR_MS;
+        TimeoutsHolder holder = holderWithTheLongestRequestTimeout();
         holder.start();
         holder.startReadTimeout();
 
@@ -368,8 +365,7 @@ public class RequestTimeoutTimerTaskTest {
 
     @Test
     public void aRequestTimeoutPastWhatTheClocksCanHoldStillLetsAReadTimeoutStart() {
-        TimeoutsHolder holder = holder(Long.MAX_VALUE, false, false, null, 0);
-        nanoOrigin = ONE_HOUR_MS;
+        TimeoutsHolder holder = holderWithTheLongestRequestTimeout();
         holder.start();
         // Still connecting or writing when the entry fires, so the read timeout takes an entry of its own.
         fire(0, READ_TIMEOUT_MS);
@@ -378,6 +374,17 @@ public class RequestTimeoutTimerTaskTest {
 
         assertEquals(3, armed.size(), "the request deadline is nowhere near");
         assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(2).task);
+    }
+
+    @Test
+    public void aReadTimeoutStartedBeforeTheHolderIsStartedStillGetsAnEntry() {
+        // setTimeoutsHolder makes the holder reachable through the future before it starts it.
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, false, false, null, 0);
+
+        holder.startReadTimeout();
+
+        assertEquals(1, armed.size(), "the whole request timeout is still ahead");
+        assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(0).task);
     }
 
     @Test
@@ -589,6 +596,13 @@ public class RequestTimeoutTimerTaskTest {
         wallOrigin = future.getLastTouch();
         nanoOrigin = future.getStartNanos() + TimeUnit.MILLISECONDS.toNanos(spentMillis);
         return new TimeoutsHolder(timer, executor, future, requestSender, config, null, this::millis, this::nanos);
+    }
+
+    // Any positive reading plus the longest timeout overflows, which only a comparison by subtraction survives.
+    private TimeoutsHolder holderWithTheLongestRequestTimeout() {
+        holder(Long.MAX_VALUE, false, false, null, 0);
+        nanoOrigin = ONE_HOUR_MS;
+        return new TimeoutsHolder(timer, null, future, requestSender, config, null, this::millis, this::nanos);
     }
 
     // Takes the holder off the future without cancelling it, as NettyResponseFuture does before it cancels.
