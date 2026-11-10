@@ -66,8 +66,9 @@ public class TimeoutsHolder {
     private final NettyRequestSender requestSender;
     // The request deadline on nanoClock, for everything that re-arms or checks it after start: a timer entry
     // is already timed on a monotonic clock, and a deadline re-derived from the wall clock would move with
-    // every step of it. Set only where something will read it -- an entry armed early, or one rehomeOn may
-    // move -- since reading the clock is a measurable part of what an attempt that needs neither costs.
+    // every step of it. Set only where something will read it -- an entry armed early, one rehomeOn may move,
+    // or a read timeout shorter than the request timeout asking whether it needs an entry of its own -- since
+    // reading the clock is a measurable part of what an attempt that needs none of them costs.
     private volatile long requestDeadlineNanos;
     private final long requestTimeoutValue;
     private final boolean absoluteDeadline;
@@ -162,7 +163,8 @@ public class TimeoutsHolder {
                     ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue;
             boolean early = readTimeoutValue != -1 && readTimeoutValue < untilDeadline;
             if (!absoluteDeadline && (early || useEventLoopTimeouts)) {
-                // Anchored where the entry is armed, from the same duration.
+                // Anchored where the entry is armed, from the same duration. Whenever the read timeout is the
+                // shorter, which is also when startReadTimeout reads it.
                 requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutValue);
             }
             if (early) {
@@ -365,7 +367,9 @@ public class TimeoutsHolder {
      * is, and is answered without a clock read: that is the default path, on which the deadline is not on
      * nanoClock. Below that it always is: the constructor puts an absolute deadline there, and {@link #start} a
      * per-attempt one whenever the read timeout is the shorter, and a delay shorter than the read timeout only
-     * comes from a read timeout that has already passed this check in full.
+     * comes from a read timeout that has already passed this check in full. That takes start() to have run,
+     * which it has: a read timeout is started through the future, and a holder is started as the future takes
+     * it.
      */
     private boolean dueBeforeRequestDeadline(long delay) {
         return delay < requestTimeoutValue && delay < untilRequestDeadline();

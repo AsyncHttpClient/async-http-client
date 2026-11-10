@@ -393,6 +393,19 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
+    public void aWallClockStepForwardDoesNotKeepAReadTimeoutFromStartingUnderAnAbsoluteDeadline() {
+        TimeoutsHolder holder = holder(REQUEST_TIMEOUT_MS, true, false, null, 2_000);
+        holder.start();
+        fire(0, READ_TIMEOUT_MS);
+
+        wallClockStepMillis = ONE_HOUR_MS;
+        holder.startReadTimeout();
+
+        assertEquals(3, armed.size(), "a step of the wall clock is not time spent on the exchange");
+        assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(2).task);
+    }
+
+    @Test
     public void aWallClockStepBackDoesNotStartAReadTimeoutThatTheRequestDeadlineBeats() {
         TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
         fire(0, READ_TIMEOUT_MS);
