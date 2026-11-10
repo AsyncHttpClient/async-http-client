@@ -367,6 +367,55 @@ public class RequestTimeoutTimerTaskTest {
     }
 
     @Test
+    public void aRequestTimeoutPastWhatTheClocksCanHoldStillLetsAReadTimeoutStart() {
+        TimeoutsHolder holder = holder(Long.MAX_VALUE, false, false, null, 0);
+        nanoOrigin = ONE_HOUR_MS;
+        holder.start();
+        // Still connecting or writing when the entry fires, so the read timeout takes an entry of its own.
+        fire(0, READ_TIMEOUT_MS);
+
+        holder.startReadTimeout();
+
+        assertEquals(3, armed.size(), "the request deadline is nowhere near");
+        assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(2).task);
+    }
+
+    @Test
+    public void aWallClockStepForwardDoesNotKeepAReadTimeoutFromStarting() {
+        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        fire(0, READ_TIMEOUT_MS);
+
+        wallClockStepMillis = ONE_HOUR_MS;
+        holder.startReadTimeout();
+
+        assertEquals(3, armed.size(), "a step of the wall clock is not time spent on the request");
+        assertInstanceOf(ReadTimeoutTimerTask.class, armed.get(2).task);
+    }
+
+    @Test
+    public void aWallClockStepBackDoesNotStartAReadTimeoutThatTheRequestDeadlineBeats() {
+        TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
+        fire(0, READ_TIMEOUT_MS);
+
+        elapsedMillis = REQUEST_TIMEOUT_MS - READ_TIMEOUT_MS / 2;
+        wallClockStepMillis = -ONE_HOUR_MS;
+        holder.startReadTimeout();
+
+        assertEquals(2, armed.size(), "the request timeout is due first, so the read timeout needs no entry");
+    }
+
+    @Test
+    public void aWallClockStepBackDoesNotStartAReadTimeoutNoShorterThanTheRequestTimeout() {
+        TimeoutsHolder holder = startedHolder(READ_TIMEOUT_MS);
+
+        wallClockStepMillis = -ONE_HOUR_MS;
+        holder.startReadTimeout();
+
+        assertEquals(1, armed.size(), "the request timeout is due first, so the read timeout needs no entry");
+        assertEquals(0, nanoReads);
+    }
+
+    @Test
     public void aWallClockStepBackDoesNotPutTheNextReadCheckOutOfReach() {
         TimeoutsHolder holder = startedHolder(REQUEST_TIMEOUT_MS);
         holder.startReadTimeout();

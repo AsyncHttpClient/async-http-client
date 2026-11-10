@@ -38,8 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * replay each build a new holder for the same future, so what a second holder makes of the same exchange is
  * the whole of the difference between the two modes.
  * <p>
- * No timer and no request sender: without them the holder computes its deadline and arms nothing, which is
- * exactly the part worth testing directly rather than through a request.
+ * No timer and no request sender: started without them, the holder computes its deadline and arms nothing,
+ * which is exactly the part worth testing directly rather than through a request. Each test reads what is left
+ * until that deadline, so a deadline that stays put shows as what is left shrinking by the time that passed.
  */
 public class TimeoutsHolderTest {
 
@@ -55,22 +56,22 @@ public class TimeoutsHolderTest {
     public void anAbsoluteDeadlineStaysWhereTheExchangeStarted() {
         NettyResponseFuture<?> future = exchange(true);
 
-        long firstHop = deadlineOf(future, BUDGET);
+        long firstHop = untilDeadlineOf(future, BUDGET);
         elapsedMillis.addAndGet(ELAPSED_MS);
-        long secondHop = deadlineOf(future, BUDGET);
+        long secondHop = untilDeadlineOf(future, BUDGET);
 
-        assertEquals(firstHop, secondHop, "the second hop moved the deadline");
+        assertEquals(firstHop - ELAPSED_MS, secondHop, "the second hop moved the deadline");
     }
 
     @Test
     public void aPerAttemptTimeoutGivesTheSecondHopItsOwnBudget() {
         NettyResponseFuture<?> future = exchange(false);
 
-        long firstHop = deadlineOf(future, BUDGET);
+        long firstHop = untilDeadlineOf(future, BUDGET);
         elapsedMillis.addAndGet(ELAPSED_MS);
-        long secondHop = deadlineOf(future, BUDGET);
+        long secondHop = untilDeadlineOf(future, BUDGET);
 
-        assertEquals(firstHop + ELAPSED_MS, secondHop, "the second hop should have started a budget of its own");
+        assertEquals(firstHop, secondHop, "the second hop should have started a budget of its own");
     }
 
     @Test
@@ -89,7 +90,7 @@ public class TimeoutsHolderTest {
         NettyResponseFuture<?> future = exchange(false);
         elapsedMillis.addAndGet(ELAPSED_MS);
 
-        assertEquals(millis() + BUDGET.toMillis(), deadlineOf(future, BUDGET),
+        assertEquals(BUDGET.toMillis(), untilDeadlineOf(future, BUDGET),
                 "a hop should be given the configured timeout of its own however long the exchange has run");
     }
 
@@ -101,13 +102,19 @@ public class TimeoutsHolderTest {
         return nanoOrigin + TimeUnit.MILLISECONDS.toNanos(elapsedMillis.get());
     }
 
-    private long deadlineOf(NettyResponseFuture<?> future, Duration requestTimeout) {
-        return new TimeoutsHolder(null, null, future, null, config(requestTimeout), null, this::millis, this::nanos)
-                .requestTimeoutMillisTime();
+    private long untilDeadlineOf(NettyResponseFuture<?> future, Duration requestTimeout) {
+        TimeoutsHolder holder = new TimeoutsHolder(null, null, future, null, config(requestTimeout), null,
+                this::millis, this::nanos);
+        holder.start();
+        return holder.untilRequestDeadline();
     }
 
+    // A read timeout shorter than the request timeout, so that start() keeps a per-attempt deadline too.
     private static AsyncHttpClientConfig config(Duration requestTimeout) {
-        return new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(requestTimeout).build();
+        return new DefaultAsyncHttpClientConfig.Builder()
+                .setRequestTimeout(requestTimeout)
+                .setReadTimeout(Duration.ofMillis(1))
+                .build();
     }
 
     private NettyResponseFuture<?> exchange(boolean useAbsoluteRequestDeadline) {
