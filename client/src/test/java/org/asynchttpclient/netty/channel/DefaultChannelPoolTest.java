@@ -534,7 +534,7 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
-    public void emptyPartitionLingersForTheIdleTimeoutByDefault() throws Exception {
+    public void emptyPartitionIsNotDroppedOnFirstSighting() throws Exception {
         CapturingTimer timer = new CapturingTimer();
         DefaultChannelPool pool = idlePool(timer, Duration.ofHours(1));
         Channel channel = new EmbeddedChannel();
@@ -598,8 +598,8 @@ public class DefaultChannelPoolTest {
 
     @Test
     public void retiringLeavesAPartitionSomebodyElseUnmappedAlone() throws Exception {
-        // A flush that unmapped the partition first owns its channels and closes them; the cleaner must not
-        // move one of them to a new partition where it would outlive the flush.
+        // Whoever unmaps a partition owns what is left in it: retire() must leave alone a partition another
+        // thread, such as a flush, has already unmapped.
         CapturingTimer timer = new CapturingTimer();
         DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
         Channel channel = new EmbeddedChannel();
