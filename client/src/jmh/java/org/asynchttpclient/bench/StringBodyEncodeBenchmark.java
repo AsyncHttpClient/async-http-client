@@ -17,7 +17,6 @@ package org.asynchttpclient.bench;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.asynchttpclient.util.StringUtils;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
@@ -28,6 +27,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
@@ -87,7 +87,7 @@ public class StringBodyEncodeBenchmark {
 
     @Benchmark
     public ByteBuf charsetEncode() {
-        return Unpooled.wrappedBuffer(StringUtils.charSequence2ByteBuffer(body, StandardCharsets.UTF_8));
+        return Unpooled.wrappedBuffer(StandardCharsets.UTF_8.encode(CharBuffer.wrap(body)));
     }
 
     @Benchmark

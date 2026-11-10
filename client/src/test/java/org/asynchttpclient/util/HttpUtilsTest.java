@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -155,6 +156,39 @@ public class HttpUtilsTest {
     @Test
     public void formUrlEncodingShouldSupportNonUtf8Charset() throws Exception {
         formUrlEncoding(Charset.forName("GBK"));
+    }
+
+    @Test
+    public void formParamBytesMatchCharsetEncodeOfTheEncodedForm() {
+        List<Param> params = new ArrayList<>();
+        params.add(new Param("a b", "caf\u00e9"));
+        params.add(new Param("\u4e2d\u6587", null));
+        params.add(new Param("x\ud83d\ude00y", "a\ud800b"));
+        params.add(new Param("\udc00", ""));
+        for (Charset charset : new Charset[]{UTF_8, ISO_8859_1, Charset.forName("GBK")}) {
+            StringBuilder form = new StringBuilder();
+            for (Param param : params) {
+                appendFormField(form, param.getName(), charset);
+                if (param.getValue() != null) {
+                    appendFormField(form.append('='), param.getValue(), charset);
+                }
+                form.append('&');
+            }
+            form.setLength(form.length() - 1);
+            ByteBuffer expected = US_ASCII.encode(CharBuffer.wrap(form));
+
+            // the pooled builder keeps a UTF-16 coder once it has held a char above U+00FF
+            StringBuilderPool.DEFAULT.stringBuilder().append('\u0100');
+            assertEquals(expected, HttpUtils.urlEncodeFormParams(params, charset), charset.name());
+        }
+    }
+
+    private static void appendFormField(StringBuilder sb, String field, Charset charset) {
+        if (charset.equals(UTF_8)) {
+            Utf8UrlEncoder.encodeAndAppendFormElement(sb, field);
+        } else {
+            sb.append(URLEncoder.encode(field, charset));
+        }
     }
 
     @Test

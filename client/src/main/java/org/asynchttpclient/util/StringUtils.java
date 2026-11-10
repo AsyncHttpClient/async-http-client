@@ -16,8 +16,11 @@
 package org.asynchttpclient.util;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class StringUtils {
 
@@ -26,7 +29,7 @@ public final class StringUtils {
     }
 
     public static ByteBuffer charSequence2ByteBuffer(CharSequence cs, Charset charset) {
-        return charset.encode(CharBuffer.wrap(cs));
+        return ByteBuffer.wrap(charSequence2Bytes(cs, charset));
     }
 
     public static byte[] byteBuffer2ByteArray(ByteBuffer bb) {
@@ -36,8 +39,25 @@ public final class StringUtils {
     }
 
     public static byte[] charSequence2Bytes(CharSequence sb, Charset charset) {
-        ByteBuffer bb = charSequence2ByteBuffer(sb, charset);
-        return byteBuffer2ByteArray(bb);
+        if (sb instanceof String) {
+            return ((String) sb).getBytes(charset);
+        }
+        // ISO-8859-1 maps a char below U+0100, UTF-8 and US-ASCII a char below U+0080, to that byte,
+        // so such input needs no String copy.
+        int limit = charset.equals(ISO_8859_1) ? 0x100 : charset.equals(UTF_8) || charset.equals(US_ASCII) ? 0x80 : 0;
+        if (limit != 0) {
+            int length = sb.length();
+            byte[] bytes = new byte[length];
+            for (int i = 0; i < length; i++) {
+                char c = sb.charAt(i);
+                if (c >= limit) {
+                    return sb.toString().getBytes(charset);
+                }
+                bytes[i] = (byte) c;
+            }
+            return bytes;
+        }
+        return sb.toString().getBytes(charset);
     }
 
     public static String toHexString(byte[] data) {

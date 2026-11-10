@@ -16,6 +16,8 @@ import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringUtils;
 import org.junit.jupiter.api.Test;
 
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
@@ -129,6 +131,36 @@ public class RealmTest {
         String expectedResponse = getMd5(ha1 + ':' + nonce + ':' + nc + ':' + cnonce + ':' + qop + ':' + ha2);
 
         assertEquals(expectedResponse, orig.getResponse());
+    }
+
+    @Test
+    public void digestHashesNonAsciiInputAsCharsetEncodeDoes() throws Exception {
+        String user = "\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c";
+        String pass = "p\u00e4ss\ud800w\u20ac\ud83d\ude00";
+        String realmName = "r\u00e9alm";
+        String nonce = "nonce";
+        String method = "GET";
+        Uri uri = Uri.create("http://ahc.io/foo");
+        for (String charsetParam : new String[]{"", ", charset=UTF-8"}) {
+            Realm realm = digestAuthRealm(user, pass)
+                    .setUri(uri)
+                    .setMethodName(method)
+                    .parseWWWAuthenticateHeader("Digest realm=\"" + realmName + "\", nonce=\"" + nonce + "\", qop=\"auth\"" + charsetParam)
+                    .build();
+
+            Charset charset = realm.getCharset();
+            assertEquals(charsetParam.isEmpty() ? StandardCharsets.ISO_8859_1 : StandardCharsets.UTF_8, charset);
+            String ha1 = charsetEncodeMd5(user + ':' + realmName + ':' + pass, charset);
+            String ha2 = charsetEncodeMd5(method + ':' + uri.getPath(), charset);
+            String expectedResponse = charsetEncodeMd5(ha1 + ':' + nonce + ':' + realm.getNc() + ':' + realm.getCnonce() + ":auth:" + ha2, charset);
+            assertEquals(expectedResponse, realm.getResponse(), charset.name());
+        }
+    }
+
+    private static String charsetEncodeMd5(String what, Charset charset) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(charset.encode(CharBuffer.wrap(what)));
+        return StringUtils.toHexString(md.digest());
     }
 
     // Phase 1: matchParam tests
