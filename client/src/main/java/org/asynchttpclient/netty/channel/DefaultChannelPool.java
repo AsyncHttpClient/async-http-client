@@ -178,57 +178,44 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private void link(Object partitionKey, Channel channel) {
-        for (; ; ) {
-            // Keep the plain get() fast path: computeIfAbsent only returns lock-free when the key is its
-            // bin's head node, and otherwise locks the bin (or joins a resize), which get() never does.
-            Partition partition = partitions.get(partitionKey);
-            if (partition == null) {
-                partition = partitions.computeIfAbsent(partitionKey, Partition::new);
-            }
-            partition.offerFirst(channel);
-            // Pairs with retire(): the link above and the flag read below, against the flag write and the
-            // drain there. Either this thread sees the flag, or the drain sees the node.
-            if (!partition.retired) {
-                return;
-            }
-            // The partition was unmapped after this thread read it. Take the node back and link it into a
-            // live partition. If it is gone, the drain or a poll() took it and the channel is theirs; if it
-            // is no longer leasable, whoever claimed it meanwhile handles it.
-            partitions.remove(partitionKey, partition);
-            if (!partition.removeFirstOccurrence(channel) || !isLeasable(channel)) {
-                return;
-            }
-            if (partition.flushed) {
-                // The flush may have missed the node this thread just took back, so close the channel the
-                // way the flush would have, rather than let it outlive the flush in a new partition.
-                IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
-                if (idleState == null || idleState.takeOwnership()) {
-                    close(channel);
-                }
-                return;
-            }
+        // Keep the plain get() fast path: computeIfAbsent only returns lock-free when the key is its bin's
+        // head node, and otherwise locks the bin (or joins a resize), which get() never does.
+        Partition partition = partitions.get(partitionKey);
+        if (partition == null) {
+            partition = partitions.computeIfAbsent(partitionKey, Partition::new);
+        }
+        partition.offerFirst(channel);
+        // Pairs with retire() and flushPartition(): the link above and the flag read below, against the flag
+        // write and the drain or scan there. Either this thread sees the flag, or that thread sees the node.
+        if (!partition.retired) {
+            return;
+        }
+        // The partition was unmapped after this thread read it. Take the node back and close the channel, as
+        // whoever unmapped the partition does with what it finds there. If the node is gone, that thread or a
+        // poll() took it and the channel is theirs.
+        partitions.remove(partitionKey, partition);
+        if (partition.removeFirstOccurrence(channel)) {
+            closeUnlessClaimed(channel);
         }
     }
 
     /**
-     * Unmap a partition and hand any channel still linked into it to a live partition. Run by the cleaner
-     * for a partition that has stayed empty, which a concurrent offer may just have refilled. A channel in
-     * transit is in no deque, so a poll() in that window misses it and opens a connection instead.
+     * Unmap a partition the cleaner found empty for long enough, and close any channel an offer linked into
+     * it meanwhile. Moving such a channel to a new partition instead would leave it in no deque for a moment,
+     * where poll() misses it and a flush that started meanwhile can miss it for good; closing one idle
+     * connection in that narrow window only costs a reconnect.
      */
     void retire(Partition partition) {
-        // Whoever unmaps a partition owns what is left in it. Losing to a flush leaves the channels to the
-        // flush, which closes them. Unmapping before raising the flag also means an offer that sees the flag
-        // cannot read this partition back from the map and spin on it.
+        // Whoever unmaps a partition owns what is left in it, so retire() and flushPartition() never both
+        // drain one. Unmapping before raising the flag also means an offer that sees the flag cannot read
+        // this partition back from the map.
         if (!partitions.remove(partition.key, partition)) {
             return;
         }
         partition.retired = true;
         Channel channel;
         while ((channel = partition.pollLast()) != null) {
-            // Owned nodes are dropped as reapPartition drops them: their owner handles the channel.
-            if (isLeasable(channel)) {
-                link(partition.key, channel);
-            }
+            closeUnlessClaimed(channel);
         }
     }
 
@@ -305,28 +292,31 @@ public final class DefaultChannelPool implements ChannelPool {
     }
 
     private void flushPartition(Partition partition) {
-        // As in retire(): losing the unmapping to the cleaner leaves the channels to it, which moves them to a
-        // live partition, the same as if they had been offered right after this flush.
+        // As in retire(): if the cleaner unmapped the partition first, it closes what is left in it.
         if (!partitions.remove(partition.key, partition)) {
             return;
         }
-        // An offer that read the partition before the unmapping, and whose node this iterator may therefore
-        // miss, sees the flags and closes its channel, instead of leaving it in a deque nothing reaches.
-        partition.flushed = true;
+        // An offer that read the partition before the unmapping, and whose node this scan may therefore miss,
+        // sees the flag and closes its channel, instead of leaving it in a deque nothing reaches any more.
         partition.retired = true;
         for (Channel channel : partition) {
-            // Claim before closing, the same rule the idle cleaner follows. Removing the partition
-            // from the map does not stop a concurrent poll(): a caller that read the deque reference
-            // first can still lease out of it, and this iterator can still see a node that poll has
-            // unlinked. Closing unconditionally would then kill a connection a request is already
-            // using. Losing the claim means somebody else owns the channel -- a lessee, a removeAll
-            // tombstone, or the cleaner -- and closing it is their responsibility, not ours.
-            // Winning the claim also leaves the channel owned, so the pool never holds a channel that
-            // is closed yet still reads as leasable.
-            IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
-            if (idleState == null || idleState.takeOwnership()) {
-                close(channel);
-            }
+            // Removing the partition from the map does not stop a concurrent poll(): a caller that read the
+            // deque reference first can still lease out of it, and this iterator can still see a node that
+            // poll has unlinked. Hence the claim before the close.
+            closeUnlessClaimed(channel);
+        }
+    }
+
+    /**
+     * Close a channel unless somebody else has claimed it, the rule the idle cleaner follows too. Losing the
+     * claim means somebody else owns the channel -- a lessee, a removeAll tombstone, or the cleaner -- and
+     * closing it is their responsibility. Winning it leaves the channel owned, so the pool never holds a
+     * channel that is closed yet still reads as leasable.
+     */
+    private static void closeUnlessClaimed(Channel channel) {
+        IdleState idleState = channel.attr(IDLE_STATE_ATTRIBUTE_KEY).get();
+        if (idleState == null || idleState.takeOwnership()) {
+            close(channel);
         }
     }
 
@@ -384,8 +374,8 @@ public final class DefaultChannelPool implements ChannelPool {
 
     /**
      * A partition's deque, plus what dropping it safely needs. {@code retired} is raised once the partition
-     * has been unmapped (by the cleaner or a flush), after which an offer that still links into it takes
-     * its channel back, and closes it if {@code flushed} says a flush unmapped it. A subclass rather than a holder, so offer and poll pay no extra indirection.
+     * has been unmapped (by the cleaner or a flush), after which an offer that still links into it takes its
+     * channel back and closes it. A subclass rather than a holder, so offer and poll pay no extra indirection.
      */
     static final class Partition extends ConcurrentLinkedDeque<Channel> {
 
@@ -394,9 +384,6 @@ public final class DefaultChannelPool implements ChannelPool {
 
         final transient Object key;
         transient volatile boolean retired;
-        // Written before retired, by the flush that unmapped the partition, so whoever reads retired as true
-        // also sees it.
-        transient boolean flushed;
         // Only the cleaner reads and writes this, and its passes run one after another.
         transient long emptySince = NOT_EMPTY;
 

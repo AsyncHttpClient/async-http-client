@@ -41,15 +41,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -574,7 +574,7 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
-    public void retiringAPartitionHandsItsChannelsToALiveOne() throws Exception {
+    public void retiringAPartitionClosesWhatARacingOfferLeftInIt() throws Exception {
         // The drain side of the race: an offer linked a channel into the partition after the cleaner saw it
         // empty and before the cleaner raised the flag, so the offer itself did not see it.
         CapturingTimer timer = new CapturingTimer();
@@ -588,12 +588,9 @@ public class DefaultChannelPoolTest {
         pool.retire(retired);
 
         assertTrue(retired.isEmpty(), "retiring must drain the partition");
-        DefaultChannelPool.Partition live = partition(pool, KEY);
-        assertNotNull(live);
-        assertNotSame(retired, live);
-        assertSame(second, pool.poll(KEY), "the drain must keep the LIFO order");
-        assertSame(first, pool.poll(KEY));
-        assertNull(pool.poll(KEY));
+        assertFalse(hasPartition(pool, KEY));
+        assertFalse(first.isActive(), "a channel left in a retired partition must be closed, not stranded");
+        assertFalse(second.isActive());
 
         pool.destroy();
     }
@@ -635,7 +632,7 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
-    public void offerIntoARetiredPartitionRelinksTheChannel() throws Exception {
+    public void offerIntoARetiredPartitionClosesTheChannel() throws Exception {
         // The offer side of the race: the offer read the partition from the map before the cleaner unmapped
         // it, and links into it afterwards. Mapping the retired partition back stands in for that stale read.
         CapturingTimer timer = new CapturingTimer();
@@ -651,8 +648,12 @@ public class DefaultChannelPoolTest {
         assertTrue(pool.offer(channel, KEY));
 
         assertTrue(retired.isEmpty(), "the offer must take its channel back out of the retired partition");
-        assertNotSame(retired, partition(pool, KEY), "the stale mapping must be replaced");
-        assertSame(channel, pool.poll(KEY), "the channel must still be leasable");
+        assertFalse(channel.isActive(), "and close it rather than strand it");
+        assertFalse(hasPartition(pool, KEY), "the stale mapping must be gone");
+
+        Channel next = new EmbeddedChannel();
+        assertTrue(pool.offer(next, KEY));
+        assertSame(next, pool.poll(KEY), "a later offer must find a live partition");
 
         pool.destroy();
     }
@@ -1062,18 +1063,29 @@ public class DefaultChannelPoolTest {
     @Test
     @org.junit.jupiter.api.Timeout(120) // io.netty.util.Timeout owns the simple name here
     public void partitionRetirementNeverLosesAConcurrentlyOfferedChannel() throws Exception {
-        // A fixed set of channels wanders across more keys than there are channels: each worker offers the
+        // A small set of channels wanders across more keys than there are channels: each worker offers the
         // channel it holds under one random key and polls another, so most partitions are empty most of the
         // time. Meanwhile the test thread runs a cleaner that drops every partition it finds empty, so offers
-        // keep landing on partitions that are being retired. Nothing is ever closed (idle
-        // timeout of an hour, no TTL, no removeAll) and every worker hands back what it holds before it
-        // exits, so at quiescence every channel must be pooled.
+        // keep landing on partitions that are being retired. The pool closes a channel that such an offer
+        // leaves in a retired partition, and workers mint a replacement to keep the set about channelCount
+        // strong. Nothing else closes one (idle timeout of an hour, no TTL, no removeAll), and every worker
+        // hands back what it holds before it exits, so at quiescence every channel is pooled or closed. One
+        // that is alive and unreachable was lost.
         final int keys = 16;
         final int channelCount = 8;
         CapturingTimer timer = new CapturingTimer();
         DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
+        final Queue<Channel> created = new ConcurrentLinkedQueue<>();
+        final AtomicInteger open = new AtomicInteger();
+        final Supplier<Channel> mint = () -> {
+            EmbeddedChannel channel = new EmbeddedChannel();
+            created.add(channel);
+            open.incrementAndGet();
+            channel.closeFuture().addListener(future -> open.decrementAndGet());
+            return channel;
+        };
         for (int i = 0; i < channelCount; i++) {
-            assertTrue(pool.offer(new EmbeddedChannel(), i % keys));
+            assertTrue(pool.offer(mint.get(), i % keys));
         }
         final Set<Object> partitionsSeen = Collections.newSetFromMap(new IdentityHashMap<>());
         final Map<Object, ConcurrentLinkedDeque<Channel>> map = partitions(pool);
@@ -1084,6 +1096,9 @@ public class DefaultChannelPoolTest {
 
                 @Override
                 public void cycle(long random) {
+                    if (held == null && open.get() < channelCount) {
+                        held = mint.get();
+                    }
                     if (held != null) {
                         pool.offer(held, (int) ((random >>> 33) % keys));
                     }
@@ -1101,13 +1116,20 @@ public class DefaultChannelPoolTest {
                 partitionsSeen.addAll(map.values());
             });
 
+            long closed = 0;
+            for (Channel channel : created) {
+                if (!channel.isActive()) {
+                    closed++;
+                }
+            }
             long pooled = 0;
             for (int key = 0; key < keys; key++) {
                 while (pool.poll(key) != null) {
                     pooled++;
                 }
             }
-            assertEquals(channelCount, pooled, "every channel must still be pooled");
+            assertEquals(created.size(), closed + pooled, "a live channel is in no partition (created="
+                    + created.size() + " closed=" + closed + " pooled=" + pooled + ")");
             // Without retirement there is at most one deque per key, ever.
             assertTrue(partitionsSeen.size() > keys,
                     "partitions must have been dropped and recreated, otherwise this proves nothing; saw "
