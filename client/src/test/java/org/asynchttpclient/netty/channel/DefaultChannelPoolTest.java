@@ -574,9 +574,10 @@ public class DefaultChannelPoolTest {
     }
 
     @Test
-    public void retiringAPartitionClosesWhatARacingOfferLeftInIt() throws Exception {
-        // The drain side of the race: an offer linked a channel into the partition after the cleaner saw it
-        // empty and before the cleaner raised the flag, so the offer itself did not see it.
+    public void retiringANonEmptyPartitionClosesItsChannels() throws Exception {
+        // The state the drain side of the race leaves: an offer linked a channel into the partition after the
+        // cleaner saw it empty and before the cleaner raised the flag, so the offer itself did not see it. The
+        // race itself is exercised by partitionRetirementNeverLosesAConcurrentlyOfferedChannel.
         CapturingTimer timer = new CapturingTimer();
         DefaultChannelPool pool = retiringPool(timer, Duration.ZERO);
         Channel first = new EmbeddedChannel();
@@ -625,7 +626,7 @@ public class DefaultChannelPoolTest {
 
         pool.retire(partition(pool, KEY));
 
-        assertFalse(hasPartition(pool, KEY), "a tombstone must not be moved into a new partition");
+        assertFalse(hasPartition(pool, KEY), "retiring must unmap the partition");
         assertTrue(channel.isActive(), "a tombstone belongs to whoever claimed it");
 
         pool.destroy();
