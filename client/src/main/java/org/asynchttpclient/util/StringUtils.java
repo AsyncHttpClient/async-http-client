@@ -42,13 +42,15 @@ public final class StringUtils {
         if (sb instanceof String) {
             return ((String) sb).getBytes(charset);
         }
-        // Each of these charsets maps a char below U+0080 to that byte, so ASCII input needs no String copy.
-        if (charset.equals(UTF_8) || charset.equals(ISO_8859_1) || charset.equals(US_ASCII)) {
+        // ISO-8859-1 maps a char below U+0100, UTF-8 and US-ASCII a char below U+0080, to that byte,
+        // so such input needs no String copy.
+        int limit = charset.equals(ISO_8859_1) ? 0x100 : charset.equals(UTF_8) || charset.equals(US_ASCII) ? 0x80 : 0;
+        if (limit != 0) {
             int length = sb.length();
             byte[] bytes = new byte[length];
             for (int i = 0; i < length; i++) {
                 char c = sb.charAt(i);
-                if (c >= 0x80) {
+                if (c >= limit) {
                     return sb.toString().getBytes(charset);
                 }
                 bytes[i] = (byte) c;
