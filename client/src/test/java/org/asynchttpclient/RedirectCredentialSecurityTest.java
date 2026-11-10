@@ -841,6 +841,42 @@ public class RedirectCredentialSecurityTest {
     }
 
     /**
+     * Stripping credentials on a redirect must not change the caller's request, so it can be executed again. The
+     * stored cookie makes the client add it to a request that shares the caller's headers.
+     */
+    @Test
+    void crossDomainRedirectLeavesCallerRequestHeadersUnchanged() throws Exception {
+        ThreadSafeCookieStore store = new ThreadSafeCookieStore();
+        store.add(Uri.create("http://127.0.0.1:" + portA + "/redirect-to-b"),
+                new DefaultCookie("store_cookie", "store_value"));
+
+        DefaultAsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
+                .setFollowRedirect(true)
+                .setCookieStore(store)
+                .build();
+        try (DefaultAsyncHttpClient client = new DefaultAsyncHttpClient(config)) {
+            Request request = client.prepareGet("http://127.0.0.1:" + portA + "/redirect-to-b")
+                    .setHeader("Authorization", "Bearer token123")
+                    .setHeader("Cookie", "session=abc123")
+                    .build();
+            String headers = request.getHeaders().entries().toString();
+
+            for (int i = 0; i < 2; i++) {
+                lastAuthHeaderOnA.set(null);
+                lastAuthHeaderOnB.set(null);
+                lastCookieHeaderOnA.set(null);
+
+                client.executeRequest(request).get(5, TimeUnit.SECONDS);
+
+                assertEquals(headers, request.getHeaders().entries().toString());
+                assertTrue(lastCookieHeaderOnA.get().contains("store_cookie=store_value"), lastCookieHeaderOnA.get());
+                assertEquals("Bearer token123", lastAuthHeaderOnA.get());
+                assertNull(lastAuthHeaderOnB.get());
+            }
+        }
+    }
+
+    /**
      * Same host (127.0.0.1) on a different port is treated as cross-origin: both Cookie and
      * Authorization are stripped. Locks in the port-as-part-of-origin behavior so that a future
      * change to {@link Uri#isSameBase} cannot accidentally narrow the origin to host-only.
