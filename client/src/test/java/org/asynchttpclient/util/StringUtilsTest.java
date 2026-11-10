@@ -42,6 +42,9 @@ public class StringUtilsTest {
             "\u20ac 100",
             "\u4e2d\u6587",
             "\u0000\u007f\u0080\u00ff\u0100",
+            // U+0080 alone and between ASCII chars: the first char that leaves the ASCII loop
+            "\u0080",
+            "a\u0080b",
             // supplementary character (surrogate pair)
             "x\ud83d\ude00y",
             // lone high surrogate at the end, at the start and before another high surrogate
