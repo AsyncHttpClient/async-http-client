@@ -106,7 +106,7 @@ public class FormDigestEncodeBenchmark {
         return asciiDigest.build();
     }
 
-    /** UTF-8 digest of Cyrillic credentials: HA1 is not ASCII. */
+    /** UTF-8 digest of Cyrillic credentials: the HA1 input is not ASCII. */
     @Benchmark
     public Realm digestUtf8() {
         return utf8Digest.build();
