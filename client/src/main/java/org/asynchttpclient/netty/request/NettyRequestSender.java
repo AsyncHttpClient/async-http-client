@@ -511,7 +511,11 @@ public final class NettyRequestSender {
             // exit and don't try to resolve address
             return future;
         }
+        return connectNewChannel(request, proxy, future, asyncHandler);
+    }
 
+    // Resolves, unless round-robin already did, and connects. The connection permit is in hand by now.
+    private <T> ListenableFuture<T> connectNewChannel(Request request, ProxyServer proxy, NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler) {
         // In round-robin mode the addresses were already resolved (and rotated) before polling the pool,
         // so reuse them directly instead of resolving a second time. The up-front resolve deliberately did
         // NOT schedule the request timeout (see sendRequestRoundRobin), so schedule it here — once — for this
@@ -1377,9 +1381,10 @@ public final class NettyRequestSender {
      * {@code IP_A} that finishes connecting after this request deferred — and multiplexes onto it (#2214),
      * rather than waiting out the deadline for its own pinned IP.
      *
-     * @return the (pending) future when the request was reused or deferred; {@code null} if it should be
-     *         failed with {@code semaphoreException} (a WebSocket request, an origin that could never carry
-     *         an HTTP/2 connection, or on the event loop with no connection available)
+     * @return the (pending) future when the request was reused, deferred, or sent on a new connection with a
+     *         permit freed since it was refused; {@code null} if it should be failed with
+     *         {@code semaphoreException} (a WebSocket request, an origin that could never carry an HTTP/2
+     *         connection, or on the event loop with no connection available)
      */
     private <T> ListenableFuture<T> reuseOrDeferHttp2Connection(Request request, ProxyServer proxy,
             NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, IOException semaphoreException) {
@@ -1403,6 +1408,13 @@ public final class NettyRequestSender {
         if (h2Channel != null) {
             return sendRequestWithOpenChannel(future, asyncHandler, h2Channel);
         }
+        // Nothing to multiplex onto, so try the permit once more, without waiting. A GOAWAY or connectionTtl frees the
+        // permit of the connection it retires, then takes that connection out of the registry: a request refused the
+        // permit just before that and polling just after finds neither, and nothing would register a connection for it
+        // to wake on until another request opened one. It would wait out connectTimeout for a permit that is free.
+        if (reacquirePermit(future)) {
+            return connectNewChannel(request, proxy, future, asyncHandler);
+        }
         if (isOnEventLoop()) {
             return null;
         }
@@ -1425,6 +1437,15 @@ public final class NettyRequestSender {
         }
         new Http2ConnectionWaiter<>(request, proxy, future, asyncHandler, override, semaphoreException).arm();
         return future;
+    }
+
+    private static boolean reacquirePermit(NettyResponseFuture<?> future) {
+        try {
+            future.acquirePartitionLockLazily(true);
+            return true;
+        } catch (IOException stillHeld) {
+            return false;
+        }
     }
 
     /**

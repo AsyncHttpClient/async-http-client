@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -41,6 +42,7 @@ import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameCodec;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2GoAwayFrame;
 import io.netty.resolver.InetNameResolver;
 import io.netty.resolver.NameResolver;
 import io.netty.util.ReferenceCountUtil;
@@ -60,6 +62,9 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
+import org.asynchttpclient.netty.channel.ConnectionSemaphore;
+import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
+import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -73,8 +78,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -123,6 +131,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Integration tests for HTTP/2 support using a self-contained Netty-based HTTP/2 test server.
@@ -160,6 +169,9 @@ public class BasicHttp2Test {
     private ChannelGroup serverChildChannels;
     private SslContext serverSslCtx;
     private int serverPort;
+    // Per client connection, under the address the server sees it from: whether GOAWAY arrived before it closed.
+    private final ConcurrentHashMap<SocketAddress, CompletableFuture<Boolean>> goAwayBeforeCloseByClient =
+            new ConcurrentHashMap<>();
 
     /**
      * Path-routing HTTP/2 server handler that supports multiple test scenarios.
@@ -429,6 +441,7 @@ public class BasicHttp2Test {
                                         }
                                         ctx.pipeline()
                                                 .addLast(Http2FrameCodecBuilder.forServer().build())
+                                                .addLast(new CloseObserver())
                                                 .addLast(new Http2MultiplexHandler(
                                                         new ChannelInitializer<Http2StreamChannel>() {
                                                             @Override
@@ -467,6 +480,47 @@ public class BasicHttp2Test {
             }
         }
         return null;
+    }
+
+    /**
+     * Records, on the server side, whether a connection sent GOAWAY before it closed, as RFC 9113 section 6.8 asks of
+     * a connection that is closed on purpose.
+     */
+    private final class CloseObserver extends ChannelInboundHandlerAdapter {
+        private SocketAddress clientAddress;
+        private boolean goAwayReceived;
+
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) {
+            clientAddress = ctx.channel().remoteAddress();
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            if (msg instanceof Http2GoAwayFrame) {
+                goAwayReceived = true;
+            }
+            ctx.fireChannelRead(msg);
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) {
+            goAwayBeforeClose(clientAddress).complete(goAwayReceived);
+            ctx.fireChannelInactive();
+        }
+    }
+
+    private CompletableFuture<Boolean> goAwayBeforeClose(SocketAddress clientAddress) {
+        return goAwayBeforeCloseByClient.computeIfAbsent(clientAddress, address -> new CompletableFuture<>());
+    }
+
+    /**
+     * Fails unless the connection, closed by now, sent GOAWAY first. The address is the client's local one, read while
+     * the connection was still open.
+     */
+    private void assertClosedWithGoAway(SocketAddress clientAddress) throws Exception {
+        assertTrue(goAwayBeforeClose(clientAddress).get(10, SECONDS),
+                "the connection must send GOAWAY before it closes, not just close");
     }
 
     private String httpsUrl(String path) {
@@ -621,6 +675,21 @@ public class BasicHttp2Test {
                 promise.setSuccess(new ArrayList<>(addresses));
             }
         };
+    }
+
+    /**
+     * Only 127.0.0.1 is usable on the loopback interface of macOS. A connect to another 127.x address waits out the
+     * connect timeout there and fails over to 127.0.0.1, where the failed-IP cooldown then pins the next requests too.
+     */
+    private static void assumeLoopbackAddressIsUsable(String ip) throws Exception {
+        boolean usable;
+        try (ServerSocket probe = new ServerSocket()) {
+            probe.bind(new InetSocketAddress(InetAddress.getByName(ip), 0));
+            usable = true;
+        } catch (IOException notOnThisHost) {
+            usable = false;
+        }
+        assumeTrue(usable, ip + " is not a usable loopback address on this host");
     }
 
     /**
@@ -821,9 +890,11 @@ public class BasicHttp2Test {
             Response firstResponse = client.prepareGet(httpsUrl("/ok")).execute(first).get(10, SECONDS);
             assertEquals(HttpProtocol.HTTP_2, firstResponse.getProtocol());
             Channel firstConnection = first.connection();
+            SocketAddress firstAddress = firstConnection.localAddress();
 
             assertTrue(firstConnection.closeFuture().await(10, SECONDS),
                     "an idle HTTP/2 connection must close by itself once it reaches connectionTtl");
+            assertClosedWithGoAway(firstAddress);
 
             ConnectionRecorder second = new ConnectionRecorder();
             Response secondResponse = client.prepareGet(httpsUrl("/ok")).execute(second).get(10, SECONDS);
@@ -846,6 +917,7 @@ public class BasicHttp2Test {
             ListenableFuture<Response> longResponse = client.prepareGet(httpsUrl("/delay/3000")).execute(longRunning);
             assertTrue(longRunning.sent.await(10, SECONDS));
             Channel retiring = longRunning.connection();
+            SocketAddress retiringAddress = retiring.localAddress();
 
             // Sequential requests ride the connection until it is retired; the first one after that opens another.
             // Each round trip paces the loop, which the long-running stream's 3 s bounds well past the 1 s TTL.
@@ -867,6 +939,7 @@ public class BasicHttp2Test {
                     "a stream in flight at connectionTtl must complete normally");
             assertTrue(retiring.closeFuture().await(10, SECONDS),
                     "the retired connection must close once its last stream has ended");
+            assertClosedWithGoAway(retiringAddress);
         }
     }
 
@@ -882,6 +955,7 @@ public class BasicHttp2Test {
             ListenableFuture<Response> holderResponse = client.prepareGet(httpsUrl("/delay/3000")).execute(holder);
             assertTrue(holder.sent.await(10, SECONDS));
             Channel connection = holder.connection();
+            SocketAddress connectionAddress = connection.localAddress();
 
             // The only slot is held for 3 s, so this waits in the queue across the 1 s expiry.
             ConnectionRecorder queued = new ConnectionRecorder();
@@ -895,6 +969,7 @@ public class BasicHttp2Test {
             assertNull(queued.opened.get(), "it was served on the retired connection, not on a new one");
             assertTrue(connection.closeFuture().await(10, SECONDS),
                     "the retired connection must close once both exchanges are done");
+            assertClosedWithGoAway(connectionAddress);
         }
     }
 
@@ -969,6 +1044,7 @@ public class BasicHttp2Test {
      */
     @Test
     public void http2RoundRobinConnectionsAreEachReplacedAfterConnectionTtl() throws Exception {
+        assumeLoopbackAddressIsUsable("127.0.0.2");
         NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
         try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
                 .setConnectionTtl(Duration.ofMillis(300)))) {
@@ -991,6 +1067,91 @@ public class BasicHttp2Test {
                 assertEquals(200, response.getStatusCode());
                 assertNotNull(recorder.opened.get(), "each IP gets a new connection");
             }
+        }
+    }
+
+    /**
+     * Issue #2370 with {@link LoadBalance#ROUND_ROBIN} and {@code maxConnectionsPerHost} 1: a request refused the
+     * per-host permit while the only connection held it, and finding that connection retired and gone when it looks
+     * for one to multiplex onto, takes the permit the retirement freed and opens the replacement. It used to wait for a
+     * connection to register, which nothing would do, and fail after connectTimeout with
+     * {@code TooManyConnectionsPerHostException}.
+     */
+    @Test
+    public void http2RoundRobinRequestRefusedThePermitAsItsConnectionRetiresOpensTheReplacement() throws Exception {
+        assumeLoopbackAddressIsUsable("127.0.0.2");
+        permitRefusedAsTheOnlyConnectionGoesAwayOpensTheReplacement(Duration.ofSeconds(1), parent -> {
+        });
+    }
+
+    /**
+     * The same with a server GOAWAY taking the only connection away, which frees its permit the same way.
+     */
+    @Test
+    public void http2RoundRobinRequestRefusedThePermitAtGoawayOpensTheReplacement() throws Exception {
+        assumeLoopbackAddressIsUsable("127.0.0.2");
+        permitRefusedAsTheOnlyConnectionGoesAwayOpensTheReplacement(Duration.ofMillis(-1),
+                parent -> parent.writeAndFlush(new DefaultHttp2GoAwayFrame(Http2Error.NO_ERROR)));
+    }
+
+    /**
+     * One connection holds the only permit. A second request, pinned to the other IP, is refused the permit and held
+     * right there until that connection is gone, taken away by {@code takeAway} on its server side or by
+     * {@code connectionTtl}, so that it looks for a connection to multiplex onto only once there is none. It must then
+     * open one of its own.
+     */
+    private void permitRefusedAsTheOnlyConnectionGoesAwayOpensTheReplacement(Duration connectionTtl,
+            Consumer<Channel> takeAway) throws Exception {
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        CompletableFuture<Channel> onlyConnection = new CompletableFuture<>();
+        CountDownLatch refused = new CountDownLatch(1);
+        ConnectionSemaphoreFactory holdingTheRefused = clientConfig -> {
+            ConnectionSemaphore permits = new DefaultConnectionSemaphoreFactory().newConnectionSemaphore(clientConfig);
+            return new ConnectionSemaphore() {
+                @Override
+                public void acquireChannelLock(Object partitionKey) throws IOException {
+                    acquireChannelLock(partitionKey, false);
+                }
+
+                @Override
+                public void acquireChannelLock(Object partitionKey, boolean nonBlocking) throws IOException {
+                    try {
+                        permits.acquireChannelLock(partitionKey, nonBlocking);
+                    } catch (IOException noPermit) {
+                        refused.countDown();
+                        onlyConnection.join().closeFuture().awaitUninterruptibly(10, SECONDS);
+                        throw noPermit;
+                    }
+                }
+
+                @Override
+                public void releaseChannelLock(Object partitionKey) {
+                    permits.releaseChannelLock(partitionKey);
+                }
+            };
+        };
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.ROUND_ROBIN)
+                .setMaxConnectionsPerHost(1).setMaxRequestRetry(0).setConnectTimeout(Duration.ofSeconds(2))
+                .setConnectionTtl(connectionTtl).setConnectionSemaphoreFactory(holdingTheRefused))) {
+            ConnectionRecorder first = new ConnectionRecorder();
+            client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), first).get(10, SECONDS);
+            onlyConnection.complete(first.connection());
+
+            // Pinned to the other IP, so it needs a connection of its own, and the permit the first one holds.
+            ConnectionRecorder second = new ConnectionRecorder();
+            Future<ListenableFuture<Response>> sent = caller.submit(
+                    () -> client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), second));
+            assertTrue(refused.await(10, SECONDS), "the second request must be refused the permit");
+            Channel parent = negotiatedHttp2Channel();
+            assertNotNull(parent);
+            takeAway.accept(parent);
+
+            assertEquals(200, sent.get(10, SECONDS).get(10, SECONDS).getStatusCode());
+            assertNotNull(second.opened.get(), "the refused request must open the replacement itself");
+            assertNotSame(first.connection(), second.connection());
+        } finally {
+            caller.shutdownNow();
         }
     }
 

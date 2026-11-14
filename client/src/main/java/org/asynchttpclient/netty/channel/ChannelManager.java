@@ -1261,17 +1261,19 @@ public class ChannelManager {
                     int lastStreamId = goAwayFrame.lastStreamId();
                     Http2ConnectionState connState = ctx.channel().attr(Http2ConnectionState.HTTP2_STATE_KEY).get();
                     if (connState != null) {
+                        // Free the round-robin per-host permit at drain start instead of at channel close.
+                        // A draining connection rejects new streams but can stay open while in-flight
+                        // streams finish, and holding the permit that whole time blocks a replacement
+                        // connection (issue #2214). Once-only: the closeFuture release becomes a no-op,
+                        // and in DEFAULT mode no hook is installed so this does nothing. Freed before the
+                        // connection stops being offered: a request refused the permit tries it once more
+                        // when it finds nothing to multiplex onto, and must find it free then.
+                        connState.releasePermitOnce();
                         connState.setDraining(lastStreamId);
                         Object pk = connState.getPartitionKey();
                         if (pk != null) {
                             removeHttp2Connection(pk, ctx.channel());
                         }
-                        // Free the round-robin per-host permit at drain start instead of at channel close.
-                        // A draining connection rejects new streams but can stay open while in-flight
-                        // streams finish, and holding the permit that whole time blocks a replacement
-                        // connection (issue #2214). Once-only: the closeFuture release becomes a no-op,
-                        // and in DEFAULT mode no hook is installed so this does nothing.
-                        connState.releasePermitOnce();
                         // Fail requests still queued for a stream slot: a draining connection accepts no
                         // new streams, so they can never be opened here and would otherwise wait until the
                         // connection finally closes. Fail them now so they retry on a fresh connection (the
@@ -1318,6 +1320,10 @@ public class ChannelManager {
         if (state == null) {
             return;
         }
+        // As at GOAWAY: free the round-robin permit now, so a replacement can open while streams finish here. Before
+        // the registry removal: a request refused the permit tries it once more when it finds nothing to multiplex
+        // onto, and a poll that misses this connection must mean the permit is free again.
+        state.releasePermitOnce();
         // Must leave the registry, not just be flagged. While it is registered and active it stays the canonical
         // connection for its key, and registerHttp2Connection marks any newcomer for that key redundant: the
         // replacement would serve one request and close, and so would every connection after it until this one closed.
@@ -1330,8 +1336,6 @@ public class ChannelManager {
         if (!state.retire()) {
             return;
         }
-        // As at GOAWAY: free the round-robin permit now, so a replacement can open while streams finish here.
-        state.releasePermitOnce();
         LOGGER.debug("HTTP/2 connection {} reached connectionTtl, retiring it", channel);
         // No GOAWAY now. RFC 9113 section 6.8 asks for one before closing, and Netty's close() sends GOAWAY(NO_ERROR)
         // when this connection is closed idle. An early one would cost requests and buy nothing: a request that looked
@@ -1479,7 +1483,8 @@ public class ChannelManager {
     /**
      * Retires its HTTP/2 connection once it has been open for the given delay. The task runs on the connection's own
      * event loop, so it is serialized with the GOAWAY and stream-close handling there, and it is cancelled when the
-     * pipeline is torn down on close, so it never outlives the connection.
+     * pipeline is torn down on close, so it never outlives the connection. A connection that closed before the handler
+     * was added gets no task: its pipeline may be torn down already, and nothing would cancel it then.
      */
     private final class Http2ConnectionTtlHandler extends ChannelInboundHandlerAdapter {
 
@@ -1492,6 +1497,9 @@ public class ChannelManager {
 
         @Override
         public void handlerAdded(ChannelHandlerContext ctx) {
+            if (!ctx.channel().isActive()) {
+                return;
+            }
             expiry = ctx.executor().schedule(() -> retireHttp2Connection(ctx.channel()),
                     delayMillis, TimeUnit.MILLISECONDS);
         }

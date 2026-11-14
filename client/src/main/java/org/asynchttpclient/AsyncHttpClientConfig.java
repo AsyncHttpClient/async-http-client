@@ -396,10 +396,17 @@ public interface AsyncHttpClientConfig {
      * An HTTP/1.1 connection older than this is closed instead of being returned to the pool, and the pool cleaner
      * closes one that passes it while idle in the pool; its age counts from the first time it was pooled. An HTTP/2
      * connection is retired once it has been open for between 90% and 100% of this value, the spread keeping
-     * connections opened together from being replaced together: new requests then go to a new connection, while the
-     * streams already open on it, and the requests already waiting for one of its stream slots, finish on it before
-     * it closes. Retirement never interrupts an exchange in flight, so a long-lived response keeps its connection
-     * open past this age.
+     * connections opened together from being replaced together. New requests then go to a new connection, and the
+     * retired one closes once the streams open on it have finished, along with the requests already waiting for one
+     * of its stream slots; a GOAWAY from the server fails those waiting requests, as it does on any connection. A
+     * request that reaches a retired connection it can no longer use is sent again on a new one. Retirement never
+     * interrupts an exchange in flight, so a long-lived response keeps its connection open past this age.
+     * <p>
+     * A retired connection no longer counts against {@code maxConnections} or {@code maxConnectionsPerHost}, so its
+     * replacement can open while its streams finish. The bound on requests waiting for a stream slot is per
+     * connection, a retired one included. Requests that arrive between the retirement and the registration of the
+     * replacement each open a connection of their own, as they do on the first request to a host and after a GOAWAY;
+     * all but one of those close after the request they were opened for.
      *
      * @return the maximum age of a pooled HTTP/1.1 or multiplexed HTTP/2 connection
      */

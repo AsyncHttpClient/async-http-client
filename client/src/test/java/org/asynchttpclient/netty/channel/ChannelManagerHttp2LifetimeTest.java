@@ -237,6 +237,43 @@ class ChannelManagerHttp2LifetimeTest {
         assertTrue(channel.isOpen());
     }
 
+    @Test
+    void noExpiryIsArmedOnAConnectionThatClosedBeforeTheUpgrade() {
+        // The handler is added once the handshake settles on HTTP/2, by when the peer may have closed the connection.
+        // A pipeline torn down already still runs handlerAdded for a new handler but never handlerRemoved, so a task
+        // armed here would hold the connection and its codec until the TTL, for nothing.
+        EmbeddedChannel channel = new EmbeddedChannel();
+        channels.add(channel);
+        channel.freezeTime();
+        channel.close();
+
+        channelManager.upgradePipelineToHttp2(channel.pipeline());
+
+        assertNotNull(channel.pipeline().get(TTL_HANDLER));
+        assertEquals(-1, channel.runScheduledPendingTasks(), "nothing may be scheduled on a closed connection");
+        advance(channel, TTL_MILLIS);
+        assertFalse(stateOf(channel).isRetired());
+    }
+
+    @Test
+    void expiryIsSpreadOverTheLastTenthOfConnectionTtl() {
+        // A fixed delay of exactly connectionTtl passes every other test here. Only drawing many times tells it apart.
+        List<Long> ages = new ArrayList<>();
+        for (int i = 0; i < 32; i++) {
+            EmbeddedChannel channel = http2Connection(BASE + "/" + i);
+            long age = EARLIEST_EXPIRY_MILLIS - 1;
+            advance(channel, age);
+            assertFalse(stateOf(channel).isRetired(), "retired before the earliest expiry");
+            while (!stateOf(channel).isRetired()) {
+                assertTrue(age < TTL_MILLIS, "not retired at connectionTtl");
+                advance(channel, 1);
+                age++;
+            }
+            ages.add(age);
+        }
+        assertTrue(ages.stream().distinct().count() > 1, "32 connections all retired at the same age: " + ages);
+    }
+
     /**
      * Error codes of the GOAWAY frames the connection wrote, decoded by a server-side codec fed with everything the
      * connection wrote.
