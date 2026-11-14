@@ -28,7 +28,8 @@ import java.util.function.Consumer;
 
 /**
  * Tracks per-connection HTTP/2 state: active stream count, max concurrent streams,
- * draining status (from GOAWAY), and pending stream openers.
+ * draining status (from GOAWAY), retirement (the connection reached {@code connectionTtl}),
+ * and pending stream openers.
  */
 public class Http2ConnectionState {
 
@@ -75,6 +76,15 @@ public class Http2ConnectionState {
     // — rather than lingering open and unregistered. Distinct from draining: it does NOT block its own
     // opening request from acquiring a slot.
     private final AtomicBoolean redundant = new AtomicBoolean(false);
+    // Set when the connection reached connectionTtl. Distinct from draining: the server has refused nothing, so
+    // a retired connection still opens streams for requests that already hold it (queued openers, and a request
+    // that looked it up just before it was retired); it only stops being handed out, and closes once idle.
+    private final AtomicBoolean retired = new AtomicBoolean(false);
+    // Parked in activeStreams by closeIfRetiredAndIdle so that admitting a stream and deciding to close are one
+    // CAS on one word: either a late tryAcquireStream gets its slot and keeps the connection open, or the
+    // connection closes and that tryAcquireStream fails before anything is written. Checking the count and then
+    // closing would let a stream open on a connection that is being closed under it.
+    private static final int IDLE_CLOSED = Integer.MIN_VALUE;
     private volatile Object partitionKey;
     // Releases the per-host permit this connection holds in ROUND_ROBIN mode (installed by
     // NettyConnectListener, absent in DEFAULT mode). Fired by the GOAWAY handler so the permit is freed at
@@ -89,7 +99,7 @@ public class Http2ConnectionState {
         }
         while (true) {
             int current = activeStreams.get();
-            if (current >= maxConcurrentStreams) {
+            if (current == IDLE_CLOSED || current >= maxConcurrentStreams) {
                 return false;
             }
             if (activeStreams.compareAndSet(current, current + 1)) {
@@ -133,14 +143,18 @@ public class Http2ConnectionState {
      * sequenced after it observes {@code closed} here (the lock provides the happens-before) and is rejected.
      * Either way no opener is left stranded. Opener callbacks always run after releasing {@code pendingLock},
      * because opening a stream can invoke user code and must not serialize other request submissions.
+     * <p>
+     * A retired connection also rejects: it is on its way out, so a request that would have to wait for one of its
+     * slots is better sent to a fresh connection. Openers queued before retirement stay queued and still run here.
      *
      * @return {@code true} if the opener was run inline or queued; {@code false} if rejected because the
-     *         connection is draining/closed or the pending queue is full (caller must fail the request)
+     *         connection is draining/closed/retired or the pending queue is full (caller must fail or re-dispatch
+     *         the request)
      */
     public boolean offerPendingOpener(NettyResponseFuture<?> future, Runnable opener) {
         boolean runOpener = false;
         synchronized (pendingLock) {
-            if (draining.get() || closed.get()) {
+            if (draining.get() || closed.get() || retired.get()) {
                 return false;
             }
             if (tryAcquireStream()) {
@@ -249,11 +263,45 @@ public class Http2ConnectionState {
     }
 
     public int getActiveStreams() {
-        return activeStreams.get();
+        int current = activeStreams.get();
+        return current == IDLE_CLOSED ? 0 : current;
     }
 
     public boolean isDraining() {
         return draining.get();
+    }
+
+    /**
+     * Marks the connection as having reached {@code connectionTtl}.
+     *
+     * @return {@code true} only for the call that retired it, so the retirement work runs once
+     */
+    public boolean retire() {
+        return retired.compareAndSet(false, true);
+    }
+
+    public boolean isRetired() {
+        return retired.get();
+    }
+
+    /**
+     * For a retired connection with no open stream and nothing queued, permanently refuses further streams.
+     * <p>
+     * The refusal and the idle check are a single CAS on the stream count, so it is exclusive with a concurrent
+     * {@link #tryAcquireStream()}: exactly one of them wins. The queue is checked under {@code pendingLock}, which
+     * every enqueue holds.
+     *
+     * @return {@code true} if the connection is now closed to streams and the caller must close the channel;
+     *         {@code false} if it is not retired or still has work, and for every call after the one that returned
+     *         {@code true}
+     */
+    public boolean closeIfRetiredAndIdle() {
+        if (!retired.get()) {
+            return false;
+        }
+        synchronized (pendingLock) {
+            return pendingCount == 0 && activeStreams.compareAndSet(0, IDLE_CLOSED);
+        }
     }
 
     /** Marks this connection as a redundant duplicate that should close once its last stream ends. */
