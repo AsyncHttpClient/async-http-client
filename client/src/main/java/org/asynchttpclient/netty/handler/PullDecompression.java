@@ -38,9 +38,8 @@ import static org.asynchttpclient.netty.handler.Http1ContentDecompressor.MAX_PAR
  * most {@link Http1ContentDecompressor#MAX_PART_SIZE} bytes at a time, with Netty's pull-based {@link Decompressor}, so
  * that it can stop between parts while the response is suspended.
  * <p>
- * Netty added {@link Decompressor} in 4.2.17, and still marks it unstable while it migrates its codecs to it, so a Netty
- * upgrade may require changes here. Only this class refers to it, and {@link Http1ContentDecompressor} loads it only
- * once one of these codings shows up, so {@code gzip} and {@code deflate} do not need that Netty version.
+ * Netty still marks {@link Decompressor} unstable while it migrates its codecs to it, so a Netty upgrade may require
+ * changes here. Only this class refers to it.
  */
 final class PullDecompression {
 
