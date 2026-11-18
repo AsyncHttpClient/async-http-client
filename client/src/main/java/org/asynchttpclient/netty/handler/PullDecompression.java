@@ -30,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
-import static org.asynchttpclient.netty.handler.Http1ContentDecompressor.MAX_FORWARD_BYTES;
 import static org.asynchttpclient.netty.handler.Http1ContentDecompressor.MAX_PART_SIZE;
 
 /**
@@ -75,9 +74,7 @@ final class PullDecompression {
             decompressor = BrotliDecompressor.builder().maxOutputChunkSize(MAX_PART_SIZE).build(alloc);
             coding = "br";
         } else if (HttpHeaderValues.ZSTD.contentEqualsIgnoreCase(contentEncoding)) {
-            // Netty's ZstdDecompressor hands out buffers of io.netty.compression.defaultMaxForwardBytes. At 0 it hands
-            // out nothing while reporting more, so zstd is left to Netty's push decoder then, as before.
-            if (!Zstd.isAvailable() || MAX_FORWARD_BYTES <= 0) {
+            if (!Zstd.isAvailable()) {
                 return null;
             }
             decompressor = ZstdDecompressor.builder().build(alloc);

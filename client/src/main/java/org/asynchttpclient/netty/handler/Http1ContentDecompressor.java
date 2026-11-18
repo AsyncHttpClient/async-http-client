@@ -24,7 +24,6 @@ import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.compression.DecompressionException;
-import io.netty.handler.codec.compression.ZstdDecoder;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -96,7 +95,6 @@ import java.util.zip.Inflater;
  * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
  * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
  * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
- * {@code zstd} also goes there while {@code io.netty.compression.defaultMaxForwardBytes} is not positive.
  * {@code gzip} and {@code deflate} never use the API. A body that ends inside its compressed stream fails on the
  * pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}. Not every such end is
  * noticed: a {@code gzip} or {@code zstd} body cut exactly between two of its members or frames looks complete, as the
@@ -128,7 +126,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     // Same floor and forwarding threshold as JdkZlibDecoder, so the body is cut into parts the same way, except that
     // a part never grows past MAX_PART_SIZE.
     private static final int MIN_OUTPUT_BUFFER_SIZE = 512;
-    static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
+    private static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
             SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024));
 
     // Netty added its Decompressor API in 4.2.17. Without it, br, zstd and snappy go to HttpContentDecompressor's own
@@ -478,12 +476,6 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     @Override
     protected EmbeddedChannel newContentDecoder(String contentEncoding) throws Exception {
         EmbeddedChannel decoder = super.newContentDecoder(contentEncoding);
-        if (decoder != null && MAX_FORWARD_BYTES <= 0
-                && HttpHeaderValues.ZSTD.contentEqualsIgnoreCase(contentEncoding)) {
-            // Since Netty 4.2.20, the ZstdDecoder that HttpContentDecompressor creates sizes its output buffers by
-            // this threshold, so it would hand on an empty body at 0 and fail below it.
-            decoder.pipeline().replace(ZstdDecoder.class, null, new ZstdDecoder(MAX_PART_SIZE));
-        }
         if (decoder != null && maxDecompressedBytes > 0) {
             // Appended before HttpContentDecoder appends its forwarder, so every decompressed buffer is
             // counted before it leaves for the outer pipeline.
