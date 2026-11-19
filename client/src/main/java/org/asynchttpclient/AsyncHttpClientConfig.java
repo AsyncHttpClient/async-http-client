@@ -529,6 +529,10 @@ public interface AsyncHttpClientConfig {
 
     int getHttpClientCodecInitialBufferSize();
 
+    boolean getHttpClientCodecParseHttpAfterConnectRequest();
+
+    boolean getHttpClientCodecAllowDuplicateContentLengths();
+
     boolean isDisableZeroCopy();
 
     int getHandshakeTimeout();
