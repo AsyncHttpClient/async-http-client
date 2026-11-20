@@ -42,4 +42,8 @@ public class RequestBuilder extends RequestBuilderBase<RequestBuilder> {
     RequestBuilder(Request prototype) {
         super(prototype);
     }
+
+    RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
+        super(prototype, disableUrlEncoding, validateHeaders);
+    }
 }

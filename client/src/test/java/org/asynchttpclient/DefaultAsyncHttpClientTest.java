@@ -31,6 +31,7 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.uring.IoUring;
 import io.netty.channel.uring.IoUringIoHandler;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.ReadOnlyHttpHeaders;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.Timer;
@@ -40,6 +41,8 @@ import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.RequestFilter;
+import org.asynchttpclient.handler.resumable.MapResumableProcessor;
+import org.asynchttpclient.handler.resumable.ResumableAsyncHandler;
 import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.asynchttpclient.testserver.HttpServer;
@@ -48,22 +51,32 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.basicAuthRealm;
 import static org.asynchttpclient.Dsl.config;
@@ -78,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -450,6 +464,229 @@ public class DefaultAsyncHttpClientTest {
         Request sent = sendWithStoredCookies(request, cookie("session", "s"));
 
         assertEquals(List.of("session=s"), cookieStrings(sent));
+    }
+
+    @Test
+    public void testRangeOffsetKeepsRawUrlAsBuilt() throws Exception {
+        try (ServerSocket server = loopbackServer()) {
+            String path = "/a|b?q={x}";
+            String url = "http://127.0.0.1:" + server.getLocalPort() + path;
+            Request request = new RequestBuilder(GET, true).setUrl(url).setHeader("X-Custom", "v").setRangeOffset(5).build();
+            assertEquals(url, request.getUrl());
+            assertNotEquals(url, new RequestBuilder(GET).setUrl(url).build().getUrl(), "the URL must be one encoding would change");
+
+            List<String> head = sendToRawServer(server, request);
+
+            assertEquals("GET " + path + " HTTP/1.1", head.get(0));
+            assertEquals(List.of("bytes=5-"), headerValues(head, "Range"));
+            assertEquals(List.of("v"), headerValues(head, "X-Custom"));
+            assertNull(request.getHeaders().get(RANGE));
+        }
+    }
+
+    @Test
+    public void testRangeOffsetReplacesRangeHeader() throws Exception {
+        try (ServerSocket server = loopbackServer()) {
+            Request request = get("http://127.0.0.1:" + server.getLocalPort() + "/").setHeader(RANGE, "bytes=0-10")
+                    .addHeader(RANGE, "bytes=20-30").setRangeOffset(5).build();
+
+            List<String> head = sendToRawServer(server, request);
+
+            assertEquals(List.of("bytes=5-"), headerValues(head, "Range"));
+            assertEquals(List.of("bytes=0-10", "bytes=20-30"), request.getHeaders().getAll(RANGE));
+        }
+    }
+
+    @Test
+    public void testRangeOffsetGoesThroughToBuilderForRequestSubclass() throws Exception {
+        try (ServerSocket server = loopbackServer()) {
+            Request built = get("http://127.0.0.1:" + server.getLocalPort() + "/").setRangeOffset(5).build();
+            AtomicInteger toBuilderCalls = new AtomicInteger();
+            Request request = new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(), built.getLocalAddress(),
+                    built.getHeaders(), built.getCookies(), built.getByteData(), built.getCompositeByteData(), built.getStringData(),
+                    built.getByteBufferData(), built.getByteBufData(), built.getStreamData(), built.getBodyGenerator(),
+                    built.getFormParams(), built.getBodyParts(), built.getVirtualHost(), built.getProxyServer(), built.getRealm(),
+                    built.getFile(), built.getFollowRedirect(), built.getRequestTimeout(), built.getReadTimeout(),
+                    built.getRangeOffset(), built.getCharset(), built.getChannelPoolPartitioning(), built.getNameResolver()) {
+                @Override
+                public RequestBuilder toBuilder() {
+                    toBuilderCalls.incrementAndGet();
+                    return super.toBuilder();
+                }
+            };
+
+            List<String> head = sendToRawServer(server, request);
+
+            assertEquals(1, toBuilderCalls.get());
+            assertEquals(List.of("bytes=5-"), headerValues(head, "Range"));
+        }
+    }
+
+    @Test
+    public void testRangeOffsetDoesNotValidateRequestHeaders() {
+        // Checked before sending: the outgoing Netty request validates its headers anyway.
+        Request built = get("http://localhost/").setRangeOffset(5).build();
+        Request request = new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(), built.getLocalAddress(),
+                new ReadOnlyHttpHeaders(false, "X-Raw", "a\u0001b", "X Bad", "v"), built.getCookies(), built.getByteData(),
+                built.getCompositeByteData(), built.getStringData(), built.getByteBufferData(), built.getByteBufData(),
+                built.getStreamData(), built.getBodyGenerator(), built.getFormParams(), built.getBodyParts(),
+                built.getVirtualHost(), built.getProxyServer(), built.getRealm(), built.getFile(), built.getFollowRedirect(),
+                built.getRequestTimeout(), built.getReadTimeout(), built.getRangeOffset(), built.getCharset(),
+                built.getChannelPoolPartitioning(), built.getNameResolver());
+
+        Request sent = DefaultAsyncHttpClient.withRangeHeader(request, "bytes=5-");
+
+        assertEquals("bytes=5-", sent.getHeaders().get(RANGE));
+        assertEquals("a\u0001b", sent.getHeaders().get("X-Raw"));
+        assertEquals("v", sent.getHeaders().get("X Bad"));
+    }
+
+    @Test
+    public void testRangeOffsetFillsInFieldsOfHandBuiltRequest() {
+        String url = "http://localhost/a|b?q={x}";
+        Request built = new RequestBuilder(GET, true).setUrl(url).setRangeOffset(5).build();
+        Request request = new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(), built.getLocalAddress(),
+                built.getHeaders(), null, built.getByteData(), built.getCompositeByteData(), built.getStringData(),
+                built.getByteBufferData(), built.getByteBufData(), built.getStreamData(), built.getBodyGenerator(), null,
+                null, built.getVirtualHost(), built.getProxyServer(), built.getRealm(), built.getFile(),
+                built.getFollowRedirect(), built.getRequestTimeout(), built.getReadTimeout(), built.getRangeOffset(), null,
+                built.getChannelPoolPartitioning(), built.getNameResolver());
+
+        Request sent = DefaultAsyncHttpClient.withRangeHeader(request, "bytes=5-");
+
+        assertEquals(url, sent.getUrl());
+        assertEquals("bytes=5-", sent.getHeaders().get(RANGE));
+        assertEquals(UTF_8, sent.getCharset());
+        assertEquals(List.of(), sent.getCookies());
+        assertEquals(List.of(), sent.getFormParams());
+        assertEquals(List.of(), sent.getBodyParts());
+    }
+
+    @Test
+    public void testResumableHandlerAndRangeOffsetKeepRawUrlAsBuilt() throws Exception {
+        try (ServerSocket server = loopbackServer()) {
+            String path = "/a|b?q={x}";
+            String url = "http://127.0.0.1:" + server.getLocalPort() + path;
+            MapResumableProcessor processor = new MapResumableProcessor();
+            processor.put(url, 5000);
+            Request request = new RequestBuilder(GET, true).setUrl(url).build();
+
+            List<String> head = sendToRawServer(server, request, new ResumableAsyncHandler(processor));
+
+            assertEquals("GET " + path + " HTTP/1.1", head.get(0));
+            assertEquals(List.of("bytes=5000-"), headerValues(head, "Range"));
+        }
+        try (ServerSocket server = loopbackServer()) {
+            String path = "/a|b?q={x}";
+            String url = "http://127.0.0.1:" + server.getLocalPort() + path;
+            MapResumableProcessor processor = new MapResumableProcessor();
+            processor.put(url, 5000);
+            Request request = new RequestBuilder(GET, true).setUrl(url).setRangeOffset(7).build();
+
+            List<String> head = sendToRawServer(server, request, new ResumableAsyncHandler(processor));
+
+            // The range offset wins over the handler's stored offset.
+            assertEquals("GET " + path + " HTTP/1.1", head.get(0));
+            assertEquals(List.of("bytes=7-"), headerValues(head, "Range"));
+        }
+    }
+
+    @Test
+    public void testRangeOffsetKeepsOtherRequestFields() throws Exception {
+        Request request = new RequestBuilder("POST")
+                .setUrl("http://localhost/url?x=1")
+                .setAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}))
+                .setLocalAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 2}))
+                .setHeader("X-Custom", "v")
+                .addCookie(cookie("a", "b"))
+                .setBody("body")
+                .setVirtualHost("vhost")
+                .setProxyServer(proxyServer("proxy", 8080))
+                .setRealm(basicAuthRealm("user", "pass"))
+                .setFollowRedirect(true)
+                .setUseAbsoluteRequestDeadline(false)
+                .setRefuseSchemeDowngradeOnRedirect(true)
+                .setRefuseCrossOriginBodyOnRedirect(false)
+                .setRequestTimeout(Duration.ofSeconds(3))
+                .setReadTimeout(Duration.ofSeconds(2))
+                .setRangeOffset(7)
+                .setCharset(UTF_16)
+                .build();
+        Request expected = request.toBuilder().setHeader(RANGE, "bytes=7-").build();
+
+        Request sent = DefaultAsyncHttpClient.withRangeHeader(request, "bytes=7-");
+
+        assertEquals(DefaultRequest.class, sent.getClass());
+        assertEquals(expected.getHeaders().entries().toString(), sent.getHeaders().entries().toString());
+        for (Field field : DefaultRequest.class.getDeclaredFields()) {
+            String name = field.getName();
+            // queryParams is computed from the URI on first use.
+            if (Modifier.isStatic(field.getModifiers()) || "headers".equals(name) || "queryParams".equals(name)) {
+                continue;
+            }
+            field.setAccessible(true);
+            assertEquals(field.get(expected), field.get(sent), name);
+        }
+    }
+
+    @Test
+    public void testRangeOffsetValidatesSchemeOfHandBuiltRequest() {
+        Request built = get("http://localhost/").setRangeOffset(5).build();
+        Request request = new DefaultRequest(built.getMethod(), Uri.create("ftp://localhost/file"), built.getAddress(),
+                built.getLocalAddress(), built.getHeaders(), built.getCookies(), built.getByteData(),
+                built.getCompositeByteData(), built.getStringData(), built.getByteBufferData(), built.getByteBufData(),
+                built.getStreamData(), built.getBodyGenerator(), built.getFormParams(), built.getBodyParts(),
+                built.getVirtualHost(), built.getProxyServer(), built.getRealm(), built.getFile(), built.getFollowRedirect(),
+                built.getRequestTimeout(), built.getReadTimeout(), built.getRangeOffset(), built.getCharset(),
+                built.getChannelPoolPartitioning(), built.getNameResolver());
+
+        assertThrows(IllegalArgumentException.class, () -> DefaultAsyncHttpClient.withRangeHeader(request, "bytes=5-"));
+    }
+
+    /** A server on 127.0.0.1, which the tests address by that literal: the loopback address may be ::1. */
+    private static ServerSocket loopbackServer() throws IOException {
+        return new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{127, 0, 0, 1}));
+    }
+
+    /** Executes the request against {@code server}, answers it with an empty 200 and returns the request head it received. */
+    private static List<String> sendToRawServer(ServerSocket server, Request request) throws Exception {
+        return sendToRawServer(server, request, new AsyncCompletionHandlerBase());
+    }
+
+    private static List<String> sendToRawServer(ServerSocket server, Request request, AsyncHandler<Response> handler) throws Exception {
+        server.setSoTimeout(10_000);
+        // The range offset is applied only on the path that runs the request filters.
+        RequestFilter passThrough = new RequestFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                return ctx;
+            }
+        };
+        try (AsyncHttpClient client = asyncHttpClient(config().addRequestFilter(passThrough))) {
+            ListenableFuture<Response> future = client.executeRequest(request, handler);
+            List<String> head = new ArrayList<>();
+            try (Socket socket = server.accept()) {
+                socket.setSoTimeout(10_000);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), ISO_8859_1));
+                String line;
+                while ((line = in.readLine()) != null && !line.isEmpty()) {
+                    head.add(line);
+                }
+                OutputStream out = socket.getOutputStream();
+                out.write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".getBytes(ISO_8859_1));
+                out.flush();
+                assertEquals(200, future.get(10, TimeUnit.SECONDS).getStatusCode());
+            }
+            return head;
+        }
+    }
+
+    private static List<String> headerValues(List<String> head, String name) {
+        String prefix = name.toLowerCase(Locale.ROOT) + ':';
+        return head.stream()
+                .filter(line -> line.toLowerCase(Locale.ROOT).startsWith(prefix))
+                .map(line -> line.substring(prefix.length()).trim())
+                .collect(Collectors.toList());
     }
 
     /** Executes the request on a client whose store holds these cookies for localhost and returns what reached the filters. */
