@@ -48,10 +48,11 @@ public interface ResponseBodyControl {
      * <p>
      * For an HTTP/1.1 response whose {@code Content-Encoding} AHC decompresses ({@code gzip}, {@code deflate}, and
      * with Netty 4.2.17 or later {@code br}, {@code zstd} or {@code snappy}), a suspension also stops decompression:
-     * once it has taken effect, no further body part with content is delivered until {@link #resume()}. Once the body
-     * has been decompressed in full, the final empty part, trailing headers and completion can still arrive while
-     * reads are suspended. A transfer coding, such as {@code Transfer-Encoding: gzip}, is decompressed as soon as it is
-     * read.
+     * once it has taken effect, no further body part with content is delivered until {@link #resume()}. If the system
+     * property {@code io.netty.compression.defaultMaxForwardBytes} is zero or negative, {@code zstd} needs Netty 4.2.21
+     * or later. Once the body has been decompressed in full, the final empty part, trailing headers and completion can
+     * still arrive while reads are suspended. A transfer coding, such as {@code Transfer-Encoding: gzip}, is
+     * decompressed as soon as it is read.
      * <p>
      * If the connection closes while compressed input is held back, the rest of a body that has ended is decompressed
      * and delivered at once, bounded only by {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. That
