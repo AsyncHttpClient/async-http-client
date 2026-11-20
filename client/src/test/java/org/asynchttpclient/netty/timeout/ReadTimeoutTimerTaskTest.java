@@ -58,7 +58,7 @@ import static org.mockito.Mockito.when;
  * since it was armed: it has to wait only for what is left of the window, or the exchange is failed up to
  * twice the read timeout after its last read.
  * <p>
- * The holder's clock and the timer are both fakes, so the delay a task re-arms with is read straight off the
+ * The holder's clocks and the timer are all fakes, so the delay a task re-arms with is read straight off the
  * timer rather than inferred from how long a request took to fail.
  */
 public class ReadTimeoutTimerTaskTest {
@@ -68,6 +68,7 @@ public class ReadTimeoutTimerTaskTest {
 
     private final AtomicLong elapsedMillis = new AtomicLong();
     private long origin;
+    private long nanoOrigin;
     private NettyResponseFuture<?> future;
 
     private HashedWheelTimer senderTimer;
@@ -102,15 +103,22 @@ public class ReadTimeoutTimerTaskTest {
     }
 
     @Test
-    public void aReadTimeoutStillDueBeforeTheRequestTimeoutIsReArmed() {
-        // The full read timeout would land after the request timeout, what is left of it does not.
-        ReadTimeoutTimerTask task = armedReadTimeout(Duration.ofMillis(1_500));
+    public void aReadTimeoutStillDueBeforeTheRequestTimeoutIsReArmed() throws Exception {
+        TimeoutsHolder holder = holder(Duration.ofMillis(1_500));
+        holder.start();
+        // The request timeout's entry, armed early to serve the read timeout too, fires before the request is
+        // written, which leaves the read timeout to an entry of its own.
+        elapsedMillis.set(100);
+        armedTask(1, 0).run(null);
+        holder.startReadTimeout();
+        ReadTimeoutTimerTask task = (ReadTimeoutTimerTask) armedTask(3, 2);
 
+        // The full read timeout would land after the request timeout, what is left of it does not.
         elapsedMillis.set(SINCE_LAST_READ_MS);
         task.run((Timeout) null);
 
-        assertEquals(List.of(READ_TIMEOUT_MS, READ_TIMEOUT_MS - SINCE_LAST_READ_MS), armedDelays(2),
-                "a read timeout that is due before the request timeout should not be dropped");
+        assertEquals(List.of(READ_TIMEOUT_MS, 1_400L, READ_TIMEOUT_MS, READ_TIMEOUT_MS - SINCE_LAST_READ_MS),
+                armedDelays(4), "a read timeout that is due before the request timeout should not be dropped");
     }
 
     @Test
@@ -138,6 +146,14 @@ public class ReadTimeoutTimerTaskTest {
     }
 
     private ReadTimeoutTimerTask armedReadTimeout(Duration requestTimeout) {
+        holder(requestTimeout).startReadTimeout();
+
+        TimerTask armed = armedTask(1, 0);
+        assertSame(ReadTimeoutTimerTask.class, armed.getClass());
+        return (ReadTimeoutTimerTask) armed;
+    }
+
+    private TimeoutsHolder holder(Duration requestTimeout) {
         AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder()
                 .setReadTimeout(Duration.ofMillis(READ_TIMEOUT_MS))
                 .setRequestTimeout(requestTimeout)
@@ -155,15 +171,15 @@ public class ReadTimeoutTimerTaskTest {
             }
         }, null, 0, ChannelPoolPartitioning.PerHostChannelPoolPartitioning.INSTANCE, null, null);
         origin = future.getLastTouch();
+        nanoOrigin = future.getStartNanos();
 
-        TimeoutsHolder holder = new TimeoutsHolder(timer, null, future, requestSender, config, null,
-                this::millis, System::nanoTime);
-        holder.startReadTimeout();
+        return new TimeoutsHolder(timer, null, future, requestSender, config, null, this::millis, this::nanos);
+    }
 
+    private TimerTask armedTask(int expectedArms, int index) {
         ArgumentCaptor<TimerTask> armed = ArgumentCaptor.forClass(TimerTask.class);
-        verify(timer).newTimeout(armed.capture(), anyLong(), any());
-        assertSame(ReadTimeoutTimerTask.class, armed.getValue().getClass());
-        return (ReadTimeoutTimerTask) armed.getValue();
+        verify(timer, times(expectedArms)).newTimeout(armed.capture(), anyLong(), any());
+        return armed.getAllValues().get(index);
     }
 
     private List<Long> armedDelays(int expectedArms) {
@@ -174,5 +190,9 @@ public class ReadTimeoutTimerTaskTest {
 
     private long millis() {
         return origin + elapsedMillis.get();
+    }
+
+    private long nanos() {
+        return nanoOrigin + TimeUnit.MILLISECONDS.toNanos(elapsedMillis.get());
     }
 }

@@ -64,11 +64,11 @@ public class TimeoutsHolder {
     private final Timer nettyTimer;
     private volatile @Nullable EventExecutor eventExecutor;
     private final NettyRequestSender requestSender;
-    private final long requestTimeoutMillisTime;
-    // The same deadline on nanoClock, for everything that re-arms or checks it after start: a timer entry is
-    // already timed on a monotonic clock, and a deadline re-derived from the wall clock would move with every
-    // step of it. Set only where something will read it -- an entry armed early, or one rehomeOn may move --
-    // since reading the clock is a measurable part of what an attempt that needs neither costs.
+    // The request deadline on nanoClock, for everything that re-arms or checks it: a timer entry is already
+    // timed on a monotonic clock, and a deadline re-derived from the wall clock would move with every step of
+    // it. Set only where something will read it -- an entry armed early, one rehomeOn may move, or a read
+    // timeout shorter than the request timeout asking whether it needs an entry of its own -- since reading
+    // the clock is a measurable part of what an attempt that needs none of them costs.
     private volatile long requestDeadlineNanos;
     private final long requestTimeoutValue;
     private final boolean absoluteDeadline;
@@ -124,22 +124,20 @@ public class TimeoutsHolder {
         requestTimeoutValue = requestTimeoutInMs;
         absoluteDeadline = nettyResponseFuture.isUseAbsoluteRequestDeadline();
         if (requestTimeoutInMs > -1) {
-            // A redirect, a retry or an auth replay builds a new holder for the same future. Giving each of
-            // those hops the configured timeout lets a chain of n hops run for n times it; netting off what the
-            // exchange has already spent bounds it as a whole instead. Which one applies is the caller's
-            // choice, per request or per client. Left negative when the deadline is already behind us, which is
-            // what stops startReadTimeout arming a sibling for an exchange that is over.
-            long untilDeadline = absoluteDeadline
-                    ? remainingBudget(requestTimeoutInMs, nettyResponseFuture, nanoClock) : requestTimeoutInMs;
-            requestTimeoutMillisTime = millisClock.getAsLong() + untilDeadline;
             if (absoluteDeadline) {
-                // Straight off the exchange's start rather than off another clock reading, so that time passing
-                // between the two cannot extend it.
+                // A redirect, a retry or an auth replay builds a new holder for the same future. Giving each of
+                // those hops the configured timeout lets a chain of n hops run for n times it; anchoring the
+                // deadline at the exchange's start bounds it as a whole instead. Which one applies is the
+                // caller's choice, per request or per client. Straight off the start rather than off a clock
+                // reading, so that time passing while the holder is built cannot extend it.
                 requestDeadlineNanos = nettyResponseFuture.getStartNanos() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
+            } else if (readTimeoutValue != -1 && readTimeoutValue < requestTimeoutInMs) {
+                // Here rather than in start(), which arms the entry early in this same case: startReadTimeout
+                // reads it too, and can reach this holder through its future before start() has run.
+                requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutInMs);
             }
             requestTimeoutTask = new RequestTimeoutTimerTask(nettyResponseFuture, requestSender, this, requestTimeoutInMs);
         } else {
-            requestTimeoutMillisTime = -1L;
             requestTimeoutTask = null;
         }
     }
@@ -162,15 +160,15 @@ public class TimeoutsHolder {
             return;
         }
         if (requestTimeoutTask != null) {
-            // Per attempt, the configured duration: this runs within microseconds of the constructor, so
-            // reading the clock again would only expose the deadline to a step between the two reads. An
-            // absolute deadline was anchored before this holder existed, so there the remainder is the budget,
-            // floored at zero: a task armed at zero still runs, and running is how the exchange gets failed.
+            // Per attempt, the configured duration. An absolute deadline was anchored before this holder
+            // existed, so there the remainder is the budget, floored at zero: a task armed at zero still runs,
+            // and running is how the exchange gets failed.
             long untilDeadline = absoluteDeadline
                     ? Math.max(remainingBudget(requestTimeoutValue, nettyResponseFuture, nanoClock), 0L) : requestTimeoutValue;
             boolean early = readTimeoutValue != -1 && readTimeoutValue < untilDeadline;
-            if (!absoluteDeadline && (early || useEventLoopTimeouts)) {
-                // Anchored where the entry is armed, from the same duration.
+            if (!absoluteDeadline && !early && useEventLoopTimeouts) {
+                // For rehomeOn to re-arm from, anchored where the entry is armed, from the same duration. An
+                // entry armed early has it from the constructor.
                 requestDeadlineNanos = nanoClock.getAsLong() + TimeUnit.MILLISECONDS.toNanos(requestTimeoutValue);
             }
             if (early) {
@@ -223,11 +221,6 @@ public class TimeoutsHolder {
     private static long requestTimeout(AsyncHttpClientConfig config, Request request) {
         long requestTimeoutInMs = request.getRequestTimeout().toMillis();
         return requestTimeoutInMs == 0 ? config.getRequestTimeout().toMillis() : requestTimeoutInMs;
-    }
-
-    // Visible for testing: the instant this holder's request timeout is due, as a wall-clock reading.
-    long requestTimeoutMillisTime() {
-        return requestTimeoutMillisTime;
     }
 
     // The clock lastTouch is read against, which tests replace.
@@ -357,8 +350,7 @@ public class TimeoutsHolder {
     }
 
     void startReadTimeout(@Nullable ReadTimeoutTimerTask task, long delay) {
-        if (requestTimeoutTask == null
-                || !requestTimeoutTask.isClaimed() && delay < requestTimeoutMillisTime - millisClock.getAsLong()) {
+        if (requestTimeoutTask == null || !requestTimeoutTask.isClaimed() && dueBeforeRequestDeadline(delay)) {
             // only schedule a new readTimeout if the requestTimeout doesn't happen first
             if (task == null) {
                 // first call triggered from outside (else is read timeout is re-scheduling itself)
@@ -371,6 +363,18 @@ public class TimeoutsHolder {
             // read timeout couldn't re-scheduling itself, clean up
             task.clean();
         }
+    }
+
+    /**
+     * Whether a read timeout armed now for {@code delay} would be due before the request deadline, measured on
+     * nanoClock like every other check of that deadline. A delay no shorter than the whole request timeout never
+     * is, and is answered without a clock read: that is the default path, on which the deadline need not be on
+     * nanoClock. Below that the deadline always is: the constructor puts an absolute one there, and a per-attempt
+     * one whenever the read timeout is the shorter, and a delay shorter than the read timeout only comes from a
+     * read timeout that has already passed this check in full.
+     */
+    private boolean dueBeforeRequestDeadline(long delay) {
+        return delay < requestTimeoutValue && delay < untilRequestDeadline();
     }
 
     public void cancel() {
