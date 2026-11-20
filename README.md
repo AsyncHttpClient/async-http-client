@@ -110,8 +110,9 @@ AsyncHttpClient client = asyncHttpClient(config().setUseNativeTransport(true));
 ```
 
 Over HTTP/1.1, AHC decompresses Brotli, Zstd and Snappy response bodies on demand with Netty's pull-based `Decompressor`
-API. Zstd is decompressed as soon as it is read if the system property `io.netty.compression.defaultMaxForwardBytes` is
-set to zero or a negative value, so a suspended response does not hold it back then.
+API, which Netty added in 4.2.17, so AHC needs Netty 4.2.17 or later. Zstd is decompressed as soon as it is read if the
+system property `io.netty.compression.defaultMaxForwardBytes` is set to zero or a negative value, so a suspended
+response does not hold it back then.
 
 Over HTTP/1.1, a compressed response body that ends in the middle of its compressed stream, for example because a
 body delimited by the connection was cut off, fails the request with a `DecompressionException`; a body without any
