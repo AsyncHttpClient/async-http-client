@@ -59,10 +59,10 @@ public interface ResponseBodyControl {
      * the end of the body. If its last chunk could not be parsed, the request fails with that error instead. The rest
      * of a body that has ended, including one delimited by the connection, which ends with it, still waits for demand
      * after an orderly close by the server (a TCP FIN): while compressed input is held back, that close only shuts the
-     * input down, and the connection is not reused. After any other close, for example because the client is closed,
-     * the rest of a body that has ended can still be decompressed and delivered at once, bounded only by
-     * {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. If the compressed stream of a body delimited by
-     * the connection is incomplete, the request fails with a {@code DecompressionException}.
+     * input down, and the connection is not reused. After any other close, for example after a reset by the server or
+     * because the client is closed, the rest of a body that has ended can still be decompressed and delivered at once,
+     * bounded only by {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. If the compressed stream of a
+     * body delimited by the connection is incomplete, the request fails with a {@code DecompressionException}.
      * <p>
      * After an orderly close by the server, native transports such as epoll, io_uring and kqueue read what is left even
      * while reads are suspended. A body without a content coding that arrived before the close is then delivered in

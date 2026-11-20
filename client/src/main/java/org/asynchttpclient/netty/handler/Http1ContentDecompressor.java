@@ -316,12 +316,15 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         // this handler or the application allowed half-closure. What is held back of a body that has ended still
         // waits for demand, and the connection is closed once the response is done. A body that the close cut off, or
         // whose last chunk failed to parse, fails anyway, so the connection is closed now, and channelInactive drops
-        // what is held back of it.
+        // what is held back of it. The connection is also closed now if a failed read, such as a reset, detached the
+        // request from it, as AsyncHttpClientHandler then expects the close; channelInactive hands on the rest of a
+        // body that has ended.
         endHalfClosure(ctx);
         inputShutdown = true;
         LastHttpContent end = draining ? null : bodyEnd();
         Object attribute = Channels.getAttribute(ctx.channel());
-        boolean wait = end != null && end.decoderResult().isSuccess() && attribute instanceof NettyResponseFuture;
+        boolean wait = end != null && end.decoderResult().isSuccess() && attribute instanceof NettyResponseFuture
+                && ((NettyResponseFuture<?>) attribute).channel() == ctx.channel();
         if (wait) {
             ((NettyResponseFuture<?>) attribute).setKeepAlive(false);
         }

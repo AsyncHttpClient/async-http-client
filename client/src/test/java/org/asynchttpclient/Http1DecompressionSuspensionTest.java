@@ -645,6 +645,49 @@ public class Http1DecompressionSuspensionTest {
     }
 
     /**
+     * A reset by the server fails the read before it shuts the input down, and that failure detaches the request from
+     * the connection. The connection is then closed at once, as without half-closure, so the rest of a body that has
+     * ended is handed on at once. With auto-read off, nothing else would close it: the end of the response, for
+     * example by the request timeout, does not read again. epoll reads a reset even while reads are suspended.
+     */
+    @ParameterizedTest
+    @CsvSource({"http, true", "https, true", "http, false", "https, false"})
+    @EnabledOnOs(OS.LINUX)
+    public void aResetByTheServerClosesTheConnection(String scheme, boolean autoRead) throws Exception {
+        assumeAvailable("epoll");
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig("epoll", clientChannel, inputShutdown)
+                .addChannelOption(ChannelOption.AUTO_READ, autoRead))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, "/zeros")).execute(handler);
+
+            assertNotNull(handler.parts.poll(10, SECONDS));
+            awaitEventLoop(clientChannel.get());
+            assertTrue(clientChannel.get().config().getOption(ChannelOption.ALLOW_HALF_CLOSURE));
+            resetServerConnections();
+
+            assertTrue(clientChannel.get().closeFuture().await(10, SECONDS), "a reset must close the connection");
+            assertEquals(0, inputShutdown.getCount(), "the reset must only have shut the input down");
+            response.get(10, SECONDS);
+            assertNull(handler.failure.get());
+            assertEquals(ZEROS_SIZE, handler.bytes.get());
+            assertFalse(handler.corrupt.get());
+            assertEquals(0, handler.offers.get());
+        }
+    }
+
+    // Resets every connection to the server: closes it with SO_LINGER 0, and over TLS without a close_notify.
+    private void resetServerConnections() {
+        for (Channel channel : serverChildChannels) {
+            channel.eventLoop().execute(() -> {
+                channel.config().setOption(ChannelOption.SO_LINGER, 0);
+                channel.unsafe().close(channel.voidPromise());
+            });
+        }
+    }
+
+    /**
      * Half-closure is off again before a connection whose body was held back is offered for reuse, so the next response
      * on it treats a close by the server as before.
      */

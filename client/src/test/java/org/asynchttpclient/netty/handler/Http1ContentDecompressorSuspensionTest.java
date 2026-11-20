@@ -268,6 +268,7 @@ public class Http1ContentDecompressorSuspensionTest {
             future = new NettyResponseFuture<>(
                     new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
                     null, 0, null, null, null);
+            future.attachChannel(channel, false);
             Channels.setAttribute(channel, future);
             control = NettyResponseBodyControl.create(future, channel, () -> {
             }, ignored -> {
@@ -567,6 +568,36 @@ public class Http1ContentDecompressorSuspensionTest {
             assertEquals(1, body.parts, contentEncoding + ": nothing held back may be handed on");
             assertFalse(body.last);
             exchange.assertInputReleased();
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /**
+     * A reset by the server fails the read before it shuts the input down, and AsyncHttpClientHandler then detaches the
+     * request from the connection and expects the close. The connection is closed at once, so the rest of a body that
+     * has ended is handed on at once, as without half-closure.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void anInputShutdownAfterTheRequestWasDetachedClosesTheConnection(String contentEncoding) {
+        byte[] payload = concat(TEXT, new byte[400_000], TEXT);
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), contentEncoding,
+                    compress(contentEncoding, payload), 4096, false, false, Input.HEAP, true, socket.config());
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+
+            exchange.future.attachChannel(null, false);
+            exchange.channel.pipeline().fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
+            exchange.channel.runPendingTasks();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertFalse(exchange.channel.isOpen(), contentEncoding + ": the connection must be closed at once");
+            assertArrayEquals(payload, body.bytes.toByteArray(), contentEncoding);
+            assertTrue(body.last, contentEncoding);
             assertFalse(exchange.channel.finishAndReleaseAll());
         } finally {
             socket.unsafe().closeForcibly();
