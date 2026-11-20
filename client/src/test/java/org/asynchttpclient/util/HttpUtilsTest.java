@@ -260,18 +260,52 @@ public class HttpUtilsTest {
     }
 
     @Test
-    public void filterOutKeepsARefusalOfTheCoding() {
-        assertEquals("*, br;q=0", filterOutBrotli("*, br;q=0"));
-        assertEquals("*, BR ; Q = 0.000", filterOutBrotli("*, BR ; Q = 0.000"));
-        assertEquals("gzip, zstd;q=0., *", filterOutZstd("gzip, zstd;q=0., *"));
+    public void filterOutKeepsARefusalOfTheCodingWithoutAWildcard() {
         assertEquals("gzip, br;q=0", filterOutBrotli("gzip, br;q=0.001, br;q=0"));
+        assertEquals("ZSTD ; Q = 0.000", filterOutZstd("ZSTD ; Q = 0.000"));
+        assertEquals("*;q=0", filterOutBrotli("*;q=0, br"));
+        assertEquals("*;q=0, br;q=0", filterOutBrotli("*;q=0, br;q=0"));
+        assertEquals("br;q=0, x*", filterOutBrotli("br;q=0, x*"));
+        assertEquals("gzip;q=0, deflate", filterOutBrotli("gzip;q=0, deflate, br"));
     }
 
     @Test
-    public void filterOutRefusesTheCodingNextToAWildcard() {
-        assertEquals("*, zstd;q=0", filterOutZstd("*, zstd;q=0.5"));
-        assertEquals("gzip, br;q=0, *", filterOutBrotli("gzip, BR, br;q=0.2, *"));
-        assertEquals("*;q=0", filterOutBrotli("*;q=0, br"));
+    public void filterOutReplacesAWildcardOfferingNothingElseWithGzipAndDeflate() {
+        assertEquals("gzip, deflate", filterOutBrotli("*"));
+        assertEquals("gzip, deflate", filterOutZstd("*"));
+        assertEquals("gzip, deflate", filterOutBrotli("br, *"));
+        assertEquals("gzip, deflate", filterOutBrotli("*, br;q=0"));
+        assertEquals("gzip, deflate", filterOutBrotli("zstd;q=0, *"));
+        assertEquals("gzip, deflate", filterOutBrotli("x-br;q=0, ZSTD;q=0, *"));
+        assertEquals("gzip;q=0.5, deflate;q=0.5", filterOutZstd("*;q=0.5, zstd;q=0.5"));
+        assertEquals("zstd, gzip, deflate", filterOutBrotli("zstd, *"));
+        assertEquals("deflate", filterOutBrotli("gzip;q=0, *"));
+        assertEquals("deflate", filterOutBrotli("X-Gzip;q=0, *"));
+        assertEquals("gzip", filterOutBrotli("x-deflate;q=0, *"));
+        assertEquals("", filterOutBrotli("br;q=0, zstd;q=0, gzip;q=0, deflate;q=0, snappy;q=0, *, x*"));
+    }
+
+    @Test
+    public void filterOutKeepsIdentityAndARefusedWildcardWithAReplacedWildcard() {
+        assertEquals("identity;q=0, gzip, deflate", filterOutBrotli("identity;q=0, *"));
+        assertEquals("identity;q=0.5, gzip, deflate", filterOutBrotli("identity;q=0.5, *"));
+        assertEquals("*;q=0, gzip, deflate", filterOutBrotli("*, *;q=0"));
+    }
+
+    @Test
+    public void filterOutDropsAWildcardAndRefusalsNextToAnotherOfferedCoding() {
+        assertEquals("gzip", filterOutBrotli("gzip, *"));
+        assertEquals("gzip", filterOutBrotli("gzip, br;q=0, *"));
+        assertEquals("gzip", filterOutBrotli("gzip, BR, br;q=0.2, *"));
+        assertEquals("gzip", filterOutZstd("gzip, zstd;q=0., *"));
+        assertEquals("gzip", filterOutBrotli("*, gzip, *;q=0.5"));
+        assertEquals("gzip;q=0.5", filterOutZstd("gzip;q=0.5, * ; q=0.1"));
+        assertEquals("gzip, deflate, zstd", filterOutBrotli("gzip, deflate, br, zstd, *"));
+        assertEquals("snappy, X-Gzip;q=0.5, zstd", filterOutBrotli("snappy, X-Gzip;q=0.5, zstd, *"));
+        assertEquals("zstd;q=0.1, x-snappy;q=0.2, gzip", filterOutBrotli("zstd;q=0.1, x-snappy;q=0.2, gzip, *"));
+        assertEquals("compress", filterOutBrotli("compress, gzip;q=0, x*, *"));
+        assertEquals("gzip", filterOutZstd("gzip, x-zstd;q=0, br;q=0, *"));
+        assertEquals("deflate", filterOutBrotli("snappy;q=0, deflate, *"));
     }
 
     private static String filterOutBrotli(String acceptEncoding) {

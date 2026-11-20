@@ -193,6 +193,9 @@ public final class HttpUtils {
         return (eq >= 0 ? pair.substring(0, eq) : pair).trim();
     }
 
+    // Decoded over HTTP/1.1 and HTTP/2 alike, unlike br and zstd: Http2ContentDecompressor decodes only these.
+    private static final AsciiString[] WILDCARD_CODINGS = {HttpHeaderValues.GZIP, HttpHeaderValues.DEFLATE};
+
     public static CharSequence filterOutBrotliFromAcceptEncoding(String acceptEncoding) {
         return filterOutAcceptEncoding(acceptEncoding, HttpHeaderValues.BR);
     }
@@ -204,26 +207,24 @@ public final class HttpUtils {
     /**
      * Drops every element offering {@code coding}, which may appear anywhere in the list, in any case and with a weight
      * (RFC 9110 section 12.5.3). Dropping the last element leaves an empty value, which accepts no content coding.
-     * An element with weight 0 refuses the coding and is kept. Next to a "*" element, which would still offer the coding
-     * at its own weight, the dropped elements are replaced by one such refusal.
+     * An element with weight 0 refuses the coding and is kept. A list with a "*" that accepts codings is rebuilt by
+     * {@link #replaceWildcard}.
      */
     private static String filterOutAcceptEncoding(String acceptEncoding, AsciiString coding) {
-        if (!AsciiString.containsIgnoreCase(acceptEncoding, coding)) {
+        if (!AsciiString.containsIgnoreCase(acceptEncoding, coding) && acceptEncoding.indexOf('*') < 0) {
             return acceptEncoding;
         }
         String[] elements = acceptEncoding.split(",");
-        boolean wildcard = false;
         for (String element : elements) {
-            wildcard |= offers(element.trim(), "*");
+            if (offers(element.trim(), "*")) {
+                return replaceWildcard(elements, coding);
+            }
         }
         StringBuilder kept = new StringBuilder(acceptEncoding.length());
         boolean dropped = false;
         for (String element : elements) {
             String trimmed = element.trim();
             if (offers(trimmed, coding)) {
-                if (wildcard && !dropped) {
-                    appendElement(kept, coding + ";q=0");
-                }
                 dropped = true;
             } else if (!trimmed.isEmpty()) {
                 appendElement(kept, trimmed);
@@ -232,11 +233,77 @@ public final class HttpUtils {
         return dropped ? kept.toString() : acceptEncoding;
     }
 
-    private static boolean offers(String element, CharSequence coding) {
+    /**
+     * A "*" would still offer {@code coding}, so it is dropped, with every element naming {@code coding} and every
+     * other token holding a "*". A coding the list does not name is then not acceptable, so the refusals are dropped
+     * too, but "identity;q=0" and "*;q=0", which decide whether an unencoded response is acceptable. When no content
+     * coding but br or zstd is left with a positive weight, the {@link #WILDCARD_CODINGS} the list does not name take
+     * the place of the "*", at its weight.
+     * <p>
+     * Netty's {@code HttpContentCompressor} matches "*" and coding names by substring, picks a refused coding once a
+     * listed coding has a positive weight, and compares weights along br, zstd, snappy, gzip, deflate. Keeping the
+     * elements with a positive weight as they are, and adding gzip and deflate only when nothing else is offered,
+     * leaves it the choice it makes on the unfiltered list, unless that choice was {@code coding}, a refused coding or
+     * one offered only by the "*".
+     */
+    private static String replaceWildcard(String[] elements, AsciiString coding) {
+        String parameters = "";
+        boolean wildcardSeen = false;
+        boolean offersOther = false;
+        StringBuilder kept = new StringBuilder();
+        for (String element : elements) {
+            String trimmed = element.trim();
+            String token = token(trimmed);
+            if (offers(trimmed, "*")) {
+                if (!wildcardSeen) {
+                    wildcardSeen = true;
+                    int semicolon = trimmed.indexOf(';');
+                    parameters = semicolon < 0 ? "" : trimmed.substring(semicolon);
+                }
+            } else if ("*".equals(token) || AsciiString.contentEqualsIgnoreCase(token, HttpHeaderValues.IDENTITY)) {
+                appendElement(kept, trimmed);
+            } else if (!trimmed.isEmpty() && token.indexOf('*') < 0 && !refuses(trimmed)
+                    && !AsciiString.contentEqualsIgnoreCase(token, coding)) {
+                appendElement(kept, trimmed);
+                offersOther |= !AsciiString.contentEqualsIgnoreCase(token, HttpHeaderValues.BR)
+                        && !AsciiString.contentEqualsIgnoreCase(token, HttpHeaderValues.ZSTD);
+            }
+        }
+        if (!offersOther) {
+            for (AsciiString wildcardCoding : WILDCARD_CODINGS) {
+                if (!names(elements, wildcardCoding)) {
+                    appendElement(kept, wildcardCoding + parameters);
+                }
+            }
+        }
+        return kept.toString();
+    }
+
+    private static String token(String element) {
         int semicolon = element.indexOf(';');
-        String token = semicolon < 0 ? element : element.substring(0, semicolon).trim();
-        return AsciiString.contentEqualsIgnoreCase(token, coding)
-                && (semicolon < 0 || !hasZeroWeight(element.substring(semicolon + 1)));
+        return semicolon < 0 ? element : element.substring(0, semicolon).trim();
+    }
+
+    private static boolean offers(String element, CharSequence coding) {
+        return AsciiString.contentEqualsIgnoreCase(token(element), coding) && !refuses(element);
+    }
+
+    private static boolean refuses(String element) {
+        int semicolon = element.indexOf(';');
+        return semicolon >= 0 && hasZeroWeight(element.substring(semicolon + 1));
+    }
+
+    // A recipient should treat x-gzip as gzip (RFC 9110 section 8.4.1.3); AHC decodes x-deflate as deflate.
+    private static boolean names(String[] elements, AsciiString coding) {
+        AsciiString alias = HttpHeaderValues.GZIP.equals(coding) ? HttpHeaderValues.X_GZIP : HttpHeaderValues.X_DEFLATE;
+        for (String element : elements) {
+            String token = token(element.trim());
+            if (AsciiString.contentEqualsIgnoreCase(token, coding)
+                    || AsciiString.contentEqualsIgnoreCase(token, alias)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void appendElement(StringBuilder list, String element) {
