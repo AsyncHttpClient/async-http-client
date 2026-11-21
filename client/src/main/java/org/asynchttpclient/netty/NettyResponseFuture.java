@@ -577,15 +577,14 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
      * Records that a write of this request has started on the stream of a multipart {@code InputStreamPart}.
      *
      * @param stream the part's stream
-     * @return {@code false} if an earlier write of this request had already started on it
      */
-    public boolean markStreamPartConsumed(InputStream stream) {
+    public void markStreamPartConsumed(InputStream stream) {
         Set<InputStream> streams = consumedStreamParts;
         if (streams == null) {
             streams = Collections.newSetFromMap(new IdentityHashMap<>());
             consumedStreamParts = streams;
         }
-        return streams.add(stream);
+        streams.add(stream);
     }
 
     public long getLastTouch() {

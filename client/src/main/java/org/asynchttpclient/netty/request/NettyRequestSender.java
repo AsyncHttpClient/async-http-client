@@ -92,7 +92,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -769,7 +768,7 @@ public final class NettyRequestSender {
 
             if (writeBody) {
                 NettyBody body = nettyRequest.getBody();
-                claimStreamParts(body, future);
+                markStreamPartsConsumed(body, future);
                 body.write(channel, future);
             }
 
@@ -1141,7 +1140,7 @@ public final class NettyRequestSender {
                                       ByteBuf bodyBuf, boolean hasStreamingBody, NettyBody nettyBody) throws IOException {
         if (hasStreamingBody) {
             streamChannel.flush();
-            claimStreamParts(nettyBody, future);
+            markStreamPartsConsumed(nettyBody, future);
             nettyBody.writeHttp2(streamChannel, future);
         } else if (bodyBuf != null) {
             // Single DATA frame; retainedDuplicate so releasing the request doesn't free the bytes
@@ -1153,31 +1152,13 @@ public final class NettyRequestSender {
         }
     }
 
-    // A retry, redirect or replay writes a new multipart body over the same InputStreamPart streams, unless a filter
-    // supplied new ones. As NettyInputStreamBody does for an InputStream body, a stream that an earlier write of this
-    // request started on is reset if it supports mark/reset, and fails the request otherwise. NettyBodyBody.write does
-    // not declare IOException, so this runs here, before the HTTP/1.1 and HTTP/2 writes.
-    private static void claimStreamParts(NettyBody body, NettyResponseFuture<?> future) throws IOException {
-        if (!(body instanceof NettyMultipartBody)) {
-            return;
-        }
-        for (Part part : future.getCurrentRequest().getBodyParts()) {
-            if (!(part instanceof InputStreamPart)) {
-                continue;
-            }
-            InputStream stream = ((InputStreamPart) part).getInputStream();
-            if (future.markStreamPartConsumed(stream)) {
-                continue;
-            }
-            String message = "Multipart InputStream body part '" + part.getName()
-                    + "' already consumed and cannot be reset for a retry";
-            if (!stream.markSupported()) {
-                throw new IOException(message);
-            }
-            try {
-                stream.reset();
-            } catch (IOException e) {
-                throw new IOException(message, e);
+    // Runs before the HTTP/1.1 and HTTP/2 writes of a multipart body, for sendNextRequest to refuse these streams.
+    private static void markStreamPartsConsumed(NettyBody body, NettyResponseFuture<?> future) {
+        if (body instanceof NettyMultipartBody) {
+            for (Part part : future.getCurrentRequest().getBodyParts()) {
+                if (part instanceof InputStreamPart) {
+                    future.markStreamPartConsumed(((InputStreamPart) part).getInputStream());
+                }
             }
         }
     }
@@ -1349,6 +1330,23 @@ public final class NettyRequestSender {
     }
 
     public <T> void sendNextRequest(final Request request, final NettyResponseFuture<T> future) {
+        // A retry, redirect or replay writes a new multipart body over the same InputStreamPart streams, unless a
+        // filter supplied new ones. A stream that an earlier write of this request started on is not sent again,
+        // and is not reset either: that write may still be reading it, the part closes it once done, and its mark
+        // need not be where that write started. Fail before connecting, so that nothing of the request is sent.
+        if (NettyRequestFactory.sendsBodyParts(request)) {
+            for (Part part : request.getBodyParts()) {
+                if (part instanceof InputStreamPart && future.isStreamPartConsumed(((InputStreamPart) part).getInputStream())) {
+                    // A channel kept for this request, as after a 401 or 407 on a keep-alive connection, is the one
+                    // getOpenChannel would pick, so close it. The other callers closed theirs or gave it to the pool.
+                    Channel channel = future.isReuseChannel() && Channels.isChannelActive(future.channel())
+                            ? future.channel() : null;
+                    abort(channel, future, new IOException("Multipart InputStream body part '" + part.getName()
+                            + "' already consumed and cannot be sent again"));
+                    return;
+                }
+            }
+        }
         sendRequest(request, future.getAsyncHandler(), future);
     }
 

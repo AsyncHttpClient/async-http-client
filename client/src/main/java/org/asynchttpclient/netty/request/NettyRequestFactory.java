@@ -289,6 +289,20 @@ public final class NettyRequestFactory {
         return nettyBody;
     }
 
+    // Whether newNettyRequest sends the request's parts: a CONNECT has no body, and setters of a body with higher
+    // precedence leave the parts in place.
+    static boolean sendsBodyParts(Request request) {
+        return !HttpMethod.CONNECT.name().equals(request.getMethod())
+                && request.getByteData() == null
+                && request.getCompositeByteData() == null
+                && request.getStringData() == null
+                && request.getByteBufferData() == null
+                && request.getByteBufData() == null
+                && request.getStreamData() == null
+                && !isNonEmpty(request.getFormParams())
+                && isNonEmpty(request.getBodyParts());
+    }
+
     public void addAuthorizationHeader(HttpHeaders headers, String authorizationHeader) {
         if (authorizationHeader != null) {
             // don't override authorization but append

@@ -150,15 +150,10 @@ public class NettyRequestSenderConsumedBodyRetryTest extends AbstractBasicTest {
     }
 
     @Test
-    public void replayOfNonResettableInputStreamPartFailsTheFuturePromptly() throws Exception {
+    public void replayOfConsumedInputStreamPartFailsTheFuturePromptly() throws Exception {
         IOException cause = assertReplayFailsPromptly(builder -> builder.addBodyPart(
-                new InputStreamPart("file", new ByteArrayInputStream(new byte[]{1, 2, 3}) {
-                    @Override
-                    public boolean markSupported() {
-                        return false;
-                    }
-                }, "file.bin")));
-        assertEquals("Multipart InputStream body part 'file' already consumed and cannot be reset for a retry",
+                new InputStreamPart("file", new ByteArrayInputStream(new byte[]{1, 2, 3}), "file.bin")));
+        assertEquals("Multipart InputStream body part 'file' already consumed and cannot be sent again",
                 cause.getMessage());
     }
 

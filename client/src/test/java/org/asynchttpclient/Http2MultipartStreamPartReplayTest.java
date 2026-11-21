@@ -70,13 +70,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A replay of an HTTP/2 request must not send a multipart {@link InputStreamPart} from where the first attempt
- * left its stream, and must send the streams of parts that a filter supplied for the replay as they are.
+ * A replay of an HTTP/2 request must not send a multipart {@link InputStreamPart} again once a write of the request
+ * has started on its stream, nor open a stream for it, and must send the streams of parts that a filter supplied for
+ * the replay as they are.
  */
 public class Http2MultipartStreamPartReplayTest {
 
     private static final String PAYLOAD = "stream part payload";
 
+    private final AtomicInteger headersFrames = new AtomicInteger();
     private final AtomicInteger requests = new AtomicInteger();
     private NioEventLoopGroup serverGroup;
     private Channel serverChannel;
@@ -130,21 +132,8 @@ public class Http2MultipartStreamPartReplayTest {
     }
 
     @Test
-    public void replaySendsAResettableStreamPartAgain() throws Exception {
-        try (AsyncHttpClient client = replayingClient()) {
-            Response response = client.preparePost("https://localhost:" + serverPort + "/")
-                    .addBodyPart(new InputStreamPart("file", new ByteArrayInputStream(PAYLOAD.getBytes(UTF_8)), "file.bin"))
-                    .execute()
-                    .get(10, SECONDS);
-
-            assertEquals(2, requests.get());
-            assertTrue(response.getResponseBody().contains(PAYLOAD));
-        }
-    }
-
-    @Test
-    public void replayFailsForAStreamPartThatCannotBeReset() throws Exception {
-        InputStream stream = nonResettable(PAYLOAD);
+    public void replayFailsForAConsumedStreamPart() throws Exception {
+        InputStream stream = new ByteArrayInputStream(PAYLOAD.getBytes(UTF_8));
         try (AsyncHttpClient client = replayingClient()) {
             ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
                     .preparePost("https://localhost:" + serverPort + "/")
@@ -153,9 +142,10 @@ public class Http2MultipartStreamPartReplayTest {
                     .get(10, SECONDS));
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
-            assertEquals("Multipart InputStream body part 'file' already consumed and cannot be reset for a retry",
+            assertEquals("Multipart InputStream body part 'file' already consumed and cannot be sent again",
                     cause.getMessage());
             assertEquals(1, requests.get());
+            assertEquals(1, headersFrames.get());
         }
     }
 
@@ -169,22 +159,6 @@ public class Http2MultipartStreamPartReplayTest {
                     .get(10, SECONDS);
 
             assertEquals(2, requests.get());
-            assertTrue(response.getResponseBody().contains("fresh payload"));
-        }
-    }
-
-    @Test
-    public void replayResetsAReusedStreamPartAndSendsAFreshOne() throws Exception {
-        Part reused = new InputStreamPart("reused", new ByteArrayInputStream(PAYLOAD.getBytes(UTF_8)), "reused.bin");
-        Part fresh = new InputStreamPart("fresh", nonResettable("fresh payload"), "fresh.bin");
-        try (AsyncHttpClient client = replayingClient(List.of(reused, fresh))) {
-            Response response = client.preparePost("https://localhost:" + serverPort + "/")
-                    .addBodyPart(reused)
-                    .execute()
-                    .get(10, SECONDS);
-
-            assertEquals(2, requests.get());
-            assertTrue(response.getResponseBody().contains(PAYLOAD));
             assertTrue(response.getResponseBody().contains("fresh payload"));
         }
     }
@@ -235,6 +209,7 @@ public class Http2MultipartStreamPartReplayTest {
         protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
             boolean endStream = false;
             if (msg instanceof Http2HeadersFrame) {
+                headersFrames.incrementAndGet();
                 endStream = ((Http2HeadersFrame) msg).isEndStream();
             } else if (msg instanceof Http2DataFrame) {
                 body.writeBytes(((Http2DataFrame) msg).content());

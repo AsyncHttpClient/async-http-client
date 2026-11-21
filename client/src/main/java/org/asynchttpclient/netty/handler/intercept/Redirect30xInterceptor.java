@@ -358,15 +358,13 @@ public class Redirect30xInterceptor {
     private static void ensureBodyReplayable(Request request, BodyRepresentation bodyRepresentation,
                                              NettyResponseFuture<?> future) throws IOException {
         // A stream counts as consumed once a write has started on it, so an early redirect before 100 Continue
-        // leaves it available for its first write.
+        // leaves it available for its first write. A consumed one is not reset, see NettyRequestSender.sendNextRequest.
         if (bodyRepresentation == BodyRepresentation.BODY_PARTS) {
             for (Part part : request.getBodyParts()) {
-                if (part instanceof InputStreamPart) {
-                    InputStream stream = ((InputStreamPart) part).getInputStream();
-                    if (future.isStreamPartConsumed(stream) && !stream.markSupported()) {
-                        throw new IOException("Multipart InputStream body part '" + part.getName()
-                                + "' cannot be replayed after redirect");
-                    }
+                if (part instanceof InputStreamPart
+                        && future.isStreamPartConsumed(((InputStreamPart) part).getInputStream())) {
+                    throw new IOException("Multipart InputStream body part '" + part.getName()
+                            + "' cannot be replayed after redirect");
                 }
             }
         }
