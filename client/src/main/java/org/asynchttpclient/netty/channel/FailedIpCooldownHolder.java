@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongSupplier;
+import java.util.function.Predicate;
 
 /**
  * Per-host failed-IP cooldown applied to a request's resolved addresses before a new connection is
@@ -59,6 +60,8 @@ public final class FailedIpCooldownHolder {
     // for a useful window instead of re-pinning to it on the very next request, yet short enough that a
     // recovered IP rejoins the order quickly. The DNS/resolver layer remains the authority on liveness.
     static final Duration DEFAULT_FAILED_IP_COOLDOWN = Duration.ofSeconds(10);
+
+    static final Predicate<InetSocketAddress> NOT_COOLING = address -> false;
 
     private final ConcurrentHashMap<String, HostState> hosts = new ConcurrentHashMap<>();
     private final long cooldownNanos;
@@ -106,6 +109,20 @@ public final class FailedIpCooldownHolder {
         if (state != null) {
             state.cooldowns.put(address, nanoClock.getAsLong() + cooldownNanos);
         }
+    }
+
+    // A snapshot of which of the host's addresses are cooling, taken with one clock read so that a caller can rank
+    // several of them. Agrees with what reorder(host, ...) would move to the back.
+    Predicate<InetSocketAddress> coolingNow(String host) {
+        HostState state = hosts.get(host);
+        if (state == null || state.cooldowns.isEmpty()) {
+            return NOT_COOLING;
+        }
+        long now = nanoClock.getAsLong();
+        return address -> {
+            Long until = state.cooldowns.get(address);
+            return until != null && until - now > 0;
+        };
     }
 
     // Visible for testing: the number of hosts currently tracked (bounded by MAX_TRACKED_HOSTS).

@@ -69,6 +69,7 @@ import org.asynchttpclient.netty.channel.ConnectionSemaphore;
 import org.asynchttpclient.netty.channel.Http2ConnectionState;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.FailedIpCooldownHolder;
+import org.asynchttpclient.netty.channel.LeastConnectionsAddressSelector;
 import org.asynchttpclient.netty.channel.NettyChannelConnector;
 import org.asynchttpclient.netty.channel.NettyConnectListener;
 import org.asynchttpclient.netty.channel.RoundRobinAddressSelector;
@@ -132,6 +133,8 @@ public final class NettyRequestSender {
     // Deprioritizes a recently-failed IP when ordering a direct connection's resolved addresses, in any
     // LoadBalance mode. Null when the failed-IP cooldown is disabled; call sites gate on ipCooldown != null.
     private final FailedIpCooldownHolder ipCooldown;
+    // Non-null only in LoadBalance.LEAST_CONNECTIONS mode.
+    private final @Nullable LeastConnectionsAddressSelector leastConnections;
 
     public NettyRequestSender(AsyncHttpClientConfig config, ChannelManager channelManager, Timer nettyTimer, AsyncHttpClientState clientState) {
         this.config = config;
@@ -147,6 +150,9 @@ public final class NettyRequestSender {
         Duration cooldownPeriod = config.getFailedIpCooldownPeriod();
         ipCooldown = config.isFailedIpCooldownEnabled() && cooldownPeriod != null
                 ? new FailedIpCooldownHolder(cooldownPeriod.toNanos(), System::nanoTime)
+                : null;
+        leastConnections = config.getLoadBalance() == LoadBalance.LEAST_CONNECTIONS
+                ? new LeastConnectionsAddressSelector(ipCooldown)
                 : null;
     }
 
@@ -567,11 +573,18 @@ public final class NettyRequestSender {
         // of the next new connection re-targeting it (and burning another connectTimeout). Applied to direct
         // connections in any LoadBalance mode; the host key matches the one reorder() ordered under.
         Consumer<InetSocketAddress> connectFailureListener = null;
-        if (ipCooldown != null && isDirectConnection(request, proxy)) {
-            String host = request.getUri().getHost();
-            connectFailureListener = address -> ipCooldown.markFailed(host, address);
+        LeastConnectionsAddressSelector selector = null;
+        String host = request.getUri().getHost();
+        if ((ipCooldown != null || leastConnections != null) && isDirectConnection(request, proxy)) {
+            if (ipCooldown != null) {
+                connectFailureListener = address -> ipCooldown.markFailed(host, address);
+            }
+            if (addresses.size() > 1) {
+                selector = leastConnections;
+            }
         }
-        NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState, connectFailureListener);
+        NettyChannelConnector connector = new NettyChannelConnector(request.getLocalAddress(), addresses, asyncHandler, clientState,
+                connectFailureListener, selector, host);
         if (!future.isDone()) {
             // Do not throw an exception when we need an extra connection for a redirect
             // FIXME why? This violate the max connection per host handling, right?
