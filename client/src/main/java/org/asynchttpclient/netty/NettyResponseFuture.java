@@ -479,6 +479,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
             // ConnectSuccessInterceptor sets it back.
             tunnelEstablished = false;
         }
+        // Set by a 100 Continue so that the body deferred until then goes out without repeating the headers.
+        // A new request has to send its own.
+        headersAlreadyWrittenOnContinue = false;
         this.nettyRequest = nettyRequest;
     }
 
