@@ -25,12 +25,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.uring.IoUring;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
@@ -45,6 +48,11 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.pkitesting.CertificateBuilder;
+import io.netty.pkitesting.X509Bundle;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.channel.ChannelPool;
@@ -62,6 +70,7 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
@@ -74,8 +83,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -95,6 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -118,11 +131,17 @@ public class Http1DecompressionSuspensionTest {
 
     private final AtomicInteger connectionCount = new AtomicInteger();
     private final AtomicInteger requestCount = new AtomicInteger();
+    // A permit for every connection the server has closed.
+    private final Semaphore serverConnectionsClosed = new Semaphore(0);
 
     private NioEventLoopGroup serverGroup;
     private Channel serverChannel;
     private ChannelGroup serverChildChannels;
     private int serverPort;
+    private @Nullable Channel tlsServerChannel;
+    private @Nullable SslContext tlsServerSslContext;
+    private int tlsServerPort;
+    private @Nullable EventLoopGroup clientGroup;
 
     private static byte[] gzip(byte[] payload) {
         ByteArrayOutputStream compressed = new ByteArrayOutputStream();
@@ -156,6 +175,7 @@ public class Http1DecompressionSuspensionTest {
                     protected void initChannel(Channel channel) {
                         serverChildChannels.add(channel);
                         connectionCount.incrementAndGet();
+                        channel.closeFuture().addListener(future -> serverConnectionsClosed.release());
                         channel.pipeline()
                                 .addLast(new HttpServerCodec())
                                 .addLast(new HttpObjectAggregator(1024))
@@ -183,9 +203,46 @@ public class Http1DecompressionSuspensionTest {
         if (serverChannel != null) {
             serverChannel.close().sync();
         }
+        if (tlsServerChannel != null) {
+            tlsServerChannel.close().sync();
+        }
         if (serverGroup != null) {
             serverGroup.shutdownGracefully(0, 100, MILLISECONDS).sync();
         }
+        if (clientGroup != null) {
+            clientGroup.shutdownGracefully(0, 100, MILLISECONDS).sync();
+        }
+        ReferenceCountUtil.release(tlsServerSslContext);
+    }
+
+    // The same responses over TLS, on a server started on first use.
+    private void startTlsServer() throws Exception {
+        X509Bundle bundle = new CertificateBuilder()
+                .subject("CN=localhost")
+                .setIsCertificateAuthority(true)
+                .buildSelfSigned();
+        SslContext sslContext = SslContextBuilder.forServer(bundle.toKeyManagerFactory()).build();
+        tlsServerSslContext = sslContext;
+        tlsServerChannel = new ServerBootstrap()
+                .group(serverGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<Channel>() {
+                    @Override
+                    protected void initChannel(Channel channel) {
+                        serverChildChannels.add(channel);
+                        connectionCount.incrementAndGet();
+                        channel.closeFuture().addListener(future -> serverConnectionsClosed.release());
+                        channel.pipeline()
+                                .addLast(sslContext.newHandler(channel.alloc()))
+                                .addLast(new HttpServerCodec())
+                                .addLast(new HttpObjectAggregator(1024))
+                                .addLast(new CompressedResponseHandler());
+                    }
+                })
+                .bind(0)
+                .sync()
+                .channel();
+        tlsServerPort = ((InetSocketAddress) tlsServerChannel.localAddress()).getPort();
     }
 
     @Test
@@ -217,21 +274,7 @@ public class Http1DecompressionSuspensionTest {
             assertEquals(first, handler.bytes.get(), "a suspended response inflated " + (handler.bytes.get() - first)
                     + " more bytes in " + (handler.partCount.get() - 1) + " parts from input it had already read");
 
-            int resumes = 0;
-            while (!handler.last.get()) {
-                long before = handler.bytes.get();
-                handler.control.resume();
-                resumes++;
-                int part = handler.parts.poll(10, SECONDS);
-                awaitEventLoop(clientChannel.get());
-                Integer terminal = handler.parts.poll();
-                if (terminal != null) {
-                    assertEquals(0, terminal, "only the empty terminal part may follow a data part");
-                    assertNull(handler.parts.poll());
-                }
-                assertTrue(part <= MAX_PART_SIZE, "a resume produced a part of " + part + " bytes");
-                assertEquals(before + part, handler.bytes.get(), "one resume must produce at most one part");
-            }
+            int resumes = resumeToTheEnd(handler, clientChannel.get());
 
             response.get(10, SECONDS);
             assertNull(handler.failure.get());
@@ -372,6 +415,309 @@ public class Http1DecompressionSuspensionTest {
             assertEquals(1, requestCount.get());
             assertEquals(1, handler.partCount.get(), "nothing held back may be delivered after the close");
             assertFalse(handler.corrupt.get());
+        }
+    }
+
+    /**
+     * Native transports read the close of a connection even while reads are suspended. While compressed input is held
+     * back, that close only shuts the input down: the rest of a body that has ended still waits for demand, one part
+     * per resume, and the connection is closed instead of reused once the response is done.
+     */
+    @ParameterizedTest
+    @CsvSource({"epoll, http, /zeros-close", "epoll, http, /zeros-delimited",
+            "epoll, https, /zeros-close", "epoll, https, /zeros-delimited",
+            "io_uring, http, /zeros-close", "io_uring, http, /zeros-delimited",
+            "io_uring, https, /zeros-close", "io_uring, https, /zeros-delimited"})
+    @EnabledOnOs(OS.LINUX)
+    public void aSuspendedBodyThatHasEndedWaitsForDemandAfterTheServerCloses(String transport, String scheme,
+                                                                            String path) throws Exception {
+        assumeTrue("epoll".equals(transport) ? Epoll.isAvailable() : IoUring.isAvailable(), transport);
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig(transport, clientChannel, inputShutdown))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, path)).execute(handler);
+
+            assertTrue(inputShutdown.await(10, SECONDS), "the close must only shut the input down");
+            awaitEventLoop(clientChannel.get());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered without demand");
+            assertFalse(response.isDone());
+
+            assertNotNull(handler.parts.poll());
+            resumeToTheEnd(handler, clientChannel.get());
+            response.get(10, SECONDS);
+            assertNull(handler.failure.get());
+            assertEquals(ZEROS_SIZE, handler.bytes.get());
+            assertFalse(handler.corrupt.get());
+            assertEquals(0, handler.offers.get(), "a connection the server closed must not be offered for reuse");
+            clientChannel.get().closeFuture().await(10, SECONDS);
+            assertFalse(clientChannel.get().isOpen());
+        }
+    }
+
+    /** Half-closure that the application turned on already stays on, and the close by the server is handled alike. */
+    @ParameterizedTest
+    @ValueSource(strings = {"epoll", "io_uring"})
+    @EnabledOnOs(OS.LINUX)
+    public void aConnectionWithHalfClosureOnAlreadyIsNotReusedAfterTheServerCloses(String transport) throws Exception {
+        assumeTrue("epoll".equals(transport) ? Epoll.isAvailable() : IoUring.isAvailable(), transport);
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig(transport, clientChannel, inputShutdown)
+                .addChannelOption(ChannelOption.ALLOW_HALF_CLOSURE, true))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url("/zeros-close")).execute(handler);
+
+            assertTrue(inputShutdown.await(10, SECONDS), "the close must only shut the input down");
+            awaitEventLoop(clientChannel.get());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered without demand");
+
+            assertNotNull(handler.parts.poll());
+            resumeToTheEnd(handler, clientChannel.get());
+            response.get(10, SECONDS);
+            assertNull(handler.failure.get());
+            assertEquals(ZEROS_SIZE, handler.bytes.get());
+            assertEquals(0, handler.offers.get(), "a connection the server closed must not be offered for reuse");
+            assertTrue(clientChannel.get().config().getOption(ChannelOption.ALLOW_HALF_CLOSURE));
+            clientChannel.get().closeFuture().await(10, SECONDS);
+            assertFalse(clientChannel.get().isOpen());
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"epoll, http", "epoll, https", "io_uring, http", "io_uring, https"})
+    @EnabledOnOs(OS.LINUX)
+    public void cancellationAfterTheServerClosesClosesTheConnection(String transport, String scheme) throws Exception {
+        assumeTrue("epoll".equals(transport) ? Epoll.isAvailable() : IoUring.isAvailable(), transport);
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig(transport, clientChannel, inputShutdown))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, "/zeros-close")).execute(handler);
+
+            assertTrue(inputShutdown.await(10, SECONDS), "the close must only shut the input down");
+            handler.control.cancel();
+            response.get(10, SECONDS);
+            clientChannel.get().closeFuture().await(10, SECONDS);
+            assertFalse(clientChannel.get().isOpen());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered after the cancellation");
+        }
+    }
+
+    // A client on the given transport, and a latch that opens once the server's close has shut the input down.
+    private DefaultAsyncHttpClientConfig.Builder transportConfig(String transport, AtomicReference<Channel> clientChannel,
+                                                                 CountDownLatch inputShutdown) {
+        DefaultAsyncHttpClientConfig.Builder config = config()
+                .setUseInsecureTrustManager(true)
+                .setMaxRequestRetry(0)
+                .setRequestTimeout(Duration.ofSeconds(60))
+                .setHttpAdditionalChannelInitializer(channel -> {
+                    clientChannel.set(channel);
+                    channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                        @Override
+                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+                            if (evt == ChannelInputShutdownEvent.INSTANCE) {
+                                inputShutdown.countDown();
+                            }
+                            ctx.fireUserEventTriggered(evt);
+                        }
+                    });
+                });
+        if ("nio".equals(transport)) {
+            // AHC picks a native transport whenever one is available, so NIO needs a group of its own.
+            clientGroup = new NioEventLoopGroup(1);
+            return config.setEventLoopGroup(clientGroup);
+        }
+        return config.setUseNativeTransport(true).setUseOnlyEpollNativeTransport("epoll".equals(transport));
+    }
+
+    private static void assumeAvailable(String transport) {
+        if (!"nio".equals(transport)) {
+            assumeTrue(OS.LINUX.isCurrentOs(), transport);
+            assumeTrue("epoll".equals(transport) ? Epoll.isAvailable() : IoUring.isAvailable(), transport);
+        }
+    }
+
+    // Resumes until the body has ended, checking that each resume delivers at most one part. Returns the resumes.
+    private static int resumeToTheEnd(SuspendingHandler handler, Channel channel) throws InterruptedException {
+        int resumes = 0;
+        while (!handler.last.get()) {
+            long before = handler.bytes.get();
+            handler.control.resume();
+            resumes++;
+            Integer part = handler.parts.poll(10, SECONDS);
+            assertNotNull(part, "a resume must deliver a part");
+            awaitEventLoop(channel);
+            Integer terminal = handler.parts.poll();
+            if (terminal != null) {
+                assertEquals(0, terminal, "only the empty terminal part may follow a data part");
+                assertNull(handler.parts.poll());
+            }
+            assertTrue(part <= MAX_PART_SIZE, "a resume produced a part of " + part + " bytes");
+            assertEquals(before + part, handler.bytes.get(), "one resume must produce at most one part");
+        }
+        return resumes;
+    }
+
+    /**
+     * A body that the server's close cuts off, or whose last chunk cannot be parsed, does not wait for demand once the
+     * input is shut down: the connection is closed at once, and the request fails without what is held back of the
+     * body, which would hit the size limit first if it were decompressed.
+     */
+    @ParameterizedTest
+    @CsvSource({"epoll, http, /zeros-cut", "epoll, http, /zeros-cut-chunked", "epoll, http, /zeros-bad-chunk",
+            "epoll, https, /zeros-cut", "epoll, https, /zeros-cut-chunked", "epoll, https, /zeros-bad-chunk",
+            "io_uring, http, /zeros-cut", "io_uring, http, /zeros-cut-chunked", "io_uring, http, /zeros-bad-chunk",
+            "io_uring, https, /zeros-cut", "io_uring, https, /zeros-cut-chunked", "io_uring, https, /zeros-bad-chunk"})
+    @EnabledOnOs(OS.LINUX)
+    public void aSuspendedBodyThatTheServerCutsOffOrBreaksFailsAtOnce(String transport, String scheme, String path)
+            throws Exception {
+        assumeAvailable(transport);
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig(transport, clientChannel, inputShutdown)
+                .setMaxDecompressedResponseSize(1024 * 1024))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, path)).execute(handler);
+
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> response.get(10, SECONDS));
+            assertEquals(0, inputShutdown.getCount(), "the close must only have shut the input down");
+            Class<? extends Throwable> expected =
+                    path.endsWith("bad-chunk") ? NumberFormatException.class : RemotelyClosedException.class;
+            assertInstanceOf(expected, failure.getCause());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered after the close");
+            assertFalse(handler.corrupt.get());
+            assertTrue(clientChannel.get().closeFuture().await(10, SECONDS));
+            assertEquals(0, handler.offers.get());
+        }
+    }
+
+    /**
+     * NIO does not read the server's close while reads are suspended, so it gets no input shutdown. Half-closure is
+     * still turned on while input is held back, and the body then ends on demand as before.
+     */
+    @ParameterizedTest
+    @CsvSource({"http, /zeros-close", "http, /zeros-delimited", "https, /zeros-close", "https, /zeros-delimited"})
+    public void onNioASuspendedBodyThatHasEndedWaitsForDemandAfterTheServerCloses(String scheme, String path)
+            throws Exception {
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig("nio", clientChannel, new CountDownLatch(1)))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, path)).execute(handler);
+
+            assertNotNull(handler.parts.poll(10, SECONDS));
+            assertTrue(serverConnectionsClosed.tryAcquire(10, SECONDS), "the server must have closed the connection");
+            awaitEventLoop(clientChannel.get());
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered without demand");
+            assertFalse(response.isDone());
+            assertTrue(clientChannel.get().config().getOption(ChannelOption.ALLOW_HALF_CLOSURE));
+
+            resumeToTheEnd(handler, clientChannel.get());
+            response.get(10, SECONDS);
+            assertNull(handler.failure.get());
+            assertEquals(ZEROS_SIZE, handler.bytes.get());
+            assertFalse(handler.corrupt.get());
+            assertTrue(clientChannel.get().closeFuture().await(10, SECONDS));
+        }
+    }
+
+    /** The request timeout still ends a response that waits for demand after the server's close. */
+    @ParameterizedTest
+    @CsvSource({"epoll, http", "epoll, https", "io_uring, http", "io_uring, https"})
+    @EnabledOnOs(OS.LINUX)
+    public void theRequestTimeoutAfterTheServerClosesFailsTheResponse(String transport, String scheme)
+            throws Exception {
+        assumeAvailable(transport);
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig(transport, clientChannel, inputShutdown)
+                .setRequestTimeout(Duration.ofSeconds(2)))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, "/zeros-close")).execute(handler);
+
+            assertTrue(inputShutdown.await(10, SECONDS), "the close must only shut the input down");
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> response.get(10, SECONDS));
+            assertInstanceOf(TimeoutException.class, failure.getCause());
+            assertTrue(clientChannel.get().closeFuture().await(10, SECONDS));
+            assertEquals(1, handler.partCount.get(), "nothing held back may be delivered after the timeout");
+            assertEquals(0, handler.offers.get());
+        }
+    }
+
+    /**
+     * A reset by the server fails the read before it shuts the input down, and that failure detaches the request from
+     * the connection. The connection is then closed at once, as without half-closure, so the rest of a body that has
+     * ended is handed on at once. With auto-read off, nothing else would close it: the end of the response, for
+     * example by the request timeout, does not read again. epoll reads a reset even while reads are suspended.
+     */
+    @ParameterizedTest
+    @CsvSource({"http, true", "https, true", "http, false", "https, false"})
+    @EnabledOnOs(OS.LINUX)
+    public void aResetByTheServerClosesTheConnection(String scheme, boolean autoRead) throws Exception {
+        assumeAvailable("epoll");
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        CountDownLatch inputShutdown = new CountDownLatch(1);
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig("epoll", clientChannel, inputShutdown)
+                .addChannelOption(ChannelOption.AUTO_READ, autoRead))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url(scheme, "/zeros")).execute(handler);
+
+            assertNotNull(handler.parts.poll(10, SECONDS));
+            awaitEventLoop(clientChannel.get());
+            assertTrue(clientChannel.get().config().getOption(ChannelOption.ALLOW_HALF_CLOSURE));
+            resetServerConnections();
+
+            assertTrue(clientChannel.get().closeFuture().await(10, SECONDS), "a reset must close the connection");
+            assertEquals(0, inputShutdown.getCount(), "the reset must only have shut the input down");
+            response.get(10, SECONDS);
+            assertNull(handler.failure.get());
+            assertEquals(ZEROS_SIZE, handler.bytes.get());
+            assertFalse(handler.corrupt.get());
+            assertEquals(0, handler.offers.get());
+        }
+    }
+
+    // Resets every connection to the server: closes it with SO_LINGER 0, and over TLS without a close_notify.
+    private void resetServerConnections() {
+        for (Channel channel : serverChildChannels) {
+            channel.eventLoop().execute(() -> {
+                channel.config().setOption(ChannelOption.SO_LINGER, 0);
+                channel.unsafe().close(channel.voidPromise());
+            });
+        }
+    }
+
+    /**
+     * Half-closure is off again before a connection whose body was held back is offered for reuse, so the next response
+     * on it treats a close by the server as before.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"nio", "epoll", "io_uring"})
+    public void aConnectionIsReusedWithHalfClosureOffAfterASuspendedBody(String transport) throws Exception {
+        assumeAvailable(transport);
+        AtomicReference<Channel> clientChannel = new AtomicReference<>();
+        try (AsyncHttpClient client = asyncHttpClient(transportConfig(transport, clientChannel, new CountDownLatch(1))
+                .setMaxConnectionsPerHost(1))) {
+            SuspendingHandler handler = new SuspendingHandler();
+            ListenableFuture<Void> response = client.prepareGet(url("/zeros")).execute(handler);
+
+            assertNotNull(handler.parts.poll(10, SECONDS));
+            Channel channel = clientChannel.get();
+            awaitEventLoop(channel);
+            assertTrue(channel.config().getOption(ChannelOption.ALLOW_HALF_CLOSURE),
+                    "holding input back must turn half-closure on");
+            resumeToTheEnd(handler, channel);
+            response.get(10, SECONDS);
+            assertNull(handler.failure.get());
+            assertEquals(ZEROS_SIZE, handler.bytes.get());
+            assertEquals(1, handler.offers.get());
+            assertEquals(Boolean.FALSE, handler.halfClosureAtOffer.get(),
+                    "half-closure must be off when the connection is offered for reuse");
+
+            assertEquals(200, client.prepareHead(url("/zeros")).execute().get(10, SECONDS).getStatusCode());
+            assertSame(channel, clientChannel.get(), "the connection must be reused");
+            assertEquals(1, connectionCount.get());
+            assertFalse(channel.config().getOption(ChannelOption.ALLOW_HALF_CLOSURE));
         }
     }
 
@@ -545,6 +891,16 @@ public class Http1DecompressionSuspensionTest {
         return "http://localhost:" + serverPort + path;
     }
 
+    private String url(String scheme, String path) throws Exception {
+        if ("http".equals(scheme)) {
+            return url(path);
+        }
+        if (tlsServerChannel == null) {
+            startTlsServer();
+        }
+        return "https://localhost:" + tlsServerPort + path;
+    }
+
     private static void awaitEventLoop(Channel channel) throws InterruptedException {
         channel.eventLoop().submit(() -> {
         }).sync();
@@ -609,6 +965,8 @@ public class Http1DecompressionSuspensionTest {
         final LinkedBlockingQueue<Integer> parts = new LinkedBlockingQueue<>();
         final AtomicLong bytes = new AtomicLong();
         final AtomicInteger partCount = new AtomicInteger();
+        final AtomicInteger offers = new AtomicInteger();
+        final AtomicReference<Boolean> halfClosureAtOffer = new AtomicReference<>();
         final AtomicBoolean corrupt = new AtomicBoolean();
         final AtomicBoolean last = new AtomicBoolean();
         final AtomicReference<String> trailer = new AtomicReference<>();
@@ -665,6 +1023,12 @@ public class Http1DecompressionSuspensionTest {
         public State onTrailingHeadersReceived(HttpHeaders headers) {
             trailer.set(last.get() || bytes.get() != TEXT.length ? "early" : headers.get("x-trailer"));
             return State.CONTINUE;
+        }
+
+        @Override
+        public void onConnectionOffer(Channel connection) {
+            halfClosureAtOffer.set(connection.config().getOption(ChannelOption.ALLOW_HALF_CLOSURE));
+            offers.incrementAndGet();
         }
 
         @Override
@@ -739,9 +1103,23 @@ public class Http1DecompressionSuspensionTest {
                     HttpUtil.setTransferEncodingChunked(response, true);
                     ctx.write(response);
                     ctx.write(new DefaultHttpContent(Unpooled.wrappedBuffer(ZEROS_GZIP, 0, ZEROS_GZIP.length / 2)));
-                    // Past the encoder: a chunk size that is not hexadecimal.
-                    ctx.pipeline().firstContext()
+                    // Past the encoder, but through TLS: a chunk size that is not hexadecimal.
+                    ctx.pipeline().context(HttpServerCodec.class)
                             .writeAndFlush(Unpooled.copiedBuffer("zz\r\n", StandardCharsets.US_ASCII))
+                            .addListener(ChannelFutureListener.CLOSE);
+                    break;
+                }
+                case "/zeros-close":
+                case "/zeros-delimited": {
+                    HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+                    response.headers().set(HttpHeaderNames.CONTENT_ENCODING, HttpHeaderValues.GZIP);
+                    if ("/zeros-close".equals(request.uri())) {
+                        HttpUtil.setContentLength(response, ZEROS_GZIP.length);
+                    } else {
+                        response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+                    }
+                    ctx.write(response);
+                    ctx.writeAndFlush(new DefaultHttpContent(Unpooled.wrappedBuffer(ZEROS_GZIP)))
                             .addListener(ChannelFutureListener.CLOSE);
                     break;
                 }
