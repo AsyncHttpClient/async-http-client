@@ -121,6 +121,9 @@ public class RedirectBodyTest extends AbstractBasicTest {
                     return;
                 }
 
+                // Send the 100 even if the content came with the headers, as AHC sends an in-memory body;
+                // Jetty would skip it then. Without Expect: 100-continue this does nothing.
+                request.getHttpChannel().continue100(0);
                 byte[] body = IOUtils.toByteArray(request.getInputStream());
                 receivedContentLengths.add(String.valueOf(httpRequest.getHeader(CONTENT_LENGTH.toString())));
                 String redirectHeader = httpRequest.getHeader("X-REDIRECT");
@@ -385,6 +388,62 @@ public class RedirectBodyTest extends AbstractBasicTest {
             assertArrayEquals(REDIRECT_BODY, receivedBody);
             assertEquals("PUT", receivedMethod);
             assertRedirectBody(response);
+        }
+    }
+
+    @ParameterizedTest(name = "307 after 100 Continue keeps the method, headers and body (generator={0})")
+    @ValueSource(booleans = {false, true})
+    public void expectContinue307After100KeepsMethodHeadersAndBody(boolean useBodyGenerator) throws Exception {
+        List<Integer> statuses = new CopyOnWriteArrayList<>();
+        try (AsyncHttpClient c = clientRecordingStatuses(statuses)) {
+            BoundRequestBuilder builder = c.preparePost(getTargetUrl()).setHeader(EXPECT, "100-continue");
+            // A byte array goes out with the headers; a generator waits for the 100.
+            if (useBodyGenerator) {
+                builder.setBody(new ByteArrayBodyGenerator(REDIRECT_BODY));
+            } else {
+                builder.setBody(REDIRECT_BODY);
+            }
+            Response response = execute307(builder);
+
+            assertEquals(List.of(100, 307), statuses.subList(0, 2));
+            assertEquals(POST, receivedMethod);
+            assertRedirectBody(response);
+        }
+    }
+
+    @Test
+    public void expectContinue303After100SwitchesToGet() throws Exception {
+        List<Integer> statuses = new CopyOnWriteArrayList<>();
+        try (AsyncHttpClient c = clientRecordingStatuses(statuses)) {
+            Response response = c.preparePost(getTargetUrl())
+                    .setHeader(EXPECT, "100-continue")
+                    .setHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE)
+                    .setHeader("X-REDIRECT", "303")
+                    .setBody(REDIRECT_BODY)
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(List.of(100, 303), statuses.subList(0, 2));
+            assertEquals(200, response.getStatusCode());
+            assertEquals(GET, receivedMethod);
+            assertNull(receivedContentType);
+        }
+    }
+
+    @Test
+    public void expectContinueMultipart307After100KeepsBody() throws Exception {
+        List<Integer> statuses = new CopyOnWriteArrayList<>();
+        try (AsyncHttpClient c = clientRecordingStatuses(statuses)) {
+            Response response = c.preparePost(getTargetUrl())
+                    .setHeader(EXPECT, "100-continue")
+                    .addBodyPart(new StringPart("field", "multipart value"))
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals(List.of(100, 307), statuses.subList(0, 2));
+            assertEquals(POST, receivedMethod);
+            assertTrue(response.getResponseBody().contains("multipart value"));
         }
     }
 
@@ -805,5 +864,16 @@ public class RedirectBodyTest extends AbstractBasicTest {
     private static void assertRedirectBody(Response response) {
         assertArrayEquals(REDIRECT_BODY, response.getResponseBodyAsBytes());
         assertEquals(CONTENT_TYPE_VALUE, receivedContentType);
+    }
+
+    private static AsyncHttpClient clientRecordingStatuses(List<Integer> statuses) {
+        ResponseFilter recorder = new ResponseFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                statuses.add(ctx.getResponseStatus().getStatusCode());
+                return ctx;
+            }
+        };
+        return asyncHttpClient(config().setFollowRedirect(true).addResponseFilter(recorder));
     }
 }
