@@ -46,25 +46,28 @@ public interface ResponseBodyControl {
      * delivered to the {@link AsyncHandler}.
      * If the final response headers already ended the response, this call has no effect on completion.
      * <p>
-     * For an HTTP/1.1 response whose {@code Content-Encoding} AHC decompresses ({@code gzip}, {@code deflate}, and
-     * with Netty 4.2.17 or later {@code br}, {@code zstd} or {@code snappy}), a suspension also stops decompression:
-     * once it has taken effect, no further body part with content is delivered until {@link #resume()}. If the system
-     * property {@code io.netty.compression.defaultMaxForwardBytes} is zero or negative, {@code zstd} needs Netty 4.2.21
-     * or later. Once the body has been decompressed in full, the final empty part, trailing headers and completion can
+     * For an HTTP/1.1 response whose {@code Content-Encoding} AHC decompresses ({@code gzip}, {@code deflate},
+     * {@code br}, {@code zstd} or {@code snappy}), a suspension also stops decompression: once it has taken effect, no
+     * further body part with content is delivered until {@link #resume()}. If the system property
+     * {@code io.netty.compression.defaultMaxForwardBytes} is zero or negative, {@code zstd} needs Netty 4.2.21 or
+     * later. Once the body has been decompressed in full, the final empty part, trailing headers and completion can
      * still arrive while reads are suspended. A transfer coding, such as {@code Transfer-Encoding: gzip}, is
      * decompressed as soon as it is read.
      * <p>
-     * If the connection closes while compressed input is held back, the rest of a body that has ended is decompressed
-     * and delivered at once, bounded only by {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. That
-     * includes a body delimited by the connection, which ends with it; if its compressed stream is incomplete, the
-     * request then fails with a {@code DecompressionException}. The rest of a {@code Content-Length} or chunked body
-     * that the close cut off is dropped, and the request is retried or fails as for any connection closed before the
-     * end of the body. If its last chunk could not be parsed, the request fails with that error instead.
+     * If the connection closes while compressed input is held back, the rest of a {@code Content-Length} or chunked
+     * body that the close cut off is dropped, and the request is retried or fails as for any connection closed before
+     * the end of the body. If its last chunk could not be parsed, the request fails with that error instead. The rest
+     * of a body that has ended, including one delimited by the connection, which ends with it, still waits for demand
+     * after an orderly close by the server (a TCP FIN): while compressed input is held back, that close only shuts the
+     * input down, and the connection is not reused. After any other close, for example after a reset by the server or
+     * because the client is closed, the rest of a body that has ended can still be decompressed and delivered at once,
+     * bounded only by {@link AsyncHttpClientConfig#getMaxDecompressedResponseSize()}. If the compressed stream of a
+     * body delimited by the connection is incomplete, the request fails with a {@code DecompressionException}.
      * <p>
-     * After an orderly close by the server (a TCP FIN), native transports such as epoll, io_uring and kqueue read what
-     * is left even while reads are suspended. A body without a content coding that arrived before the close is then
-     * delivered in full, and compressed input is handled as described above. NIO reads nothing while reads are
-     * suspended, so it sees the close only once reads are resumed.
+     * After an orderly close by the server, native transports such as epoll, io_uring and kqueue read what is left even
+     * while reads are suspended. A body without a content coding that arrived before the close is then delivered in
+     * full. NIO reads only when asked to, so it usually sees the close only once reads are resumed, but TLS can ask for
+     * a read while reads are suspended, for example to complete a record.
      * <p>
      * While reads are suspended, the read timeout is paused but the request timeout remains active. If the request
      * timeout is disabled, failing to resume or cancel the response can retain its transport resources indefinitely.

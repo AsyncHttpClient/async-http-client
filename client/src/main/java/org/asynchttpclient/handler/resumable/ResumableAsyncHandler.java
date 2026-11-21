@@ -14,10 +14,11 @@ package org.asynchttpclient.handler.resumable;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.DefaultRequest;
 import org.asynchttpclient.HttpResponseBodyPart;
 import org.asynchttpclient.HttpResponseStatus;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.Response.ResponseBuilder;
 import org.jetbrains.annotations.Nullable;
@@ -191,7 +192,8 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
      * position.
      *
      * @param request {@link Request}
-     * @return a {@link Request} with the Range header properly set.
+     * @return a {@link Request} with the Range header properly set, or {@code request} itself when it needs no Range
+     * header (it has one, or no bytes were transferred yet) and has the charset and lists that a built request has.
      */
     public Request adjustRequestRange(Request request) {
         Long ri = resumableIndex.get(request.getUrl());
@@ -204,9 +206,18 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
             byteTransferred.set(resumableListener.length());
         }
 
-        RequestBuilder builder = request.toBuilder();
-        if (request.getHeaders().get(RANGE) == null && byteTransferred.get() != 0) {
-            builder.setHeader(RANGE, "bytes=" + byteTransferred.get() + '-');
+        long offset = byteTransferred.get();
+        boolean addRange = offset != 0 && request.getHeaders().get(RANGE) == null;
+        // A DefaultRequest from the public constructor may carry null where build() sets a charset and lists.
+        if (!addRange && request.getCharset() != null && request.getCookies() != null && request.getFormParams() != null
+                && request.getBodyParts() != null) {
+            return request;
+        }
+        // Exact class only: a subclass or another Request implementation may override what toBuilder() copies.
+        RequestBuilderBase<?> builder = request.getClass() == DefaultRequest.class
+                ? new PrototypeRequestBuilder(request) : request.toBuilder();
+        if (addRange) {
+            builder.setHeader(RANGE, "bytes=" + offset + '-');
         }
         return builder.build();
     }
@@ -295,6 +306,18 @@ public class ResumableAsyncHandler implements AsyncHandler<Response> {
         @Override
         public Map<String, Long> load() {
             return new HashMap<>();
+        }
+    }
+
+    /**
+     * Copies a request as {@link Request#toBuilder()} does, but keeps its URI as it is: {@code toBuilder()} encodes
+     * the URI again, which changes one built with URL encoding disabled.
+     * The package-private {@code RequestBuilder} constructor that does the same is not visible from this package.
+     */
+    private static final class PrototypeRequestBuilder extends RequestBuilderBase<PrototypeRequestBuilder> {
+
+        private PrototypeRequestBuilder(Request prototype) {
+            super(prototype, true, false);
         }
     }
 

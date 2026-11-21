@@ -56,7 +56,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1392,29 +1390,6 @@ public class Http1ContentDecompressorTest {
     }
 
     @Test
-    void gzipAndDeflateDoNotNeedNettysDecompressorApi() throws Exception {
-        Class<?> type = new WithoutDecompressorApi(Http1ContentDecompressor.class.getClassLoader())
-                .loadClass(Http1ContentDecompressor.class.getName());
-        assertNotSame(Http1ContentDecompressor.class, type);
-        for (String contentEncoding : List.of("gzip", "deflate")) {
-            byte[] encoded = "gzip".equals(contentEncoding) ? gzip(TEXT) : deflate(TEXT, false);
-            EmbeddedChannel channel = channel((ChannelHandler) type.getConstructor(boolean.class, long.class)
-                    .newInstance(false, 0L), allocator());
-            assertDecoded(TEXT, exchange(channel, contentEncoding, encoded, sizes(encoded.length, 100), Kind.DIRECT));
-            channel.finishAndReleaseAll();
-        }
-        // Without the API, the other codings go to Netty's own decoders, as before. A second handler must not try
-        // the API again.
-        byte[] zstd = encode("zstd", TEXT);
-        for (int attempt = 0; attempt < 2; attempt++) {
-            EmbeddedChannel channel = channel((ChannelHandler) type.getConstructor(boolean.class, long.class)
-                    .newInstance(false, 0L), allocator());
-            assertDecoded(TEXT, exchange(channel, "zstd", zstd, sizes(zstd.length, 100), Kind.DIRECT));
-            channel.finishAndReleaseAll();
-        }
-    }
-
-    @Test
     void aLargeChunkDoesNotInflateIntoOversizedPartBuffers() {
         // One chunk of 1 MiB: the inflater would like an output buffer twice that size, but a part never holds more
         // than MAX_PART_SIZE, so its buffer must not either.
@@ -1438,46 +1413,6 @@ public class Http1ContentDecompressorTest {
         }
         assertTrue(parts >= 16, "parts: " + parts);
         assertFalse(channel.finishAndReleaseAll());
-    }
-
-    /**
-     * Defines the decompressor's own classes afresh, and hides Netty's {@code Decompressor} API and its implementations
-     * from them, as a Netty release older than 4.2.17 would.
-     */
-    private static final class WithoutDecompressorApi extends ClassLoader {
-
-        WithoutDecompressorApi(ClassLoader parent) {
-            super(parent);
-        }
-
-        @Override
-        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            synchronized (getClassLoadingLock(name)) {
-                // The interface and every class implementing it, such as ZstdDecompressor.
-                if (name.startsWith("io.netty.handler.codec.compression.")
-                        && (name.endsWith("Decompressor") || name.contains("Decompressor$"))) {
-                    throw new ClassNotFoundException(name);
-                }
-                if (!name.startsWith(Http1ContentDecompressor.class.getName())
-                        && !name.startsWith(PullDecompression.class.getName())) {
-                    return super.loadClass(name, resolve);
-                }
-                Class<?> loaded = findLoadedClass(name);
-                if (loaded == null) {
-                    byte[] bytes;
-                    try (InputStream in = getParent().getResourceAsStream(name.replace('.', '/') + ".class")) {
-                        bytes = in.readAllBytes();
-                    } catch (IOException e) {
-                        throw new ClassNotFoundException(name, e);
-                    }
-                    loaded = defineClass(name, bytes, 0, bytes.length);
-                }
-                if (resolve) {
-                    resolveClass(loaded);
-                }
-                return loaded;
-            }
-        }
     }
 
     @Test

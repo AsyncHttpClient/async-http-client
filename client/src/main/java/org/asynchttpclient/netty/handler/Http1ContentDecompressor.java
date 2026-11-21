@@ -23,6 +23,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.socket.ChannelInputShutdownEvent;
+import io.netty.channel.socket.SocketChannelConfig;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
@@ -87,20 +89,21 @@ import java.util.zip.Inflater;
  * request, such as the one {@code resume()} issues, decompresses that input before it is passed on to the transport.
  * That is why this handler also sees outbound events; it passes all others through. Only parts with content wait for
  * a resume: once the body has been decompressed in full, its end, with any trailers, is handed on even to a suspended
- * response, as for an unencoded body. If the connection closes while input is held back and the body has ended, the
- * rest of it is decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}. If the close cut the
- * body off, or its last chunk failed to parse, the response fails anyway, and the input held back is dropped without
- * being decompressed; a failed last chunk is still handed on, so that the response fails with its error.
+ * response, as for an unencoded body. While input is held back, the channel allows half-closure, so that an orderly
+ * close by the server only shuts the input down: the rest of a body that has ended still waits for demand, and the
+ * connection is not reused. If the connection closes in any other way while input is held back and the body has
+ * ended, the rest of it can still be decompressed and handed on at once, bounded only by {@code maxDecompressedBytes}.
+ * If the close cut the body off, or its last chunk failed to parse, the response fails anyway, and the input held back
+ * is dropped without being decompressed; a failed last chunk is still handed on, so that the response fails with its
+ * error.
  * <p>
  * {@code br}, {@code zstd} and {@code snappy} are decompressed the same way, one part at a time, by
- * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. Netty added that API in 4.2.17; with an
- * older Netty, these codings go to {@link HttpContentDecompressor} as before, which does not wait for demand.
- * {@code gzip} and {@code deflate} never use the API. A body that ends inside its compressed stream fails on the
- * pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}. Not every such end is
- * noticed: a {@code gzip} or {@code zstd} body cut exactly between two of its members or frames looks complete, as the
- * stream may end after any of them; {@code snappy} has no end marker, so a body cut between two of its chunks looks
- * complete too; and with zstd-jni before 1.5.7-26, a {@code zstd} body of several frames completes when it is cut
- * inside a frame that started in the same chunk as the end of the previous one.
+ * {@link PullDecompression} with Netty's pull-based {@code Decompressor}. A body that ends inside its compressed stream
+ * fails on the pull path too, and still ends quietly on the paths through {@link HttpContentDecompressor}. Not every
+ * such end is noticed: a {@code gzip} or {@code zstd} body cut exactly between two of its members or frames looks
+ * complete, as the stream may end after any of them; {@code snappy} has no end marker, so a body cut between two of its
+ * chunks looks complete too; and with zstd-jni before 1.5.7-26, a {@code zstd} body of several frames completes when it
+ * is cut inside a frame that started in the same chunk as the end of the previous one.
  * <p>
  * Every other content coding, and a transfer coding such as {@code Transfer-Encoding: gzip}, still goes through
  * {@link HttpContentDecompressor}, which decompresses it as soon as it is read. There the counting is done
@@ -128,10 +131,6 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private static final int MIN_OUTPUT_BUFFER_SIZE = 512;
     private static final int MAX_FORWARD_BYTES = Math.min(MAX_PART_SIZE,
             SystemPropertyUtil.getInt("io.netty.compression.defaultMaxForwardBytes", 64 * 1024));
-
-    // Netty added its Decompressor API in 4.2.17. Without it, br, zstd and snappy go to HttpContentDecompressor's own
-    // decoders, as they did before.
-    private static volatile boolean pullAvailable = true;
 
     // Inflaters between responses, per event loop. Holding them per connection instead would pin zlib's
     // native window on every idle pooled connection.
@@ -198,6 +197,12 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     private boolean draining;
     private boolean readPending;
     private boolean inputClosed;
+    // Whether this handler turned half-closure on while the response is paused, so that a close by the server only
+    // shuts the input down and what is held back outlives it.
+    private boolean halfClosure;
+    // Whether the server closed the connection while half-closure was on and the response was paused. The connection
+    // is not reused.
+    private boolean inputShutdown;
     // Whether nobody reads the rest of the current body, so its input is dropped instead of inflated.
     private boolean discarding;
     // The decompressor of a br, zstd or snappy body; null for gzip and deflate, which are inflated here.
@@ -285,10 +290,39 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         try {
+            endHalfClosure(ctx);
             releaseQueued();
             endResponse();
         } finally {
             super.handlerRemoved(ctx);
+        }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt != ChannelInputShutdownEvent.INSTANCE || !paused) {
+            super.userEventTriggered(ctx, evt);
+            return;
+        }
+        // The server closed the connection while the response was paused, and only the input was shut down, whether
+        // this handler or the application allowed half-closure. What is held back of a body that has ended still
+        // waits for demand, and the connection is closed once the response is done. A body that the close cut off, or
+        // whose last chunk failed to parse, fails anyway, so the connection is closed now, and channelInactive drops
+        // what is held back of it. The connection is also closed now if a failed read, such as a reset, detached the
+        // request from it, as AsyncHttpClientHandler then expects the close; channelInactive hands on the rest of a
+        // body that has ended.
+        endHalfClosure(ctx);
+        inputShutdown = true;
+        LastHttpContent end = draining ? null : bodyEnd();
+        Object attribute = Channels.getAttribute(ctx.channel());
+        boolean wait = end != null && end.decoderResult().isSuccess() && attribute instanceof NettyResponseFuture
+                && ((NettyResponseFuture<?>) attribute).channel() == ctx.channel();
+        if (wait) {
+            ((NettyResponseFuture<?>) attribute).setKeepAlive(false);
+        }
+        ctx.fireUserEventTriggered(evt);
+        if (!wait) {
+            ctx.close();
         }
     }
 
@@ -349,6 +383,9 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
         } finally {
             draining = false;
         }
+        if (!paused) {
+            endHalfClosure(ctx);
+        }
         if (!paused && readPending) {
             readPending = false;
             ctx.read();
@@ -375,7 +412,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             return true;
         }
         if (!usedUp) {
-            paused = true;
+            pause(ctx);
             return false;
         }
         LastHttpContent last = heldLast;
@@ -411,6 +448,24 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
             }
         }
         return null;
+    }
+
+    private void pause(ChannelHandlerContext ctx) {
+        paused = true;
+        if (!halfClosure && !inputShutdown && ctx.channel().config() instanceof SocketChannelConfig) {
+            SocketChannelConfig config = (SocketChannelConfig) ctx.channel().config();
+            if (!config.isAllowHalfClosure()) {
+                config.setAllowHalfClosure(true);
+                halfClosure = true;
+            }
+        }
+    }
+
+    private void endHalfClosure(ChannelHandlerContext ctx) {
+        if (halfClosure) {
+            halfClosure = false;
+            ((SocketChannelConfig) ctx.channel().config()).setAllowHalfClosure(false);
+        }
     }
 
     private void releaseQueued() {
@@ -501,17 +556,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 || HttpHeaderValues.X_DEFLATE.contentEqualsIgnoreCase(contentEncoding);
     }
 
-    // Only called for br, zstd and snappy, so that gzip and deflate never load Netty's newer Decompressor API.
     @Nullable PullDecompression newPullDecompression(ChannelHandlerContext ctx, String contentEncoding) {
-        if (!pullAvailable) {
-            return null;
-        }
-        try {
-            return PullDecompression.create(contentEncoding, ctx.alloc(), maxDecompressedBytes);
-        } catch (LinkageError e) {
-            pullAvailable = false;
-            return null;
-        }
+        return PullDecompression.create(contentEncoding, ctx.alloc(), maxDecompressedBytes);
     }
 
     private static boolean isPulled(String contentEncoding) {
@@ -575,7 +621,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 return;
             }
             if (!usedUp) {
-                paused = true;
+                pause(ctx);
                 if (content instanceof LastHttpContent) {
                     heldLast = trailer((LastHttpContent) content);
                 }
@@ -600,7 +646,7 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
                 if (pull != null) {
                     pull.endOfInput();
                     if (!decompress(ctx, null, generation)) {
-                        paused = true;
+                        pause(ctx);
                         heldLast = last;
                         return;
                     }
@@ -628,6 +674,8 @@ public class Http1ContentDecompressor extends HttpContentDecompressor implements
     }
 
     private void endBody(ChannelHandlerContext ctx, LastHttpContent last) {
+        // The connection may be offered for reuse once the end is handed on.
+        endHalfClosure(ctx);
         endResponse();
         needRead = false;
         ctx.fireChannelRead(last);

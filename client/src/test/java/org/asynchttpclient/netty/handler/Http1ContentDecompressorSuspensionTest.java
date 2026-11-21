@@ -20,9 +20,14 @@ import com.github.luben.zstd.Zstd;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.DefaultChannelId;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.socket.ChannelInputShutdownEvent;
+import io.netty.channel.socket.SocketChannelConfig;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.DecompressionException;
@@ -43,6 +48,7 @@ import org.asynchttpclient.netty.NettyResponseBodyControl;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.OnLastHttpContentCallback;
 import org.asynchttpclient.netty.channel.Channels;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -207,6 +213,7 @@ public class Http1ContentDecompressorSuspensionTest {
     /** A channel whose response is suspended by the handler after every body part, as a demand-driven consumer does. */
     private static final class SuspendedExchange {
         final EmbeddedChannel channel;
+        final NettyResponseFuture<?> future;
         final NettyResponseBodyControl control;
         final Http1ContentDecompressor decompressor;
         final List<ByteBuf> input = new ArrayList<>();
@@ -242,12 +249,26 @@ public class Http1ContentDecompressorSuspensionTest {
          */
         SuspendedExchange(Http1ContentDecompressor decompressor, String contentEncoding, byte[] body,
                           int fragmentSize, boolean suspendBeforeBody, boolean autoRead, Input kind, boolean ended) {
+            this(decompressor, contentEncoding, body, fragmentSize, suspendBeforeBody, autoRead, kind, ended, null);
+        }
+
+        /**
+         * With a {@code config}, such as a socket channel's, the channel uses that instead of its own. Changing its
+         * auto-read setting reads from the channel it belongs to, so a resume reads from this channel only with
+         * {@code autoRead} off.
+         */
+        SuspendedExchange(Http1ContentDecompressor decompressor, String contentEncoding, byte[] body,
+                          int fragmentSize, boolean suspendBeforeBody, boolean autoRead, Input kind, boolean ended,
+                          @Nullable ChannelConfig config) {
             suspendedBeforeBody = suspendBeforeBody;
-            channel = new EmbeddedChannel();
+            channel = config == null
+                    ? new EmbeddedChannel()
+                    : new EmbeddedChannel(DefaultChannelId.newInstance(), false, config);
             channel.config().setAutoRead(autoRead);
-            NettyResponseFuture<?> future = new NettyResponseFuture<>(
+            future = new NettyResponseFuture<>(
                     new RequestBuilder().setUrl("http://localhost/").build(), new AsyncCompletionHandlerBase(),
                     null, 0, null, null, null);
+            future.attachChannel(channel, false);
             Channels.setAttribute(channel, future);
             control = NettyResponseBodyControl.create(future, channel, () -> {
             }, ignored -> {
@@ -495,14 +516,258 @@ public class Http1ContentDecompressorSuspensionTest {
     }
 
     /**
+     * While input is held back, the channel allows half-closure, so that a close by the server only shuts the input
+     * down. The rest of a body that has ended still waits for demand, one part per resume, and the connection is not
+     * reused. Half-closure is turned off again once nothing is held back.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void aCloseByTheServerOnlyShutsTheInputDownWhileInputIsHeldBack(String contentEncoding) {
+        byte[] payload = concat(TEXT, new byte[400_000], TEXT);
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SocketChannelConfig config = socket.config();
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), contentEncoding,
+                    compress(contentEncoding, payload), 4096, false, false, Input.HEAP, true, config);
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+            assertTrue(config.isAllowHalfClosure(), "holding input back must turn half-closure on");
+
+            exchange.channel.pipeline().fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
+            exchange.channel.runPendingTasks();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertTrue(exchange.channel.isOpen());
+            assertEquals(1, body.parts, contentEncoding + ": the close must not hand on what is held back");
+            assertFalse(exchange.future.isKeepAlive(), "the connection must not be reused");
+
+            assertArrayEquals(payload, exchange.resumeToTheEnd(body).bytes.toByteArray(), contentEncoding);
+            assertFalse(config.isAllowHalfClosure(), "half-closure must be turned off once nothing is held back");
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void aCloseByTheServerFailsABodyThatItCutsOffAtOnce(String contentEncoding) {
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            // Decompressing what is held back would exceed the limit.
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 256 * 1024),
+                    contentEncoding, compress(contentEncoding, new byte[1024 * 1024]), 4096, false, false, Input.HEAP,
+                    false, socket.config());
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+
+            exchange.channel.pipeline().fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
+            exchange.channel.runPendingTasks();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertFalse(exchange.channel.isOpen(), "a body that the close cut off must fail at once");
+            assertEquals(1, body.parts, contentEncoding + ": nothing held back may be handed on");
+            assertFalse(body.last);
+            exchange.assertInputReleased();
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /**
+     * A reset by the server fails the read before it shuts the input down, and AsyncHttpClientHandler then detaches the
+     * request from the connection and expects the close. The connection is closed at once, so the rest of a body that
+     * has ended is handed on at once, as without half-closure.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void anInputShutdownAfterTheRequestWasDetachedClosesTheConnection(String contentEncoding) {
+        byte[] payload = concat(TEXT, new byte[400_000], TEXT);
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), contentEncoding,
+                    compress(contentEncoding, payload), 4096, false, false, Input.HEAP, true, socket.config());
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+
+            exchange.future.attachChannel(null, false);
+            exchange.channel.pipeline().fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
+            exchange.channel.runPendingTasks();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertFalse(exchange.channel.isOpen(), contentEncoding + ": the connection must be closed at once");
+            assertArrayEquals(payload, body.bytes.toByteArray(), contentEncoding);
+            assertTrue(body.last, contentEncoding);
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /**
+     * A last chunk that could not be parsed fails the exchange anyway, so a close by the server closes the connection at
+     * once, and the failed end is handed on without what is held back of the body.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void aCloseByTheServerFailsABodyWhoseLastChunkFailedAtOnce(String contentEncoding) {
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SuspendedExchange exchange = heldBackOverTheLimit(contentEncoding, socket.config());
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+
+            IllegalArgumentException parserError = new IllegalArgumentException("bad chunk");
+            LastHttpContent last = new DefaultLastHttpContent();
+            last.setDecoderResult(DecoderResult.failure(parserError));
+            exchange.channel.writeInbound(last);
+            body.drain(exchange.channel);
+            assertFalse(body.last, contentEncoding + ": the end must wait behind the input held back");
+
+            exchange.channel.pipeline().fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
+            exchange.channel.runPendingTasks();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertFalse(exchange.channel.isOpen(), contentEncoding + ": a failed body must not wait for demand");
+            assertEquals(1, body.parts, contentEncoding + ": nothing held back may be handed on");
+            assertTrue(body.last, contentEncoding);
+            assertEquals(parserError, body.lastResult.cause(), contentEncoding);
+            exchange.assertInputReleased();
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /** Half-closure is off by the time the end of the body is handed on, as the connection may then be reused. */
+    @ParameterizedTest
+    @ValueSource(strings = {"gzip", "deflate", "br", "zstd", "snappy"})
+    public void halfClosureIsOffWhenTheEndOfTheBodyIsHandedOn(String contentEncoding) {
+        byte[] payload = concat(TEXT, new byte[400_000], TEXT);
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SocketChannelConfig config = socket.config();
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), contentEncoding,
+                    compress(contentEncoding, payload), 4096, false, false, Input.HEAP, true, config);
+            List<Boolean> halfClosureAtTheEnd = new ArrayList<>();
+            exchange.channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                @Override
+                public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                    if (msg instanceof LastHttpContent) {
+                        halfClosureAtTheEnd.add(config.isAllowHalfClosure());
+                    }
+                    ctx.fireChannelRead(msg);
+                }
+            });
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+            assertTrue(config.isAllowHalfClosure(), "holding input back must turn half-closure on");
+
+            assertArrayEquals(payload, exchange.resumeToTheEnd(body).bytes.toByteArray(), contentEncoding);
+            assertEquals(List.of(false), halfClosureAtTheEnd, contentEncoding);
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    @Test
+    public void removalTurnsHalfClosureOff() {
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SocketChannelConfig config = socket.config();
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), "gzip",
+                    ZEROS_GZIP, 4096, false, false, Input.HEAP, true, config);
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+            assertTrue(config.isAllowHalfClosure());
+
+            exchange.channel.pipeline().remove(Http1ContentDecompressor.class);
+            assertFalse(config.isAllowHalfClosure());
+            exchange.assertInputReleased();
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /** A body held back that is then discarded, for example after a redirect, ends with half-closure off. */
+    @Test
+    public void discardingABodyHeldBackTurnsHalfClosureOff() {
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SocketChannelConfig config = socket.config();
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), "gzip",
+                    ZEROS_GZIP, 4096, false, false, Input.HEAP, true, config);
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+            assertTrue(config.isAllowHalfClosure());
+
+            Channels.setAttribute(exchange.channel, DiscardEvent.DISCARD);
+            exchange.channel.read();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertEquals(1, body.parts, "a discarded body must not be inflated");
+            assertTrue(body.last);
+            assertFalse(config.isAllowHalfClosure());
+            exchange.assertInputReleased();
+            assertFalse(exchange.channel.finishAndReleaseAll());
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /**
+     * Half-closure that was on already stays on, and the close by the server is handled the same way: the rest of a
+     * body that has ended waits for demand without the connection being reused, and a body that the close cut off
+     * fails at once.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void halfClosureThatWasOnAlreadyIsLeftOn(boolean ended) {
+        NioSocketChannel socket = new NioSocketChannel();
+        try {
+            SocketChannelConfig config = socket.config();
+            config.setAllowHalfClosure(true);
+            SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 0), "gzip",
+                    ZEROS_GZIP, 4096, false, false, Input.HEAP, ended, config);
+            Body body = new Body().drain(exchange.channel);
+            assertEquals(1, body.parts);
+
+            exchange.channel.pipeline().fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
+            exchange.channel.runPendingTasks();
+            body.drain(exchange.channel);
+            exchange.channel.checkException();
+            assertEquals(1, body.parts);
+            assertTrue(config.isAllowHalfClosure());
+            if (ended) {
+                assertTrue(exchange.channel.isOpen());
+                assertFalse(exchange.future.isKeepAlive(), "the connection must not be reused");
+                assertEquals(ZEROS_SIZE, exchange.resumeToTheEnd(body).bytes.size());
+                assertTrue(config.isAllowHalfClosure());
+            } else {
+                assertFalse(exchange.channel.isOpen(), "a body that the close cut off must fail at once");
+                exchange.assertInputReleased();
+                assertFalse(exchange.channel.finishAndReleaseAll());
+            }
+        } finally {
+            socket.unsafe().closeForcibly();
+        }
+    }
+
+    /**
      * A body that has not ended, with input held back that would exceed the limit if it were decompressed. The payload
      * barely compresses, so input is also queued behind what is held, for every coding.
      */
     private static SuspendedExchange heldBackOverTheLimit(String contentEncoding) {
+        return heldBackOverTheLimit(contentEncoding, null);
+    }
+
+    private static SuspendedExchange heldBackOverTheLimit(String contentEncoding, @Nullable ChannelConfig config) {
         byte[] payload = new byte[512 * 1024];
         new Random(31).nextBytes(payload);
         SuspendedExchange exchange = new SuspendedExchange(new Http1ContentDecompressor(false, 256 * 1024),
-                contentEncoding, compress(contentEncoding, payload), 4096, false, true, Input.HEAP, false);
+                contentEncoding, compress(contentEncoding, payload), 4096, false, config == null, Input.HEAP, false,
+                config);
         assertTrue(exchange.decompressor.queuedMessages() > 0, contentEncoding + ": nothing is queued");
         return exchange;
     }

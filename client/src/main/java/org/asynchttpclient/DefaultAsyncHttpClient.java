@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.RANGE;
 import static java.util.Objects.requireNonNull;
 import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
 import static org.asynchttpclient.util.HttpConstants.Methods.DELETE;
@@ -340,12 +341,22 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
         }
 
         if (request.getRangeOffset() != 0) {
-            RequestBuilder builder = request.toBuilder();
-            builder.setHeader("Range", "bytes=" + request.getRangeOffset() + '-');
-            request = builder.build();
+            request = withRangeHeader(request, "bytes=" + request.getRangeOffset() + '-');
         }
         fc = new FilterContext.FilterContextBuilder<>(fc).request(request).build();
         return fc;
+    }
+
+    /**
+     * Returns the request with its Range header replaced by {@code range}. A {@link DefaultRequest} is copied as
+     * {@link Request#toBuilder()} copies it, but with URL encoding disabled, so its URI is kept as the request carries
+     * it: {@code toBuilder()} encodes it again, which changes one built with URL encoding disabled. Any other
+     * {@link Request} goes through {@link Request#toBuilder()}, as it may override what the builder copies.
+     */
+    static Request withRangeHeader(Request request, String range) {
+        RequestBuilder builder = request.getClass() == DefaultRequest.class
+                ? new RequestBuilder(request, true, false) : request.toBuilder();
+        return builder.setHeader(RANGE, range).build();
     }
 
     public ChannelPool getChannelPool() {
