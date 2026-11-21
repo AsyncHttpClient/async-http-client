@@ -23,6 +23,7 @@ import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.BoundRequestBuilder;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
@@ -31,6 +32,7 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
+import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,9 +45,11 @@ import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.UnaryOperator;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -145,7 +149,24 @@ public class NettyRequestSenderConsumedBodyRetryTest extends AbstractBasicTest {
         assertReplayFailsPromptly(new BufferedInputStream(new ByteArrayInputStream(new byte[]{1, 2, 3})));
     }
 
+    @Test
+    public void replayOfNonResettableInputStreamPartFailsTheFuturePromptly() throws Exception {
+        IOException cause = assertReplayFailsPromptly(builder -> builder.addBodyPart(
+                new InputStreamPart("file", new ByteArrayInputStream(new byte[]{1, 2, 3}) {
+                    @Override
+                    public boolean markSupported() {
+                        return false;
+                    }
+                }, "file.bin")));
+        assertEquals("Multipart InputStream body part 'file' already consumed and cannot be reset for a retry",
+                cause.getMessage());
+    }
+
     private void assertReplayFailsPromptly(InputStream body) throws Exception {
+        assertReplayFailsPromptly(builder -> builder.setBody(body));
+    }
+
+    private IOException assertReplayFailsPromptly(UnaryOperator<BoundRequestBuilder> body) throws Exception {
         AtomicBoolean replay = new AtomicBoolean(true);
         ResponseFilter replayOnce = new ResponseFilter() {
             @Override
@@ -163,12 +184,12 @@ public class NettyRequestSenderConsumedBodyRetryTest extends AbstractBasicTest {
                 .addResponseFilter(replayOnce)
                 .setRequestTimeout(Duration.ofSeconds(30)))) {
             ExecutionException thrown = assertThrows(ExecutionException.class, () ->
-                    client.preparePost(getTargetUrl())
-                            .setBody(body)
+                    body.apply(client.preparePost(getTargetUrl()))
                             .execute()
                             .get(2, TimeUnit.SECONDS));
-            assertInstanceOf(IOException.class, thrown.getCause());
-            assertNotEquals("Stream closed", thrown.getCause().getMessage());
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertNotEquals("Stream closed", cause.getMessage());
+            return cause;
         }
     }
 

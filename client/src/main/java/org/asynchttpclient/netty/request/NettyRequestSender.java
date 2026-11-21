@@ -76,9 +76,12 @@ import org.asynchttpclient.netty.channel.RoundRobinPartitionKey;
 import org.asynchttpclient.netty.handler.Http2ContentDecompressor;
 import org.asynchttpclient.netty.request.body.NettyBody;
 import org.asynchttpclient.netty.request.body.NettyDirectBody;
+import org.asynchttpclient.netty.request.body.NettyMultipartBody;
 import org.asynchttpclient.netty.timeout.TimeoutsHolder;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
+import org.asynchttpclient.request.body.multipart.InputStreamPart;
+import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.resolver.RequestHostnameResolver;
 import org.asynchttpclient.uri.Uri;
 import org.asynchttpclient.util.StringBuilderPool;
@@ -89,6 +92,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -764,7 +768,9 @@ public final class NettyRequestSender {
             }
 
             if (writeBody) {
-                nettyRequest.getBody().write(channel, future);
+                NettyBody body = nettyRequest.getBody();
+                claimStreamParts(body, future);
+                body.write(channel, future);
             }
 
             // don't bother scheduling read timeout if channel became invalid
@@ -1135,6 +1141,7 @@ public final class NettyRequestSender {
                                       ByteBuf bodyBuf, boolean hasStreamingBody, NettyBody nettyBody) throws IOException {
         if (hasStreamingBody) {
             streamChannel.flush();
+            claimStreamParts(nettyBody, future);
             nettyBody.writeHttp2(streamChannel, future);
         } else if (bodyBuf != null) {
             // Single DATA frame; retainedDuplicate so releasing the request doesn't free the bytes
@@ -1143,6 +1150,35 @@ public final class NettyRequestSender {
             streamChannel.flush();
         } else {
             streamChannel.flush();
+        }
+    }
+
+    // A retry, redirect or replay writes a new multipart body over the same InputStreamPart streams, unless a filter
+    // supplied new ones. As NettyInputStreamBody does for an InputStream body, a stream that an earlier write of this
+    // request started on is reset if it supports mark/reset, and fails the request otherwise. NettyBodyBody.write does
+    // not declare IOException, so this runs here, before the HTTP/1.1 and HTTP/2 writes.
+    private static void claimStreamParts(NettyBody body, NettyResponseFuture<?> future) throws IOException {
+        if (!(body instanceof NettyMultipartBody)) {
+            return;
+        }
+        for (Part part : future.getCurrentRequest().getBodyParts()) {
+            if (!(part instanceof InputStreamPart)) {
+                continue;
+            }
+            InputStream stream = ((InputStreamPart) part).getInputStream();
+            if (future.markStreamPartConsumed(stream)) {
+                continue;
+            }
+            String message = "Multipart InputStream body part '" + part.getName()
+                    + "' already consumed and cannot be reset for a retry";
+            if (!stream.markSupported()) {
+                throw new IOException(message);
+            }
+            try {
+                stream.reset();
+            } catch (IOException e) {
+                throw new IOException(message, e);
+            }
         }
     }
 

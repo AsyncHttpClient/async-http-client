@@ -343,29 +343,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     @ParameterizedTest(name = "307 before 100 Continue keeps an untouched stream (generator={0})")
     @ValueSource(booleans = {false, true})
     public void deferredInputStream307KeepsBody(boolean useBodyGenerator) throws Exception {
-        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
-            @Override
-            public int read() throws IOException {
-                deferredStreamReads.incrementAndGet();
-                return in.read();
-            }
-
-            @Override
-            public int read(byte[] bytes, int offset, int length) throws IOException {
-                deferredStreamReads.incrementAndGet();
-                return in.read(bytes, offset, length);
-            }
-
-            @Override
-            public boolean markSupported() {
-                return false;
-            }
-
-            @Override
-            public synchronized void reset() throws IOException {
-                throw new IOException("reset not supported");
-            }
-        };
+        try (InputStream body = countedNonResettableStream();
              AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             BoundRequestBuilder builder = c.preparePut(getTargetUrl() + "/deferred-redirect")
                     .setHeader(EXPECT, "100-continue")
@@ -775,6 +753,39 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
+    @Test
+    public void deferredInputStreamMultipart307KeepsPart() throws Exception {
+        try (InputStream body = countedNonResettableStream();
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = c.preparePost(getTargetUrl() + "/deferred-redirect")
+                    .setHeader(EXPECT, "100-continue")
+                    .addBodyPart(new InputStreamPart("file", body, "file.bin", REDIRECT_BODY.length, CONTENT_TYPE_VALUE))
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertTrue(expectingContinueBeforeRedirect);
+            assertEquals(0, streamReadsBeforeRedirect);
+            assertEquals(0, bodyBytesBeforeRedirect);
+            assertEquals(POST, receivedMethod);
+            assertTrue(response.getResponseBody().contains(new String(REDIRECT_BODY, UTF_8)));
+        }
+    }
+
+    @Test
+    public void resettableInputStreamMultipart307KeepsBody() throws Exception {
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = c.preparePost(getTargetUrl())
+                    .addBodyPart(new InputStreamPart("file", new ByteArrayInputStream(REDIRECT_BODY), "file.bin",
+                            REDIRECT_BODY.length, CONTENT_TYPE_VALUE))
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertTrue(response.getResponseBody().contains(new String(REDIRECT_BODY, UTF_8)));
+            assertEquals(2, receivedContentLengths.size());
+        }
+    }
+
     private void queryRedirectKeepsMethodAndBody(int statusCode, boolean strict302Handling) throws Exception {
         try (AsyncHttpClient c = asyncHttpClient(config()
                 .setFollowRedirect(true)
@@ -792,6 +803,33 @@ public class RedirectBodyTest extends AbstractBasicTest {
             assertEquals(QUERY, receivedMethod);
             assertEquals(contentType, receivedContentType);
         }
+    }
+
+    // Counts its reads, so a test can tell that the stream was untouched before a redirect.
+    private static InputStream countedNonResettableStream() {
+        return new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public int read() throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read();
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read(bytes, offset, length);
+            }
+
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
     }
 
     private static Response execute307(BoundRequestBuilder requestBuilder) throws Exception {
