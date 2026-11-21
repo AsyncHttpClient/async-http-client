@@ -57,7 +57,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Netty reads {@code io.netty.compression.defaultMaxForwardBytes} once per JVM, so this test sets it in a fresh JVM. A
  * threshold of 0 or less hands on the output of every inflate step, as Netty's {@code JdkZlibDecoder} does; the
- * decompressor must still make progress, also while suspending after every part.
+ * decompressor must still make progress, also while suspending after every part. Netty's zstd decompressor then falls
+ * back to its default output buffer size, and {@code zstd} must still wait for demand.
  */
 public class Http1ContentDecompressorForwardThresholdTest {
 
@@ -103,19 +104,8 @@ public class Http1ContentDecompressorForwardThresholdTest {
             whole.checkReleased("the body");
 
             Exchange suspended = new Exchange("gzip", compressed, true, 0);
-            for (int resumes = 0; !suspended.last; resumes++) {
-                check(resumes < 100_000, "the suspended body did not end");
-                int before = suspended.parts;
-                suspended.control.resume();
-                check(suspended.parts == before + 1 || suspended.last && suspended.parts == before,
-                        "each resume must deliver exactly one more part");
-            }
-            check(Arrays.equals(payload, suspended.bytes.toByteArray()), "the suspended body differs");
-            check(suspended.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, "a part of " + suspended.maxPart
-                    + " bytes was handed on");
-            suspended.checkReleased("the suspended body");
+            checkOnePartPerResume(suspended, payload, "the suspended body");
 
-            // At this threshold zstd is left to Netty's decoder, which must still decode it rather than hang.
             byte[] zstdCompressed = Zstd.compress(payload);
             Exchange zstd = new Exchange("zstd", zstdCompressed, false, 0);
             check(zstd.last, "the zstd body did not end");
@@ -123,6 +113,18 @@ public class Http1ContentDecompressorForwardThresholdTest {
             check(zstd.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, "a zstd part of " + zstd.maxPart
                     + " bytes was handed on");
             zstd.checkReleased("the zstd body");
+
+            Exchange suspendedZstd = new Exchange("zstd", zstdCompressed, true, 0);
+            check(suspendedZstd.parts == 1 && !suspendedZstd.last,
+                    "the suspended zstd body did not wait for demand after its first part");
+            checkOnePartPerResume(suspendedZstd, payload, "the suspended zstd body");
+
+            Exchange truncated = new Exchange("zstd", Arrays.copyOf(zstdCompressed, zstdCompressed.length / 2), false,
+                    0);
+            check(truncated.failure != null && truncated.failure.getMessage().startsWith("Truncated zstd stream"),
+                    "the truncated zstd body did not fail: " + truncated.failure);
+            check(!truncated.last, "the truncated zstd body ended");
+            truncated.checkReleased("the truncated zstd body");
 
             Exchange limited = new Exchange("zstd", zstdCompressed, false, payload.length - 1);
             check(limited.failure != null && limited.failure.getMessage().startsWith(
@@ -133,7 +135,21 @@ public class Http1ContentDecompressorForwardThresholdTest {
 
             System.out.println("decoded " + payload.length + " bytes in " + whole.parts + " parts, in "
                     + suspended.parts + " parts while suspending after each, and the zstd body in " + zstd.parts
-                    + " parts");
+                    + " parts, " + suspendedZstd.parts + " while suspending after each");
+        }
+
+        private static void checkOnePartPerResume(Exchange suspended, byte[] payload, String name) {
+            for (int resumes = 0; !suspended.last; resumes++) {
+                check(resumes < 100_000, name + " did not end");
+                int before = suspended.parts;
+                suspended.control.resume();
+                check(suspended.parts == before + 1 || suspended.last && suspended.parts == before,
+                        name + ": each resume must deliver exactly one more part");
+            }
+            check(Arrays.equals(payload, suspended.bytes.toByteArray()), name + " differs");
+            check(suspended.maxPart <= Http1ContentDecompressor.MAX_PART_SIZE, name + ": a part of "
+                    + suspended.maxPart + " bytes was handed on");
+            suspended.checkReleased(name);
         }
 
         private static byte[] gzip(byte[] payload) {
