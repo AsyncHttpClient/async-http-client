@@ -414,9 +414,9 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     /**
      * Points this future at the proxy serving its current target, recomputing the partition key so the key
-     * names the route actually in use. Only a replay onto a different origin needs this. Setting it without
-     * recomputing, or recomputing before it is set, files a proxied connection under the direct key for the
-     * new host, and the next direct request to that host then draws a socket that runs through the proxy.
+     * names the route actually in use. Called when the proxy selected for the target is not this one. Setting
+     * it without recomputing, or recomputing before it is set, files a proxied connection under the direct key
+     * for the new host, and the next direct request to that host then draws a socket that runs through the proxy.
      */
     public void setProxyServer(ProxyServer proxyServer) {
         this.proxyServer = proxyServer;

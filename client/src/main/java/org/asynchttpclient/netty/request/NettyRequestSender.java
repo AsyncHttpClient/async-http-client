@@ -125,6 +125,7 @@ import static org.asynchttpclient.util.ProxyUtils.getProxyServer;
 public final class NettyRequestSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyRequestSender.class);
+    private static final Object PROXY_LOGIN = new Object();
 
     private final AsyncHttpClientConfig config;
     private final ChannelManager channelManager;
@@ -166,7 +167,7 @@ public final class NettyRequestSender {
                 && (request.getUri().isSecured() || request.getUri().isWebSocket());
     }
 
-    public <T> ListenableFuture<T> sendRequest(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
+    public <T> ListenableFuture<T> sendRequest(Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future) {
         if (isClosed()) {
             throw new IllegalStateException("Closed");
         }
@@ -174,6 +175,29 @@ public final class NettyRequestSender {
         validateWebSocketRequest(request, asyncHandler);
         NettyRequestFactory.checkStreamBodyLength(request);
         ProxyServer proxyServer = getProxyServer(config, request);
+        if (future != null) {
+            ProxyServer previous = future.getProxyServer();
+            if (!sameProxy(previous, proxyServer)) {
+                if (request == future.getTargetRequest()
+                        && !(future.isReuseChannel() && Channels.isChannelActive(future.channel()))) {
+                    request = moveToProxy(request, future, proxyServer);
+                } else {
+                    // Only an attempt that sends the target itself follows the selector. One that answers a 401 or
+                    // a 407, or enters a tunnel just opened, goes back the way it came, and a channel held for this
+                    // request was opened through the previous proxy and may carry a tunnel or a handshake with it.
+                    proxyServer = previous;
+                }
+            }
+            if (future.getProxyRealm() == null && proxyServer != null) {
+                // A cross-origin redirect or replay drops the credentials of the previous hop, not the proxy's login.
+                future.setProxyRealm(proxyServer.getRealm());
+            }
+            if (!needConnect(request, proxyServer)) {
+                // Left by a tunnel an earlier attempt opened. This one opens none, and the flag would have a 407
+                // from the proxy taken for the origin's.
+                future.setTunnelEstablished(false);
+            }
+        }
 
         // Round-robin across the host's resolved IPs: resolve first, pick the next IP, then proceed.
         // Re-evaluated when the target base changes (e.g. a cross-host redirect, or a same-host
@@ -207,6 +231,47 @@ public final class NettyRequestSender {
             // no CONNECT for sure
             return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, false);
         }
+    }
+
+    /**
+     * Points the future at the proxy selected for this attempt before a connection is chosen: the partition key
+     * and the TLS and CONNECT decisions are read off the future. Authentication starts over from the new proxy's
+     * own realm, and a Proxy-Authorization the request carries was made for the previous proxy, so it is dropped,
+     * from the target too: the target is what goes into a tunnel, and what a later retry is compared with.
+     */
+    private static Request moveToProxy(Request request, NettyResponseFuture<?> future, @Nullable ProxyServer proxy) {
+        future.setProxyServer(proxy);
+        future.setProxyRealm(proxy != null ? proxy.getRealm() : null);
+        future.setInProxyAuth(false);
+        // Round-robin pinned one of the target's own addresses, which a proxied attempt must not connect to.
+        future.clearRoundRobinOverrides();
+        HttpHeaders headers = request.getHeaders();
+        if (!headers.contains(HttpHeaderNames.PROXY_AUTHORIZATION)) {
+            return request;
+        }
+        Request withoutProxyAuthorization = request.toBuilder()
+                .setHeaders(headers.copy().remove(HttpHeaderNames.PROXY_AUTHORIZATION))
+                .build();
+        future.setTargetRequest(withoutProxyAuthorization);
+        return withoutProxyAuthorization;
+    }
+
+    private static boolean sameProxy(@Nullable ProxyServer a, @Nullable ProxyServer b) {
+        return a == b || a != null && b != null
+                && a.getHost().equals(b.getHost())
+                && a.getPort() == b.getPort()
+                && a.getSecuredPort() == b.getSecuredPort()
+                && a.getProxyType() == b.getProxyType()
+                && sameLogin(a, b);
+    }
+
+    // Compared as the pool tells proxy logins apart.
+    private static boolean sameLogin(@Nullable ProxyServer a, @Nullable ProxyServer b) {
+        Realm realmA = a != null ? a.getRealm() : null;
+        Realm realmB = b != null ? b.getRealm() : null;
+        return realmA == realmB || realmA != null && realmB != null
+                && PrincipalScopedPartitionKey.scope(PROXY_LOGIN, null, realmA, true)
+                .equals(PrincipalScopedPartitionKey.scope(PROXY_LOGIN, null, realmB, true));
     }
 
     // Whether the request opens a direct connection to the target host, i.e. the connector targets the
@@ -1780,8 +1845,8 @@ public final class NettyRequestSender {
         // future's TARGET has to move with it or it keeps describing the previous origin: the connection
         // pool partition key, the request ConnectSuccessInterceptor writes into a tunnel, and
         // NettyConnectListener's decision whether to install an SslHandler at all. The credentials computed
-        // for the previous origin must not follow either. Redirect30xInterceptor already does all of this
-        // for a cross-origin redirect; the replay path never did.
+        // for the previous origin must not follow either. Redirect30xInterceptor does the same for a
+        // cross-origin redirect, and sendRequest moves the proxy for both.
         Uri previousUri = future.getTargetRequest().getUri();
         Uri newUri = newRequest.getUri();
         boolean sameBase = previousUri.isSameBase(newUri);
@@ -1794,12 +1859,8 @@ public final class NettyRequestSender {
             future.setRealm(newRequest.getRealm());
             future.setProxyRealm(null);
         }
-        // Proxy first, then target. Both feed the memoized partition key, and setTargetRequest recomputes
-        // it: moving the target while the proxy still names the old route yields a key for the new host on
-        // the old route. Concretely, replaying from a direct origin to one behind a proxy would file the
-        // proxied socket under the direct key for the new host, and the next direct request to that host
-        // would draw it and send its credentials through the proxy.
-        future.setProxyServer(getProxyServer(config, newRequest));
+        // Not the proxy: sendRequest has to compare the previous one with the one it selects, and it moves the
+        // proxy, and with it the partition key, before a connection is chosen.
         future.setTargetRequest(newRequest);
 
         // Detach the old channel before completing its body control. Completing it restores auto-read, and the read
