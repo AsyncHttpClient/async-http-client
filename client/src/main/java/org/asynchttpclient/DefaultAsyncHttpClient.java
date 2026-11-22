@@ -17,7 +17,6 @@
 package org.asynchttpclient;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -34,9 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,7 +49,6 @@ import static org.asynchttpclient.util.HttpConstants.Methods.PATCH;
 import static org.asynchttpclient.util.HttpConstants.Methods.POST;
 import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.asynchttpclient.util.HttpConstants.Methods.TRACE;
-import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 
 /**
  * Default and threadsafe implementation of {@link AsyncHttpClient}.
@@ -233,16 +228,13 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
 
     @Override
     public <T> ListenableFuture<T> executeRequest(Request request, AsyncHandler<T> handler) {
-        if (config.getCookieStore() != null) {
-            try {
-                List<Cookie> cookies = config.getCookieStore().get(request.getUri());
-                if (!cookies.isEmpty()) {
-                    request = addCookiesIfUnset(request, cookies);
-                }
-            } catch (Exception e) {
-                handler.onThrowable(e);
-                return new ListenableFuture.CompletedFailure<>("Failed to set cookies of request", e);
-            }
+        CookieStore cookieStore = config.getCookieStore();
+        try {
+            // A request the client built before carries the store's cookies for the URI it had then.
+            request = StoreCookies.rebind(request, null, cookieStore);
+        } catch (Exception e) {
+            handler.onThrowable(e);
+            return new ListenableFuture.CompletedFailure<>("Failed to set cookies of request", e);
         }
 
         if (noRequestFilters) {
@@ -256,7 +248,16 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
                 return new ListenableFuture.CompletedFailure<>("preProcessRequest failed", e);
             }
 
-            return execute(fc.getRequest(), fc.getAsyncHandler());
+            Request filtered = fc.getRequest();
+            if (filtered != request) {
+                try {
+                    filtered = StoreCookies.rebind(filtered, request, cookieStore);
+                } catch (Exception e) {
+                    fc.getAsyncHandler().onThrowable(e);
+                    return new ListenableFuture.CompletedFailure<>("Failed to set cookies of request", e);
+                }
+            }
+            return execute(filtered, fc.getAsyncHandler());
         }
     }
 
@@ -273,44 +274,6 @@ public class DefaultAsyncHttpClient implements AsyncHttpClient {
     @Override
     public ListenableFuture<Response> executeRequest(RequestBuilder requestBuilder) {
         return executeRequest(requestBuilder.build());
-    }
-
-    /**
-     * Adds each stored cookie whose name the request does not carry yet, keeping the first of a name. A
-     * {@link DefaultRequest} is copied with only its cookie list replaced, which leaves its URI as built; any other
-     * {@link Request} goes through {@link Request#toBuilder()}, as it may override what the builder copies.
-     */
-    private static Request addCookiesIfUnset(Request request, List<Cookie> storedCookies) {
-        if (request.getClass() != DefaultRequest.class) {
-            RequestBuilder requestBuilder = request.toBuilder();
-            for (Cookie cookie : storedCookies) {
-                requestBuilder.addCookieIfUnset(cookie);
-            }
-            return requestBuilder.build();
-        }
-
-        // A DefaultRequest from the public constructor may carry null, which the builder path treated as empty.
-        List<Cookie> requestCookies = isNonEmpty(request.getCookies()) ? request.getCookies() : Collections.emptyList();
-        List<Cookie> cookies = null;
-        for (Cookie cookie : storedCookies) {
-            if (!hasCookieNamed(cookies == null ? requestCookies : cookies, cookie.name())) {
-                if (cookies == null) {
-                    cookies = new ArrayList<>(requestCookies.size() + storedCookies.size());
-                    cookies.addAll(requestCookies);
-                }
-                cookies.add(cookie);
-            }
-        }
-        return cookies == null ? request : ((DefaultRequest) request).withCookies(cookies);
-    }
-
-    private static boolean hasCookieNamed(List<Cookie> cookies, String name) {
-        for (Cookie cookie : cookies) {
-            if (cookie.name().equals(name)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private <T> ListenableFuture<T> execute(Request request, final AsyncHandler<T> asyncHandler) {

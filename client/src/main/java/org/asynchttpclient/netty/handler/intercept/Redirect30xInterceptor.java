@@ -29,6 +29,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.StoreCookies;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.handler.MaxRedirectException;
 import org.asynchttpclient.handler.RedirectRefusedException;
@@ -256,7 +257,7 @@ public class Redirect30xInterceptor {
                     if (stripAuth) {
                         // Only cookies scoped to the new URI may cross this security boundary.
                         for (Cookie cookie : cookieStore.get(newUri)) {
-                            requestBuilder.addCookieIfUnset(cookie);
+                            requestBuilder.addCookieIfUnset(StoreCookies.mark(cookie));
                         }
                     } else {
                         CallerCookies.refresh(requestBuilder, request, response, cookieStore, newUri, cookieDecoder);
