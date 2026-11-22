@@ -90,5 +90,60 @@ public enum LoadBalance {
      *       {@link #DEFAULT} mode — so it is documented on the config getter rather than here.</li>
      * </ul>
      */
-    ROUND_ROBIN
+    ROUND_ROBIN,
+
+    /**
+     * Opens each new connection to the resolved IP that has the fewest connections from this client.
+     *
+     * <p>The choice is made only when a new connection has to be opened to a host that resolves to several
+     * addresses. Connection reuse stays per host, as in {@link #DEFAULT}: a request served by a pooled HTTP/1.1
+     * connection or an open HTTP/2 connection makes no choice. The mode therefore spreads the connections that
+     * concurrent requests open, not consecutive requests on a kept-alive connection. Use {@link #ROUND_ROBIN} for
+     * per-request spreading.
+     *
+     * <p>An address's count is the number of connections this mode opened to that IP and port, for any host name,
+     * that have not closed yet. Attempts in progress, idle pooled connections, WebSocket connections and HTTP/2
+     * connections draining after a GOAWAY or {@code connectionTtl} all count. Addresses with equal counts keep the
+     * resolver's order.
+     *
+     * <p>When an attempt fails, the next address is picked the same way from those not tried yet, so TCP failover
+     * still tries every resolved address once. Addresses in the failed-IP cooldown are tried last. Among the rest,
+     * the family (IPv4 or IPv6) with fewer failed attempts for this connection goes first, ahead of the count, so a
+     * connection does not exhaust one family before trying the other.
+     *
+     * <p>Notes:
+     * <ul>
+     *   <li>This mode opens no connection that {@link #DEFAULT} would not open, so it adds no deviation from RFC 9113
+     *       Section 9.1, which says that clients SHOULD NOT open more than one HTTP/2 connection to a given host and
+     *       port pair. With one HTTP/2 connection per host, it only decides where a replacement goes while the
+     *       previous connection is draining, and where the short-lived extra connections of requests racing the
+     *       first one go. Use {@link #ROUND_ROBIN} to spread HTTP/2 streams across a host's IPs.</li>
+     *   <li>The count is local to this client and says nothing about server load or health. An unreachable address
+     *       has no connections and so looks least loaded. The failed-IP cooldown
+     *       ({@link AsyncHttpClientConfig#isFailedIpCooldownEnabled()}) outranks the count and is what keeps such an
+     *       address from being picked first every time. When its cooldown lapses the address is a candidate again,
+     *       and new connections may try it first until one attempt fails and restarts the cooldown; for an address
+     *       that drops packets, each of those attempts waits up to {@code connectTimeout}. {@link #DEFAULT}
+     *       re-probes the same way when that address is first in the answer. With the cooldown disabled, an
+     *       unreachable address is tried first by every new connection, unless another address with no connections
+     *       precedes it in the resolver's order.</li>
+     *   <li>The count does not see how a server answers. An address that closes connections quickly, or fails
+     *       requests quickly, keeps a low count and draws most new connections, failovers included, wherever it
+     *       sits in the resolver's answer. Pooled connections are shared across the host's addresses, so the
+     *       fastest-answering address also serves most reused requests. The cooldown does not catch this, because
+     *       it only reacts to failed TCP connects. One misbehaving address can therefore take most of the traffic,
+     *       where {@link #ROUND_ROBIN} gives each address an equal share of the requests.</li>
+     *   <li>With every count at zero, the first connection of every client targets the address the resolver put
+     *       first. Spreading first connections across clients depends on the resolver or DNS server varying that
+     *       order.</li>
+     *   <li>The pick can be an address the resolver did not put first, including one of a different address family.
+     *       The resolver's order, which carries the platform's and the JVM's address preference, only breaks
+     *       ties.</li>
+     *   <li>Has no effect for hosts that resolve to a single address, literal-IP hosts, requests with an explicit
+     *       {@link Request#getAddress() address}, or requests routed through a proxy (HTTP or SOCKS), and their
+     *       connections are not counted. (It still applies when the proxy is bypassed for the host.)</li>
+     *   <li>Connection limits ({@code maxConnectionsPerHost}) are enforced per host, not per IP.</li>
+     * </ul>
+     */
+    LEAST_CONNECTIONS
 }

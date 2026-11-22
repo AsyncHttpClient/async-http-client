@@ -1298,7 +1298,9 @@ public class DefaultAsyncHttpClientConfig implements AsyncHttpClientConfig {
          *
          * <p>With {@link LoadBalance#ROUND_ROBIN}, consecutive requests to a multi-IP host are
          * spread evenly across all of its addresses (TCP failover is preserved, both HTTP/1.1 and
-         * HTTP/2 are supported). The {@code maxConnectionsPerHost} limit remains per host.
+         * HTTP/2 are supported). With {@link LoadBalance#LEAST_CONNECTIONS}, each new connection targets the
+         * address with the fewest open connections from this client. The {@code maxConnectionsPerHost} limit
+         * remains per host.
          *
          * @param loadBalance the dispatch strategy; {@code null} resets to {@link LoadBalance#DEFAULT}
          * @return this

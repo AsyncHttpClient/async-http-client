@@ -79,6 +79,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -93,14 +95,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -170,6 +175,7 @@ public class BasicHttp2Test {
     private SslContext serverSslCtx;
     private int serverPort;
     // Per client connection, under the address the server sees it from: whether GOAWAY arrived before it closed.
+    private static final BlockingQueue<Runnable> HELD_RESPONSES = new LinkedBlockingQueue<>();
     private final ConcurrentHashMap<SocketAddress, CompletableFuture<Boolean>> goAwayBeforeCloseByClient =
             new ConcurrentHashMap<>();
 
@@ -300,6 +306,11 @@ public class BasicHttp2Test {
                 }
                 ctx.write(new DefaultHttp2HeadersFrame(responseHeaders, true));
                 ctx.flush();
+            } else if (routePath.equals("/held")) {
+                // Answered only when the test runs the task this adds to HELD_RESPONSES.
+                ReferenceCountUtil.safeRelease(body);
+                HELD_RESPONSES.add(() -> ctx.executor().execute(
+                        () -> sendSimpleResponse(ctx, "200", Unpooled.EMPTY_BUFFER, null)));
             } else if (routePath.equals("/reset")) {
                 ReferenceCountUtil.safeRelease(body);
                 ctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.INTERNAL_ERROR));
@@ -461,6 +472,7 @@ public class BasicHttp2Test {
 
     @AfterEach
     public void stopServer() throws InterruptedException {
+        HELD_RESPONSES.clear();
         if (serverChildChannels != null) {
             serverChildChannels.close().sync();
         }
@@ -1068,6 +1080,143 @@ public class BasicHttp2Test {
                 assertNotNull(recorder.opened.get(), "each IP gets a new connection");
             }
         }
+    }
+
+    /**
+     * {@link LoadBalance#LEAST_CONNECTIONS} only chooses where a new connection goes, so a multi-IP host still gets a
+     * single HTTP/2 connection that every request multiplexes onto.
+     */
+    @Test
+    public void http2LeastConnectionsMultiplexesOntoASingleConnection() throws Exception {
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        List<String> attemptedIps = new CopyOnWriteArrayList<>();
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.LEAST_CONNECTIONS)
+                .setMaxRequestRetry(0))) {
+            for (int i = 0; i < 12; i++) {
+                Response response = client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver),
+                        new AsyncCompletionHandlerBase() {
+                            @Override
+                            public void onTcpConnectAttempt(InetSocketAddress remoteAddress) {
+                                attemptedIps.add(remoteAddress.getAddress().getHostAddress());
+                            }
+                        }).get(30, SECONDS);
+                assertEquals(200, response.getStatusCode());
+                assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
+            }
+            assertEquals(1, serverChildChannels.size(), "a single connection is open");
+        }
+        assertEquals(List.of("127.0.0.1"), attemptedIps, "one connection, to the first address, for all twelve requests");
+    }
+
+    /**
+     * With {@link LoadBalance#LEAST_CONNECTIONS}, an HTTP/2 connection retired at {@code connectionTtl} still counts while
+     * its last stream finishes, so the connection that replaces it goes to another address.
+     */
+    @Test
+    public void http2LeastConnectionsSendsTheReplacementOfARetiringConnectionElsewhere() throws Exception {
+        assumeLoopbackAddressIsUsable("127.0.0.2");
+        NameResolver<InetAddress> resolver = multiIpResolver("127.0.0.1", "127.0.0.2");
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.LEAST_CONNECTIONS)
+                .setConnectionTtl(Duration.ofSeconds(1)).setMaxRequestRetry(0))) {
+            ConnectionRecorder longRunning = new ConnectionRecorder();
+            ListenableFuture<Response> longResponse = client.executeRequest(
+                    Dsl.get(httpsUrl("/held")).setNameResolver(resolver), longRunning);
+            Runnable answer = HELD_RESPONSES.poll(10, SECONDS);
+            assertNotNull(answer, "the server never got the request it is to hold");
+            Channel retiring = longRunning.connection();
+            assertEquals("127.0.0.1", ipOf(retiring));
+
+            // Sequential requests ride the connection until it is retired; the first one after that opens another.
+            ConnectionRecorder moved = null;
+            long deadline = System.nanoTime() + SECONDS.toNanos(10);
+            while (moved == null && System.nanoTime() < deadline) {
+                ConnectionRecorder next = new ConnectionRecorder();
+                client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), next).get(10, SECONDS);
+                if (next.connection() != retiring) {
+                    moved = next;
+                }
+            }
+            assertNotNull(moved, "requests sent after connectionTtl must move to a new connection");
+            assertNotNull(moved.opened.get(), "by opening one");
+            assertTrue(retiring.isActive(), "the retired connection is still open for its held stream");
+            assertEquals("127.0.0.2", ipOf(moved.connection()), "the retiring connection still counts against 127.0.0.1");
+            answer.run();
+            assertEquals(200, longResponse.get(10, SECONDS).getStatusCode());
+        }
+    }
+
+    /**
+     * Requests that race the first HTTP/2 connection each open their own, and {@link LoadBalance#LEAST_CONNECTIONS}
+     * spreads those over the addresses. One stays registered; the others close after their own request and stop
+     * counting. How many race depends on timing, so this checks only the state the burst settles into.
+     */
+    @Test
+    public void http2LeastConnectionsBurstSettlesOnOneConnectionWithNothingElseCounted() throws Exception {
+        assumeLoopbackAddressIsUsable("127.0.0.2");
+        assumeLoopbackAddressIsUsable("127.0.0.3");
+        List<String> ips = List.of("127.0.0.1", "127.0.0.2", "127.0.0.3");
+        NameResolver<InetAddress> resolver = multiIpResolver(ips.toArray(new String[0]));
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setLoadBalance(LoadBalance.LEAST_CONNECTIONS)
+                .setMaxRequestRetry(0))) {
+            List<ConnectionRecorder> burst = new ArrayList<>();
+            List<ListenableFuture<Response>> responses = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                ConnectionRecorder recorder = new ConnectionRecorder();
+                burst.add(recorder);
+                responses.add(client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), recorder));
+            }
+            for (ListenableFuture<Response> response : responses) {
+                assertEquals(200, response.get(30, SECONDS).getStatusCode());
+            }
+
+            ConnectionRecorder after = new ConnectionRecorder();
+            client.executeRequest(Dsl.get(httpsUrl("/ok")).setNameResolver(resolver), after).get(30, SECONDS);
+            assertNull(after.opened.get(), "a later request multiplexes onto the registered connection");
+            Channel kept = after.connection();
+            for (ConnectionRecorder recorder : burst) {
+                Channel opened = recorder.opened.get();
+                if (opened != null && opened != kept) {
+                    assertTrue(opened.closeFuture().await(10, SECONDS), "a connection that lost the race closes");
+                    // Its count is released by a close listener, on its event loop.
+                    opened.eventLoop().submit(() -> {
+                    }).get(10, SECONDS);
+                }
+            }
+            assertEquals(List.of(kept), registeredHttp2Connections(client));
+            for (String ip : ips) {
+                assertEquals(ip.equals(ipOf(kept)) ? 1 : 0, leastConnectionsCount(client, ip), "count of " + ip);
+            }
+        }
+    }
+
+    private static String ipOf(Channel connection) {
+        return ((InetSocketAddress) connection.remoteAddress()).getAddress().getHostAddress();
+    }
+
+    private static List<Channel> registeredHttp2Connections(AsyncHttpClient client) throws Exception {
+        Object channelManager = ((DefaultAsyncHttpClient) client).channelManager();
+        Field registry = channelManager.getClass().getDeclaredField("http2Connections");
+        registry.setAccessible(true);
+        List<Channel> connections = new ArrayList<>();
+        for (Object byKey : ((Map<?, ?>) registry.get(channelManager)).values()) {
+            for (Object connection : ((Map<?, ?>) byKey).values()) {
+                connections.add((Channel) connection);
+            }
+        }
+        return connections;
+    }
+
+    // The current LEAST_CONNECTIONS count for ip at the test server's port.
+    private int leastConnectionsCount(AsyncHttpClient client, String ip) throws Exception {
+        Field senderField = DefaultAsyncHttpClient.class.getDeclaredField("requestSender");
+        senderField.setAccessible(true);
+        Object sender = senderField.get(client);
+        Field selectorField = sender.getClass().getDeclaredField("leastConnections");
+        selectorField.setAccessible(true);
+        Object selector = selectorField.get(sender);
+        Method count = selector.getClass().getDeclaredMethod("activeConnections", InetSocketAddress.class);
+        count.setAccessible(true);
+        return (int) count.invoke(selector, new InetSocketAddress(InetAddress.getByName(ip), serverPort));
     }
 
     /**
