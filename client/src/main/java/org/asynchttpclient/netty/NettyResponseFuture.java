@@ -36,9 +36,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -147,6 +151,8 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
     private NettyRequest nettyRequest;
     private AsyncHandler<V> asyncHandler;
     private boolean streamAlreadyConsumed;
+    // By identity: a filter can replace the request, and the streams of its new parts are not consumed.
+    private @Nullable Set<InputStream> consumedStreamParts;
     private boolean reuseChannel;
     private boolean headersAlreadyWrittenOnContinue;
     private boolean dontWriteBodyBecauseExpectContinue;
@@ -559,6 +565,29 @@ public final class NettyResponseFuture<V> implements ListenableFuture<V> {
 
     public void setStreamConsumed(boolean streamConsumed) {
         streamAlreadyConsumed = streamConsumed;
+    }
+
+    /**
+     * @param stream the stream of a multipart {@code InputStreamPart}
+     * @return whether a write of this request has started on it
+     */
+    public boolean isStreamPartConsumed(InputStream stream) {
+        Set<InputStream> streams = consumedStreamParts;
+        return streams != null && streams.contains(stream);
+    }
+
+    /**
+     * Records that a write of this request has started on the stream of a multipart {@code InputStreamPart}.
+     *
+     * @param stream the part's stream
+     */
+    public void markStreamPartConsumed(InputStream stream) {
+        Set<InputStream> streams = consumedStreamParts;
+        if (streams == null) {
+            streams = Collections.newSetFromMap(new IdentityHashMap<>());
+            consumedStreamParts = streams;
+        }
+        streams.add(stream);
     }
 
     public long getLastTouch() {

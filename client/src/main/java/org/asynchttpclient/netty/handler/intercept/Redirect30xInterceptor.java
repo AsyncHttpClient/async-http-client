@@ -187,7 +187,7 @@ public class Redirect30xInterceptor {
 
                 final RequestBuilder requestBuilder;
                 if (keepBody) {
-                    ensureBodyReplayable(request, bodyRepresentation, future.isStreamConsumed());
+                    ensureBodyReplayable(request, bodyRepresentation, future);
                     requestBuilder = request.toBuilder();
                     if (!sameBase) {
                         // An explicitly resolved address and virtual host belong to the previous target.
@@ -356,10 +356,13 @@ public class Redirect30xInterceptor {
     }
 
     private static void ensureBodyReplayable(Request request, BodyRepresentation bodyRepresentation,
-                                             boolean streamConsumed) throws IOException {
+                                             NettyResponseFuture<?> future) throws IOException {
+        // A stream counts as consumed once a write has started on it, so an early redirect before 100 Continue
+        // leaves it available for its first write. A consumed one is not reset, see NettyRequestSender.sendNextRequest.
         if (bodyRepresentation == BodyRepresentation.BODY_PARTS) {
             for (Part part : request.getBodyParts()) {
-                if (part instanceof InputStreamPart) {
+                if (part instanceof InputStreamPart
+                        && future.isStreamPartConsumed(((InputStreamPart) part).getInputStream())) {
                     throw new IOException("Multipart InputStream body part '" + part.getName()
                             + "' cannot be replayed after redirect");
                 }
@@ -385,7 +388,7 @@ public class Redirect30xInterceptor {
         }
         // NettyInputStreamBody alone tracks consumption; multipart must not use this flag.
         // An early redirect before 100 Continue leaves the stream available for its first write.
-        if (streamConsumed && inputStream != null && !inputStream.markSupported()) {
+        if (future.isStreamConsumed() && inputStream != null && !inputStream.markSupported()) {
             throw new IOException("Redirect request body InputStream does not support mark/reset"
                     + " and cannot be replayed");
         }

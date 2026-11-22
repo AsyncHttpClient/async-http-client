@@ -27,6 +27,7 @@ import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.asynchttpclient.request.body.multipart.StringPart;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -44,6 +46,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -87,6 +90,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     private static volatile int streamReadsBeforeRedirect;
     private static volatile long bodyBytesBeforeRedirect;
     private static volatile boolean expectingContinueBeforeRedirect;
+    private static volatile CountDownLatch uploadMayResume;
 
     @BeforeEach
     public void setUp() {
@@ -100,6 +104,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
         streamReadsBeforeRedirect = -1;
         bodyBytesBeforeRedirect = -1;
         expectingContinueBeforeRedirect = false;
+        uploadMayResume = new CountDownLatch(1);
     }
 
     @Override
@@ -107,6 +112,26 @@ public class RedirectBodyTest extends AbstractBasicTest {
         return new AbstractHandler() {
             @Override
             public void handle(String pathInContext, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
+                if (pathInContext.endsWith("/redirect-during-upload")) {
+                    // Answers once the body has started to arrive, and reads no more of it until the test lets it,
+                    // so that the client is still writing the body when it gets the 307.
+                    InputStream input = request.getInputStream();
+                    IOUtils.skipFully(input, 1024);
+                    httpResponse.setStatus(307);
+                    httpResponse.setContentLength(0);
+                    httpResponse.setHeader(LOCATION.toString(), getTargetUrl());
+                    httpResponse.setHeader(CONNECTION.toString(), "close");
+                    request.setHandled(true);
+                    httpResponse.flushBuffer();
+                    try {
+                        uploadMayResume.await(TIMEOUT, TimeUnit.SECONDS);
+                        IOUtils.consume(input);
+                    } catch (IOException | InterruptedException e) {
+                        // The client gave up on the request.
+                    }
+                    return;
+                }
+
                 if (pathInContext.endsWith("/deferred-redirect")) {
                     streamReadsBeforeRedirect = deferredStreamReads.get();
                     bodyBytesBeforeRedirect = request.getHttpInput().getContentReceived();
@@ -346,29 +371,7 @@ public class RedirectBodyTest extends AbstractBasicTest {
     @ParameterizedTest(name = "307 before 100 Continue keeps an untouched stream (generator={0})")
     @ValueSource(booleans = {false, true})
     public void deferredInputStream307KeepsBody(boolean useBodyGenerator) throws Exception {
-        try (InputStream body = new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
-            @Override
-            public int read() throws IOException {
-                deferredStreamReads.incrementAndGet();
-                return in.read();
-            }
-
-            @Override
-            public int read(byte[] bytes, int offset, int length) throws IOException {
-                deferredStreamReads.incrementAndGet();
-                return in.read(bytes, offset, length);
-            }
-
-            @Override
-            public boolean markSupported() {
-                return false;
-            }
-
-            @Override
-            public synchronized void reset() throws IOException {
-                throw new IOException("reset not supported");
-            }
-        };
+        try (InputStream body = countedNonResettableStream();
              AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
             BoundRequestBuilder builder = c.preparePut(getTargetUrl() + "/deferred-redirect")
                     .setHeader(EXPECT, "100-continue")
@@ -810,12 +813,16 @@ public class RedirectBodyTest extends AbstractBasicTest {
         }
     }
 
-    @Test
-    public void inputStreamMultipart307FailsPromptly() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void inputStreamMultipart307FailsPromptly(boolean buffered) throws Exception {
         Path bodyFile = Files.createTempFile("ahc-redirect-multipart-", ".bin");
         try {
             Files.write(bodyFile, REDIRECT_BODY);
-            try (InputStream body = Files.newInputStream(bodyFile);
+            // A BufferedInputStream supports mark/reset, but the part closes it once written.
+            try (InputStream body = buffered
+                    ? new BufferedInputStream(Files.newInputStream(bodyFile))
+                    : Files.newInputStream(bodyFile);
                  AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
                 ExecutionException thrown = assertThrows(ExecutionException.class,
                         () -> c.preparePost(getTargetUrl())
@@ -831,6 +838,50 @@ public class RedirectBodyTest extends AbstractBasicTest {
             }
         } finally {
             Files.deleteIfExists(bodyFile);
+        }
+    }
+
+    @Test
+    public void deferredInputStreamMultipart307KeepsPart() throws Exception {
+        try (InputStream body = countedNonResettableStream();
+             AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = c.preparePost(getTargetUrl() + "/deferred-redirect")
+                    .setHeader(EXPECT, "100-continue")
+                    .addBodyPart(new InputStreamPart("file", body, "file.bin", REDIRECT_BODY.length, CONTENT_TYPE_VALUE))
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertTrue(expectingContinueBeforeRedirect);
+            assertEquals(0, streamReadsBeforeRedirect);
+            assertEquals(0, bodyBytesBeforeRedirect);
+            assertEquals(POST, receivedMethod);
+            assertTrue(response.getResponseBody().contains(new String(REDIRECT_BODY, UTF_8)));
+        }
+    }
+
+    @Test
+    public void inputStreamMultipart307DuringUploadFailsPromptly() throws Exception {
+        // Resetting the stream while the first write still reads it would corrupt what both requests send. Both socket
+        // buffers are pinned and the server reads only the first KiB, so the client is still writing the part when the
+        // 307 arrives. The last assertion checks that.
+        ServerConnector connector = (ServerConnector) server.getConnectors()[0];
+        connector.setAcceptedReceiveBufferSize(64 * 1024);
+        ByteArrayInputStream stream = new ByteArrayInputStream(new byte[32 * 1024 * 1024]);
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true).setSoSndBuf(64 * 1024))) {
+            ExecutionException thrown = assertThrows(ExecutionException.class,
+                    () -> c.preparePost(getTargetUrl() + "/redirect-during-upload")
+                            .addBodyPart(new InputStreamPart("file", stream, "file.bin"))
+                            .execute()
+                            .get(TIMEOUT, TimeUnit.SECONDS));
+
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals("Multipart InputStream body part 'file' cannot be replayed after redirect",
+                    cause.getMessage());
+            assertNull(receivedBody);
+            assertTrue(stream.available() > 0);
+        } finally {
+            uploadMayResume.countDown();
+            connector.setAcceptedReceiveBufferSize(-1);
         }
     }
 
@@ -851,6 +902,33 @@ public class RedirectBodyTest extends AbstractBasicTest {
             assertEquals(QUERY, receivedMethod);
             assertEquals(contentType, receivedContentType);
         }
+    }
+
+    // Counts its reads, so a test can tell that the stream was untouched before a redirect.
+    private static InputStream countedNonResettableStream() {
+        return new FilterInputStream(new ByteArrayInputStream(REDIRECT_BODY)) {
+            @Override
+            public int read() throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read();
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                deferredStreamReads.incrementAndGet();
+                return in.read(bytes, offset, length);
+            }
+
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+
+            @Override
+            public synchronized void reset() throws IOException {
+                throw new IOException("reset not supported");
+            }
+        };
     }
 
     private static Response execute307(BoundRequestBuilder requestBuilder) throws Exception {
