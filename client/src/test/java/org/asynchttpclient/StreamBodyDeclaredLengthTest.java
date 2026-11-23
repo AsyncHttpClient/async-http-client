@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
@@ -37,21 +38,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * An {@link InputStreamPart} or {@link InputStreamBodyGenerator} with a declared length sends that many bytes of its
- * stream: not more, as the server reads the bytes past the {@code Content-Length} as the start of the next request
- * on the connection, and not fewer, as the server then waits for the rest.
+ * An {@link InputStreamPart} or a stream body with a declared length sends that many bytes of its stream: not more, as
+ * the server reads the bytes past the {@code Content-Length} as the start of the next request on the connection, and
+ * not fewer, as the server then waits for the rest. A {@code Content-Length} header the caller sets on a stream body
+ * declares its length too.
  */
 public class StreamBodyDeclaredLengthTest {
 
@@ -142,6 +147,126 @@ public class StreamBodyDeclaredLengthTest {
             assertCause("InputStream body ended after 60000 of its 100000 declared bytes", thrown);
             assertCutOff(exchanges.get(10, SECONDS));
         }
+    }
+
+    @Test
+    public void streamBodyLongerThanItsContentLengthHeaderSendsOnlyThatLength() throws Exception {
+        Future<List<Exchange>> exchanges = executor.submit(() -> serve(2));
+        ByteArrayInputStream stream = new ByteArrayInputStream((CONTENT + EXTRA).getBytes(US_ASCII));
+        try (AsyncHttpClient client = client(true)) {
+            assertEquals(200, client.preparePost(url("/upload"))
+                    .setHeader(CONTENT_LENGTH, CONTENT.length())
+                    .setBody(stream)
+                    .execute()
+                    .get(10, SECONDS)
+                    .getStatusCode());
+            assertEquals(200, client.prepareGet(url("/next")).execute().get(10, SECONDS).getStatusCode());
+        }
+
+        List<Exchange> received = exchanges.get(10, SECONDS);
+        assertEquals(CONTENT, received.get(0).body);
+        assertEquals("GET /next HTTP/1.1", received.get(1).requestLine);
+        assertEquals(EXTRA.length(), stream.available());
+    }
+
+    @Test
+    public void streamBodyShorterThanItsContentLengthHeaderFails() throws Exception {
+        Future<List<Exchange>> exchanges = executor.submit(() -> serve(1));
+        try (AsyncHttpClient client = client(true)) {
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(url("/upload"))
+                    .setHeader(CONTENT_LENGTH, DECLARED)
+                    .setBody(new ByteArrayInputStream(new byte[SHORT]))
+                    .execute()
+                    .get(10, SECONDS));
+            assertCause("InputStream body ended after 60000 of its 100000 declared bytes", thrown);
+            assertCutOff(exchanges.get(10, SECONDS));
+        }
+    }
+
+    @ParameterizedTest(name = "header={0}")
+    @ValueSource(ints = {5, 20})
+    public void streamBodyGeneratorFailsWhenItsLengthDisagreesWithItsContentLengthHeader(int header) throws Exception {
+        assertRejectedBeforeConnecting("Content-Length header " + header + " does not match the InputStreamBodyGenerator's length 16",
+                client -> client.preparePost(url("/upload"))
+                        .setHeader(CONTENT_LENGTH, header)
+                        .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream((CONTENT + EXTRA).getBytes(US_ASCII)),
+                                CONTENT.length()))
+                        .execute());
+    }
+
+    // RFC 9110 section 8.6: a length is ASCII digits, without a sign.
+    @ParameterizedTest(name = "header={0}")
+    @ValueSource(strings = {"16, 16", "+16", "-0", "\u0661\u0666"})
+    public void streamBodyFailsWhenItsContentLengthHeaderIsNotALength(String header) throws Exception {
+        assertRejectedBeforeConnecting("Content-Length header [" + header + "] is not a length for an InputStream body",
+                client -> client.preparePost(url("/upload"))
+                        .setHeader(CONTENT_LENGTH, header)
+                        .setBody(new ByteArrayInputStream(CONTENT.getBytes(US_ASCII)))
+                        .execute());
+    }
+
+    @Test
+    public void streamBodyFailsWhenItsContentLengthHeaderIsLongerThanSupported() throws Exception {
+        assertRejectedBeforeConnecting("Content-Length header [99999999999999999999] is longer than AHC supports",
+                client -> client.preparePost(url("/upload"))
+                        .setHeader(CONTENT_LENGTH, "99999999999999999999")
+                        .setBody(new ByteArrayInputStream(CONTENT.getBytes(US_ASCII)))
+                        .execute());
+    }
+
+    // Netty's validation of the request's headers rejects whitespace in front of a value, even where the caller turned
+    // header validation off. The check fails such a request before it takes a connection, not Netty after.
+    @Test
+    public void streamBodyFailsWhenItsContentLengthHeaderHasWhitespaceInFront() throws Exception {
+        Request request = new RequestBuilder("POST", false, false)
+                .setUrl(url("/upload"))
+                .setHeader(CONTENT_LENGTH, " 16")
+                .setBody(new ByteArrayInputStream(CONTENT.getBytes(US_ASCII)))
+                .build();
+        assertRejectedBeforeConnecting("Content-Length header [ 16] is not a length for an InputStream body",
+                client -> client.executeRequest(request));
+    }
+
+    // Whitespace after a value is not part of it (RFC 9112 section 5.1), and Netty's validation accepts it.
+    @ParameterizedTest(name = "header={0}, generator={1}")
+    @CsvSource(value = {"'16 ',false", "'16\t',false", "'16 ',true", "'16\t',true"})
+    public void streamBodyContentLengthHeaderMayEndInWhitespace(String header, boolean generator) throws Exception {
+        Future<List<Exchange>> exchanges = executor.submit(() -> serve(2));
+        ByteArrayInputStream stream = new ByteArrayInputStream((CONTENT + EXTRA).getBytes(US_ASCII));
+        try (AsyncHttpClient client = client(true)) {
+            BoundRequestBuilder upload = client.preparePost(url("/upload")).setHeader(CONTENT_LENGTH, header);
+            if (generator) {
+                upload.setBody(new InputStreamBodyGenerator(stream, CONTENT.length()));
+            } else {
+                upload.setBody(stream);
+            }
+            assertEquals(200, upload.execute().get(10, SECONDS).getStatusCode());
+            assertEquals(200, client.prepareGet(url("/next")).execute().get(10, SECONDS).getStatusCode());
+        }
+
+        List<Exchange> received = exchanges.get(10, SECONDS);
+        assertEquals(CONTENT, received.get(0).body);
+        assertEquals("GET /next HTTP/1.1", received.get(1).requestLine);
+        assertEquals(EXTRA.length(), stream.available());
+    }
+
+    // The request fails before it takes the pooled connection, so with a limit of one connection, the next request
+    // still gets it.
+    private void assertRejectedBeforeConnecting(String message, Function<AsyncHttpClient, Future<Response>> rejected)
+            throws Exception {
+        Future<List<Exchange>> exchanges = executor.submit(() -> serve(2));
+        try (AsyncHttpClient client = client(true)) {
+            assertEquals(200, client.prepareGet(url("/first")).execute().get(10, SECONDS).getStatusCode());
+            ExecutionException thrown = assertThrows(ExecutionException.class,
+                    () -> rejected.apply(client).get(10, SECONDS));
+            assertInstanceOf(IllegalArgumentException.class, thrown.getCause());
+            assertEquals(message, thrown.getCause().getMessage());
+            assertEquals(200, client.prepareGet(url("/next")).execute().get(10, SECONDS).getStatusCode());
+        }
+
+        List<Exchange> received = exchanges.get(10, SECONDS);
+        assertEquals("GET /first HTTP/1.1", received.get(0).requestLine);
+        assertEquals("GET /next HTTP/1.1", received.get(1).requestLine);
     }
 
     /**
