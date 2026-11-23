@@ -29,6 +29,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -334,20 +335,116 @@ public class MultipartBodyTest {
             assertEquals(reference.getContentLength(), expected.length);
         }
 
-        for (int bufferSize : new int[]{1, 7, 64, 8192}) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(longer);
-            try (MultipartBody multipartBody = streamPartBody(stream, content.length)) {
-                assertArrayEquals(expected, copy(multipartBody, bufferSize), "bufferSize=" + bufferSize);
+        for (boolean trickle : new boolean[]{false, true}) {
+            for (int bufferSize : new int[]{1, 7, 64, 8192}) {
+                String label = "trickle=" + trickle + ", bufferSize=" + bufferSize;
+                ByteArrayInputStream source = new ByteArrayInputStream(longer);
+                try (MultipartBody multipartBody = streamPartBody(trickle ? new TrickleStream(source) : source, content.length)) {
+                    assertArrayEquals(expected, copy(multipartBody, bufferSize), label);
+                }
+                assertEquals(extra.length, source.available(), label + ": read past the declared length");
             }
-            assertEquals(extra.length, stream.available(), "bufferSize=" + bufferSize + ": read past the declared length");
+            for (int chunkCapacity : new int[]{1, 7, 64, 65536}) {
+                String label = "trickle=" + trickle + ", chunkCapacity=" + chunkCapacity;
+                ByteArrayInputStream source = new ByteArrayInputStream(longer);
+                try (MultipartBody multipartBody = streamPartBody(trickle ? new TrickleStream(source) : source, content.length)) {
+                    assertArrayEquals(expected, drain(multipartBody, new BoundedChannel(chunkCapacity), 10_000), label);
+                }
+                assertEquals(extra.length, source.available(), label + ": read past the declared length");
+            }
+        }
+    }
+
+    @Test
+    public void inputStreamPartWithNoDeclaredBytes() throws Exception {
+        for (int bufferSize : new int[]{1, 7, 64, 8192}) {
+            try (MultipartBody multipartBody = streamPartBody(new ByteArrayInputStream(new byte[0]), 0)) {
+                assertEquals(multipartBody.getContentLength(), copy(multipartBody, bufferSize).length, "bufferSize=" + bufferSize);
+            }
         }
         for (int chunkCapacity : new int[]{1, 7, 64, 65536}) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(longer);
-            try (MultipartBody multipartBody = streamPartBody(stream, content.length)) {
+            try (MultipartBody multipartBody = streamPartBody(new ByteArrayInputStream(new byte[0]), 0)) {
+                assertEquals(multipartBody.getContentLength(),
+                        drain(multipartBody, new BoundedChannel(chunkCapacity), 10_000).length, "chunkCapacity=" + chunkCapacity);
+            }
+        }
+    }
+
+    /**
+     * In a body of unknown length, which goes out chunked because another part has no length, a part's declared length
+     * frames nothing. It is still how much of its stream the part sends: whether the body has a length must not change
+     * that. A caller who wants the whole stream leaves the part's length unknown.
+     */
+    @Test
+    public void inputStreamPartKeepsItsDeclaredLengthInABodyOfUnknownLength() throws Exception {
+        byte[] content = "declared content".getBytes(UTF_8);
+        byte[] longer = "declared content|and more".getBytes(UTF_8);
+        int extra = longer.length - content.length;
+
+        byte[] expected;
+        try (MultipartBody reference = withPartOfUnknownLength(new ByteArrayInputStream(content), content.length)) {
+            assertEquals(-1, reference.getContentLength());
+            expected = copy(reference, 8192);
+        }
+
+        for (int bufferSize : new int[]{1, 7, 64, 8192}) {
+            ByteArrayInputStream source = new ByteArrayInputStream(longer);
+            try (MultipartBody multipartBody = withPartOfUnknownLength(source, content.length)) {
+                assertArrayEquals(expected, copy(multipartBody, bufferSize), "bufferSize=" + bufferSize);
+            }
+            assertEquals(extra, source.available(), "bufferSize=" + bufferSize + ": read past the declared length");
+
+            IOException thrown = assertThrows(IOException.class, () -> {
+                try (MultipartBody multipartBody = withPartOfUnknownLength(new ByteArrayInputStream(content, 0, 7), content.length)) {
+                    copy(multipartBody, bufferSize);
+                }
+            });
+            assertEquals("Multipart InputStream body part 'isPart' ended after 7 of its 16 declared bytes", thrown.getMessage(),
+                    "bufferSize=" + bufferSize);
+        }
+        for (int chunkCapacity : new int[]{1, 7, 64, 65536}) {
+            ByteArrayInputStream source = new ByteArrayInputStream(longer);
+            try (MultipartBody multipartBody = withPartOfUnknownLength(source, content.length)) {
                 assertArrayEquals(expected, drain(multipartBody, new BoundedChannel(chunkCapacity), 10_000),
                         "chunkCapacity=" + chunkCapacity);
             }
-            assertEquals(extra.length, stream.available(), "chunkCapacity=" + chunkCapacity + ": read past the declared length");
+            assertEquals(extra, source.available(), "chunkCapacity=" + chunkCapacity + ": read past the declared length");
+
+            IOException thrown = assertThrows(IOException.class, () -> {
+                try (MultipartBody multipartBody = withPartOfUnknownLength(new ByteArrayInputStream(content, 0, 7), content.length)) {
+                    drain(multipartBody, new BoundedChannel(chunkCapacity), 10_000);
+                }
+            });
+            assertEquals("Multipart InputStream body part 'isPart' ended after 7 of its 16 declared bytes", thrown.getMessage(),
+                    "chunkCapacity=" + chunkCapacity);
+        }
+    }
+
+    private static MultipartBody withPartOfUnknownLength(InputStream stream, long contentLength) {
+        List<Part> parts = new ArrayList<>();
+        parts.add(new InputStreamPart("isPart", stream, "fileName", contentLength));
+        parts.add(new InputStreamPart("unknown", new ByteArrayInputStream("tail".getBytes(UTF_8)), "other"));
+        return MultipartUtils.newMultipartBody(parts, pinnedBoundary());
+    }
+
+    /**
+     * Hands out at most 7 bytes per read and reports none available, like a stream that receives its data in small
+     * pieces, so that a part reads it several times while bytes from an earlier read wait for the target.
+     */
+    private static final class TrickleStream extends FilterInputStream {
+
+        TrickleStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return super.read(b, off, Math.min(len, 7));
+        }
+
+        @Override
+        public int available() {
+            return 0;
         }
     }
 

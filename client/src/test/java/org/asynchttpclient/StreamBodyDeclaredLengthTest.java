@@ -57,7 +57,9 @@ public class StreamBodyDeclaredLengthTest {
 
     private static final String CONTENT = "declared content";
     private static final String EXTRA = "GET /smuggled HTTP/1.1\r\nHost: localhost\r\n\r\n";
-    private static final String SHORT = CONTENT.substring(0, 7);
+    // Long enough for part of the body to go out before the stream ends.
+    private static final int DECLARED = 100_000;
+    private static final int SHORT = 60_000;
 
     private ServerSocket server;
     private ExecutorService executor;
@@ -120,14 +122,13 @@ public class StreamBodyDeclaredLengthTest {
         Future<List<Exchange>> exchanges = executor.submit(() -> serve(1));
         try (AsyncHttpClient client = client(zeroCopy)) {
             ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(url("/upload"))
-                    .addBodyPart(new InputStreamPart("file", new ByteArrayInputStream(SHORT.getBytes(US_ASCII)),
-                            "file.bin", CONTENT.length()))
+                    .addBodyPart(new InputStreamPart("file", new ByteArrayInputStream(new byte[SHORT]), "file.bin", DECLARED))
                     .execute()
                     .get(10, SECONDS));
-            assertCause("Multipart InputStream body part 'file' ended after 7 of its 16 declared bytes", thrown);
+            assertCause("Multipart InputStream body part 'file' ended after 60000 of its 100000 declared bytes", thrown);
+            // Before the client closes, which would close the connection anyway.
+            assertCutOff(exchanges.get(10, SECONDS));
         }
-
-        assertTrue(exchanges.get(10, SECONDS).isEmpty(), "the server received a whole request");
     }
 
     @Test
@@ -135,13 +136,12 @@ public class StreamBodyDeclaredLengthTest {
         Future<List<Exchange>> exchanges = executor.submit(() -> serve(1));
         try (AsyncHttpClient client = client(true)) {
             ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(url("/upload"))
-                    .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(SHORT.getBytes(US_ASCII)), CONTENT.length()))
+                    .setBody(new InputStreamBodyGenerator(new ByteArrayInputStream(new byte[SHORT]), DECLARED))
                     .execute()
                     .get(10, SECONDS));
-            assertCause("InputStream body ended after 7 of its 16 declared bytes", thrown);
+            assertCause("InputStream body ended after 60000 of its 100000 declared bytes", thrown);
+            assertCutOff(exchanges.get(10, SECONDS));
         }
-
-        assertTrue(exchanges.get(10, SECONDS).isEmpty(), "the server received a whole request");
     }
 
     /**
@@ -176,6 +176,13 @@ public class StreamBodyDeclaredLengthTest {
         return "http://localhost:" + server.getLocalPort() + path;
     }
 
+    // The server received part of the body, and then the connection closed: it does not wait for the rest.
+    private static void assertCutOff(List<Exchange> received) {
+        assertEquals(1, received.size());
+        assertFalse(received.get(0).complete, "the server received a whole request");
+        assertTrue(received.get(0).body.length() > 0, "no part of the body went out before the failure");
+    }
+
     private static void assertCause(String message, Throwable thrown) {
         for (Throwable t = thrown; t != null; t = t.getCause()) {
             if (t instanceof IOException && message.equals(t.getMessage())) {
@@ -186,7 +193,7 @@ public class StreamBodyDeclaredLengthTest {
     }
 
     // Reads up to the given number of requests with a Content-Length on one connection and answers each with a 200.
-    // Stops early when the client closes the connection.
+    // Stops when the client closes the connection, recording a request it cut off.
     private List<Exchange> serve(int requests) throws IOException {
         List<Exchange> exchanges = new ArrayList<>();
         try (Socket socket = server.accept()) {
@@ -205,10 +212,11 @@ public class StreamBodyDeclaredLengthTest {
                     }
                 }
                 byte[] body = in.readNBytes(contentLength);
-                if (body.length < contentLength) {
+                boolean complete = body.length == contentLength;
+                exchanges.add(new Exchange(head.substring(0, head.indexOf("\r\n")), new String(body, US_ASCII), complete));
+                if (!complete) {
                     break;
                 }
-                exchanges.add(new Exchange(head.substring(0, head.indexOf("\r\n")), new String(body, US_ASCII)));
                 out.write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
                 out.flush();
             }
@@ -233,10 +241,12 @@ public class StreamBodyDeclaredLengthTest {
 
         final String requestLine;
         final String body;
+        final boolean complete;
 
-        Exchange(String requestLine, String body) {
+        Exchange(String requestLine, String body, boolean complete) {
             this.requestLine = requestLine;
             this.body = body;
+            this.complete = complete;
         }
     }
 
