@@ -61,6 +61,7 @@ import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.zip.CRC32;
@@ -69,6 +70,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -388,6 +390,52 @@ public class Http2StreamingBodyFlowControlTest {
                     .execute()
                     .get(30, SECONDS);
             assertEchoed(response, payload);
+        }
+    }
+
+    // =========================================================================
+    // NettyInputStreamBody: a stream with more bytes than its declared length, or no end after it.
+    // =========================================================================
+    @Test
+    public void inputStreamBodyLongerThanItsDeclaredLengthSendsOnlyThatLengthOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+
+        try (AsyncHttpClient client = http2Client()) {
+            // The pattern does not depend on the size, so the payload is a prefix of the stream.
+            InputStream is = new ByteArrayInputStream(deterministicPayload(SMALL_SIZE + 3));
+            Response response = client.preparePost(httpsUrl("/small"))
+                    .setBody(new InputStreamBodyGenerator(is, payload.length))
+                    .execute()
+                    .get(30, SECONDS);
+            assertEchoed(response, payload);
+            assertEquals(3, is.available(), "the body read past its declared length");
+        }
+    }
+
+    @Test
+    public void inputStreamBodyIsNotReadPastItsDeclaredLengthOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        AtomicBoolean readPastDeclaredLength = new AtomicBoolean();
+
+        try (AsyncHttpClient client = http2Client()) {
+            // A socket-backed stream has nothing more to give, so a read for its end would block until it ends.
+            InputStream is = new ByteArrayInputStream(payload) {
+                @Override
+                public synchronized int read(byte[] b, int off, int len) {
+                    if (available() == 0) {
+                        readPastDeclaredLength.set(true);
+                    }
+                    return super.read(b, off, len);
+                }
+            };
+            Response response = client.preparePost(httpsUrl("/small"))
+                    .setBody(new InputStreamBodyGenerator(is, payload.length))
+                    .execute()
+                    .get(30, SECONDS);
+            assertEchoed(response, payload);
+            assertFalse(readPastDeclaredLength.get(), "the body read past its declared length");
         }
     }
 
