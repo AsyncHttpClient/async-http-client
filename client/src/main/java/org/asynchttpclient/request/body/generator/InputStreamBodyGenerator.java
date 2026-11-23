@@ -14,8 +14,6 @@ package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
 import org.asynchttpclient.request.body.Body;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +26,6 @@ import java.io.InputStream;
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
     private final InputStream inputStream;
     private final long contentLength;
 
@@ -58,6 +55,7 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
         private final InputStream inputStream;
         private final long contentLength;
+        private long transferred;
 
         private InputStreamBody(InputStream inputStream, long contentLength) {
             this.inputStream = inputStream;
@@ -70,19 +68,30 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
         }
 
         @Override
-        public BodyState transferTo(ByteBuf target) {
+        public BodyState transferTo(ByteBuf target) throws IOException {
             // Read straight from the stream into the target buffer instead of staging through a per-call byte[].
             // For heap target buffers this drops both the staging array and the copy; for direct buffers Netty
             // still stages through a temporary heap array internally (InputStream can only read into a byte[]),
-            // so there the win is smaller. Mirrors InputStreamMultipartPart, which writes the full writable region.
-            int read;
-            try {
-                read = target.writeBytes(inputStream, target.writableBytes());
-            } catch (IOException ex) {
-                LOGGER.warn("Unable to read", ex);
-                return BodyState.STOP;
+            // so there the win is smaller.
+            int length = target.writableBytes();
+            if (contentLength >= 0) {
+                // Bytes past the declared length would go out after the end of the body, and a read for the end of
+                // a socket-backed stream would block until it ends.
+                if (transferred == contentLength) {
+                    return BodyState.STOP;
+                }
+                length = (int) Math.min(length, contentLength - transferred);
             }
-            return read > 0 ? BodyState.CONTINUE : BodyState.STOP;
+            int read = target.writeBytes(inputStream, length);
+            if (read > 0) {
+                transferred += read;
+                return BodyState.CONTINUE;
+            }
+            if (read < 0 && contentLength >= 0) {
+                throw new IOException("InputStream body ended after " + transferred + " of its " + contentLength
+                        + " declared bytes");
+            }
+            return BodyState.STOP;
         }
 
         @Override
