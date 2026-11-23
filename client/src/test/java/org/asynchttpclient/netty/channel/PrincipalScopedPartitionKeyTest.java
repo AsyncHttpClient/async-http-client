@@ -465,12 +465,22 @@ public class PrincipalScopedPartitionKeyTest {
     @Test
     public void twoRealmsInOneSetBothStayCached() {
         // The same slot, not just the same set, so a cache with one way per slot would fail.
-        int slot = PrincipalScopedPartitionKey.CACHED_IDENTITIES - 1;
+        alternateWithoutEviction(0);
+    }
+
+    /** Realms whose identity hashes differ in the lowest slot bit still share a set and must not evict each other. */
+    @Test
+    public void twoRealmsInAdjacentSlotsOfOneSetBothStayCached() {
+        alternateWithoutEviction(1);
+    }
+
+    private static void alternateWithoutEviction(int hashDifference) {
+        int mask = PrincipalScopedPartitionKey.CACHED_IDENTITIES - 1;
         Realm first = realm(Realm.AuthScheme.NTLM, "first");
         Realm second = null;
         for (int i = 0; second == null; i++) {
             Realm candidate = realm(Realm.AuthScheme.NTLM, "second" + i);
-            if ((System.identityHashCode(candidate) & slot) == (System.identityHashCode(first) & slot)) {
+            if (((System.identityHashCode(candidate) ^ System.identityHashCode(first)) & mask) == hashDifference) {
                 second = candidate;
             }
         }

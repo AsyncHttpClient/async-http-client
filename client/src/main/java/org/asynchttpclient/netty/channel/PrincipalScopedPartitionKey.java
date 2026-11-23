@@ -129,10 +129,10 @@ public final class PrincipalScopedPartitionKey {
             return digest(realm);
         }
         Object[] cache = IDENTITIES.get();
-        int slot = System.identityHashCode(realm) & (CACHED_IDENTITIES - 1);
         // Two ways per set, the most recently used in slot, so an origin and a proxy realm that collide both
-        // stay cached.
-        int other = slot ^ 1;
+        // stay cached. Every realm of a set must see the same slot, or each would evict the other.
+        int slot = System.identityHashCode(realm) & (CACHED_IDENTITIES - 2);
+        int other = slot + 1;
         String identity = cached(cache, slot, realm);
         if (identity != null) {
             return identity;
@@ -143,14 +143,17 @@ public final class PrincipalScopedPartitionKey {
             return identity;
         }
         identity = digest(realm);
+        // Both weak: the cache keeps neither the realm, and with it the password, nor the digest alive. A digest
+        // no pool key holds is computed again after the next collection. Both are allocated before the cache is
+        // touched, so a failed allocation cannot leave a slot naming this realm with another realm's identity.
+        WeakReference<Realm> realmReference = new WeakReference<>(realm);
+        WeakReference<String> identityReference = new WeakReference<>(identity);
         // Unless slot already names this realm, whose digest was collected, keep what it held in the other way.
         if (!holdsRealm(cache, slot, realm)) {
             swapWays(cache, slot, other);
         }
-        // Both weak: the cache keeps neither the realm, and with it the password, nor the digest alive. A digest
-        // no pool key holds is computed again after the next collection.
-        cache[2 * slot] = new WeakReference<>(realm);
-        cache[2 * slot + 1] = new WeakReference<>(identity);
+        cache[2 * slot] = realmReference;
+        cache[2 * slot + 1] = identityReference;
         return identity;
     }
 
