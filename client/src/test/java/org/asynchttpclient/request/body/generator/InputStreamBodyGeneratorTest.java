@@ -27,12 +27,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -43,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Covers {@link InputStreamBodyGenerator}'s {@link Body#transferTo(ByteBuf)}, which now reads straight from
@@ -52,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class InputStreamBodyGeneratorTest {
 
     private static final int CHUNK_SIZE = 1024 * 8;
+    private static final String COMPLETE_REQUEST =
+            "POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n7\r\npartial\r\n0\r\n\r\n";
 
     @Test
     public void streamsAllBytesAcrossMultipleReads() throws IOException {
@@ -160,19 +168,49 @@ public class InputStreamBodyGeneratorTest {
         InputStreamBodyGenerator generator = new InputStreamBodyGenerator(failingAfter("partial".getBytes(US_ASCII), failure));
         BodyGenerator wrapper = generator::createBody;
 
-        try (ServerSocket server = new ServerSocket(0);
-             AsyncHttpClient client = asyncHttpClient(config()
-                     .setMaxRequestRetry(0)
-                     .setRequestTimeout(Duration.ofSeconds(10)))) {
-            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> readChunkedRequest(server));
-            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
-                    .preparePost("http://localhost:" + server.getLocalPort() + "/")
-                    .setBody(wrapper)
-                    .execute()
-                    .get(10, SECONDS));
-            assertSame(failure, thrown.getCause());
-            assertEquals("connection ended before the last chunk", received.get(10, SECONDS));
+        AtomicBoolean clientDone = new AtomicBoolean();
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> receiveRequest(server, clientDone));
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setMaxRequestRetry(0)
+                    .setRequestTimeout(Duration.ofSeconds(10)))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
+                        .preparePost("http://localhost:" + server.getLocalPort() + "/")
+                        .setBody(wrapper)
+                        .execute()
+                        .get(10, SECONDS));
+                assertSame(failure, thrown.getCause());
+            } finally {
+                clientDone.set(true);
+            }
+            // How much of the body went out before the failure depends on the transport; its last chunk must not.
+            assertFalse(hasLastChunk(received.get(10, SECONDS)), "the server received the last chunk");
         }
+    }
+
+    @Test
+    public void bodyWithNoDeclaredBytesDoesNotReadItsStream() throws IOException {
+        ByteArrayInputStream stream = new ByteArrayInputStream("abc".getBytes(US_ASCII));
+        Body body = new InputStreamBodyGenerator(stream, 0).createBody();
+
+        assertArrayEquals(new byte[0], drain(body, CHUNK_SIZE));
+        assertEquals(3, stream.available());
+    }
+
+    // The server side of the request tests must not lose a last chunk to an error after it.
+    @Test
+    public void receivingKeepsWhatArrivedBeforeAReset() throws IOException {
+        InputStream in = failingAfter(COMPLETE_REQUEST.getBytes(US_ASCII), new SocketException("Connection reset"));
+
+        assertTrue(hasLastChunk(receiveUntilQuiet(in, () -> false)));
+    }
+
+    @Test
+    public void receivingFailsOnAnyOtherError() {
+        IOException failure = new IOException("read failed");
+        InputStream in = failingAfter(COMPLETE_REQUEST.getBytes(US_ASCII), failure);
+
+        assertSame(failure, assertThrows(IOException.class, () -> receiveUntilQuiet(in, () -> false)));
     }
 
     @Test
@@ -223,10 +261,12 @@ public class InputStreamBodyGeneratorTest {
         ByteBuf chunkBuffer = Unpooled.buffer(bufferSize);
         ByteArrayOutputStream collected = new ByteArrayOutputStream();
         try {
-            while (body.transferTo(chunkBuffer) != BodyState.STOP) {
+            BodyState state;
+            do {
+                state = body.transferTo(chunkBuffer);
                 chunkBuffer.readBytes(collected, chunkBuffer.readableBytes());
                 chunkBuffer.clear();
-            }
+            } while (state != BodyState.STOP);
             return collected.toByteArray();
         } finally {
             chunkBuffer.release();
@@ -248,33 +288,51 @@ public class InputStreamBodyGeneratorTest {
         };
     }
 
-    // Reads one chunked request and tells whether its last chunk arrived.
-    private static String readChunkedRequest(ServerSocket server) {
+    private static String receiveRequest(ServerSocket server, AtomicBoolean clientDone) {
         try (Socket socket = server.accept()) {
-            socket.setSoTimeout(10_000);
-            InputStream in = socket.getInputStream();
-            String line;
-            do {
-                line = readLine(in);
-            } while (line != null && !line.isEmpty());
-            while (line != null) {
-                line = readLine(in);
-                if (line == null) {
-                    break;
-                }
-                int size = Integer.parseInt(line, 16);
-                if (size == 0) {
-                    socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
-                    return "last chunk received";
-                }
-                if (in.readNBytes(size + 2).length < size + 2) {
-                    break;
-                }
-            }
-            return "connection ended before the last chunk";
+            socket.setSoTimeout(100);
+            return receiveUntilQuiet(socket.getInputStream(), clientDone::get);
         } catch (IOException e) {
-            return "server failed: " + e;
+            throw new UncheckedIOException(e);
         }
+    }
+
+    // What arrives until the connection ends, or until the client is done and nothing more arrives within the read
+    // timeout. That is a bounded observation, not proof that nothing would follow: on io_uring, the connection of a
+    // request that failed in the middle of its body can stay open, so its end is not something to wait for. A reset
+    // ends the connection too, and keeps what arrived before it; any other error fails the observation.
+    private static String receiveUntilQuiet(InputStream in, BooleanSupplier clientDone) throws IOException {
+        ByteArrayOutputStream received = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        long deadline = System.nanoTime() + SECONDS.toNanos(10);
+        while (System.nanoTime() < deadline) {
+            int read;
+            try {
+                read = in.read(buffer);
+            } catch (SocketTimeoutException e) {
+                if (clientDone.getAsBoolean()) {
+                    break;
+                }
+                continue;
+            } catch (SocketException e) {
+                if (e.getMessage() == null || !e.getMessage().startsWith("Connection reset")) {
+                    throw e;
+                }
+                break;
+            }
+            if (read < 0) {
+                break;
+            }
+            received.write(buffer, 0, read);
+        }
+        return received.toString(US_ASCII);
+    }
+
+    // Whether a chunked request, received in full or in part, ends with its last chunk.
+    private static boolean hasLastChunk(String request) {
+        int head = request.indexOf("\r\n\r\n");
+        String body = head < 0 ? "" : request.substring(head + 4);
+        return body.equals("0\r\n\r\n") || body.endsWith("\r\n0\r\n\r\n");
     }
 
     private static String readLine(InputStream in) throws IOException {
