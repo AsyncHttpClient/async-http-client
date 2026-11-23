@@ -64,7 +64,7 @@ public class NettyBodyBody implements NettyBody {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {
-            msg = new BodyChunkedInput(body);
+            msg = new BodyChunkedInput(body, future);
 
             BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
             if (bg instanceof FeedableBodyGenerator) {

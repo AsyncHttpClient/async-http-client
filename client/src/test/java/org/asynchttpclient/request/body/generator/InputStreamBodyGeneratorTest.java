@@ -17,6 +17,7 @@ package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
@@ -37,6 +38,7 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -188,6 +190,42 @@ public class InputStreamBodyGeneratorTest {
         }
     }
 
+    /**
+     * On a pooled connection, WriteListener took a read failure such as a "Connection reset" for a connection that
+     * died, and retried the request with a new body over the stream that had just failed.
+     */
+    @Test
+    public void readFailureOnAPooledConnectionIsNotRetried() throws Exception {
+        IOException failure = new IOException("Connection reset");
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(failingAfter("partial".getBytes(US_ASCII), failure));
+        BodyGenerator wrapper = generator::createBody;
+        AtomicInteger retries = new AtomicInteger();
+        AtomicBoolean clientDone = new AtomicBoolean();
+
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> receiveGetThenRequest(server, clientDone));
+            try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)))) {
+                String url = "http://localhost:" + server.getLocalPort() + "/";
+                assertEquals(200, client.prepareGet(url).execute().get(10, SECONDS).getStatusCode());
+                ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
+                        .preparePost(url)
+                        .setBody(wrapper)
+                        .execute(new AsyncCompletionHandlerBase() {
+                            @Override
+                            public void onRetry() {
+                                retries.incrementAndGet();
+                            }
+                        })
+                        .get(10, SECONDS));
+                assertSame(failure, thrown.getCause());
+                assertEquals(0, retries.get(), "the request was retried");
+            } finally {
+                clientDone.set(true);
+            }
+            assertFalse(hasLastChunk(received.get(10, SECONDS)), "the server received the last chunk");
+        }
+    }
+
     @Test
     public void laterBodyReadsTheStreamFromItsMark() throws IOException {
         InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
@@ -324,6 +362,22 @@ public class InputStreamBodyGeneratorTest {
                 return false;
             }
         };
+    }
+
+    // Answers a GET, then receives the next request on the same connection.
+    private static String receiveGetThenRequest(ServerSocket server, AtomicBoolean clientDone) {
+        try (Socket socket = server.accept()) {
+            socket.setSoTimeout(10_000);
+            String line;
+            do {
+                line = readLine(socket.getInputStream());
+            } while (line != null && !line.isEmpty());
+            socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
+            socket.setSoTimeout(100);
+            return receiveUntilQuiet(socket.getInputStream(), clientDone::get);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static String receiveRequest(ServerSocket server, AtomicBoolean clientDone) {
