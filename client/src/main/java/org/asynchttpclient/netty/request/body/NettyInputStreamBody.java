@@ -99,7 +99,7 @@ public class NettyInputStreamBody implements NettyBody {
         // backpressure, so a large upload does not buffer the whole stream in heap or read it all inline on
         // the event loop. Cleanup (closeSilently) happens when the async pump completes — see
         // InputStreamChunkSource.close.
-        Http2BodyWriter.start(channel, new InputStreamChunkSource(declaredLength(is)));
+        Http2BodyWriter.start(channel, new InputStreamChunkSource(declaredLength(is)), future);
     }
 
     private InputStream declaredLength(InputStream is) {
