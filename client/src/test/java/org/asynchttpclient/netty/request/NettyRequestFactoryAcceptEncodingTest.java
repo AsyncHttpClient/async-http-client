@@ -110,7 +110,8 @@ public class NettyRequestFactoryAcceptEncodingTest {
         String[] acceptEncodings = {"*", "gzip, *", "br, *", "gzip, br, *", "gzip, br;q=0, *", "*, zstd;q=0.5",
                 "gzip;q=0.5, *;q=0.1", "gzip, deflate, br, zstd", "br;q=0, *", "zstd;q=0, *",
                 "x-br;q=0, ZSTD;q=0, *", "br;q=0, zstd;q=0, gzip;q=0, deflate;q=0, snappy;q=0, *, x*",
-                "compress, x*, *", "gzip, x-zstd;q=0, br;q=0, *", "snappy;q=0, deflate, *"};
+                "compress, x*, *", "gzip, x-zstd;q=0, br;q=0, *", "snappy;q=0, deflate, *", "*;zstd=1", "*;br=1",
+                "*, *;q=0"};
         for (boolean[] available : A_LIBRARY_MISSING) {
             boolean brotliAvailable = available[0];
             boolean zstdAvailable = available[1];

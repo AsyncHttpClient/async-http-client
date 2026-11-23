@@ -237,8 +237,9 @@ public final class HttpUtils {
      * A "*" would still offer {@code coding}, so it is dropped, with every element naming {@code coding} and every
      * other token holding a "*". A coding the list does not name is then not acceptable, so the refusals are dropped
      * too, but "identity;q=0" and "*;q=0", which decide whether an unencoded response is acceptable. When no content
-     * coding but br or zstd is left with a positive weight, the {@link #WILDCARD_CODINGS} the list does not name take
-     * the place of the "*", at its weight.
+     * coding but br or zstd is left with a positive weight and no "*;q=0" refuses the codings the list does not name,
+     * the {@link #WILDCARD_CODINGS} the list does not name take the place of the "*", at its weight. Only the weight is
+     * carried over, as a parameter of the "*" could name a coding.
      * <p>
      * Netty's {@code HttpContentCompressor} matches "*" and coding names by substring, picks a refused coding once a
      * listed coding has a positive weight, and compares weights along br, zstd, snappy, gzip, deflate. Keeping the
@@ -247,9 +248,10 @@ public final class HttpUtils {
      * one offered only by the "*".
      */
     private static String replaceWildcard(String[] elements, AsciiString coding) {
-        String parameters = "";
+        String weight = "";
         boolean wildcardSeen = false;
         boolean offersOther = false;
+        boolean refusesOthers = false;
         StringBuilder kept = new StringBuilder();
         for (String element : elements) {
             String trimmed = element.trim();
@@ -257,11 +259,11 @@ public final class HttpUtils {
             if (offers(trimmed, "*")) {
                 if (!wildcardSeen) {
                     wildcardSeen = true;
-                    int semicolon = trimmed.indexOf(';');
-                    parameters = semicolon < 0 ? "" : trimmed.substring(semicolon);
+                    weight = weight(trimmed);
                 }
             } else if ("*".equals(token) || AsciiString.contentEqualsIgnoreCase(token, HttpHeaderValues.IDENTITY)) {
                 appendElement(kept, trimmed);
+                refusesOthers |= "*".equals(token);
             } else if (!trimmed.isEmpty() && token.indexOf('*') < 0 && !refuses(trimmed)
                     && !AsciiString.contentEqualsIgnoreCase(token, coding)) {
                 appendElement(kept, trimmed);
@@ -269,10 +271,10 @@ public final class HttpUtils {
                         && !AsciiString.contentEqualsIgnoreCase(token, HttpHeaderValues.ZSTD);
             }
         }
-        if (!offersOther) {
+        if (!offersOther && !refusesOthers) {
             for (AsciiString wildcardCoding : WILDCARD_CODINGS) {
                 if (!names(elements, wildcardCoding)) {
-                    appendElement(kept, wildcardCoding + parameters);
+                    appendElement(kept, wildcardCoding + weight);
                 }
             }
         }
@@ -282,6 +284,19 @@ public final class HttpUtils {
     private static String token(String element) {
         int semicolon = element.indexOf(';');
         return semicolon < 0 ? element : element.substring(0, semicolon).trim();
+    }
+
+    private static String weight(String element) {
+        int semicolon = element.indexOf(';');
+        if (semicolon >= 0) {
+            for (String parameter : element.substring(semicolon + 1).split(";")) {
+                int eq = parameter.indexOf('=');
+                if (eq >= 0 && "q".equalsIgnoreCase(parameter.substring(0, eq).trim())) {
+                    return ";q=" + parameter.substring(eq + 1).trim();
+                }
+            }
+        }
+        return "";
     }
 
     private static boolean offers(String element, CharSequence coding) {

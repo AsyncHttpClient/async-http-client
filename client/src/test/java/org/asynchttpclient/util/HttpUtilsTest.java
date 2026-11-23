@@ -289,7 +289,16 @@ public class HttpUtilsTest {
     public void filterOutKeepsIdentityAndARefusedWildcardWithAReplacedWildcard() {
         assertEquals("identity;q=0, gzip, deflate", filterOutBrotli("identity;q=0, *"));
         assertEquals("identity;q=0.5, gzip, deflate", filterOutBrotli("identity;q=0.5, *"));
-        assertEquals("*;q=0, gzip, deflate", filterOutBrotli("*, *;q=0"));
+        assertEquals("*;q=0", filterOutBrotli("*, *;q=0"));
+        assertEquals("*;q=0", filterOutBrotli("*;q=0, *;q=0.5"));
+        assertEquals("zstd, *;q=0", filterOutBrotli("zstd, *, *;q=0"));
+    }
+
+    @Test
+    public void filterOutCarriesOnlyTheWeightOfAReplacedWildcard() {
+        assertEquals("gzip, deflate", filterOutZstd("*;zstd=1"));
+        assertEquals("gzip;q=0.5, deflate;q=0.5", filterOutZstd("*;br=1;Q=0.5"));
+        assertEquals("gzip;q=0.1, deflate;q=0.1", filterOutBrotli("* ; q=0.1"));
     }
 
     @Test
