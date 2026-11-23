@@ -17,6 +17,7 @@ import org.asynchttpclient.request.body.Body;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
@@ -28,6 +29,9 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
     private final InputStream inputStream;
     private final long contentLength;
+    // Set by the first body that reads the stream. Every body reads that same stream, so a later one, for a retry or a
+    // redirect, would go on where the earlier one stopped.
+    private final AtomicBoolean streamRead = new AtomicBoolean();
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this(inputStream, -1L);
@@ -48,18 +52,23 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
     @Override
     public Body createBody() {
-        return new InputStreamBody(inputStream, contentLength);
+        return new InputStreamBody(inputStream, contentLength, streamRead);
     }
 
     private static class InputStreamBody implements Body {
 
+        private static final String CONSUMED = "InputStream body already consumed and cannot be reset for a retry";
+
         private final InputStream inputStream;
         private final long contentLength;
+        private final AtomicBoolean streamRead;
+        private boolean started;
         private long transferred;
 
-        private InputStreamBody(InputStream inputStream, long contentLength) {
+        private InputStreamBody(InputStream inputStream, long contentLength, AtomicBoolean streamRead) {
             this.inputStream = inputStream;
             this.contentLength = contentLength;
+            this.streamRead = streamRead;
         }
 
         @Override
@@ -82,6 +91,12 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                 }
                 length = (int) Math.min(length, contentLength - transferred);
             }
+            if (!started) {
+                started = true;
+                if (streamRead.getAndSet(true)) {
+                    resetStream();
+                }
+            }
             int read = target.writeBytes(inputStream, length);
             if (read > 0) {
                 transferred += read;
@@ -92,6 +107,18 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
                         + " declared bytes");
             }
             return BodyState.STOP;
+        }
+
+        // As NettyInputStreamBody does when it sends this generator's stream again: back to the stream's mark, or fail.
+        private void resetStream() throws IOException {
+            if (!inputStream.markSupported()) {
+                throw new IOException(CONSUMED);
+            }
+            try {
+                inputStream.reset();
+            } catch (IOException e) {
+                throw new IOException(CONSUMED, e);
+            }
         }
 
         @Override

@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.ResponseFilter;
+import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.ByteArrayBodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
@@ -365,6 +366,44 @@ public class RedirectBodyTest extends AbstractBasicTest {
 
             IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
             assertEquals(NON_REPLAYABLE_STREAM_MESSAGE, cause.getMessage());
+        }
+    }
+
+    // A BodyGenerator that hands out an InputStreamBodyGenerator's bodies, as one that wraps it does, gets a new body for
+    // the redirect, over the same stream.
+    @Test
+    public void inputStreamGeneratorBody307SendsTheStreamFromItsMark() throws Exception {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                new ByteArrayInputStream("FIRST---SECOND--".getBytes(UTF_8)), 8);
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            Response response = c.preparePost(getTargetUrl())
+                    .setBody((BodyGenerator) generator::createBody)
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS);
+
+            assertEquals("FIRST---", response.getResponseBody());
+        }
+    }
+
+    @Test
+    public void inputStreamGeneratorBody307FailsForAStreamWithoutMarkSupport() throws Exception {
+        InputStream stream = new FilterInputStream(new ByteArrayInputStream("FIRST---SECOND--".getBytes(UTF_8))) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+        };
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(stream, 8);
+        try (AsyncHttpClient c = asyncHttpClient(config().setFollowRedirect(true))) {
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> c.preparePost(getTargetUrl())
+                    .setBody((BodyGenerator) generator::createBody)
+                    .setHeader("X-REDIRECT", "307")
+                    .execute()
+                    .get(TIMEOUT, TimeUnit.SECONDS));
+
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals("InputStream body already consumed and cannot be reset for a retry", cause.getMessage());
         }
     }
 

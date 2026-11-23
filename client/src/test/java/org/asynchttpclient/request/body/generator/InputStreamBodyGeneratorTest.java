@@ -189,6 +189,35 @@ public class InputStreamBodyGeneratorTest {
     }
 
     @Test
+    public void laterBodyReadsTheStreamFromItsMark() throws IOException {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                new ByteArrayInputStream("FIRST---SECOND--".getBytes(US_ASCII)), 8);
+
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+    }
+
+    @Test
+    public void laterBodyFailsForAStreamWithoutMarkSupport() throws IOException {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                withoutMarkSupport(new ByteArrayInputStream("FIRST---SECOND--".getBytes(US_ASCII))), 8);
+
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+        Body later = generator.createBody();
+        IOException thrown = assertThrows(IOException.class, () -> drain(later, CHUNK_SIZE));
+        assertEquals("InputStream body already consumed and cannot be reset for a retry", thrown.getMessage());
+    }
+
+    @Test
+    public void bodyThatDidNotReadLeavesTheStreamToTheNextOne() throws IOException {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                withoutMarkSupport(new ByteArrayInputStream("FIRST---".getBytes(US_ASCII))), 8);
+
+        generator.createBody();
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+    }
+
+    @Test
     public void bodyWithNoDeclaredBytesDoesNotReadItsStream() throws IOException {
         ByteArrayInputStream stream = new ByteArrayInputStream("abc".getBytes(US_ASCII));
         Body body = new InputStreamBodyGenerator(stream, 0).createBody();
@@ -284,6 +313,15 @@ public class InputStreamBodyGeneratorTest {
                     throw failure;
                 }
                 return read;
+            }
+        };
+    }
+
+    private static InputStream withoutMarkSupport(InputStream in) {
+        return new FilterInputStream(in) {
+            @Override
+            public boolean markSupported() {
+                return false;
             }
         };
     }
