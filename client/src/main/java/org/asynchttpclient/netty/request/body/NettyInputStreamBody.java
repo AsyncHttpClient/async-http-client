@@ -25,6 +25,7 @@ import io.netty.handler.stream.ChunkedStream;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -67,7 +68,7 @@ public class NettyInputStreamBody implements NettyBody {
             future.setStreamConsumed(true);
         }
 
-        channel.write(new ChunkedStream(is), channel.newProgressivePromise()).addListener(
+        channel.write(new ChunkedStream(declaredLength(is)), channel.newProgressivePromise()).addListener(
                 new WriteProgressListener(future, false, getContentLength()) {
                     @Override
                     public void operationComplete(ChannelProgressiveFuture cf) {
@@ -98,7 +99,63 @@ public class NettyInputStreamBody implements NettyBody {
         // backpressure, so a large upload does not buffer the whole stream in heap or read it all inline on
         // the event loop. Cleanup (closeSilently) happens when the async pump completes — see
         // InputStreamChunkSource.close.
-        Http2BodyWriter.start(channel, new InputStreamChunkSource(is));
+        Http2BodyWriter.start(channel, new InputStreamChunkSource(declaredLength(is)), future);
+    }
+
+    private InputStream declaredLength(InputStream is) {
+        return contentLength < 0 ? is : new DeclaredLengthInputStream(is, contentLength);
+    }
+
+    /**
+     * Ends at the declared length, so that bytes past it are neither read nor sent, and fails if the stream ends
+     * before it.
+     */
+    private static final class DeclaredLengthInputStream extends FilterInputStream {
+
+        private final long contentLength;
+        private long remaining;
+
+        DeclaredLengthInputStream(InputStream in, long contentLength) {
+            super(in);
+            this.contentLength = contentLength;
+            remaining = contentLength;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (remaining == 0) {
+                return -1;
+            }
+            int b = in.read();
+            if (b < 0) {
+                throw endedEarly();
+            }
+            remaining--;
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (remaining == 0) {
+                return -1;
+            }
+            int read = in.read(b, off, (int) Math.min(len, remaining));
+            if (read < 0) {
+                throw endedEarly();
+            }
+            remaining -= read;
+            return read;
+        }
+
+        @Override
+        public int available() throws IOException {
+            return (int) Math.min(in.available(), remaining);
+        }
+
+        private IOException endedEarly() {
+            return new IOException("InputStream body ended after " + (contentLength - remaining) + " of its "
+                    + contentLength + " declared bytes");
+        }
     }
 
     /**
