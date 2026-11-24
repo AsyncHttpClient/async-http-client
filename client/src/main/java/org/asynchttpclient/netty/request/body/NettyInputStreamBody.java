@@ -25,6 +25,7 @@ import io.netty.handler.stream.ChunkedStream;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 
+import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -152,8 +153,9 @@ public class NettyInputStreamBody implements NettyBody {
             return (int) Math.min(in.available(), remaining);
         }
 
-        private IOException endedEarly() {
-            return new IOException("InputStream body ended after " + (contentLength - remaining) + " of its "
+        // An EOFException, as for every body that ends before its length.
+        private EOFException endedEarly() {
+            return new EOFException("InputStream body ended after " + (contentLength - remaining) + " of its "
                     + contentLength + " declared bytes");
         }
     }
