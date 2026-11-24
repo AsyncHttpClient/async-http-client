@@ -172,7 +172,7 @@ public final class NettyRequestSender {
         }
 
         validateWebSocketRequest(request, asyncHandler);
-        NettyRequestFactory.checkStreamBodyLength(request);
+        NettyRequestFactory.checkContentLength(request);
         ProxyServer proxyServer = getProxyServer(config, request);
 
         // Round-robin across the host's resolved IPs: resolve first, pick the next IP, then proceed.
