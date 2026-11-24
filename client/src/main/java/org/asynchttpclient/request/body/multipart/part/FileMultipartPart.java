@@ -23,6 +23,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -88,9 +89,7 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
             transferred = fileChannel.transferTo(position, count, target);
             if (transferred > 0) {
                 position += transferred;
-            } else if (fileChannel.size() <= position) {
-                // transferTo returns 0, not -1, at the end of the file. It also returns 0 when the target takes
-                // nothing, so only the size of the open file tells the two apart.
+            } else if (isEndOfFile(fileChannel)) {
                 throw endedEarly();
             }
         }
@@ -101,6 +100,13 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
             slowTarget = true;
         }
         return transferred;
+    }
+
+    // transferTo returns 0, not -1, at the end of the file, and also when the target takes nothing. The file's size
+    // does not tell the two apart either, as a file can report a size it does not have: a sysfs file reports 4096
+    // bytes or more, and holds fewer. A read of one byte at the position does.
+    private boolean isEndOfFile(FileChannel fileChannel) throws IOException {
+        return fileChannel.read(ByteBuffer.allocate(1), position) < 0;
     }
 
     // An EOFException, which WriteListener never takes for a pooled connection that died: a retry would send the

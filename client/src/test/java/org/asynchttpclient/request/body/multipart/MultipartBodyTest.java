@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class MultipartBodyTest {
 
@@ -651,6 +652,25 @@ public class MultipartBodyTest {
             try (MultipartBody body = filePartBody(file)) {
                 assertArrayEquals(expected, send(body, file, zeroCopy, 0, MultipartBodyTest::grow),
                         "zeroCopy=" + zeroCopy);
+            }
+        }
+    }
+
+    // A file can report a size it does not have: a sysfs file reports 4096 bytes or more, and holds fewer. At the end
+    // of what it holds, transferTo keeps returning 0 while the size says there is more, so the size alone would make the
+    // zero-copy path spin until the request times out.
+    @Test
+    public void filePartFailsWhenTheFileHoldsLessThanItsSize() throws Exception {
+        File file = new File("/sys/devices/system/cpu/online");
+        assumeTrue(file.canRead(), "no " + file);
+        int held = Files.readAllBytes(file.toPath()).length;
+        assumeTrue(file.length() > held, file + " holds as much as its size");
+        for (boolean zeroCopy : new boolean[]{false, true}) {
+            try (MultipartBody body = filePartBody(file)) {
+                EOFException e = assertThrows(EOFException.class, () -> send(body, file, zeroCopy, Long.MAX_VALUE, f -> {
+                }));
+                assertEquals("Multipart file part 'file' ended after " + held + " of its " + file.length() + " bytes",
+                        e.getMessage(), "zeroCopy=" + zeroCopy);
             }
         }
     }
