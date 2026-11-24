@@ -320,7 +320,7 @@ public final class NettyRequestSender {
         Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
         if (Channels.isChannelActive(channel)) {
             NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future,
-                    proxyServer, performConnectRequest);
+                    proxyServer, performConnectRequest, channel);
             return sendRequestWithOpenChannel(newFuture, asyncHandler, channel);
         } else {
             // A new channel is not expected when performConnectRequest is false. We need to
@@ -351,7 +351,7 @@ public final class NettyRequestSender {
             }
 
             if (newFuture == null) {
-                newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, false);
+                newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, false, channel);
             }
 
             if (Channels.isChannelActive(channel)) {
@@ -364,6 +364,33 @@ public final class NettyRequestSender {
         // couldn't poll an active channel
         newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, true);
         return sendRequestWithNewChannel(request, proxyServer, newFuture, asyncHandler);
+    }
+
+    /**
+     * Builds the request for a channel that {@link #getOpenChannel} returned. If that fails, as it does for a
+     * {@code File} body that does not exist, a channel polled from the HTTP/1.1 pool is closed. It is out of the
+     * pool and nothing was written to it, so nothing else would close it, and as long as the server kept it open it
+     * would hold its connection permit: with {@code maxConnections} reached, every later request would fail.
+     * Offering it back instead would need the principal-scoped key it was polled with.
+     * <p>
+     * A channel the future keeps for this request is left to the caller, which aborts with it. An HTTP/2
+     * connection stays open: it was never taken out of the registry, and other requests may be using it.
+     */
+    private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(Request request, AsyncHandler<T> asyncHandler,
+                                                                        NettyResponseFuture<T> future, ProxyServer proxyServer,
+                                                                        boolean performConnectRequest, Channel channel) {
+        boolean polled = channel != null && !ChannelManager.isHttp2(channel)
+                && !(future != null && future.isReuseChannel() && channel == future.channel());
+        try {
+            return newNettyRequestAndResponseFuture(request, asyncHandler, future, proxyServer, performConnectRequest);
+        } catch (Throwable t) {
+            if (polled) {
+                // Now rather than once the close completes: the next request can come first, even from onThrowable.
+                Channels.releasePermit(channel);
+                channelManager.closeChannel(channel);
+            }
+            throw t;
+        }
     }
 
     private <T> NettyResponseFuture<T> newNettyRequestAndResponseFuture(final Request request, final AsyncHandler<T> asyncHandler, NettyResponseFuture<T> originalFuture,

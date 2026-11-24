@@ -15,6 +15,7 @@
  */
 package org.asynchttpclient.channel;
 
+import io.netty.channel.Channel;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
@@ -28,6 +29,8 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
+import java.io.File;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
@@ -51,6 +55,7 @@ import static org.asynchttpclient.test.EventCollectingHandler.HEADERS_WRITTEN_EV
 import static org.asynchttpclient.test.EventCollectingHandler.REQUEST_SEND_EVENT;
 import static org.asynchttpclient.test.EventCollectingHandler.STATUS_RECEIVED_EVENT;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -242,6 +247,55 @@ public class ConnectionPoolTest extends AbstractBasicTest {
             client.executeRequest(request).get();
             Thread.sleep(1000);
             client.executeRequest(request).get();
+        }
+    }
+
+    @Test
+    public void requestFailingToBuildGivesUpItsPooledConnection() throws Exception {
+        File missing = new File(createTempFile(1).getParentFile(), "missing-" + System.nanoTime());
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
+            assertEquals(200, client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
+
+            // The request takes the pooled connection before NettyFileBody refuses the missing file.
+            ExecutionException e = assertThrows(ExecutionException.class,
+                    () -> client.preparePost(getTargetUrl()).setBody(missing).execute().get(TIMEOUT, TimeUnit.SECONDS));
+            assertInstanceOf(IllegalArgumentException.class, e.getCause());
+
+            // Left open outside the pool, that connection would hold the only permit.
+            assertEquals(200, client.prepareGet(getTargetUrl()).execute().get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
+        }
+    }
+
+    @Test
+    public void requestFailingToBuildReturnsItsPermitBeforeTheCloseCompletes() throws Exception {
+        File missing = new File(createTempFile(1).getParentFile(), "missing-" + System.nanoTime());
+        try (AsyncHttpClient client = asyncHttpClient(config().setKeepAlive(true).setMaxConnections(1))) {
+            AtomicReference<Channel> connection = new AtomicReference<>();
+            assertEquals(200, client.prepareGet(getTargetUrl()).execute(new AsyncCompletionHandlerBase() {
+                @Override
+                public void onTcpConnectSuccess(InetSocketAddress remoteAddress, Channel channel) {
+                    connection.set(channel);
+                }
+            }).get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
+
+            // Hold the connection's event loop, so that its close cannot complete before the next request.
+            CountDownLatch held = new CountDownLatch(1);
+            connection.get().eventLoop().execute(() -> {
+                try {
+                    held.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            ListenableFuture<Response> next;
+            try {
+                assertThrows(ExecutionException.class,
+                        () -> client.preparePost(getTargetUrl()).setBody(missing).execute().get(TIMEOUT, TimeUnit.SECONDS));
+                next = client.prepareGet(getTargetUrl()).execute();
+            } finally {
+                held.countDown();
+            }
+            assertEquals(200, next.get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
         }
     }
 
