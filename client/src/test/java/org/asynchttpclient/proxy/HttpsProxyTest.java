@@ -38,10 +38,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -52,7 +54,10 @@ import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.LARGE_IMAGE_BYTES;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
+import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 /**
@@ -234,6 +239,26 @@ public class HttpsProxyTest extends AbstractBasicTest {
         }
     }
     
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("proxyTypeProvider")
+    public void requestFailingToBuildGivesUpItsPooledTunnel(String testName, ProxyType proxyType) throws Exception {
+        int proxyPort = proxyType == ProxyType.HTTPS ? httpsProxyPort : this.proxyPort;
+        File missing = new File(createTempFile(1).getParentFile(), "missing-" + System.nanoTime());
+
+        try (AsyncHttpClient client = asyncHttpClient(config().setUseInsecureTrustManager(true).setKeepAlive(true).setMaxConnections(1))) {
+            ProxyServer proxy = proxyServer("localhost", proxyPort).setProxyType(proxyType).build();
+            assertEquals(200, client.executeRequest(get(getTargetUrl2()).setProxyServer(proxy)).get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
+
+            // The request takes the pooled tunnel before NettyFileBody refuses the missing file.
+            ExecutionException e = assertThrows(ExecutionException.class, () -> client.executeRequest(
+                    post(getTargetUrl2()).setProxyServer(proxy).setBody(missing)).get(TIMEOUT, TimeUnit.SECONDS));
+            assertInstanceOf(IllegalArgumentException.class, e.getCause());
+
+            // Left open outside the pool, that tunnel would hold the only permit.
+            assertEquals(200, client.executeRequest(get(getTargetUrl2()).setProxyServer(proxy)).get(TIMEOUT, TimeUnit.SECONDS).getStatusCode());
+        }
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource("proxyTypeProvider")
     public void testFailedConnectWithProxy(String testName, ProxyType proxyType) throws Exception {

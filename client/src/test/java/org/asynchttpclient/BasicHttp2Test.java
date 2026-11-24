@@ -78,6 +78,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -123,6 +124,7 @@ import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.AsyncCompletionHandlerAdapter;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
+import static org.asynchttpclient.test.TestUtils.createTempFile;
 import static org.asynchttpclient.util.DateUtils.unpreciseMillisTime;
 import static org.asynchttpclient.util.ThrowableUtil.unknownStackTrace;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -2160,6 +2162,28 @@ public class BasicHttp2Test {
                 Response response = client.prepareGet(httpsUrl("/ok")).execute().get(30, SECONDS);
                 assertEquals(200, response.getStatusCode());
             }
+        }
+    }
+
+    /**
+     * A request that fails to build keeps an HTTP/2 connection open: unlike an HTTP/1.1 one, it never left the
+     * registry, and other requests may be using it.
+     */
+    @Test
+    public void http2ConnectionStaysOpenWhenARequestFailsToBuild() throws Exception {
+        File missing = new File(createTempFile(1).getParentFile(), "missing-" + System.nanoTime());
+        try (AsyncHttpClient client = http2ClientWithConfig(b -> b.setMaxConnections(1))) {
+            ConnectionRecorder first = new ConnectionRecorder();
+            assertEquals(200, client.prepareGet(httpsUrl("/ok")).execute(first).get(30, SECONDS).getStatusCode());
+
+            ExecutionException e = assertThrows(ExecutionException.class,
+                    () -> client.preparePost(httpsUrl("/ok")).setBody(missing).execute().get(30, SECONDS));
+            assertInstanceOf(IllegalArgumentException.class, e.getCause());
+
+            ConnectionRecorder next = new ConnectionRecorder();
+            assertEquals(200, client.prepareGet(httpsUrl("/ok")).execute(next).get(30, SECONDS).getStatusCode());
+            assertSame(first.connection(), next.connection(), "the next request should reuse the HTTP/2 connection");
+            assertTrue(first.connection().isActive(), "the HTTP/2 connection should still be open");
         }
     }
 
