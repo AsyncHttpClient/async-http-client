@@ -34,9 +34,13 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -46,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -331,6 +336,164 @@ public class MultipartBodyTest {
             } finally {
                 buffer.release();
             }
+        }
+    }
+
+    // A FilePart takes the file's length when the request is built, and the Content-Length announces it. The file
+    // can still change before or while it is sent. Both paths must send exactly that length, or fail.
+
+    private interface FileChange {
+        void apply(File file) throws IOException;
+    }
+
+    private static File filePartFile(int size) throws IOException {
+        File file = File.createTempFile("ahc-file-part-", ".bin");
+        file.deleteOnExit();
+        byte[] content = new byte[size];
+        for (int i = 0; i < size; i++) {
+            content[i] = (byte) ('a' + i % 26);
+        }
+        Files.write(file.toPath(), content);
+        return file;
+    }
+
+    private static MultipartBody filePartBody(File file) {
+        return MultipartUtils.newMultipartBody(Collections.singletonList(new FilePart("file", file)), pinnedBoundary());
+    }
+
+    private static void grow(File file) throws IOException {
+        Files.write(file.toPath(), new byte[3000], StandardOpenOption.APPEND);
+    }
+
+    private static FileChange truncateTo(long size) {
+        return file -> {
+            try (FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.WRITE)) {
+                channel.truncate(size);
+            }
+        };
+    }
+
+    /**
+     * Sends the body through a ByteBuf or, with zeroCopy, a channel that takes at most 64 bytes per call, and
+     * applies the change once at least changeAfter bytes went out. Fails instead of spinning.
+     */
+    private static byte[] send(MultipartBody body, File file, boolean zeroCopy, long changeAfter, FileChange change)
+            throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        boolean changed = false;
+        for (int calls = 0; ; calls++) {
+            assertTrue(calls < 10_000, "the body made no progress");
+            if (!changed && out.size() >= changeAfter) {
+                change.apply(file);
+                changed = true;
+            }
+            if (zeroCopy) {
+                BoundedChannel target = new BoundedChannel(64);
+                long transferred = body.transferTo(target);
+                out.write(target.toByteArray());
+                if (transferred == -1L) {
+                    return out.toByteArray();
+                }
+            } else {
+                ByteBuf buffer = Unpooled.buffer(64);
+                try {
+                    BodyState state = body.transferTo(buffer);
+                    buffer.readBytes(out, buffer.readableBytes());
+                    if (state == BodyState.STOP) {
+                        return out.toByteArray();
+                    }
+                } finally {
+                    buffer.release();
+                }
+            }
+        }
+    }
+
+    private static byte[] sendUnchanged(File file, boolean zeroCopy) throws IOException {
+        try (MultipartBody body = filePartBody(file)) {
+            byte[] sent = send(body, file, zeroCopy, Long.MAX_VALUE, f -> {
+            });
+            assertEquals(body.getContentLength(), sent.length);
+            return sent;
+        }
+    }
+
+    @Test
+    public void filePartSendsOnlyItsLengthWhenTheFileGrows() throws Exception {
+        for (boolean zeroCopy : new boolean[]{false, true}) {
+            // Before any of the file went out, and in the middle of it.
+            for (long changeAfter : new long[]{0, 400}) {
+                File file = filePartFile(1000);
+                byte[] expected = sendUnchanged(file, zeroCopy);
+                try (MultipartBody body = filePartBody(file)) {
+                    byte[] sent = send(body, file, zeroCopy, changeAfter, MultipartBodyTest::grow);
+                    assertArrayEquals(expected, sent, "zeroCopy=" + zeroCopy + ", changeAfter=" + changeAfter);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void filePartFailsWhenTheFileShrinks() throws Exception {
+        for (boolean zeroCopy : new boolean[]{false, true}) {
+            for (long changeAfter : new long[]{0, 400}) {
+                File file = filePartFile(1000);
+                try (MultipartBody body = filePartBody(file)) {
+                    IOException e = assertThrows(IOException.class,
+                            () -> send(body, file, zeroCopy, changeAfter, truncateTo(500)));
+                    assertEquals("Multipart file part 'file' ended after 500 of its 1000 bytes", e.getMessage(),
+                            "zeroCopy=" + zeroCopy + ", changeAfter=" + changeAfter);
+                }
+            }
+        }
+    }
+
+    // Shorter than what already went out: the next read finds the end at once.
+    @Test
+    public void filePartFailsWhenTheFileShrinksBelowWhatWasSent() throws Exception {
+        for (boolean zeroCopy : new boolean[]{false, true}) {
+            File file = filePartFile(1000);
+            try (MultipartBody body = filePartBody(file)) {
+                IOException e = assertThrows(IOException.class, () -> send(body, file, zeroCopy, 600, truncateTo(10)));
+                assertTrue(e.getMessage().startsWith("Multipart file part 'file' ended after "), e.getMessage());
+                assertTrue(e.getMessage().endsWith(" of its 1000 bytes"), e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    public void emptyFilePartSendsNothingWhenTheFileGrows() throws Exception {
+        for (boolean zeroCopy : new boolean[]{false, true}) {
+            File file = filePartFile(0);
+            byte[] expected = sendUnchanged(file, zeroCopy);
+            try (MultipartBody body = filePartBody(file)) {
+                assertArrayEquals(expected, send(body, file, zeroCopy, 0, MultipartBodyTest::grow),
+                        "zeroCopy=" + zeroCopy);
+            }
+        }
+    }
+
+    // A target that takes nothing makes transferTo return 0, as the end of the file does. The unchanged file must
+    // still be sent whole.
+    @Test
+    public void unchangedFilePartSurvivesATargetThatTakesNothing() throws Exception {
+        File file = filePartFile(1000);
+        byte[] expected = sendUnchanged(file, false);
+        try (MultipartBody body = filePartBody(file)) {
+            // The part's headers and the start of the file.
+            BoundedChannel target = new BoundedChannel(64);
+            for (int i = 0; i < 6; i++) {
+                body.transferTo(target);
+                target.refill();
+            }
+            int contentStart = new String(expected, UTF_8).indexOf("\r\n\r\n") + 4;
+            int sent = target.toByteArray().length;
+            assertTrue(sent > contentStart && sent < contentStart + 1000, "not inside the file: " + sent);
+            BoundedChannel refusing = new BoundedChannel(0);
+            for (int i = 0; i < 5; i++) {
+                assertEquals(0, body.transferTo(refusing));
+            }
+            assertArrayEquals(expected, drain(body, target, 10_000));
         }
     }
 }

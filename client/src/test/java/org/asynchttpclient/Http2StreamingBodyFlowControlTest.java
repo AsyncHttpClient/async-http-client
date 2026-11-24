@@ -31,11 +31,13 @@ import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContext;
@@ -44,9 +46,11 @@ import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.asynchttpclient.request.body.multipart.FilePart;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,12 +59,16 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.zip.CRC32;
@@ -69,6 +77,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -94,6 +103,7 @@ public class Http2StreamingBodyFlowControlTest {
     private ChannelGroup serverChildChannels;
     private SslContext serverSslCtx;
     private int serverPort;
+    private Http2FrameLogger serverFrameLogger;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -149,6 +159,9 @@ public class Http2StreamingBodyFlowControlTest {
         Http2FrameCodecBuilder codecBuilder = Http2FrameCodecBuilder.forServer();
         if (initialWindowSize > 0) {
             codecBuilder.initialSettings(new Http2Settings().initialWindowSize(initialWindowSize));
+        }
+        if (serverFrameLogger != null) {
+            codecBuilder.frameLogger(serverFrameLogger);
         }
         ServerBootstrap b = new ServerBootstrap()
                 .group(serverGroup)
@@ -507,5 +520,137 @@ public class Http2StreamingBodyFlowControlTest {
         assertTrue(bodySource.closed.await(10, SECONDS),
                 "Http2BodyWriter must close the body source when the stream is closed while the pump is parked "
                         + "on SUSPEND (otherwise the source / its file descriptor leaks)");
+    }
+
+    // =========================================================================
+    // A file that changes after the request took its length, which the content-length header announces: the
+    // body must keep that length, or the request must fail.
+    // =========================================================================
+    private interface FileChange {
+        void apply(File file) throws IOException;
+    }
+
+    private static final FileChange GROW =
+            f -> Files.write(f.toPath(), new byte[32 * 1024], StandardOpenOption.APPEND);
+
+    private static FileChange truncateTo(long size) {
+        return f -> {
+            try (FileChannel channel = FileChannel.open(f.toPath(), StandardOpenOption.WRITE)) {
+                channel.truncate(size);
+            }
+        };
+    }
+
+    // Changes the file once the request is built and before its body is written, and records the announced length.
+    private static AsyncCompletionHandlerBase changeOnSend(File file, FileChange change, AtomicLong declared) {
+        return new AsyncCompletionHandlerBase() {
+            @Override
+            public void onRequestSend(NettyRequest request) {
+                declared.set(Long.parseLong(request.getHttpRequest().headers().get("content-length")));
+                try {
+                    change.apply(file);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        };
+    }
+
+    private static File tempFile(byte[] content) throws IOException {
+        File tmp = File.createTempFile("ahc-h2-file-change", ".bin");
+        tmp.deleteOnExit();
+        Files.write(tmp.toPath(), content);
+        return tmp;
+    }
+
+    /**
+     * Counts the request streams the client ended with END_STREAM on a DATA frame, as frames arrive and before the
+     * server's own content-length check, which resets a stream that ends short of its content-length.
+     */
+    private static final class EndedRequestStreams extends Http2FrameLogger {
+        private final AtomicInteger count = new AtomicInteger();
+
+        EndedRequestStreams() {
+            super(LogLevel.DEBUG);
+        }
+
+        @Override
+        public void logData(Direction direction, ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding,
+                            boolean endStream) {
+            if (direction == Direction.INBOUND && endStream) {
+                count.incrementAndGet();
+            }
+            super.logData(direction, ctx, streamId, data, padding, endStream);
+        }
+    }
+
+    @Test
+    public void fileBodyThatGrowsSendsItsLengthOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(64 * 1024);
+        File tmp = tempFile(payload);
+        try (AsyncHttpClient client = http2Client()) {
+            Response response = client.preparePost(httpsUrl("/upload"))
+                    .setBody(tmp)
+                    .execute(changeOnSend(tmp, GROW, new AtomicLong()))
+                    .get(60, SECONDS);
+            assertEchoed(response, payload);
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
+    }
+
+    // The request fails, and the client does not end the stream as if the shorter body were complete. With the
+    // HTTP/2 body writer of this version, the failure is that of the closed stream, not the file's.
+    @Test
+    public void fileBodyThatShrinksFailsTheRequestOverHttp2() throws Exception {
+        EndedRequestStreams ended = new EndedRequestStreams();
+        serverFrameLogger = ended;
+        startServer(-1);
+        File tmp = tempFile(deterministicPayload(64 * 1024));
+        try (AsyncHttpClient client = http2Client()) {
+            assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
+                    .setBody(tmp)
+                    .execute(changeOnSend(tmp, truncateTo(1000), new AtomicLong()))
+                    .get(60, SECONDS));
+            assertEquals(0, ended.count.get(), "the client ended the stream as if the shorter body were complete");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
+    }
+
+    @Test
+    public void filePartThatGrowsSendsItsDeclaredLengthOverHttp2() throws Exception {
+        startServer(-1);
+        File tmp = tempFile(deterministicPayload(64 * 1024));
+        AtomicLong declared = new AtomicLong();
+        try (AsyncHttpClient client = http2Client()) {
+            Response response = client.preparePost(httpsUrl("/upload"))
+                    .addBodyPart(new FilePart("file", tmp))
+                    .execute(changeOnSend(tmp, GROW, declared))
+                    .get(60, SECONDS);
+            assertEquals(200, response.getStatusCode());
+            assertEquals(declared.get(), parseLongHeader(response, "x-received-length"),
+                    "the server must receive exactly the announced length");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
+    }
+
+    @Test
+    public void filePartThatShrinksFailsTheRequestOverHttp2() throws Exception {
+        EndedRequestStreams ended = new EndedRequestStreams();
+        serverFrameLogger = ended;
+        startServer(-1);
+        File tmp = tempFile(deterministicPayload(64 * 1024));
+        try (AsyncHttpClient client = http2Client()) {
+            assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
+                    .addBodyPart(new FilePart("file", tmp))
+                    .execute(changeOnSend(tmp, truncateTo(1000), new AtomicLong()))
+                    .get(60, SECONDS));
+            assertEquals(0, ended.count.get(), "the client ended the stream as if the shorter body were complete");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
     }
 }
