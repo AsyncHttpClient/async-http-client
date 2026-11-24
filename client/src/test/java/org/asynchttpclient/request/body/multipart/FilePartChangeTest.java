@@ -77,6 +77,8 @@ public class FilePartChangeTest {
                                 StandardOpenOption.APPEND), attempts))
                         .get(10, SECONDS);
                 assertEquals(200, response.getStatusCode());
+                // The change runs in onRequestSend, where an exception is only logged.
+                assertEquals(2L * FILE_SIZE, file.length(), "the file did not grow");
 
                 // The same connection: what was sent after the declared body would be read as this request's start.
                 assertEquals(200, client.prepareGet(url + "/next").execute().get(10, SECONDS).getStatusCode());
