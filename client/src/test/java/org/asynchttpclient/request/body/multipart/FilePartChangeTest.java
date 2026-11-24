@@ -23,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +40,7 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -62,6 +64,7 @@ public class FilePartChangeTest {
     public void filePartThatGrowsSendsItsDeclaredBodyOnly(boolean zeroCopy) throws Exception {
         File file = file();
         List<String> requestLines = new CopyOnWriteArrayList<>();
+        AtomicInteger attempts = new AtomicInteger();
         try (ServerSocket server = new ServerSocket(0)) {
             CompletableFuture<byte[]> body =
                     CompletableFuture.supplyAsync(() -> serveTwoRequests(server, requestLines));
@@ -71,7 +74,7 @@ public class FilePartChangeTest {
                         .setHeader("Content-Type", "multipart/form-data; boundary=" + BOUNDARY)
                         .addBodyPart(new FilePart("file", file))
                         .execute(changeOnSend(file, f -> Files.write(f.toPath(), new byte[FILE_SIZE],
-                                StandardOpenOption.APPEND)))
+                                StandardOpenOption.APPEND), attempts))
                         .get(10, SECONDS);
                 assertEquals(200, response.getStatusCode());
 
@@ -83,6 +86,7 @@ public class FilePartChangeTest {
             assertTrue(text.endsWith("\r\n--" + BOUNDARY + "--\r\n"),
                     "the declared body does not end the multipart body");
             assertEquals(List.of("POST /upload HTTP/1.1", "GET /next HTTP/1.1"), requestLines);
+            assertEquals(1, attempts.get());
         } finally {
             Files.deleteIfExists(file.toPath());
         }
@@ -93,6 +97,7 @@ public class FilePartChangeTest {
     public void filePartThatShrinksFailsTheRequest(boolean zeroCopy) throws Exception {
         File file = file();
         List<String> requestLines = new CopyOnWriteArrayList<>();
+        AtomicInteger attempts = new AtomicInteger();
         ServerSocket server = new ServerSocket(0);
         Thread acceptor = new Thread(() -> serveUntilClosed(server, requestLines));
         acceptor.start();
@@ -100,33 +105,67 @@ public class FilePartChangeTest {
             ExecutionException e = assertThrows(ExecutionException.class, () -> client
                     .preparePost("http://localhost:" + server.getLocalPort() + "/upload")
                     .addBodyPart(new FilePart("file", file))
-                    .execute(changeOnSend(file, f -> {
-                        try (FileChannel channel = FileChannel.open(f.toPath(), StandardOpenOption.WRITE)) {
-                            channel.truncate(5_000);
-                        }
-                    }))
+                    .execute(changeOnSend(file, truncateTo(5_000), attempts))
                     // Well before the request timeout: the failure must not wait for it.
                     .get(10, SECONDS));
             // Netty fails a write whose FileRegion throws with "Channel output shutdown", caused by that exception.
-            assertTrue(hasCause(e, "Multipart file part 'file' ended after 5000 of its " + FILE_SIZE + " bytes"),
+            assertTrue(hasEndOfFile(e, "Multipart file part 'file' ended after 5000 of its " + FILE_SIZE + " bytes"),
                     "unexpected failure: " + e.getCause());
+            assertEquals(1, attempts.get(), "sent again, with the shorter file and its new length");
         } finally {
             server.close();
             acceptor.join(10_000);
             Files.deleteIfExists(file.toPath());
         }
-        // Not sent again, with the shorter file and its new length. Whether the first attempt's head got out before
-        // the failure depends on the path.
+        // Whether the first attempt's head got out before the failure depends on the path.
         assertTrue(requestLines.size() <= 1, "sent again: " + requestLines);
     }
 
-    private static boolean hasCause(Throwable t, String message) {
+    // On a pooled connection, a write that fails with "Connection reset" in any of its causes' messages is taken for a
+    // connection that died, and retried. The part's name is in the error, but a file that ended early must still not
+    // be retried: the retry would take the shorter file's length and succeed.
+    @ParameterizedTest(name = "zeroCopy={0}")
+    @ValueSource(booleans = {true, false})
+    public void filePartThatShrinksOnAPooledConnectionIsNotRetried(boolean zeroCopy) throws Exception {
+        File file = file();
+        List<String> requestLines = new CopyOnWriteArrayList<>();
+        AtomicInteger attempts = new AtomicInteger();
+        ServerSocket server = new ServerSocket(0);
+        Thread acceptor = new Thread(() -> serveUntilClosed(server, requestLines));
+        acceptor.start();
+        try (AsyncHttpClient client = client(zeroCopy)) {
+            String url = "http://localhost:" + server.getLocalPort();
+            assertEquals(200, client.prepareGet(url + "/warm").execute().get(10, SECONDS).getStatusCode());
+
+            ExecutionException e = assertThrows(ExecutionException.class, () -> client.preparePost(url + "/upload")
+                    .addBodyPart(new FilePart("Connection reset", file))
+                    .execute(changeOnSend(file, truncateTo(5_000), attempts))
+                    .get(10, SECONDS));
+            assertTrue(hasEndOfFile(e, "Multipart file part 'Connection reset' ended after 5000 of its " + FILE_SIZE
+                    + " bytes"), "unexpected failure: " + e.getCause());
+            assertEquals(1, attempts.get(), "sent again, with the shorter file and its new length");
+        } finally {
+            server.close();
+            acceptor.join(10_000);
+            Files.deleteIfExists(file.toPath());
+        }
+    }
+
+    private static boolean hasEndOfFile(Throwable t, String message) {
         for (Throwable c = t; c != null; c = c.getCause()) {
-            if (c instanceof IOException && message.equals(c.getMessage())) {
+            if (c instanceof EOFException && message.equals(c.getMessage())) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static FileChange truncateTo(long size) {
+        return f -> {
+            try (FileChannel channel = FileChannel.open(f.toPath(), StandardOpenOption.WRITE)) {
+                channel.truncate(size);
+            }
+        };
     }
 
     private interface FileChange {
@@ -150,11 +189,15 @@ public class FilePartChangeTest {
                 .setRequestTimeout(Duration.ofSeconds(60)));
     }
 
-    // Changes the file once the request is built, so its length is taken, and before its body is written.
-    private static AsyncCompletionHandlerBase changeOnSend(File file, FileChange change) {
+    // Changes the file on the first attempt, once the request is built, so its length is taken, and before its body
+    // is written. Counts the attempts.
+    private static AsyncCompletionHandlerBase changeOnSend(File file, FileChange change, AtomicInteger attempts) {
         return new AsyncCompletionHandlerBase() {
             @Override
             public void onRequestSend(NettyRequest request) {
+                if (attempts.incrementAndGet() > 1) {
+                    return;
+                }
                 try {
                     change.apply(file);
                 } catch (IOException e) {

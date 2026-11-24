@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
+import java.io.EOFException;
 import java.nio.channels.ClosedChannelException;
 
 public abstract class WriteListener {
@@ -41,7 +42,8 @@ public abstract class WriteListener {
     }
 
     private void abortOnThrowable(Channel channel, Throwable cause) {
-        if (future.getChannelState() == ChannelState.POOLED && (cause instanceof IllegalStateException ||
+        if (future.getChannelState() == ChannelState.POOLED && !isEndOfBodySource(cause) &&
+                (cause instanceof IllegalStateException ||
                 cause instanceof ClosedChannelException ||
                 cause instanceof SSLException ||
                 StackTraceInspector.recoverOnReadOrWriteException(cause))) {
@@ -50,6 +52,20 @@ public abstract class WriteListener {
             future.abort(cause);
         }
         Channels.silentlyCloseChannel(channel);
+    }
+
+    /**
+     * A body whose source ends before its length, as a file that got shorter after the request took it, fails with an
+     * {@link EOFException}. That is not a pooled connection that died, whatever the message says, and a retry would
+     * send the source again under the length it has by then.
+     */
+    private static boolean isEndOfBodySource(Throwable cause) {
+        for (Throwable t = cause; t != null; t = t.getCause()) {
+            if (t instanceof EOFException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void operationComplete(Channel channel, Throwable cause) {

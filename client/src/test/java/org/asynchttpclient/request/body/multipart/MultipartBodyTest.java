@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -439,7 +440,7 @@ public class MultipartBodyTest {
             for (long changeAfter : new long[]{0, 400}) {
                 File file = filePartFile(1000);
                 try (MultipartBody body = filePartBody(file)) {
-                    IOException e = assertThrows(IOException.class,
+                    EOFException e = assertThrows(EOFException.class,
                             () -> send(body, file, zeroCopy, changeAfter, truncateTo(500)));
                     assertEquals("Multipart file part 'file' ended after 500 of its 1000 bytes", e.getMessage(),
                             "zeroCopy=" + zeroCopy + ", changeAfter=" + changeAfter);
@@ -454,7 +455,8 @@ public class MultipartBodyTest {
         for (boolean zeroCopy : new boolean[]{false, true}) {
             File file = filePartFile(1000);
             try (MultipartBody body = filePartBody(file)) {
-                IOException e = assertThrows(IOException.class, () -> send(body, file, zeroCopy, 600, truncateTo(10)));
+                EOFException e = assertThrows(EOFException.class,
+                        () -> send(body, file, zeroCopy, 600, truncateTo(10)));
                 assertTrue(e.getMessage().startsWith("Multipart file part 'file' ended after "), e.getMessage());
                 assertTrue(e.getMessage().endsWith(" of its 1000 bytes"), e.getMessage());
             }

@@ -541,11 +541,16 @@ public class Http2StreamingBodyFlowControlTest {
         };
     }
 
-    // Changes the file once the request is built and before its body is written, and records the announced length.
-    private static AsyncCompletionHandlerBase changeOnSend(File file, FileChange change, AtomicLong declared) {
+    // Changes the file on the first attempt, once the request is built and before its body is written, records the
+    // announced length and counts the attempts.
+    private static AsyncCompletionHandlerBase changeOnSend(File file, FileChange change, AtomicLong declared,
+                                                           AtomicInteger attempts) {
         return new AsyncCompletionHandlerBase() {
             @Override
             public void onRequestSend(NettyRequest request) {
+                if (attempts.incrementAndGet() > 1) {
+                    return;
+                }
                 declared.set(Long.parseLong(request.getHttpRequest().headers().get("content-length")));
                 try {
                     change.apply(file);
@@ -587,14 +592,16 @@ public class Http2StreamingBodyFlowControlTest {
     @Test
     public void fileBodyThatGrowsSendsItsLengthOverHttp2() throws Exception {
         startServer(-1);
+        AtomicInteger attempts = new AtomicInteger();
         byte[] payload = deterministicPayload(64 * 1024);
         File tmp = tempFile(payload);
         try (AsyncHttpClient client = http2Client()) {
             Response response = client.preparePost(httpsUrl("/upload"))
                     .setBody(tmp)
-                    .execute(changeOnSend(tmp, GROW, new AtomicLong()))
+                    .execute(changeOnSend(tmp, GROW, new AtomicLong(), attempts))
                     .get(60, SECONDS);
             assertEchoed(response, payload);
+            assertEquals(1, attempts.get(), "sent again");
         } finally {
             Files.deleteIfExists(tmp.toPath());
         }
@@ -607,13 +614,15 @@ public class Http2StreamingBodyFlowControlTest {
         EndedRequestStreams ended = new EndedRequestStreams();
         serverFrameLogger = ended;
         startServer(-1);
+        AtomicInteger attempts = new AtomicInteger();
         File tmp = tempFile(deterministicPayload(64 * 1024));
         try (AsyncHttpClient client = http2Client()) {
             assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
                     .setBody(tmp)
-                    .execute(changeOnSend(tmp, truncateTo(1000), new AtomicLong()))
+                    .execute(changeOnSend(tmp, truncateTo(1000), new AtomicLong(), attempts))
                     .get(60, SECONDS));
             assertEquals(0, ended.count.get(), "the client ended the stream as if the shorter body were complete");
+            assertEquals(1, attempts.get(), "sent again");
         } finally {
             Files.deleteIfExists(tmp.toPath());
         }
@@ -622,16 +631,18 @@ public class Http2StreamingBodyFlowControlTest {
     @Test
     public void filePartThatGrowsSendsItsDeclaredLengthOverHttp2() throws Exception {
         startServer(-1);
+        AtomicInteger attempts = new AtomicInteger();
         File tmp = tempFile(deterministicPayload(64 * 1024));
         AtomicLong declared = new AtomicLong();
         try (AsyncHttpClient client = http2Client()) {
             Response response = client.preparePost(httpsUrl("/upload"))
                     .addBodyPart(new FilePart("file", tmp))
-                    .execute(changeOnSend(tmp, GROW, declared))
+                    .execute(changeOnSend(tmp, GROW, declared, attempts))
                     .get(60, SECONDS);
             assertEquals(200, response.getStatusCode());
             assertEquals(declared.get(), parseLongHeader(response, "x-received-length"),
                     "the server must receive exactly the announced length");
+            assertEquals(1, attempts.get(), "sent again");
         } finally {
             Files.deleteIfExists(tmp.toPath());
         }
@@ -642,13 +653,15 @@ public class Http2StreamingBodyFlowControlTest {
         EndedRequestStreams ended = new EndedRequestStreams();
         serverFrameLogger = ended;
         startServer(-1);
+        AtomicInteger attempts = new AtomicInteger();
         File tmp = tempFile(deterministicPayload(64 * 1024));
         try (AsyncHttpClient client = http2Client()) {
             assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
                     .addBodyPart(new FilePart("file", tmp))
-                    .execute(changeOnSend(tmp, truncateTo(1000), new AtomicLong()))
+                    .execute(changeOnSend(tmp, truncateTo(1000), new AtomicLong(), attempts))
                     .get(60, SECONDS));
             assertEquals(0, ended.count.get(), "the client ended the stream as if the shorter body were complete");
+            assertEquals(1, attempts.get(), "sent again");
         } finally {
             Files.deleteIfExists(tmp.toPath());
         }

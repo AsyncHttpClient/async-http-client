@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import org.asynchttpclient.netty.request.body.BodyChunkedInput;
 import org.asynchttpclient.request.body.multipart.FilePart;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -102,8 +103,10 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
         return transferred;
     }
 
-    private IOException endedEarly() {
-        return new IOException("Multipart file part '" + part.getName() + "' ended after " + position + " of its "
+    // An EOFException, which WriteListener never takes for a pooled connection that died: a retry would send the
+    // shorter file under the length it has now.
+    private EOFException endedEarly() {
+        return new EOFException("Multipart file part '" + part.getName() + "' ended after " + position + " of its "
                 + length + " bytes");
     }
 
