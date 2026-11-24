@@ -46,11 +46,14 @@ import io.netty.pkitesting.CertificateBuilder;
 import io.netty.pkitesting.X509Bundle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.asynchttpclient.filter.FilterContext;
+import org.asynchttpclient.filter.IOExceptionFilter;
 import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
 import org.asynchttpclient.request.body.multipart.FilePart;
+import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,6 +71,7 @@ import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -77,6 +81,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -402,6 +408,116 @@ public class Http2StreamingBodyFlowControlTest {
                     .get(30, SECONDS);
             assertEchoed(response, payload);
         }
+    }
+
+    // =========================================================================
+    // NettyInputStreamBody: a stream with more bytes than its declared length, or no end after it.
+    // =========================================================================
+    @Test
+    public void inputStreamBodyLongerThanItsDeclaredLengthSendsOnlyThatLengthOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+
+        try (AsyncHttpClient client = http2Client()) {
+            // The pattern does not depend on the size, so the payload is a prefix of the stream.
+            InputStream is = new ByteArrayInputStream(deterministicPayload(SMALL_SIZE + 3));
+            Response response = client.preparePost(httpsUrl("/small"))
+                    .setBody(new InputStreamBodyGenerator(is, payload.length))
+                    .execute()
+                    .get(30, SECONDS);
+            assertEchoed(response, payload);
+            assertEquals(3, is.available(), "the body read past its declared length");
+        }
+    }
+
+    @Test
+    public void inputStreamBodyIsNotReadPastItsDeclaredLengthOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        AtomicBoolean readPastDeclaredLength = new AtomicBoolean();
+
+        try (AsyncHttpClient client = http2Client()) {
+            // A socket-backed stream has nothing more to give, so a read for its end would block until it ends.
+            InputStream is = new ByteArrayInputStream(payload) {
+                @Override
+                public synchronized int read(byte[] b, int off, int len) {
+                    if (available() == 0) {
+                        readPastDeclaredLength.set(true);
+                    }
+                    return super.read(b, off, len);
+                }
+            };
+            Response response = client.preparePost(httpsUrl("/small"))
+                    .setBody(new InputStreamBodyGenerator(is, payload.length))
+                    .execute()
+                    .get(30, SECONDS);
+            assertEchoed(response, payload);
+            assertFalse(readPastDeclaredLength.get(), "the body read past its declared length");
+        }
+    }
+
+    @Test
+    public void inputStreamBodyShorterThanItsDeclaredLengthFailsWithItsErrorOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        AtomicInteger retries = new AtomicInteger();
+
+        try (AsyncHttpClient client = replayingHttp2Client()) {
+            // Supports mark/reset, so a replay could send it again, and fail again.
+            InputStream is = new ByteArrayInputStream(payload, 0, 2);
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/small"))
+                    .setBody(new InputStreamBodyGenerator(is, payload.length))
+                    .execute(retryCounting(retries))
+                    .get(30, SECONDS));
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals("InputStream body ended after 2 of its 5 declared bytes", cause.getMessage());
+            assertEquals(0, retries.get(), "a request whose body failed was replayed");
+        }
+    }
+
+    @Test
+    public void streamPartShorterThanItsDeclaredLengthFailsWithItsErrorOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(SMALL_SIZE);
+        AtomicInteger retries = new AtomicInteger();
+
+        try (AsyncHttpClient client = replayingHttp2Client()) {
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/small"))
+                    .addBodyPart(new InputStreamPart("file", new ByteArrayInputStream(payload, 0, 2), "file.bin", payload.length))
+                    .execute(retryCounting(retries))
+                    .get(30, SECONDS));
+            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            assertEquals("Multipart InputStream body part 'file' ended after 2 of its 5 declared bytes", cause.getMessage());
+            assertEquals(0, retries.get(), "a request whose body failed was replayed");
+        }
+    }
+
+    // Replays a request after any IOException, up to the retry limit.
+    private AsyncHttpClient replayingHttp2Client() {
+        IOExceptionFilter replay = new IOExceptionFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                return new FilterContext.FilterContextBuilder<>(ctx.getAsyncHandler(), ctx.getRequest())
+                        .replayRequest(true)
+                        .build();
+            }
+        };
+        return asyncHttpClient(config()
+                .setUseInsecureTrustManager(true)
+                .setHttp2Enabled(true)
+                .setMaxConnectionsPerHost(1)
+                .setMaxRequestRetry(3)
+                .addIOExceptionFilter(replay)
+                .setRequestTimeout(Duration.ofSeconds(30)));
+    }
+
+    private static AsyncCompletionHandlerBase retryCounting(AtomicInteger retries) {
+        return new AsyncCompletionHandlerBase() {
+            @Override
+            public void onRetry() {
+                retries.incrementAndGet();
+            }
+        };
     }
 
     // =========================================================================

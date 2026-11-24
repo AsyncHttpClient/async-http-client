@@ -23,6 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +62,8 @@ import java.io.IOException;
  * error closes the stream channel. Closing the stream channel fires {@code channelInactive}, which
  * AsyncHttpClient's {@code Http2Handler.handleChannelInactive} turns into a stream-scoped failure of the
  * request future — matching how the rest of the HTTP/2 path signals stream errors without touching sibling
- * multiplexed streams.
+ * multiplexed streams. When the source itself fails, the request future fails with that error first, as over
+ * HTTP/1.1, so that it is neither replaced by the closed stream nor replayed by an {@code IOExceptionFilter}.
  * <p>
  * <strong>Reference counting.</strong> Each chunk {@link ByteBuf} is owned by this writer from allocation
  * until it is wrapped in a {@link DefaultHttp2DataFrame} and handed to {@link Http2StreamChannel#write},
@@ -118,6 +120,7 @@ final class Http2BodyWriter {
 
     private final Http2StreamChannel channel;
     private final ChunkSource source;
+    private final NettyResponseFuture<?> future;
 
     // Single buffered chunk read ahead so the final DATA frame can carry endStream=true. Owned by this
     // writer until written; released by finish() if still set when the pump ends.
@@ -137,9 +140,10 @@ final class Http2BodyWriter {
     // Set while the pump is parked on a ChunkSource.SUSPEND, to ignore spurious/duplicate feed resumes.
     private boolean suspended;
 
-    private Http2BodyWriter(Http2StreamChannel channel, ChunkSource source) {
+    private Http2BodyWriter(Http2StreamChannel channel, ChunkSource source, NettyResponseFuture<?> future) {
         this.channel = channel;
         this.source = source;
+        this.future = future;
         source.onResume(this::resumeFromSuspend);
         // Guarantee cleanup if the stream is closed out from under a PARKED pump — i.e. one waiting on
         // channelWritabilityChanged (flow-control window exhausted) or on a feed (ChunkSource.SUSPEND).
@@ -172,8 +176,8 @@ final class Http2BodyWriter {
      * asynchronously on the channel's event loop. The caller (which has already written the HEADERS frame
      * with {@code endStream=false}) must not write further frames on this stream.
      */
-    static void start(Http2StreamChannel channel, ChunkSource source) {
-        Http2BodyWriter writer = new Http2BodyWriter(channel, source);
+    static void start(Http2StreamChannel channel, ChunkSource source, NettyResponseFuture<?> future) {
+        Http2BodyWriter writer = new Http2BodyWriter(channel, source, future);
         if (channel.eventLoop().inEventLoop()) {
             writer.pump();
         } else {
@@ -250,6 +254,7 @@ final class Http2BodyWriter {
                 // First iteration (toWrite == null): nothing written yet, loop to read the second chunk.
             }
         } catch (Throwable t) {
+            future.abort(t);
             finish(t);
         } finally {
             pumping = false;
