@@ -34,6 +34,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -226,6 +228,62 @@ public class InputStreamBodyGeneratorTest {
         }
     }
 
+    /**
+     * A caller's Content-Length header goes on the wire as it is, so a body that a wrapping generator hands out must
+     * end there: the bytes past it would reach the server as the start of the next request.
+     */
+    @Test
+    public void wrappedBodyStopsAtTheContentLengthHeader() throws Exception {
+        InputStream stream = new ByteArrayInputStream(
+                "declared contentGET /smuggled HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(US_ASCII));
+        BodyGenerator wrapper = new InputStreamBodyGenerator(stream)::createBody;
+
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<List<String>> received = CompletableFuture.supplyAsync(() -> answerRequests(server, 2));
+            try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)))) {
+                String url = "http://localhost:" + server.getLocalPort();
+                assertEquals(200, client.preparePost(url + "/upload")
+                        .setHeader("Content-Length", "16")
+                        .setBody(wrapper)
+                        .execute()
+                        .get(10, SECONDS)
+                        .getStatusCode());
+                assertEquals(200, client.prepareGet(url + "/next").execute().get(10, SECONDS).getStatusCode());
+            }
+            assertEquals(List.of("POST /upload HTTP/1.1 declared content", "GET /next HTTP/1.1 "), received.get(10, SECONDS));
+        }
+    }
+
+    /**
+     * A body that ends before the Content-Length that went on the wire fails the request, instead of leaving the
+     * server waiting for the rest until a timeout gives up.
+     */
+    @Test
+    public void wrappedBodyFailsWhenItEndsBeforeTheContentLengthHeader() throws Exception {
+        BodyGenerator wrapper = new InputStreamBodyGenerator(
+                new ByteArrayInputStream("declared content".getBytes(US_ASCII)))::createBody;
+
+        AtomicBoolean clientDone = new AtomicBoolean();
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> receiveRequest(server, clientDone));
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setMaxRequestRetry(0)
+                    .setRequestTimeout(Duration.ofSeconds(10)))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
+                        .preparePost("http://localhost:" + server.getLocalPort() + "/upload")
+                        .setHeader("Content-Length", "20")
+                        .setBody(wrapper)
+                        .execute()
+                        .get(10, SECONDS));
+                assertEquals("Request body ended after 16 of the 20 bytes of its Content-Length",
+                        thrown.getCause().getMessage());
+            } finally {
+                clientDone.set(true);
+            }
+            received.get(10, SECONDS);
+        }
+    }
+
     @Test
     public void laterBodyReadsTheStreamFromItsMark() throws IOException {
         InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
@@ -362,6 +420,38 @@ public class InputStreamBodyGeneratorTest {
                 return false;
             }
         };
+    }
+
+    // Answers requests on one connection, each one framed by its Content-Length, and returns each request line with
+    // the body that came with it.
+    private static List<String> answerRequests(ServerSocket server, int count) {
+        List<String> requests = new ArrayList<>();
+        try (Socket socket = server.accept()) {
+            socket.setSoTimeout(10_000);
+            InputStream in = socket.getInputStream();
+            while (requests.size() < count) {
+                String requestLine = readLine(in);
+                if (requestLine == null) {
+                    break;
+                }
+                int contentLength = 0;
+                String line;
+                while ((line = readLine(in)) != null && !line.isEmpty()) {
+                    if (line.regionMatches(true, 0, "content-length:", 0, 15)) {
+                        contentLength = Integer.parseInt(line.substring(15).trim());
+                    }
+                }
+                byte[] body = in.readNBytes(contentLength);
+                if (body.length < contentLength) {
+                    break;
+                }
+                requests.add(requestLine + ' ' + new String(body, US_ASCII));
+                socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return requests;
     }
 
     // Answers a GET, then receives the next request on the same connection.
