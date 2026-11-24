@@ -61,11 +61,19 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
     @Override
     protected long transferContentTo(ByteBuf target) throws IOException {
         InputStream inputStream = part.getInputStream();
-        int transferred = target.writeBytes(inputStream, target.writableBytes());
+        long contentLength = getContentLength();
+        int length = target.writableBytes();
+        if (contentLength >= 0) {
+            // Bytes past the declared length would go out after the end of the part.
+            length = (int) Math.min(length, contentLength - position);
+        }
+        int transferred = length > 0 ? target.writeBytes(inputStream, length) : 0;
         if (transferred > 0) {
             position += transferred;
+        } else if (transferred < 0 && contentLength >= 0) {
+            throw endedEarly(position, contentLength);
         }
-        if (position == getContentLength() || transferred < 0) {
+        if (position == contentLength || transferred < 0) {
             state = MultipartState.POST_CONTENT;
             inputStream.close();
         }
@@ -99,7 +107,12 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
         boolean allBytesInHand = contentLength >= 0 && position + buffer.position() >= contentLength;
 
         if (!sourceExhausted && !allBytesInHand) {
+            if (contentLength >= 0) {
+                // Nor read past it: those bytes would go out after the end of the part.
+                buffer.limit((int) Math.min(buffer.capacity(), contentLength - position));
+            }
             int read = channel.read(buffer);
+            buffer.limit(buffer.capacity());
             if (read > 0) {
                 buffer.flip();
                 int written = target.write(buffer);
@@ -112,6 +125,9 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
                     slowTarget = true;
                 }
             } else if (read < 0) {
+                if (contentLength >= 0) {
+                    throw endedEarly(position + buffer.position(), contentLength);
+                }
                 sourceExhausted = true;
             }
         }
@@ -125,6 +141,11 @@ public class InputStreamMultipartPart extends FileLikeMultipartPart<InputStreamP
         }
 
         return transferred;
+    }
+
+    private IOException endedEarly(long read, long contentLength) {
+        return new IOException("Multipart InputStream body part '" + part.getName() + "' ended after " + read + " of its "
+                + contentLength + " declared bytes");
     }
 
     @Override

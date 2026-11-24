@@ -103,7 +103,7 @@ public class NettyBodyBody implements NettyBody {
         // (closeSilently(body)) happens when the async pump completes — see BodyChunkSource.close.
         BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
         FeedableBodyGenerator feedable = bg instanceof FeedableBodyGenerator ? (FeedableBodyGenerator) bg : null;
-        Http2BodyWriter.start(channel, new BodyChunkSource(contentLengthBody(future), feedable));
+        Http2BodyWriter.start(channel, new BodyChunkSource(contentLengthBody(future), feedable), future);
     }
 
     // A caller's Content-Length header goes on the wire as it is, whatever the body's own length. Bytes past it would

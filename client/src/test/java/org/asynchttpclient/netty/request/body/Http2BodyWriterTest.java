@@ -39,7 +39,12 @@ import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.ImmediateEventExecutor;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+
+import java.io.IOException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -78,7 +84,7 @@ public class Http2BodyWriterTest {
 
         FixedChunkSource source = new FixedChunkSource(4);
 
-        Http2BodyWriter.start(channel, source);
+        Http2BodyWriter.start(channel, source, newFuture());
 
         assertEquals(1, source.closed);
         assertEquals(1, terminalFrames.get());
@@ -106,7 +112,7 @@ public class Http2BodyWriterTest {
         });
 
         SuspendingChunkSource source = new SuspendingChunkSource(flushes);
-        Http2BodyWriter.start(channel, source);
+        Http2BodyWriter.start(channel, source, newFuture());
 
         assertEquals(0, source.closed);
         assertEquals(0, source.flushesBeforeSuspend);
@@ -142,7 +148,7 @@ public class Http2BodyWriterTest {
             return channel;
         });
 
-        Http2BodyWriter.start(channel, source);
+        Http2BodyWriter.start(channel, source, newFuture());
 
         assertEquals(1, source.closed);
         assertEquals(2, flushes.get());
@@ -172,7 +178,7 @@ public class Http2BodyWriterTest {
                     .authority("localhost")
                     .path("/"))).syncUninterruptibly();
 
-            Http2BodyWriter.start(stream, source);
+            Http2BodyWriter.start(stream, source, newFuture());
             parent.runPendingTasks();
 
             assertEquals(1, source.closed);
@@ -232,7 +238,7 @@ public class Http2BodyWriterTest {
         });
 
         FixedChunkSource source = new FixedChunkSource(3);
-        Http2BodyWriter.start(channel, source);
+        Http2BodyWriter.start(channel, source, newFuture());
 
         assertEquals(0, source.closed);
         assertNotNull(resumeHandler.get());
@@ -250,6 +256,53 @@ public class Http2BodyWriterTest {
         verify(channel, times(3)).write(any(DefaultHttp2DataFrame.class));
         verify(channel, times(2)).flush();
         verify(pipeline).remove(resumeHandler.get());
+    }
+
+    @Test
+    public void failingSourceFailsTheRequestWithItsErrorBeforeClosingTheStream() {
+        Http2StreamChannel channel = mock(Http2StreamChannel.class);
+        EventLoop eventLoop = mock(EventLoop.class);
+        when(eventLoop.inEventLoop()).thenReturn(true);
+        when(channel.eventLoop()).thenReturn(eventLoop);
+        when(channel.alloc()).thenReturn(UnpooledByteBufAllocator.DEFAULT);
+        when(channel.isWritable()).thenReturn(true);
+        when(channel.closeFuture()).thenReturn(new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE));
+        when(channel.write(any())).thenAnswer(invocation -> {
+            ReferenceCountUtil.release(invocation.getArgument(0));
+            return succeededFuture(channel);
+        });
+        AsyncHandler<?> handler = mock(AsyncHandler.class);
+        NettyResponseFuture<?> future = new NettyResponseFuture<>(null, handler, null, 0, null, null, null);
+        IOException failure = new IOException("read failed");
+        AtomicInteger closed = new AtomicInteger();
+
+        Http2BodyWriter.start(channel, new Http2BodyWriter.ChunkSource() {
+            private boolean first = true;
+
+            @Override
+            public ByteBuf nextChunk(ByteBufAllocator alloc) throws IOException {
+                if (first) {
+                    first = false;
+                    return alloc.buffer(1).writeZero(1);
+                }
+                throw failure;
+            }
+
+            @Override
+            public void close() {
+                closed.incrementAndGet();
+            }
+        }, future);
+
+        assertTrue(future.isDone());
+        assertEquals(1, closed.get());
+        InOrder order = inOrder(handler, channel);
+        order.verify(handler).onThrowable(failure);
+        order.verify(channel).close();
+    }
+
+    private static NettyResponseFuture<?> newFuture() {
+        return new NettyResponseFuture<>(null, mock(AsyncHandler.class), null, 0, null, null, null);
     }
 
     private static ChannelFuture succeededFuture(Http2StreamChannel channel) {

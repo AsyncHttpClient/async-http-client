@@ -102,6 +102,10 @@ public final class NettyRequestFactory {
      */
     private static final Map<String, AsciiString> KNOWN_HEADER_NAMES = buildKnownHeaderNames();
 
+    // What parseContentLength returns for a Content-Length header that is not a length, or one past Long.MAX_VALUE.
+    private static final long NOT_A_LENGTH = -1;
+    private static final long TOO_LONG = -2;
+
     private static Map<String, AsciiString> buildKnownHeaderNames() {
         AsciiString[] names = {
                 ACCEPT,
@@ -268,7 +272,7 @@ public final class NettyRequestFactory {
         } else if (request.getByteBufData() != null) {
             nettyBody = new NettyByteBufBody(request.getByteBufData());
         } else if (request.getStreamData() != null) {
-            nettyBody = new NettyInputStreamBody(request.getStreamData());
+            nettyBody = new NettyInputStreamBody(request.getStreamData(), streamContentLength(request, -1));
         } else if (isNonEmpty(request.getFormParams())) {
             CharSequence contentTypeOverride = request.getHeaders().contains(CONTENT_TYPE) ? null : HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
             nettyBody = new NettyByteBufferBody(urlEncodeFormParams(request.getFormParams(), bodyCharset), contentTypeOverride);
@@ -281,12 +285,81 @@ public final class NettyRequestFactory {
             nettyBody = new NettyFileBody(fileBodyGenerator.getFile(), fileBodyGenerator.getRegionSeek(), fileBodyGenerator.getRegionLength(), config);
         } else if (request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
             InputStreamBodyGenerator inStreamGenerator = (InputStreamBodyGenerator) request.getBodyGenerator();
-            nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(), inStreamGenerator.getContentLength());
+            nettyBody = new NettyInputStreamBody(inStreamGenerator.getInputStream(),
+                    streamContentLength(request, inStreamGenerator.getContentLength()));
         } else if (request.getBodyGenerator() != null) {
             nettyBody = new NettyBodyBody(request.getBodyGenerator().createBody(), config);
         }
 
         return nettyBody;
+    }
+
+    // Fails as newNettyRequest would for the length of a stream body it sends. NettyRequestSender calls this before it
+    // takes a pooled connection: a request that fails to build after that would leave the connection out of the pool.
+    // The order is body()'s.
+    static void checkStreamBodyLength(Request request) {
+        if (HttpMethod.CONNECT.name().equals(request.getMethod())
+                || request.getByteData() != null
+                || request.getCompositeByteData() != null
+                || request.getStringData() != null
+                || request.getByteBufferData() != null
+                || request.getByteBufData() != null) {
+            return;
+        }
+        if (request.getStreamData() != null) {
+            streamContentLength(request, -1);
+        } else if (!isNonEmpty(request.getFormParams()) && !isNonEmpty(request.getBodyParts()) && request.getFile() == null
+                && request.getBodyGenerator() instanceof InputStreamBodyGenerator) {
+            streamContentLength(request, ((InputStreamBodyGenerator) request.getBodyGenerator()).getContentLength());
+        }
+    }
+
+    // A stream body ends at the Content-Length that goes on the wire. newNettyRequest sends a caller's header as it is,
+    // so with one set, that is its length, and it must agree with the length the body was given.
+    private static long streamContentLength(Request request, long declared) {
+        List<String> values = request.getHeaders().getAll(CONTENT_LENGTH);
+        if (values.isEmpty()) {
+            return declared;
+        }
+        long header = values.size() == 1 ? parseContentLength(values.get(0)) : NOT_A_LENGTH;
+        if (header == NOT_A_LENGTH) {
+            throw new IllegalArgumentException("Content-Length header " + values + " is not a length for an InputStream body");
+        }
+        if (header == TOO_LONG) {
+            throw new IllegalArgumentException("Content-Length header " + values + " is longer than AHC supports");
+        }
+        if (declared >= 0 && declared != header) {
+            throw new IllegalArgumentException("Content-Length header " + header
+                    + " does not match the InputStreamBodyGenerator's length " + declared);
+        }
+        return header;
+    }
+
+    // RFC 9110 section 8.6: ASCII digits, without a sign. Whitespace after them is not part of the field value (RFC 9112
+    // section 5.1); whitespace in front fails Netty's validation of the request's headers, so it is rejected here, where
+    // no connection is taken yet. A length past Long.MAX_VALUE is AHC's own limit, not the RFC's.
+    private static long parseContentLength(String value) {
+        int end = value.length();
+        while (end > 0 && (value.charAt(end - 1) == ' ' || value.charAt(end - 1) == '\t')) {
+            end--;
+        }
+        if (end == 0) {
+            return NOT_A_LENGTH;
+        }
+        long length = 0;
+        boolean tooLong = false;
+        for (int i = 0; i < end; i++) {
+            int digit = value.charAt(i) - '0';
+            if (digit < 0 || digit > 9) {
+                return NOT_A_LENGTH;
+            }
+            if (tooLong || length > (Long.MAX_VALUE - digit) / 10) {
+                tooLong = true;
+            } else {
+                length = length * 10 + digit;
+            }
+        }
+        return tooLong ? TOO_LONG : length;
     }
 
     // Whether newNettyRequest sends the request's parts: a CONNECT has no body, and setters of a body with higher
