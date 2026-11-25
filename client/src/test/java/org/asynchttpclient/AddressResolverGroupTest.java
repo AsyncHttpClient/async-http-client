@@ -27,6 +27,7 @@ import io.netty.channel.uring.IoUringIoHandler;
 import io.netty.handler.codec.dns.DnsResponseCode;
 import io.netty.resolver.dns.DnsAddressResolverGroup;
 import io.netty.resolver.dns.DnsErrorCauseException;
+import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.resolver.dns.SingletonDnsServerAddressStreamProvider;
 import org.asynchttpclient.test.EventCollectingHandler;
 import org.asynchttpclient.testserver.HttpServer;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -97,8 +99,15 @@ public class AddressResolverGroupTest extends HttpTest {
         return "http://" + host + ":" + server.getHttpPort() + "/foo/bar";
     }
 
+    // Without search domains of its own, the resolver takes the machine's from /etc/resolv.conf. Once the stub server
+    // answers NXDOMAIN for a name, it tries the name with each of them. With "search .", as systemd-resolved writes it,
+    // the name it builds has an empty label, and the lookup fails with an IllegalArgumentException instead of the
+    // NXDOMAIN.
     private DnsAddressResolverGroup newDnsResolverGroup() {
-        return new DnsAddressResolverGroup(datagramChannelClass, new SingletonDnsServerAddressStreamProvider(dns.getAddress()));
+        return new DnsAddressResolverGroup(new DnsNameResolverBuilder()
+                .datagramChannelType(datagramChannelClass)
+                .nameServerProvider(new SingletonDnsServerAddressStreamProvider(dns.getAddress()))
+                .searchDomains(Collections.emptyList()));
     }
 
     @Test
