@@ -58,7 +58,10 @@ public class FilterContext<T> {
     /**
      * The request carries the cookies the client took from its cookie store for its URI, and a request built from it
      * carries them as the store's: wherever that request is sent or replayed, they are taken from the store again.
-     * Cookies copied from it by name and value are the caller's own and are sent as they are.
+     * A request sent in place of this one to the same origin gets none of the store's cookies under the names of
+     * those it no longer carries, as a filter removed them: one built from scratch gets only the store's cookies of
+     * other names. Any other cookie a caller or a filter adds is theirs and is not taken from the store again, even
+     * a copy of a store cookie or the store's own instance.
      *
      * @return the original or decorated {@link Request}
      */

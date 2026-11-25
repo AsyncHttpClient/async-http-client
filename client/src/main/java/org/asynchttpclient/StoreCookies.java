@@ -16,6 +16,8 @@
 package org.asynchttpclient;
 
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.asynchttpclient.cookie.CookieStore;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,8 +33,9 @@ import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
 /**
  * Tells the cookies the client added to a request from its {@link CookieStore} from those the application or a
  * filter set. The store selected them for the URI the request had then, so a request sent to another URI must not
- * carry them. They are marked rather than recognised by value: the response that leads to another request may have
- * rotated the value in the store already. A marked cookie delegates to the store's instance.
+ * carry them. They are marked rather than recognised by value or by instance: the response that leads to another
+ * request may have rotated the value in the store already, and a cookie the application adds is its own, even the
+ * store's instance. A marked cookie is a {@link DefaultCookie} that delegates to the store's instance.
  * <p>
  * Internal to the client; applications have no use for it.
  */
@@ -154,11 +157,12 @@ public final class StoreCookies {
         return false;
     }
 
-    private static final class Marked implements Cookie {
+    private static final class Marked extends DefaultCookie {
 
         private final Cookie cookie;
 
         Marked(Cookie cookie) {
+            super(cookie.name(), cookie.value());
             this.cookie = cookie;
         }
 
@@ -174,7 +178,10 @@ public final class StoreCookies {
 
         @Override
         public void setValue(String value) {
-            cookie.setValue(value);
+            // DefaultCookie's constructor calls this before the delegate is assigned.
+            if (cookie != null) {
+                cookie.setValue(value);
+            }
         }
 
         @Override
@@ -235,6 +242,35 @@ public final class StoreCookies {
         @Override
         public void setHttpOnly(boolean httpOnly) {
             cookie.setHttpOnly(httpOnly);
+        }
+
+        // A store's cookie of another type has no SameSite or Partitioned attribute, so the mark holds those.
+        @Override
+        public @Nullable SameSite sameSite() {
+            return cookie instanceof DefaultCookie ? ((DefaultCookie) cookie).sameSite() : super.sameSite();
+        }
+
+        @Override
+        public void setSameSite(@Nullable SameSite sameSite) {
+            if (cookie instanceof DefaultCookie) {
+                ((DefaultCookie) cookie).setSameSite(sameSite);
+            } else {
+                super.setSameSite(sameSite);
+            }
+        }
+
+        @Override
+        public boolean isPartitioned() {
+            return cookie instanceof DefaultCookie ? ((DefaultCookie) cookie).isPartitioned() : super.isPartitioned();
+        }
+
+        @Override
+        public void setPartitioned(boolean partitioned) {
+            if (cookie instanceof DefaultCookie) {
+                ((DefaultCookie) cookie).setPartitioned(partitioned);
+            } else {
+                super.setPartitioned(partitioned);
+            }
         }
 
         // Unwrapped, so that a marked cookie compares and equals as the store's own does, against either.
