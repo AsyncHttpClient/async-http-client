@@ -182,6 +182,11 @@ public final class NettyRequestSender {
         NettyRequestFactory.checkContentLength(request);
         ProxyServer proxyServer = getProxyServer(config, request);
         if (future != null) {
+            if (request == future.getTargetRequest()) {
+                // A 407 sets this for its own retry. Left over from an earlier 407 of this exchange, it would make the
+                // target CONNECT, where it can take a tunnel from the pool.
+                future.setConnectAllowed(false);
+            }
             ProxyServer previous = future.getProxyServer();
             if (!sameProxy(previous, proxyServer)) {
                 if (request == future.getTargetRequest()

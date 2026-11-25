@@ -16,6 +16,7 @@
 package org.asynchttpclient.netty.request;
 
 import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
@@ -671,6 +672,123 @@ class ProxyReselectionTest {
 
                 assertEquals("via-b", response(outcome).getResponseBody(), proxyB.seen::toString);
                 assertTrue(proxyB.seen.stream().allMatch(s -> s.connection == 1), proxyB.seen::toString);
+            }
+        }
+    }
+
+    @Test
+    void aRedirectAfterAProxyChallengeKeepsAnotherProxysLoginOutOfAPooledTunnel() throws Exception {
+        try (Peer origin = new Peer(serverTls()).answer(s -> s.connect() ? status(405) : ok(s.target()));
+             Peer proxyA = new Peer(); Peer proxyB = new Peer()) {
+            proxyA.answer(s -> ALICE.equals(s.proxyAuthorization())
+                    ? redirect("https://localhost:" + origin.port() + "/landing", false) : challenge("Basic realm=\"a\""));
+            proxyB.answer(s -> s.connect() && BOB.equals(s.proxyAuthorization()) ? TUNNEL : status(502));
+            ProxyServer a = proxy(proxyA, "alice", "A-secret");
+            ProxyServer b = proxyServer("127.0.0.1", proxyB.port())
+                    .setRealm(basicAuthRealm("bob", "B-secret").setUsePreemptiveAuth(true)).build();
+
+            try (AsyncHttpClient client = asyncHttpClient(client()
+                    .setProxyServerSelector(uri -> uri.isSecured() ? b : a))) {
+                // Pools a tunnel to the origin through B.
+                assertEquals("/warm", response(outcome(client.prepareGet("https://localhost:" + origin.port() + "/warm")
+                        .execute())).getResponseBody());
+
+                Object outcome = outcome(client.prepareGet("http://127.0.0.1:" + proxyA.port() + "/start").execute());
+
+                assertTrue(origin.seen.stream().noneMatch(s -> s.connect() || s.proxyAuthorization() != null),
+                        () -> "proxy B's CONNECT went into the tunnel to the origin: " + origin.seen);
+                assertEquals("/landing", response(outcome).getResponseBody());
+                assertTrue(origin.seen.stream().allMatch(s -> s.connection == 1),
+                        () -> "the redirect did not take the pooled tunnel: " + origin.seen);
+                assertEquals(1, proxyB.seen.size(), proxyB.seen::toString);
+            }
+        }
+    }
+
+    @Test
+    void aRedirectAfterAProxyChallengeTakesAPooledTunnel() throws Exception {
+        try (Peer origin = new Peer(serverTls()).answer(s -> s.connect() ? status(405) : ok(s.target()));
+             Peer proxy = new Peer()) {
+            proxy.answer(s -> !ALICE.equals(s.proxyAuthorization()) ? challenge("Basic realm=\"p\"")
+                    : s.connect() ? TUNNEL
+                    : redirect("https://localhost:" + origin.port() + "/landing", false));
+
+            try (AsyncHttpClient client = asyncHttpClient(client().setProxyServer(proxy(proxy, "alice", "A-secret")))) {
+                assertEquals("/warm", response(outcome(client.prepareGet("https://localhost:" + origin.port() + "/warm")
+                        .execute())).getResponseBody());
+
+                Object outcome = outcome(client.prepareGet("http://127.0.0.1:" + proxy.port() + "/start").execute());
+
+                assertTrue(origin.seen.stream().noneMatch(Seen::connect),
+                        () -> "a CONNECT went into the tunnel to the origin: " + origin.seen);
+                assertEquals("/landing", response(outcome).getResponseBody());
+                assertTrue(origin.seen.stream().allMatch(s -> s.connection == 1),
+                        () -> "the redirect did not take the pooled tunnel: " + origin.seen);
+                assertTrue(proxy.seen.stream().allMatch(s -> s.connection <= 2),
+                        () -> "the redirect opened another connection to the proxy: " + proxy.seen);
+            }
+        }
+    }
+
+    @Test
+    void aRedirectAfterAProxyChallengeReusesATunnelAtTheConnectionLimit() throws Exception {
+        try (Peer origin = new Peer(serverTls()).answer(s -> s.connect() ? status(405) : ok(s.target()));
+             Peer proxy = new Peer()) {
+            proxy.answer(s -> !ALICE.equals(s.proxyAuthorization()) ? challenge("Basic realm=\"p\"")
+                    : s.connect() ? TUNNEL
+                    : redirect("https://localhost:" + origin.port() + "/landing", false));
+
+            try (AsyncHttpClient client = asyncHttpClient(client().setMaxConnections(2)
+                    .setProxyServer(proxy(proxy, "alice", "A-secret")))) {
+                assertEquals("/warm", response(outcome(client.prepareGet("https://localhost:" + origin.port() + "/warm")
+                        .execute())).getResponseBody());
+
+                Object outcome = outcome(client.prepareGet("http://127.0.0.1:" + proxy.port() + "/start").execute());
+
+                assertEquals("/landing", response(outcome).getResponseBody());
+                assertTrue(origin.seen.stream().allMatch(s -> s.connection == 1), origin.seen::toString);
+            }
+        }
+    }
+
+    @Test
+    void aRedirectAfterAProxyChallengeKeepsTheProxysHeadersOutOfAPooledTunnel() throws Exception {
+        try (Peer origin = new Peer(serverTls()).answer(s -> s.connect() ? status(405) : ok(s.target()));
+             Peer proxy = new Peer()) {
+            proxy.answer(s -> !ALICE.equals(s.proxyAuthorization()) ? challenge("Basic realm=\"p\"")
+                    : s.connect() ? TUNNEL
+                    : redirect("https://localhost:" + origin.port() + "/landing", false));
+            ProxyServer withHeader = proxyServer("127.0.0.1", proxy.port())
+                    .setRealm(basicAuthRealm("alice", "A-secret"))
+                    .setCustomHeaders(r -> new DefaultHttpHeaders().add("X-Proxy-Token", "proxy-secret"))
+                    .build();
+
+            try (AsyncHttpClient client = asyncHttpClient(client().setProxyServer(withHeader))) {
+                assertEquals("/warm", response(outcome(client.prepareGet("https://localhost:" + origin.port() + "/warm")
+                        .execute())).getResponseBody());
+
+                Object outcome = outcome(client.prepareGet("http://127.0.0.1:" + proxy.port() + "/start").execute());
+
+                assertTrue(origin.seen.stream().noneMatch(s -> s.headers.containsKey("x-proxy-token")),
+                        () -> "the proxy's header reached the origin: " + origin.seen);
+                assertEquals("/landing", response(outcome).getResponseBody());
+            }
+        }
+    }
+
+    @Test
+    void aRedirectAfterAProxyChallengeOpensATunnelWhenNoneIsPooled() throws Exception {
+        try (Peer origin = new Peer(serverTls()).answer(s -> s.connect() ? status(405) : ok(s.target()));
+             Peer proxy = new Peer()) {
+            proxy.answer(s -> !ALICE.equals(s.proxyAuthorization()) ? challenge("Basic realm=\"p\"")
+                    : s.connect() ? TUNNEL
+                    : redirect("https://localhost:" + origin.port() + "/landing", false));
+
+            try (AsyncHttpClient client = asyncHttpClient(client().setProxyServer(proxy(proxy, "alice", "A-secret")))) {
+                Object outcome = outcome(client.prepareGet("http://127.0.0.1:" + proxy.port() + "/start").execute());
+
+                assertEquals("/landing", response(outcome).getResponseBody(), proxy.seen::toString);
+                assertTrue(origin.seen.stream().noneMatch(Seen::connect), origin.seen::toString);
             }
         }
     }
