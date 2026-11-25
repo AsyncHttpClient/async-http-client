@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.FileBodyGenerator;
@@ -26,6 +27,10 @@ import org.asynchttpclient.request.body.multipart.MultipartBody;
 import org.asynchttpclient.request.body.multipart.MultipartUtils;
 import org.asynchttpclient.request.body.multipart.Part;
 import org.asynchttpclient.request.body.multipart.StringPart;
+import org.asynchttpclient.test.EchoHandler;
+import org.eclipse.jetty.proxy.ConnectHandler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +68,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.config;
+import static org.asynchttpclient.Dsl.proxyServer;
+import static org.asynchttpclient.test.TestUtils.addHttpConnector;
+import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -309,6 +317,39 @@ public class CallerContentLengthTest {
         assertEquals(1, generator.bodies.size());
         assertTrue(generator.bodies.get(0).closed, "the body was not closed");
         assertEquals(List.of("GET /first HTTP/1.1", "GET /next HTTP/1.1"), requestLines.get(10, SECONDS));
+    }
+
+    // Through an HTTP proxy, an https request is built once its tunnel is up, inside a listener that discards what it
+    // throws. The request still fails, and the tunnel's connection is closed: with a limit of one connection, the next
+    // request opens a new one.
+    @Test
+    public void multipartBodyFailsTheLateCheckThroughAProxyTunnel() throws Exception {
+        Server origin = new Server();
+        ServerConnector originConnector = addHttpsConnector(origin);
+        origin.setHandler(new EchoHandler());
+        Server proxy = new Server();
+        ServerConnector proxyConnector = addHttpConnector(proxy);
+        proxy.setHandler(new ConnectHandler());
+        origin.start();
+        proxy.start();
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setMaxConnections(1)
+                .setMaxRequestRetry(0)
+                .setUseInsecureTrustManager(true)
+                .setRequestTimeout(Duration.ofSeconds(30)))) {
+            String url = "https://localhost:" + originConnector.getLocalPort() + "/upload";
+            ProxyServer.Builder viaProxy = proxyServer("localhost", proxyConnector.getLocalPort());
+            assertRejected("Content-Length header 10 does not match the body's length ",
+                    c -> c.preparePost(url)
+                            .setProxyServer(viaProxy)
+                            .setHeader(CONTENT_LENGTH, 10)
+                            .addBodyPart(new StringPart("content", CONTENT))
+                            .execute(), client);
+            assertEquals(200, client.prepareGet(url).setProxyServer(viaProxy).execute().get(10, SECONDS).getStatusCode());
+        } finally {
+            proxy.stop();
+            origin.stop();
+        }
     }
 
     // A redirect that drops the body drops the caller's Content-Length header with it.

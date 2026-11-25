@@ -1852,7 +1852,12 @@ public final class NettyRequestSender {
                                         return;
                                     }
                                 }
-                                sendNextRequest(nextRequest, future);
+                                try {
+                                    sendNextRequest(nextRequest, future);
+                                } catch (Exception sendError) {
+                                    // Discarded here too: a request that fails to build on the tunnel would wait for its timeout.
+                                    abort(channel, future, sendError);
+                                }
                             } else {
                                 future.abort(f.cause());
                             }
