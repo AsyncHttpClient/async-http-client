@@ -27,6 +27,7 @@ import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.request.WriteProgressListener;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -94,6 +95,7 @@ public class NettyFileBody implements NettyBody {
         private final RandomAccessFile raf;
         private final FileChannel fileChannel;
         private final int chunkSize;
+        private final long length;
         private long remaining;
         private long pos;
 
@@ -101,6 +103,7 @@ public class NettyFileBody implements NettyBody {
             this.raf = new RandomAccessFile(file, "r");
             this.fileChannel = raf.getChannel();
             this.chunkSize = chunkSize;
+            this.length = length;
             this.remaining = length;
             this.pos = offset;
         }
@@ -115,10 +118,9 @@ public class NettyFileBody implements NettyBody {
             try {
                 int read = buf.writeBytes(fileChannel, pos, toRead);
                 if (read <= 0) {
-                    // Truncated file relative to the declared length — treat as end of body.
-                    buf.release();
-                    remaining = 0;
-                    return null;
+                    // The file got shorter after the request took its length, which the content-length announces.
+                    throw new EOFException("File body ended after " + (length - remaining) + " of its " + length
+                            + " bytes");
                 }
                 remaining -= read;
                 pos += read;

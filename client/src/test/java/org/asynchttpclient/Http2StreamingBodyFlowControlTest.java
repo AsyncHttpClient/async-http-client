@@ -31,11 +31,13 @@ import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
 import io.netty.handler.codec.http2.Http2MultiplexHandler;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2StreamChannel;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContext;
@@ -46,20 +48,26 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
+import org.asynchttpclient.netty.request.NettyRequest;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.generator.BodyGenerator;
 import org.asynchttpclient.request.body.generator.InputStreamBodyGenerator;
+import org.asynchttpclient.request.body.multipart.FilePart;
 import org.asynchttpclient.request.body.multipart.InputStreamPart;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -102,6 +110,7 @@ public class Http2StreamingBodyFlowControlTest {
     private ChannelGroup serverChildChannels;
     private SslContext serverSslCtx;
     private int serverPort;
+    private Http2FrameLogger serverFrameLogger;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -157,6 +166,9 @@ public class Http2StreamingBodyFlowControlTest {
         Http2FrameCodecBuilder codecBuilder = Http2FrameCodecBuilder.forServer();
         if (initialWindowSize > 0) {
             codecBuilder.initialSettings(new Http2Settings().initialWindowSize(initialWindowSize));
+        }
+        if (serverFrameLogger != null) {
+            codecBuilder.frameLogger(serverFrameLogger);
         }
         ServerBootstrap b = new ServerBootstrap()
                 .group(serverGroup)
@@ -458,7 +470,7 @@ public class Http2StreamingBodyFlowControlTest {
                     .setBody(new InputStreamBodyGenerator(is, payload.length))
                     .execute(retryCounting(retries))
                     .get(30, SECONDS));
-            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            EOFException cause = assertInstanceOf(EOFException.class, thrown.getCause());
             assertEquals("InputStream body ended after 2 of its 5 declared bytes", cause.getMessage());
             assertEquals(0, retries.get(), "a request whose body failed was replayed");
         }
@@ -475,7 +487,7 @@ public class Http2StreamingBodyFlowControlTest {
                     .addBodyPart(new InputStreamPart("file", new ByteArrayInputStream(payload, 0, 2), "file.bin", payload.length))
                     .execute(retryCounting(retries))
                     .get(30, SECONDS));
-            IOException cause = assertInstanceOf(IOException.class, thrown.getCause());
+            EOFException cause = assertInstanceOf(EOFException.class, thrown.getCause());
             assertEquals("Multipart InputStream body part 'file' ended after 2 of its 5 declared bytes", cause.getMessage());
             assertEquals(0, retries.get(), "a request whose body failed was replayed");
         }
@@ -625,5 +637,176 @@ public class Http2StreamingBodyFlowControlTest {
         assertTrue(bodySource.closed.await(10, SECONDS),
                 "Http2BodyWriter must close the body source when the stream is closed while the pump is parked "
                         + "on SUSPEND (otherwise the source / its file descriptor leaks)");
+    }
+
+    // =========================================================================
+    // A file that changes after the request took its length, which the content-length header announces: the
+    // body must keep that length, or the request must fail.
+    // =========================================================================
+    private interface FileChange {
+        void apply(File file) throws IOException;
+    }
+
+    private static final FileChange GROW =
+            f -> Files.write(f.toPath(), new byte[32 * 1024], StandardOpenOption.APPEND);
+
+    private static FileChange truncateTo(long size) {
+        return f -> {
+            try (FileChannel channel = FileChannel.open(f.toPath(), StandardOpenOption.WRITE)) {
+                channel.truncate(size);
+            }
+        };
+    }
+
+    /**
+     * Changes the file on the first attempt, once the request is built and before its body is written, and records
+     * that it did, and the announced length. Counts the attempts. An exception thrown here is only logged, so the
+     * tests check what was recorded.
+     */
+    private static final class ChangeOnSend extends AsyncCompletionHandlerBase {
+        private final File file;
+        private final FileChange change;
+        final AtomicInteger attempts = new AtomicInteger();
+        final AtomicBoolean changed = new AtomicBoolean();
+        final AtomicLong declared = new AtomicLong(-1);
+
+        ChangeOnSend(File file, FileChange change) {
+            this.file = file;
+            this.change = change;
+        }
+
+        @Override
+        public void onRequestSend(NettyRequest request) {
+            if (attempts.incrementAndGet() > 1) {
+                return;
+            }
+            try {
+                change.apply(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            changed.set(true);
+            String contentLength = request.getHttpRequest().headers().get("content-length");
+            if (contentLength != null) {
+                declared.set(Long.parseLong(contentLength));
+            }
+        }
+    }
+
+    private static File tempFile(byte[] content) throws IOException {
+        File tmp = File.createTempFile("ahc-h2-file-change", ".bin");
+        tmp.deleteOnExit();
+        Files.write(tmp.toPath(), content);
+        return tmp;
+    }
+
+    /**
+     * Counts the request streams the client ended with END_STREAM on a DATA frame, as frames arrive and before the
+     * server's own content-length check, which resets a stream that ends short of its content-length.
+     */
+    private static final class EndedRequestStreams extends Http2FrameLogger {
+        private final AtomicInteger count = new AtomicInteger();
+
+        EndedRequestStreams() {
+            super(LogLevel.DEBUG);
+        }
+
+        @Override
+        public void logData(Direction direction, ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding,
+                            boolean endStream) {
+            if (direction == Direction.INBOUND && endStream) {
+                count.incrementAndGet();
+            }
+            super.logData(direction, ctx, streamId, data, padding, endStream);
+        }
+    }
+
+    // NettyFileBody stopped a file body at its length before this check too. This keeps it so.
+    @Test
+    public void fileBodyThatGrowsSendsItsLengthOverHttp2() throws Exception {
+        startServer(-1);
+        byte[] payload = deterministicPayload(64 * 1024);
+        File tmp = tempFile(payload);
+        ChangeOnSend onSend = new ChangeOnSend(tmp, GROW);
+        try (AsyncHttpClient client = http2Client()) {
+            Response response = client.preparePost(httpsUrl("/upload"))
+                    .setBody(tmp)
+                    .execute(onSend)
+                    .get(60, SECONDS);
+            assertTrue(onSend.changed.get(), "the file did not grow");
+            assertEchoed(response, payload);
+            assertEquals(1, onSend.attempts.get(), "sent again");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
+    }
+
+    // The request fails with the file's error, and the client does not end the stream as if the shorter body were
+    // complete. A filter that replays a request after an IOException does not get to send the shorter file again
+    // under its new length: Http2BodyWriter fails the request with the file's error before the stream closes.
+    @Test
+    public void fileBodyThatShrinksFailsTheRequestOverHttp2() throws Exception {
+        EndedRequestStreams ended = new EndedRequestStreams();
+        serverFrameLogger = ended;
+        startServer(-1);
+        File tmp = tempFile(deterministicPayload(64 * 1024));
+        ChangeOnSend onSend = new ChangeOnSend(tmp, truncateTo(1000));
+        try (AsyncHttpClient client = replayingHttp2Client()) {
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
+                    .setBody(tmp)
+                    .execute(onSend)
+                    .get(60, SECONDS));
+            assertTrue(onSend.changed.get(), "the file did not shrink");
+            EOFException cause = assertInstanceOf(EOFException.class, thrown.getCause());
+            assertEquals("File body ended after 1000 of its 65536 bytes", cause.getMessage());
+            assertEquals(0, ended.count.get(), "the client ended the stream as if the shorter body were complete");
+            assertEquals(1, onSend.attempts.get(), "sent again");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
+    }
+
+    @Test
+    public void filePartThatGrowsSendsItsDeclaredLengthOverHttp2() throws Exception {
+        startServer(-1);
+        File tmp = tempFile(deterministicPayload(64 * 1024));
+        ChangeOnSend onSend = new ChangeOnSend(tmp, GROW);
+        try (AsyncHttpClient client = http2Client()) {
+            Response response = client.preparePost(httpsUrl("/upload"))
+                    .addBodyPart(new FilePart("file", tmp))
+                    .execute(onSend)
+                    .get(60, SECONDS);
+            assertTrue(onSend.changed.get(), "the file did not grow");
+            assertTrue(onSend.declared.get() > 64 * 1024, "announced length: " + onSend.declared.get());
+            assertEquals(200, response.getStatusCode());
+            assertEquals(onSend.declared.get(), parseLongHeader(response, "x-received-length"),
+                    "the server must receive exactly the announced length");
+            assertEquals(1, onSend.attempts.get(), "sent again");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
+    }
+
+    // As for a file body.
+    @Test
+    public void filePartThatShrinksFailsTheRequestOverHttp2() throws Exception {
+        EndedRequestStreams ended = new EndedRequestStreams();
+        serverFrameLogger = ended;
+        startServer(-1);
+        File tmp = tempFile(deterministicPayload(64 * 1024));
+        ChangeOnSend onSend = new ChangeOnSend(tmp, truncateTo(1000));
+        try (AsyncHttpClient client = replayingHttp2Client()) {
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(httpsUrl("/upload"))
+                    .addBodyPart(new FilePart("file", tmp))
+                    .execute(onSend)
+                    .get(60, SECONDS));
+            assertTrue(onSend.changed.get(), "the file did not shrink");
+            EOFException cause = assertInstanceOf(EOFException.class, thrown.getCause());
+            assertEquals("Multipart file part 'file' ended after 1000 of its 65536 bytes", cause.getMessage());
+            assertEquals(0, ended.count.get(), "the client ended the stream as if the shorter body were complete");
+            assertEquals(1, onSend.attempts.get(), "sent again");
+        } finally {
+            Files.deleteIfExists(tmp.toPath());
+        }
     }
 }

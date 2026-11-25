@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
+import java.io.EOFException;
+import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
 public abstract class WriteListener {
@@ -41,7 +43,8 @@ public abstract class WriteListener {
     }
 
     private void abortOnThrowable(Channel channel, Throwable cause) {
-        if (future.getChannelState() == ChannelState.POOLED && (cause instanceof IllegalStateException ||
+        if (future.getChannelState() == ChannelState.POOLED && !isEndOfBodySource(cause) &&
+                (cause instanceof IllegalStateException ||
                 cause instanceof ClosedChannelException ||
                 cause instanceof SSLException ||
                 StackTraceInspector.recoverOnReadOrWriteException(cause))) {
@@ -50,6 +53,23 @@ public abstract class WriteListener {
             future.abort(cause);
         }
         Channels.silentlyCloseChannel(channel);
+    }
+
+    /**
+     * AHC fails a body whose source ends before its length with an {@link EOFException}: a file body or file part that
+     * got shorter after the request took its length, and a stream body or stream part that ended before its declared
+     * length. That is not a pooled connection that died, whatever the message says. A retry would send a file again,
+     * under the length it has by then, and a stream that was read cannot be sent again. Netty's
+     * {@code DefaultFileRegion}, which sends a file body with zero-copy, reports a shorter file with a plain
+     * {@link IOException}, but its message has no caller text, so it is not taken for one either.
+     */
+    private static boolean isEndOfBodySource(Throwable cause) {
+        for (Throwable t = cause; t != null; t = t.getCause()) {
+            if (t instanceof EOFException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void operationComplete(Channel channel, Throwable cause) {

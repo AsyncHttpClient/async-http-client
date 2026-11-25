@@ -19,9 +19,11 @@ import io.netty.buffer.ByteBuf;
 import org.asynchttpclient.netty.request.body.BodyChunkedInput;
 import org.asynchttpclient.request.body.multipart.FilePart;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -59,38 +61,65 @@ public class FileMultipartPart extends FileLikeMultipartPart<FilePart> {
 
     @Override
     protected long transferContentTo(ByteBuf target) throws IOException {
-        // can return -1 if file is empty or FileChannel was closed
-        int transferred = target.writeBytes(getChannel(), target.writableBytes());
+        // The length was taken when the request was built, and the Content-Length announces it. Bytes the file
+        // gained since then would go out after the end of the part.
+        int toRead = (int) Math.min(target.writableBytes(), length - position);
+        int transferred = toRead > 0 ? target.writeBytes(getChannel(), toRead) : 0;
         if (transferred > 0) {
             position += transferred;
+        } else if (transferred < 0) {
+            throw endedEarly();
         }
-        if (position == length || transferred < 0) {
+        if (position == length) {
             state = MultipartState.POST_CONTENT;
-            if (channel.isOpen()) {
-                channel.close();
-            }
+            closeChannel();
         }
         return transferred;
     }
 
     @Override
     protected long transferContentTo(WritableByteChannel target) throws IOException {
-        // WARN: don't use channel.position(), it's always 0 here
-        // from FileChannel javadoc: "This method does not modify this channel's
-        // position."
-        long transferred = getChannel().transferTo(position, BodyChunkedInput.DEFAULT_CHUNK_SIZE, target);
-        if (transferred > 0) {
-            position += transferred;
-        }
-        if (position == length || transferred < 0) {
-            state = MultipartState.POST_CONTENT;
-            if (channel.isOpen()) {
-                channel.close();
+        long transferred = 0;
+        if (position < length) {
+            // WARN: don't use channel.position(), it's always 0 here
+            // from FileChannel javadoc: "This method does not modify this channel's
+            // position."
+            FileChannel fileChannel = getChannel();
+            long count = Math.min(BodyChunkedInput.DEFAULT_CHUNK_SIZE, length - position);
+            transferred = fileChannel.transferTo(position, count, target);
+            if (transferred > 0) {
+                position += transferred;
+            } else if (isEndOfFile(fileChannel)) {
+                throw endedEarly();
             }
+        }
+        if (position == length) {
+            state = MultipartState.POST_CONTENT;
+            closeChannel();
         } else {
             slowTarget = true;
         }
         return transferred;
+    }
+
+    // transferTo returns 0, not -1, at the end of the file, and also when the target takes nothing. The file's size
+    // does not tell the two apart either, as a file can report a size it does not have: a sysfs file reports 4096
+    // bytes or more, and holds fewer. A read of one byte at the position does.
+    private boolean isEndOfFile(FileChannel fileChannel) throws IOException {
+        return fileChannel.read(ByteBuffer.allocate(1), position) < 0;
+    }
+
+    // An EOFException, which WriteListener never takes for a pooled connection that died: a retry would send the
+    // shorter file under the length it has now.
+    private EOFException endedEarly() {
+        return new EOFException("Multipart file part '" + part.getName() + "' ended after " + position + " of its "
+                + length + " bytes");
+    }
+
+    private void closeChannel() throws IOException {
+        if (channel != null && channel.isOpen()) {
+            channel.close();
+        }
     }
 
     @Override

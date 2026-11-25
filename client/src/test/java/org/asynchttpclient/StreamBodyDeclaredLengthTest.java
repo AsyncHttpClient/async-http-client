@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
@@ -133,6 +135,36 @@ public class StreamBodyDeclaredLengthTest {
             assertCause("Multipart InputStream body part 'file' ended after 60000 of its 100000 declared bytes", thrown);
             // Before the client closes, which would close the connection anyway.
             assertCutOff(exchanges.get(10, SECONDS));
+        }
+    }
+
+    // On a pooled connection, WriteListener leaves a failed write to the retry when its error has "Connection reset" in
+    // its message, taking it for a connection that died. The part's name is in the error, but a stream part that ended
+    // early fails with an EOFException, which is never taken for one.
+    @ParameterizedTest(name = "zeroCopy={0}")
+    @ValueSource(booleans = {true, false})
+    public void streamPartThatEndsEarlyOnAPooledConnectionIsNotRetried(boolean zeroCopy) throws Exception {
+        executor.submit(() -> serve(2));
+        AtomicInteger retries = new AtomicInteger();
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setMaxConnections(1)
+                .setMaxRequestRetry(1)
+                .setDisableZeroCopy(!zeroCopy)
+                .setRequestTimeout(Duration.ofSeconds(10)))) {
+            assertEquals(200, client.prepareGet(url("/first")).execute().get(10, SECONDS).getStatusCode());
+            ExecutionException thrown = assertThrows(ExecutionException.class, () -> client.preparePost(url("/upload"))
+                    .addBodyPart(new InputStreamPart("Connection reset", new ByteArrayInputStream(new byte[SHORT]),
+                            "file.bin", DECLARED))
+                    .execute(new AsyncCompletionHandlerBase() {
+                        @Override
+                        public void onRetry() {
+                            retries.incrementAndGet();
+                        }
+                    })
+                    .get(10, SECONDS));
+            assertCause("Multipart InputStream body part 'Connection reset' ended after 60000 of its 100000 declared bytes",
+                    thrown);
+            assertEquals(0, retries.get(), "retried as a pooled connection that died");
         }
     }
 
@@ -310,11 +342,11 @@ public class StreamBodyDeclaredLengthTest {
 
     private static void assertCause(String message, Throwable thrown) {
         for (Throwable t = thrown; t != null; t = t.getCause()) {
-            if (t instanceof IOException && message.equals(t.getMessage())) {
+            if (t instanceof EOFException && message.equals(t.getMessage())) {
                 return;
             }
         }
-        fail("no IOException with message '" + message + "' in the causes of " + thrown, thrown);
+        fail("no EOFException with message '" + message + "' in the causes of " + thrown, thrown);
     }
 
     // Reads up to the given number of requests with a Content-Length on one connection and answers each with a 200.
