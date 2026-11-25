@@ -51,6 +51,7 @@ import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.LoadBalance;
+import org.asynchttpclient.StoreCookies;
 import org.asynchttpclient.exception.FilterException;
 import org.asynchttpclient.exception.PoolAlreadyClosedException;
 import org.asynchttpclient.exception.RemotelyClosedException;
@@ -1824,6 +1825,14 @@ public final class NettyRequestSender {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("\n\nReplaying request '{}' to '{}'\n for Future {}\n", newRequest.getMethod(),
                     newRequest.getUri().toUrlWithoutUserInfo(), future);
+        }
+        try {
+            // The store's cookies were selected for the request that was sent, also to the same origin: the
+            // response that led here may have changed them.
+            newRequest = StoreCookies.rebind(newRequest, future.getCurrentRequest(), config.getCookieStore());
+        } catch (Exception e) {
+            abort(channel, future, e);
+            return;
         }
         try {
             future.getAsyncHandler().onRetry();

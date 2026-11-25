@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.StoreCookies;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.uri.Uri;
 
@@ -44,18 +45,17 @@ final class CallerCookies {
     }
 
     /**
-     * The request's cookie objects minus the ones the store put there: those this response set, rotated or
-     * deleted, and those the store still holds with the same value. A caller's cookie sharing only a name with
-     * a stored one stays the caller's. A Cookie header the caller set is not among these; see
-     * {@link #headerCookies}.
+     * The request's cookie objects minus the ones the store put there, which are marked, and minus those this
+     * response set, rotated or deleted. A caller's cookie sharing a name, or a name and a value, with a stored one
+     * stays the caller's. A Cookie header the caller set is not among these; see {@link #headerCookies}.
      */
-    private static List<Cookie> of(List<Cookie> cookies, List<Cookie> stored, Set<String> setByResponse) {
+    private static List<Cookie> of(List<Cookie> cookies, Set<String> setByResponse) {
         if (cookies.isEmpty()) {
             return cookies;
         }
         List<Cookie> callers = new ArrayList<>(cookies.size());
         for (Cookie cookie : cookies) {
-            if (!setByResponse.contains(cookie.name().toLowerCase(Locale.ROOT)) && !holdsSameValue(stored, cookie)) {
+            if (!StoreCookies.isMarked(cookie) && !setByResponse.contains(cookie.name().toLowerCase(Locale.ROOT))) {
                 callers.add(cookie);
             }
         }
@@ -75,7 +75,7 @@ final class CallerCookies {
             try {
                 cookie = cookieDecoder.decode(header);
             } catch (IllegalArgumentException e) {
-                // Interceptors dropped it too, so the store still holds the old value and holdsSameValue decides.
+                // Interceptors dropped it too, so it replaced nothing.
                 continue;
             }
             if (cookie == null) {
@@ -110,14 +110,10 @@ final class CallerCookies {
                         Uri next, ClientCookieDecoder cookieDecoder) {
         List<Cookie> nextCookies = cookieStore.get(next);
         Set<String> setByResponse = replacedNames(response, nextCookies, request.getUri(), next, cookieDecoder);
-        List<Cookie> cookies = request.getCookies();
-        // A retry goes to the same URI again, so one lookup serves both.
-        List<Cookie> stored = cookies.isEmpty() || next.equals(request.getUri())
-                ? nextCookies : cookieStore.get(request.getUri());
-        retry.setCookies(of(cookies, stored, setByResponse));
+        retry.setCookies(of(request.getCookies(), setByResponse));
         retry.setHeader(COOKIE, headerCookies(request.getHeaders().getAll(COOKIE), setByResponse));
         for (Cookie cookie : nextCookies) {
-            retry.addCookieIfUnset(cookie);
+            retry.addCookieIfUnset(StoreCookies.mark(cookie));
         }
     }
 
