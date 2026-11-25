@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.request.body.Body;
 
 import static java.util.Objects.requireNonNull;
@@ -31,13 +32,15 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
     public static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
 
     private final Body body;
+    private final NettyResponseFuture<?> future;
     private final int chunkSize;
     private final long contentLength;
     private boolean endOfInput;
     private long progress;
 
-    BodyChunkedInput(Body body) {
+    BodyChunkedInput(Body body, NettyResponseFuture<?> future) {
         this.body = requireNonNull(body, "body");
+        this.future = requireNonNull(future, "future");
         contentLength = body.getContentLength();
         if (contentLength <= 0) {
             chunkSize = DEFAULT_CHUNK_SIZE;
@@ -65,6 +68,10 @@ public class BodyChunkedInput implements ChunkedInput<ByteBuf> {
         } catch (Throwable t) {
             // ChunkedWriteHandler only releases chunks it is handed, so a failed read would leak this one.
             buffer.release();
+            // The body's source failed, not the connection. Fail the request with that now: on a pooled connection,
+            // WriteListener takes a write failure such as a "Connection reset" for a connection that died, and retries
+            // the request with a new body over the same source.
+            future.abort(t);
             throw t;
         }
         progress += buffer.writerIndex();

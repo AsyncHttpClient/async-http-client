@@ -17,17 +17,42 @@ package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.request.body.Body;
 import org.asynchttpclient.request.body.Body.BodyState;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.config;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Covers {@link InputStreamBodyGenerator}'s {@link Body#transferTo(ByteBuf)}, which now reads straight from
@@ -37,6 +62,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class InputStreamBodyGeneratorTest {
 
     private static final int CHUNK_SIZE = 1024 * 8;
+    private static final String COMPLETE_REQUEST =
+            "POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n7\r\npartial\r\n0\r\n\r\n";
 
     @Test
     public void streamsAllBytesAcrossMultipleReads() throws IOException {
@@ -118,5 +145,389 @@ public class InputStreamBodyGeneratorTest {
             chunkBuffer.release();
             body.close();
         }
+    }
+
+    @Test
+    public void readFailureFailsTheBody() throws IOException {
+        IOException failure = new IOException("read failed");
+        Body body = new InputStreamBodyGenerator(failingAfter(new byte[3], failure)).createBody();
+        ByteBuf chunkBuffer = Unpooled.buffer(CHUNK_SIZE);
+        try {
+            assertEquals(BodyState.CONTINUE, body.transferTo(chunkBuffer));
+            chunkBuffer.clear();
+            assertSame(failure, assertThrows(IOException.class, () -> body.transferTo(chunkBuffer)));
+        } finally {
+            chunkBuffer.release();
+        }
+    }
+
+    /**
+     * A body that its own {@link BodyGenerator} hands out, as one that wraps another generator does, goes out
+     * chunked when it has no length. Ending it at a read failure sent the terminating chunk, so the server took the
+     * body for complete.
+     */
+    @Test
+    public void readFailureFailsAChunkedRequest() throws Exception {
+        IOException failure = new IOException("read failed");
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(failingAfter("partial".getBytes(US_ASCII), failure));
+        BodyGenerator wrapper = generator::createBody;
+
+        AtomicBoolean clientDone = new AtomicBoolean();
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> receiveRequest(server, clientDone));
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setMaxRequestRetry(0)
+                    .setRequestTimeout(Duration.ofSeconds(10)))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
+                        .preparePost("http://localhost:" + server.getLocalPort() + "/")
+                        .setBody(wrapper)
+                        .execute()
+                        .get(10, SECONDS));
+                assertSame(failure, thrown.getCause());
+            } finally {
+                clientDone.set(true);
+            }
+            // How much of the body went out before the failure depends on the transport; its last chunk must not.
+            assertFalse(hasLastChunk(received.get(10, SECONDS)), "the server received the last chunk");
+        }
+    }
+
+    /**
+     * On a pooled connection, WriteListener took a read failure such as a "Connection reset" for a connection that
+     * died, and retried the request with a new body over the stream that had just failed.
+     */
+    @Test
+    public void readFailureOnAPooledConnectionIsNotRetried() throws Exception {
+        IOException failure = new IOException("Connection reset");
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(failingAfter("partial".getBytes(US_ASCII), failure));
+        BodyGenerator wrapper = generator::createBody;
+        AtomicInteger retries = new AtomicInteger();
+        AtomicBoolean clientDone = new AtomicBoolean();
+
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> receiveGetThenRequest(server, clientDone));
+            try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)))) {
+                String url = "http://localhost:" + server.getLocalPort() + "/";
+                assertEquals(200, client.prepareGet(url).execute().get(10, SECONDS).getStatusCode());
+                ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
+                        .preparePost(url)
+                        .setBody(wrapper)
+                        .execute(new AsyncCompletionHandlerBase() {
+                            @Override
+                            public void onRetry() {
+                                retries.incrementAndGet();
+                            }
+                        })
+                        .get(10, SECONDS));
+                assertSame(failure, thrown.getCause());
+                assertEquals(0, retries.get(), "the request was retried");
+            } finally {
+                clientDone.set(true);
+            }
+            assertFalse(hasLastChunk(received.get(10, SECONDS)), "the server received the last chunk");
+        }
+    }
+
+    /**
+     * A caller's Content-Length header goes on the wire as it is, so a body that a wrapping generator hands out must
+     * end there: the bytes past it would reach the server as the start of the next request.
+     */
+    @Test
+    public void wrappedBodyStopsAtTheContentLengthHeader() throws Exception {
+        InputStream stream = new ByteArrayInputStream(
+                "declared contentGET /smuggled HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(US_ASCII));
+        BodyGenerator wrapper = new InputStreamBodyGenerator(stream)::createBody;
+
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<List<String>> received = CompletableFuture.supplyAsync(() -> answerRequests(server, 2));
+            try (AsyncHttpClient client = asyncHttpClient(config().setRequestTimeout(Duration.ofSeconds(10)))) {
+                String url = "http://localhost:" + server.getLocalPort();
+                assertEquals(200, client.preparePost(url + "/upload")
+                        .setHeader("Content-Length", "16")
+                        .setBody(wrapper)
+                        .execute()
+                        .get(10, SECONDS)
+                        .getStatusCode());
+                assertEquals(200, client.prepareGet(url + "/next").execute().get(10, SECONDS).getStatusCode());
+            }
+            assertEquals(List.of("POST /upload HTTP/1.1 declared content", "GET /next HTTP/1.1 "), received.get(10, SECONDS));
+        }
+    }
+
+    /**
+     * A body that ends before the Content-Length that went on the wire fails the request, instead of leaving the
+     * server waiting for the rest until a timeout gives up.
+     */
+    @Test
+    public void wrappedBodyFailsWhenItEndsBeforeTheContentLengthHeader() throws Exception {
+        BodyGenerator wrapper = new InputStreamBodyGenerator(
+                new ByteArrayInputStream("declared content".getBytes(US_ASCII)))::createBody;
+
+        AtomicBoolean clientDone = new AtomicBoolean();
+        try (ServerSocket server = new ServerSocket(0)) {
+            CompletableFuture<String> received = CompletableFuture.supplyAsync(() -> receiveRequest(server, clientDone));
+            try (AsyncHttpClient client = asyncHttpClient(config()
+                    .setMaxRequestRetry(0)
+                    .setRequestTimeout(Duration.ofSeconds(10)))) {
+                ExecutionException thrown = assertThrows(ExecutionException.class, () -> client
+                        .preparePost("http://localhost:" + server.getLocalPort() + "/upload")
+                        .setHeader("Content-Length", "20")
+                        .setBody(wrapper)
+                        .execute()
+                        .get(10, SECONDS));
+                assertEquals("Request body ended after 16 of the 20 bytes of its Content-Length",
+                        thrown.getCause().getMessage());
+            } finally {
+                clientDone.set(true);
+            }
+            received.get(10, SECONDS);
+        }
+    }
+
+    @Test
+    public void laterBodyReadsTheStreamFromItsMark() throws IOException {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                new ByteArrayInputStream("FIRST---SECOND--".getBytes(US_ASCII)), 8);
+
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+    }
+
+    @Test
+    public void laterBodyFailsForAStreamWithoutMarkSupport() throws IOException {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                withoutMarkSupport(new ByteArrayInputStream("FIRST---SECOND--".getBytes(US_ASCII))), 8);
+
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+        Body later = generator.createBody();
+        IOException thrown = assertThrows(IOException.class, () -> drain(later, CHUNK_SIZE));
+        assertEquals("InputStream body already consumed and cannot be reset for a retry", thrown.getMessage());
+    }
+
+    @Test
+    public void bodyThatDidNotReadLeavesTheStreamToTheNextOne() throws IOException {
+        InputStreamBodyGenerator generator = new InputStreamBodyGenerator(
+                withoutMarkSupport(new ByteArrayInputStream("FIRST---".getBytes(US_ASCII))), 8);
+
+        generator.createBody();
+        assertArrayEquals("FIRST---".getBytes(US_ASCII), drain(generator.createBody(), CHUNK_SIZE));
+    }
+
+    @Test
+    public void bodyWithNoDeclaredBytesDoesNotReadItsStream() throws IOException {
+        ByteArrayInputStream stream = new ByteArrayInputStream("abc".getBytes(US_ASCII));
+        Body body = new InputStreamBodyGenerator(stream, 0).createBody();
+
+        assertArrayEquals(new byte[0], drain(body, CHUNK_SIZE));
+        assertEquals(3, stream.available());
+    }
+
+    // The server side of the request tests must not lose a last chunk to an error after it.
+    @Test
+    public void receivingKeepsWhatArrivedBeforeAReset() throws IOException {
+        InputStream in = failingAfter(COMPLETE_REQUEST.getBytes(US_ASCII), new SocketException("Connection reset"));
+
+        assertTrue(hasLastChunk(receiveUntilQuiet(in, () -> false)));
+    }
+
+    @Test
+    public void receivingFailsOnAnyOtherError() {
+        IOException failure = new IOException("read failed");
+        InputStream in = failingAfter(COMPLETE_REQUEST.getBytes(US_ASCII), failure);
+
+        assertSame(failure, assertThrows(IOException.class, () -> receiveUntilQuiet(in, () -> false)));
+    }
+
+    @Test
+    public void bodyStopsAtDeclaredLength() throws IOException {
+        byte[] content = "declared content".getBytes(US_ASCII);
+        byte[] longer = "declared content|and more".getBytes(US_ASCII);
+
+        for (int bufferSize : new int[]{1, 7, 64, CHUNK_SIZE}) {
+            ByteArrayInputStream stream = new ByteArrayInputStream(longer);
+            Body body = new InputStreamBodyGenerator(stream, content.length).createBody();
+            assertArrayEquals(content, drain(body, bufferSize), "bufferSize=" + bufferSize);
+            assertEquals(longer.length - content.length, stream.available(), "bufferSize=" + bufferSize
+                    + ": read past the declared length");
+        }
+    }
+
+    /**
+     * A stream that has its declared length must not be read for its end: a socket-backed stream has nothing more to
+     * give, so that read would block until the stream ends.
+     */
+    @Test
+    public void bodyIsNotReadPastDeclaredLength() throws IOException {
+        byte[] content = "declared content".getBytes(US_ASCII);
+        boolean[] readPastDeclaredLength = new boolean[1];
+        InputStream stream = new ByteArrayInputStream(content) {
+            @Override
+            public synchronized int read(byte[] b, int off, int len) {
+                if (available() == 0) {
+                    readPastDeclaredLength[0] = true;
+                }
+                return super.read(b, off, len);
+            }
+        };
+
+        assertArrayEquals(content, drain(new InputStreamBodyGenerator(stream, content.length).createBody(), CHUNK_SIZE));
+        assertFalse(readPastDeclaredLength[0], "the body read past its declared length");
+    }
+
+    @Test
+    public void bodyFailsWhenStreamEndsBeforeDeclaredLength() {
+        Body body = new InputStreamBodyGenerator(new ByteArrayInputStream("partial".getBytes(US_ASCII)), 16).createBody();
+
+        IOException thrown = assertThrows(IOException.class, () -> drain(body, CHUNK_SIZE));
+        assertEquals("InputStream body ended after 7 of its 16 declared bytes", thrown.getMessage());
+    }
+
+    private static byte[] drain(Body body, int bufferSize) throws IOException {
+        ByteBuf chunkBuffer = Unpooled.buffer(bufferSize);
+        ByteArrayOutputStream collected = new ByteArrayOutputStream();
+        try {
+            BodyState state;
+            do {
+                state = body.transferTo(chunkBuffer);
+                chunkBuffer.readBytes(collected, chunkBuffer.readableBytes());
+                chunkBuffer.clear();
+            } while (state != BodyState.STOP);
+            return collected.toByteArray();
+        } finally {
+            chunkBuffer.release();
+            body.close();
+        }
+    }
+
+    // Hands out the given bytes, then fails every read.
+    private static InputStream failingAfter(byte[] content, IOException failure) {
+        return new FilterInputStream(new ByteArrayInputStream(content)) {
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                int read = super.read(b, off, len);
+                if (read < 0) {
+                    throw failure;
+                }
+                return read;
+            }
+        };
+    }
+
+    private static InputStream withoutMarkSupport(InputStream in) {
+        return new FilterInputStream(in) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+        };
+    }
+
+    // Answers requests on one connection, each one framed by its Content-Length, and returns each request line with
+    // the body that came with it.
+    private static List<String> answerRequests(ServerSocket server, int count) {
+        List<String> requests = new ArrayList<>();
+        try (Socket socket = server.accept()) {
+            socket.setSoTimeout(10_000);
+            InputStream in = socket.getInputStream();
+            while (requests.size() < count) {
+                String requestLine = readLine(in);
+                if (requestLine == null) {
+                    break;
+                }
+                int contentLength = 0;
+                String line;
+                while ((line = readLine(in)) != null && !line.isEmpty()) {
+                    if (line.regionMatches(true, 0, "content-length:", 0, 15)) {
+                        contentLength = Integer.parseInt(line.substring(15).trim());
+                    }
+                }
+                byte[] body = in.readNBytes(contentLength);
+                if (body.length < contentLength) {
+                    break;
+                }
+                requests.add(requestLine + ' ' + new String(body, US_ASCII));
+                socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return requests;
+    }
+
+    // Answers a GET, then receives the next request on the same connection.
+    private static String receiveGetThenRequest(ServerSocket server, AtomicBoolean clientDone) {
+        try (Socket socket = server.accept()) {
+            socket.setSoTimeout(10_000);
+            String line;
+            do {
+                line = readLine(socket.getInputStream());
+            } while (line != null && !line.isEmpty());
+            socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
+            socket.setSoTimeout(100);
+            return receiveUntilQuiet(socket.getInputStream(), clientDone::get);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static String receiveRequest(ServerSocket server, AtomicBoolean clientDone) {
+        try (Socket socket = server.accept()) {
+            socket.setSoTimeout(100);
+            return receiveUntilQuiet(socket.getInputStream(), clientDone::get);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    // What arrives until the connection ends, or until the client is done and nothing more arrives within the read
+    // timeout. That is a bounded observation, not proof that nothing would follow: on io_uring, the connection of a
+    // request that failed in the middle of its body can stay open, so its end is not something to wait for. A reset
+    // ends the connection too, and keeps what arrived before it; any other error fails the observation.
+    private static String receiveUntilQuiet(InputStream in, BooleanSupplier clientDone) throws IOException {
+        ByteArrayOutputStream received = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        long deadline = System.nanoTime() + SECONDS.toNanos(10);
+        while (System.nanoTime() < deadline) {
+            int read;
+            try {
+                read = in.read(buffer);
+            } catch (SocketTimeoutException e) {
+                if (clientDone.getAsBoolean()) {
+                    break;
+                }
+                continue;
+            } catch (SocketException e) {
+                if (e.getMessage() == null || !e.getMessage().startsWith("Connection reset")) {
+                    throw e;
+                }
+                break;
+            }
+            if (read < 0) {
+                break;
+            }
+            received.write(buffer, 0, read);
+        }
+        return received.toString(US_ASCII);
+    }
+
+    // Whether a chunked request, received in full or in part, ends with its last chunk.
+    private static boolean hasLastChunk(String request) {
+        int head = request.indexOf("\r\n\r\n");
+        String body = head < 0 ? "" : request.substring(head + 4);
+        return body.equals("0\r\n\r\n") || body.endsWith("\r\n0\r\n\r\n");
+    }
+
+    private static String readLine(InputStream in) throws IOException {
+        StringBuilder line = new StringBuilder();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\n') {
+                return line.toString();
+            }
+            if (b != '\r') {
+                line.append((char) b);
+            }
+        }
+        return null;
     }
 }

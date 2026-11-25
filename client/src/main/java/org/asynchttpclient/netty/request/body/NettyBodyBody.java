@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -34,7 +35,9 @@ import org.asynchttpclient.request.body.generator.FeedListener;
 import org.asynchttpclient.request.body.generator.FeedableBodyGenerator;
 
 import java.io.IOException;
+import java.util.List;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 
 public class NettyBodyBody implements NettyBody {
@@ -64,7 +67,7 @@ public class NettyBodyBody implements NettyBody {
             msg = new BodyFileRegion((RandomAccessBody) body);
 
         } else {
-            msg = new BodyChunkedInput(body);
+            msg = new BodyChunkedInput(contentLengthBody(future), future);
 
             BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
             if (bg instanceof FeedableBodyGenerator) {
@@ -100,7 +103,98 @@ public class NettyBodyBody implements NettyBody {
         // (closeSilently(body)) happens when the async pump completes — see BodyChunkSource.close.
         BodyGenerator bg = future.getTargetRequest().getBodyGenerator();
         FeedableBodyGenerator feedable = bg instanceof FeedableBodyGenerator ? (FeedableBodyGenerator) bg : null;
-        Http2BodyWriter.start(channel, new BodyChunkSource(body, feedable), future);
+        Http2BodyWriter.start(channel, new BodyChunkSource(contentLengthBody(future), feedable), future);
+    }
+
+    // A caller's Content-Length header goes on the wire as it is, whatever the body's own length. Bytes past it would
+    // go out as the start of the next request, and a body that ends before it would leave the server waiting.
+    private Body contentLengthBody(NettyResponseFuture<?> future) {
+        long contentLength = contentLength(future.getNettyRequest().getHttpRequest().headers());
+        return contentLength < 0 ? body : new ContentLengthBody(body, contentLength);
+    }
+
+    // RFC 9110 section 8.6: ASCII digits, without a sign. Whitespace after them is not part of the field value.
+    private static long contentLength(HttpHeaders headers) {
+        List<String> values = headers.getAll(CONTENT_LENGTH);
+        if (values.isEmpty()) {
+            return -1;
+        }
+        String value = values.get(0);
+        int end = value.length();
+        while (end > 0 && (value.charAt(end - 1) == ' ' || value.charAt(end - 1) == '\t')) {
+            end--;
+        }
+        if (values.size() > 1 || end == 0) {
+            throw notALength(values);
+        }
+        long length = 0;
+        for (int i = 0; i < end; i++) {
+            int digit = value.charAt(i) - '0';
+            if (digit < 0 || digit > 9 || length > (Long.MAX_VALUE - digit) / 10) {
+                throw notALength(values);
+            }
+            length = length * 10 + digit;
+        }
+        return length;
+    }
+
+    private static IllegalArgumentException notALength(List<String> values) {
+        return new IllegalArgumentException("Content-Length header " + values + " is not a length");
+    }
+
+    /**
+     * Ends a {@link Body} at the Content-Length that goes on the wire, and fails it if it ends before.
+     */
+    private static final class ContentLengthBody implements Body {
+
+        private final Body body;
+        private final long contentLength;
+        private long transferred;
+
+        ContentLengthBody(Body body, long contentLength) {
+            this.body = body;
+            this.contentLength = contentLength;
+        }
+
+        @Override
+        public long getContentLength() {
+            return contentLength;
+        }
+
+        @Override
+        public BodyState transferTo(ByteBuf target) throws IOException {
+            if (transferred == contentLength) {
+                return BodyState.STOP;
+            }
+            long remaining = contentLength - transferred;
+            int start = target.writerIndex();
+            BodyState state;
+            if (target.writableBytes() > remaining) {
+                // Nor let the body read past it.
+                ByteBuf limited = target.slice(start, (int) remaining).clear();
+                state = body.transferTo(limited);
+                target.writerIndex(start + limited.writerIndex());
+            } else {
+                state = body.transferTo(target);
+                if (target.writerIndex() - start > remaining) {
+                    target.writerIndex(start + (int) remaining);
+                }
+            }
+            transferred += target.writerIndex() - start;
+            if (transferred == contentLength) {
+                return BodyState.STOP;
+            }
+            if (state == BodyState.STOP) {
+                throw new IOException("Request body ended after " + transferred + " of the " + contentLength
+                        + " bytes of its Content-Length");
+            }
+            return state;
+        }
+
+        @Override
+        public void close() throws IOException {
+            body.close();
+        }
     }
 
     /**

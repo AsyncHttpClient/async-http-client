@@ -14,11 +14,10 @@ package org.asynchttpclient.request.body.generator;
 
 import io.netty.buffer.ByteBuf;
 import org.asynchttpclient.request.body.Body;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link BodyGenerator} which use an {@link InputStream} for reading bytes, without having to read the entire stream in memory.
@@ -28,9 +27,11 @@ import java.io.InputStream;
  */
 public final class InputStreamBodyGenerator implements BodyGenerator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamBody.class);
     private final InputStream inputStream;
     private final long contentLength;
+    // Set by the first body that reads the stream. Every body reads that same stream, so a later one, for a retry or a
+    // redirect, would go on where the earlier one stopped.
+    private final AtomicBoolean streamRead = new AtomicBoolean();
 
     public InputStreamBodyGenerator(InputStream inputStream) {
         this(inputStream, -1L);
@@ -51,17 +52,23 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
 
     @Override
     public Body createBody() {
-        return new InputStreamBody(inputStream, contentLength);
+        return new InputStreamBody(inputStream, contentLength, streamRead);
     }
 
     private static class InputStreamBody implements Body {
 
+        private static final String CONSUMED = "InputStream body already consumed and cannot be reset for a retry";
+
         private final InputStream inputStream;
         private final long contentLength;
+        private final AtomicBoolean streamRead;
+        private boolean started;
+        private long transferred;
 
-        private InputStreamBody(InputStream inputStream, long contentLength) {
+        private InputStreamBody(InputStream inputStream, long contentLength, AtomicBoolean streamRead) {
             this.inputStream = inputStream;
             this.contentLength = contentLength;
+            this.streamRead = streamRead;
         }
 
         @Override
@@ -70,19 +77,48 @@ public final class InputStreamBodyGenerator implements BodyGenerator {
         }
 
         @Override
-        public BodyState transferTo(ByteBuf target) {
+        public BodyState transferTo(ByteBuf target) throws IOException {
             // Read straight from the stream into the target buffer instead of staging through a per-call byte[].
             // For heap target buffers this drops both the staging array and the copy; for direct buffers Netty
             // still stages through a temporary heap array internally (InputStream can only read into a byte[]),
-            // so there the win is smaller. Mirrors InputStreamMultipartPart, which writes the full writable region.
-            int read;
-            try {
-                read = target.writeBytes(inputStream, target.writableBytes());
-            } catch (IOException ex) {
-                LOGGER.warn("Unable to read", ex);
-                return BodyState.STOP;
+            // so there the win is smaller.
+            int length = target.writableBytes();
+            if (contentLength >= 0) {
+                // Bytes past the declared length would go out after the end of the body, and a read for the end of
+                // a socket-backed stream would block until it ends.
+                if (transferred == contentLength) {
+                    return BodyState.STOP;
+                }
+                length = (int) Math.min(length, contentLength - transferred);
             }
-            return read > 0 ? BodyState.CONTINUE : BodyState.STOP;
+            if (!started) {
+                started = true;
+                if (streamRead.getAndSet(true)) {
+                    resetStream();
+                }
+            }
+            int read = target.writeBytes(inputStream, length);
+            if (read > 0) {
+                transferred += read;
+                return BodyState.CONTINUE;
+            }
+            if (read < 0 && contentLength >= 0) {
+                throw new IOException("InputStream body ended after " + transferred + " of its " + contentLength
+                        + " declared bytes");
+            }
+            return BodyState.STOP;
+        }
+
+        // As NettyInputStreamBody does when it sends this generator's stream again: back to the stream's mark, or fail.
+        private void resetStream() throws IOException {
+            if (!inputStream.markSupported()) {
+                throw new IOException(CONSUMED);
+            }
+            try {
+                inputStream.reset();
+            } catch (IOException e) {
+                throw new IOException(CONSUMED, e);
+            }
         }
 
         @Override

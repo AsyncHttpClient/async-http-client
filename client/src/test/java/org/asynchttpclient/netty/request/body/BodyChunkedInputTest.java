@@ -17,6 +17,8 @@ package org.asynchttpclient.netty.request.body;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.request.body.Body;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class BodyChunkedInputTest {
 
@@ -33,13 +38,32 @@ public class BodyChunkedInputTest {
     public void readChunkReleasesTheChunkWhenTheBodyFails() {
         IOException failure = new IOException("Stream closed");
         FailingBody body = new FailingBody(failure);
-        BodyChunkedInput input = new BodyChunkedInput(body);
+        BodyChunkedInput input = new BodyChunkedInput(body, newFuture(mock(AsyncHandler.class)));
 
         IOException thrown = assertThrows(IOException.class, () -> input.readChunk(ByteBufAllocator.DEFAULT));
 
         assertSame(failure, thrown);
         assertNotNull(body.target);
         assertEquals(0, body.target.refCnt());
+    }
+
+    // Before the write failure reaches WriteListener, which on a pooled connection takes an error such as this one for a
+    // connection that died, and retries.
+    @Test
+    public void readChunkFailsTheRequestWithTheBodysError() {
+        IOException failure = new IOException("Connection reset");
+        AsyncHandler<?> handler = mock(AsyncHandler.class);
+        NettyResponseFuture<?> future = newFuture(handler);
+        BodyChunkedInput input = new BodyChunkedInput(new FailingBody(failure), future);
+
+        assertSame(failure, assertThrows(IOException.class, () -> input.readChunk(ByteBufAllocator.DEFAULT)));
+
+        assertTrue(future.isDone());
+        verify(handler).onThrowable(failure);
+    }
+
+    private static NettyResponseFuture<?> newFuture(AsyncHandler<?> handler) {
+        return new NettyResponseFuture<>(null, handler, null, 0, null, null, null);
     }
 
     private static final class FailingBody implements Body {
