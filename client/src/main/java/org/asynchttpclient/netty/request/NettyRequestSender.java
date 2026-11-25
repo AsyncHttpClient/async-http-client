@@ -46,11 +46,13 @@ import io.netty.util.concurrent.Promise;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.AsyncHttpClientState;
+import org.asynchttpclient.DefaultRequest;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.LoadBalance;
 import org.asynchttpclient.StoreCookies;
 import org.asynchttpclient.exception.FilterException;
@@ -253,7 +255,10 @@ public final class NettyRequestSender {
         if (!headers.contains(HttpHeaderNames.PROXY_AUTHORIZATION)) {
             return request;
         }
-        Request withoutProxyAuthorization = request.toBuilder()
+        // Exact class only: a subclass or another Request implementation may override what toBuilder() copies.
+        RequestBuilderBase<?> builder = request.getClass() == DefaultRequest.class
+                ? new PrototypeRequestBuilder(request) : request.toBuilder();
+        Request withoutProxyAuthorization = builder
                 .setHeaders(headers.copy().remove(HttpHeaderNames.PROXY_AUTHORIZATION))
                 .build();
         future.setTargetRequest(withoutProxyAuthorization);
@@ -1997,5 +2002,16 @@ public final class NettyRequestSender {
                 );
             }
         });
+    }
+
+    /**
+     * Copies a request as {@link Request#toBuilder()} does, but keeps its URI as it is: {@code toBuilder()} encodes
+     * the URI again, which changes one built with URL encoding disabled.
+     */
+    private static final class PrototypeRequestBuilder extends RequestBuilderBase<PrototypeRequestBuilder> {
+
+        private PrototypeRequestBuilder(Request prototype) {
+            super(prototype, true, false);
+        }
     }
 }

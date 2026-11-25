@@ -540,6 +540,32 @@ class ProxyReselectionTest {
     }
 
     @Test
+    void aRequestMovedOffAProxyKeepsAUriBuiltWithoutEncoding() throws Exception {
+        AtomicBoolean down = new AtomicBoolean();
+        try (Peer proxyA = new Peer(); Peer proxyB = new Peer().answer(s -> ok("via-b"))) {
+            proxyA.answer(s -> {
+                down.set(true);
+                return DROP;
+            });
+            ProxyServer a = proxyServer("127.0.0.1", proxyA.port()).build();
+            ProxyServer b = proxyServer("127.0.0.1", proxyB.port()).build();
+
+            try (AsyncHttpClient client = asyncHttpClient(client()
+                    .setMaxRequestRetry(1)
+                    .setDisableUrlEncodingForBoundRequests(true)
+                    .setProxyServerSelector(uri -> down.get() ? b : a))) {
+                Object outcome = outcome(client.prepareGet("http://127.0.0.1:" + proxyA.port() + "/a|b?q={x}")
+                        .setHeader("Proxy-Authorization", ALICE).execute());
+
+                assertEquals("via-b", response(outcome).getResponseBody());
+                assertEquals(proxyA.seen.get(0).requestLine, proxyB.seen.get(0).requestLine,
+                        "the request was encoded again when it moved to proxy B");
+                assertNull(proxyB.seen.get(0).proxyAuthorization(), proxyB.seen::toString);
+            }
+        }
+    }
+
+    @Test
     void anAnswerToAnOriginChallengeGoesBackThroughTheSameProxy() throws Exception {
         AtomicInteger requests = new AtomicInteger();
         Function<Seen, String> origin = s -> requests.incrementAndGet() > 4 ? status(403)
