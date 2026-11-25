@@ -322,6 +322,14 @@ class ProxyReselectionTest {
                 assertEquals("over-tls", response(outcome).getResponseBody());
                 assertEquals(1, proxyA.seen.size() + proxyB.seen.size(),
                         () -> "a tunnel was opened again: a=" + proxyA.seen + " b=" + proxyB.seen);
+
+                // Selected through A again, so it takes the tunnel A opened from the pool.
+                Object next = outcome(client.prepareGet("https://127.0.0.1:" + origin.port() + "/y").execute());
+
+                assertEquals("over-tls", response(next).getResponseBody());
+                assertEquals(1, proxyA.seen.size() + proxyB.seen.size(),
+                        () -> "the tunnel was not pooled under the proxy that opened it: a=" + proxyA.seen
+                                + " b=" + proxyB.seen);
             }
         }
     }
