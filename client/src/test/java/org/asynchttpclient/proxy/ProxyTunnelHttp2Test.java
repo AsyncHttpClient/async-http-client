@@ -47,6 +47,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.HttpProtocol;
+import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.testserver.SocksProxy;
 import org.junit.jupiter.api.AfterEach;
@@ -70,6 +71,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -576,6 +578,65 @@ public class ProxyTunnelHttp2Test {
             assertEquals(HttpProtocol.HTTP_2, response.getProtocol());
         } finally {
             socks.stop();
+        }
+    }
+
+    /**
+     * A request refused the connection permit waits for an HTTP/2 connection to multiplex onto. It was built as the
+     * CONNECT for the connection it could not open, and the connection it gets is already past the proxy.
+     */
+    @Test
+    public void requestWaitingForAPermitMultiplexesItselfAndNotItsConnect() throws Exception {
+        CountDownLatch bothSent = new CountDownLatch(1);
+        ConnectProxy gated = new ConnectProxy(new ServerSocket(0)) {
+            @Override
+            void handle(Socket client) throws Exception {
+                bothSent.await(30, SECONDS);
+                super.handle(client);
+            }
+        };
+        gated.start();
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseInsecureTrustManager(true)
+                .setMaxConnectionsPerHost(1)
+                .setProxyServer(proxyServer("localhost", gated.port())))) {
+            ListenableFuture<Response> first = client.prepareGet(httpsUrl("/first")).execute();
+            ListenableFuture<Response> second = client.prepareGet(httpsUrl("/second")).execute();
+            bothSent.countDown();
+
+            assertEquals("GET localhost:" + serverPort, first.get(30, SECONDS).getResponseBody());
+            Response multiplexed = second.get(30, SECONDS);
+            assertEquals("GET localhost:" + serverPort, multiplexed.getResponseBody());
+            assertEquals(HttpProtocol.HTTP_2, multiplexed.getProtocol());
+            assertEquals(1, gated.connectLines().size(), gated.connectLines()::toString);
+        } finally {
+            gated.close();
+        }
+    }
+
+    @Test
+    public void connectWaitingForAPermitIsNotMultiplexed() throws Exception {
+        CountDownLatch bothSent = new CountDownLatch(1);
+        ConnectProxy gated = new ConnectProxy(new ServerSocket(0)) {
+            @Override
+            void handle(Socket client) throws Exception {
+                bothSent.await(30, SECONDS);
+                super.handle(client);
+            }
+        };
+        gated.start();
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseInsecureTrustManager(true)
+                .setMaxConnectionsPerHost(1)
+                .setProxyServer(proxyServer("localhost", gated.port())))) {
+            ListenableFuture<Response> first = client.prepareGet(httpsUrl("/first")).execute();
+            ListenableFuture<Response> connect = client.prepareConnect(httpsUrl("/")).execute();
+            bothSent.countDown();
+
+            assertEquals("GET localhost:" + serverPort, first.get(30, SECONDS).getResponseBody());
+            assertThrows(ExecutionException.class, () -> connect.get(30, SECONDS));
+        } finally {
+            gated.close();
         }
     }
 
