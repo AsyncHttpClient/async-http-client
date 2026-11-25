@@ -17,6 +17,8 @@ package org.asynchttpclient.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.Dsl;
 import org.asynchttpclient.Param;
@@ -33,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -41,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HttpUtilsTest {
@@ -319,6 +323,48 @@ public class HttpUtilsTest {
 
     private static String filterOutBrotli(String acceptEncoding) {
         return HttpUtils.filterOutBrotliFromAcceptEncoding(acceptEncoding).toString();
+    }
+
+    @Test
+    public void parseContentLengthWithoutTheHeader() {
+        assertEquals(-1, HttpUtils.parseContentLength(new DefaultHttpHeaders()));
+    }
+
+    // RFC 9110 section 8.6, and whitespace after the digits is not part of the field value (RFC 9112 section 5.1).
+    @Test
+    public void parseContentLengthOfALength() {
+        assertEquals(0, HttpUtils.parseContentLength(contentLength("0")));
+        assertEquals(16, HttpUtils.parseContentLength(contentLength("16")));
+        assertEquals(16, HttpUtils.parseContentLength(contentLength("16 \t")));
+        assertEquals(Long.MAX_VALUE, HttpUtils.parseContentLength(contentLength(String.valueOf(Long.MAX_VALUE))));
+    }
+
+    @Test
+    public void parseContentLengthOfNoLength() {
+        for (String value : new String[]{"", " ", " 16", "+16", "-0", "1 6", "16a", "0x10", "\u0661\u0666"}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> HttpUtils.parseContentLength(contentLength(value)), value);
+            assertEquals("Content-Length header [" + value + "] is not a length", e.getMessage());
+        }
+    }
+
+    @Test
+    public void parseContentLengthOfSeveralFields() {
+        HttpHeaders headers = new DefaultHttpHeaders(false).add(CONTENT_LENGTH, "16").add(CONTENT_LENGTH, "16");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> HttpUtils.parseContentLength(headers));
+        assertEquals("Content-Length header [16, 16] is not a length", e.getMessage());
+    }
+
+    @Test
+    public void parseContentLengthPastLongMaxValue() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> HttpUtils.parseContentLength(contentLength("9223372036854775808")));
+        assertEquals("Content-Length header [9223372036854775808] is longer than AHC supports", e.getMessage());
+    }
+
+    // Without validation, as a caller can build headers that Netty would reject, and the parsing must still hold.
+    private static HttpHeaders contentLength(String value) {
+        return new DefaultHttpHeaders(false).set(CONTENT_LENGTH, value);
     }
 
     private static String filterOutZstd(String acceptEncoding) {

@@ -87,6 +87,7 @@ import static org.asynchttpclient.util.HttpUtils.filterOutBrotliFromAcceptEncodi
 import static org.asynchttpclient.util.HttpUtils.filterOutZstdFromAcceptEncoding;
 import static org.asynchttpclient.util.HttpUtils.hostHeader;
 import static org.asynchttpclient.util.HttpUtils.originHeader;
+import static org.asynchttpclient.util.HttpUtils.parseContentLength;
 import static org.asynchttpclient.util.HttpUtils.urlEncodeFormParams;
 import static org.asynchttpclient.util.MiscUtils.closeSilently;
 import static org.asynchttpclient.util.MiscUtils.isNonEmpty;
@@ -103,9 +104,6 @@ public final class NettyRequestFactory {
      */
     private static final Map<String, AsciiString> KNOWN_HEADER_NAMES = buildKnownHeaderNames();
 
-    // What parseContentLength returns for a Content-Length header that is not a length, or one past Long.MAX_VALUE.
-    private static final long NOT_A_LENGTH = -1;
-    private static final long TOO_LONG = -2;
     // The length of a body that AHC knows only once it builds the body, or not at all.
     private static final long UNKNOWN_LENGTH = -1;
 
@@ -350,7 +348,7 @@ public final class NettyRequestFactory {
     // newNettyRequest sends a caller's Content-Length header as it is, so it must be a length, and the body's where AHC
     // knows that: the server takes the bytes past it for the start of the next request, and waits for missing ones.
     private static void checkContentLength(Request request, long bodyLength) {
-        long header = callerContentLength(request, "");
+        long header = parseContentLength(request.getHeaders());
         if (header >= 0 && bodyLength >= 0 && header != bodyLength) {
             throw new IllegalArgumentException("Content-Length header " + header + " does not match the body's length "
                     + bodyLength);
@@ -360,7 +358,7 @@ public final class NettyRequestFactory {
     // A stream body ends at the Content-Length that goes on the wire. newNettyRequest sends a caller's header as it is,
     // so with one set, that is its length, and it must agree with the length the body was given.
     private static long streamContentLength(Request request, long declared) {
-        long header = callerContentLength(request, " for an InputStream body");
+        long header = parseContentLength(request.getHeaders());
         if (header < 0) {
             return declared;
         }
@@ -369,50 +367,6 @@ public final class NettyRequestFactory {
                     + " does not match the InputStreamBodyGenerator's length " + declared);
         }
         return header;
-    }
-
-    // The length in the Content-Length header that the caller set, or -1 without one. newNettyRequest asks for every
-    // request, so the header is looked up before getAll allocates its list.
-    private static long callerContentLength(Request request, String body) {
-        if (!request.getHeaders().contains(CONTENT_LENGTH)) {
-            return -1;
-        }
-        List<String> values = request.getHeaders().getAll(CONTENT_LENGTH);
-        long header = values.size() == 1 ? parseContentLength(values.get(0)) : NOT_A_LENGTH;
-        if (header == NOT_A_LENGTH) {
-            throw new IllegalArgumentException("Content-Length header " + values + " is not a length" + body);
-        }
-        if (header == TOO_LONG) {
-            throw new IllegalArgumentException("Content-Length header " + values + " is longer than AHC supports");
-        }
-        return header;
-    }
-
-    // RFC 9110 section 8.6: ASCII digits, without a sign. Whitespace after them is not part of the field value (RFC 9112
-    // section 5.1); whitespace in front fails Netty's validation of the request's headers, so it is rejected here, where
-    // no connection is taken yet. A length past Long.MAX_VALUE is AHC's own limit, not the RFC's.
-    private static long parseContentLength(String value) {
-        int end = value.length();
-        while (end > 0 && (value.charAt(end - 1) == ' ' || value.charAt(end - 1) == '\t')) {
-            end--;
-        }
-        if (end == 0) {
-            return NOT_A_LENGTH;
-        }
-        long length = 0;
-        boolean tooLong = false;
-        for (int i = 0; i < end; i++) {
-            int digit = value.charAt(i) - '0';
-            if (digit < 0 || digit > 9) {
-                return NOT_A_LENGTH;
-            }
-            if (tooLong || length > (Long.MAX_VALUE - digit) / 10) {
-                tooLong = true;
-            } else {
-                length = length * 10 + digit;
-            }
-        }
-        return tooLong ? TOO_LONG : length;
     }
 
     // Whether newNettyRequest sends the request's parts: a CONNECT has no body, and setters of a body with higher
