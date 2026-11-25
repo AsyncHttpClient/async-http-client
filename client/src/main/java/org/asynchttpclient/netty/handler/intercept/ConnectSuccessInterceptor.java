@@ -29,6 +29,8 @@ import org.asynchttpclient.uri.Uri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.asynchttpclient.util.HttpConstants.Methods.CONNECT;
+
 public class ConnectSuccessInterceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectSuccessInterceptor.class);
@@ -45,6 +47,12 @@ public class ConnectSuccessInterceptor {
         // CONNECT tunneling is an HTTP/1.1 concept — it should never occur on HTTP/2 stream channels.
         if (channel instanceof Http2StreamChannel) {
             LOGGER.warn("CONNECT success on HTTP/2 stream channel is unexpected — ignoring");
+            return false;
+        }
+
+        if (CONNECT.equals(future.getTargetRequest().getMethod())) {
+            // The application asked for the CONNECT itself, so this is its response, and nothing goes into the tunnel.
+            // A channel whose exchange was a CONNECT is not pooled.
             return false;
         }
 
