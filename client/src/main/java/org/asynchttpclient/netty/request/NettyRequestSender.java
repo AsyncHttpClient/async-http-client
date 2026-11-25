@@ -196,8 +196,8 @@ public final class NettyRequestSender {
         // WebSockets use connect tunneling to work with proxies
         if (needConnect(request, proxyServer) && !isConnectAlreadyDone(request, future)) {
             // Proxy with HTTPS or WebSocket: CONNECT for sure
-            if (future != null && future.isConnectAllowed()) {
-                // Perform CONNECT
+            if ((future != null && future.isConnectAllowed()) || CONNECT.equals(request.getMethod())) {
+                // Perform CONNECT, as the retry of a 407 does
                 return sendRequestWithCertainForceConnect(request, asyncHandler, future, proxyServer, true);
             } else {
                 // CONNECT will depend on if we can pool or connection or if we have to open a new one
@@ -318,7 +318,9 @@ public final class NettyRequestSender {
      */
     private <T> ListenableFuture<T> sendRequestWithCertainForceConnect(Request request, AsyncHandler<T> asyncHandler, NettyResponseFuture<T> future,
                                                                        ProxyServer proxyServer, boolean performConnectRequest) {
-        Channel channel = getOpenChannel(future, request, proxyServer, asyncHandler);
+        // A CONNECT is for the proxy, so it goes on the proxy connection this future holds or on a new one. The pool
+        // holds tunnels under this key, and the far end of a tunnel is the origin.
+        Channel channel = performConnectRequest ? heldChannel(future) : getOpenChannel(future, request, proxyServer, asyncHandler);
         if (Channels.isChannelActive(channel)) {
             NettyResponseFuture<T> newFuture = newNettyRequestAndResponseFuture(request, asyncHandler, future,
                     proxyServer, performConnectRequest, channel);
@@ -427,11 +429,12 @@ public final class NettyRequestSender {
     }
 
     private Channel getOpenChannel(NettyResponseFuture<?> future, Request request, ProxyServer proxyServer, AsyncHandler<?> asyncHandler) {
-        if (future != null && future.isReuseChannel() && Channels.isChannelActive(future.channel())) {
-            return future.channel();
-        } else {
-            return pollPooledChannel(future, request, proxyServer, asyncHandler);
-        }
+        Channel held = heldChannel(future);
+        return held != null ? held : pollPooledChannel(future, request, proxyServer, asyncHandler);
+    }
+
+    private static @Nullable Channel heldChannel(@Nullable NettyResponseFuture<?> future) {
+        return future != null && future.isReuseChannel() && Channels.isChannelActive(future.channel()) ? future.channel() : null;
     }
 
     private <T> ListenableFuture<T> sendRequestWithOpenChannel(NettyResponseFuture<T> future, AsyncHandler<T> asyncHandler, Channel channel) {
@@ -1752,6 +1755,13 @@ public final class NettyRequestSender {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void replayRequest(final NettyResponseFuture<?> future, FilterContext fc, Channel channel) {
         Request newRequest = fc.getRequest();
+        String targetMethod = future.getTargetRequest().getMethod();
+        if (CONNECT.equals(newRequest.getMethod()) && !CONNECT.equals(targetMethod)
+                && needConnect(newRequest, getProxyServer(config, newRequest))) {
+            // The CONNECT a 407 is retried with, which is what a filter sees while the proxy answers it. Replayed as
+            // it is, it would become the target, which is what goes into the tunnel once it is open.
+            newRequest = newRequest.toBuilder().setMethod(targetMethod).build();
+        }
         future.setAsyncHandler(fc.getAsyncHandler());
         future.setChannelState(ChannelState.NEW);
         future.touch();

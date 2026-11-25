@@ -450,6 +450,10 @@ public final class NettyRequestFactory {
         } else {
             // assign headers as configured on request
             copyInternedHeaders(request.getHeaders(), headers);
+            if (proxyServer != null && proxyServer.getProxyType().isHttp() && (uri.isSecured() || uri.isWebSocket())) {
+                // Tunnelled, so it reaches the origin. A Proxy-Authorization is the proxy's, and went on the CONNECT.
+                headers.remove(PROXY_AUTHORIZATION);
+            }
 
             // Unconditional: it also folds several caller-set Cookie fields into one.
             mergeCookies(request.getCookies(), headers);
