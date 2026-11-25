@@ -177,7 +177,7 @@ public final class NettyRequestSender {
         }
 
         validateWebSocketRequest(request, asyncHandler);
-        NettyRequestFactory.checkStreamBodyLength(request);
+        NettyRequestFactory.checkContentLength(request);
         ProxyServer proxyServer = getProxyServer(config, request);
         if (future != null) {
             ProxyServer previous = future.getProxyServer();
@@ -1984,7 +1984,12 @@ public final class NettyRequestSender {
                                         return;
                                     }
                                 }
-                                sendNextRequest(nextRequest, future);
+                                try {
+                                    sendNextRequest(nextRequest, future);
+                                } catch (Exception sendError) {
+                                    // Discarded here too: a request that fails to build on the tunnel would wait for its timeout.
+                                    abort(channel, future, sendError);
+                                }
                             } else {
                                 future.abort(f.cause());
                             }

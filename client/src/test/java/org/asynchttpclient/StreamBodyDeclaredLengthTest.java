@@ -230,7 +230,7 @@ public class StreamBodyDeclaredLengthTest {
     @ParameterizedTest(name = "header={0}")
     @ValueSource(strings = {"16, 16", "+16", "-0", "\u0661\u0666"})
     public void streamBodyFailsWhenItsContentLengthHeaderIsNotALength(String header) throws Exception {
-        assertRejectedBeforeConnecting("Content-Length header [" + header + "] is not a length for an InputStream body",
+        assertRejectedBeforeConnecting("Content-Length header [" + header + "] is not a length",
                 client -> client.preparePost(url("/upload"))
                         .setHeader(CONTENT_LENGTH, header)
                         .setBody(new ByteArrayInputStream(CONTENT.getBytes(US_ASCII)))
@@ -255,7 +255,7 @@ public class StreamBodyDeclaredLengthTest {
                 .setHeader(CONTENT_LENGTH, " 16")
                 .setBody(new ByteArrayInputStream(CONTENT.getBytes(US_ASCII)))
                 .build();
-        assertRejectedBeforeConnecting("Content-Length header [ 16] is not a length for an InputStream body",
+        assertRejectedBeforeConnecting("Content-Length header [ 16] is not a length",
                 client -> client.executeRequest(request));
     }
 

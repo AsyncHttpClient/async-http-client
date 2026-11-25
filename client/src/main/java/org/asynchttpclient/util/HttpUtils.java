@@ -13,6 +13,7 @@
 package org.asynchttpclient.util;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -27,6 +28,7 @@ import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.List;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -143,6 +145,53 @@ public final class HttpUtils {
     public static boolean useAbsoluteRequestDeadline(AsyncHttpClientConfig config, Request request) {
         Boolean override = request.getUseAbsoluteRequestDeadline();
         return override != null ? override : config.isUseAbsoluteRequestDeadline();
+    }
+
+    /**
+     * Returns the length that a request's {@code Content-Length} header gives, or -1 without one.
+     * <p>
+     * This is AHC's strict reading of the header for the requests it sends, not a general HTTP parser. A length is one
+     * field of ASCII digits, without a sign (RFC 9110 section 8.6). Whitespace after the digits is not part of the
+     * field value (RFC 9112 section 5.1). Whitespace in front fails Netty's validation of the request's headers, so it
+     * is not a length here either. Nor is a list of identical values such as {@code 16, 16}: RFC 9110 lets a recipient
+     * accept one, but a sender must not send it. A length past {@link Long#MAX_VALUE} is AHC's own limit, not the
+     * RFC's.
+     *
+     * @param headers the headers to read the {@code Content-Length} from
+     * @return the length, or -1 if there is no {@code Content-Length} header
+     * @throws IllegalArgumentException if the header is not a length, or one longer than AHC supports
+     */
+    public static long parseContentLength(HttpHeaders headers) {
+        // Looked up first: every request is checked, and getAll allocates its list.
+        if (!headers.contains(CONTENT_LENGTH)) {
+            return -1;
+        }
+        List<String> values = headers.getAll(CONTENT_LENGTH);
+        String value = values.get(0);
+        int end = value.length();
+        while (end > 0 && (value.charAt(end - 1) == ' ' || value.charAt(end - 1) == '\t')) {
+            end--;
+        }
+        if (values.size() > 1 || end == 0) {
+            throw new IllegalArgumentException("Content-Length header " + values + " is not a length");
+        }
+        long length = 0;
+        boolean tooLong = false;
+        for (int i = 0; i < end; i++) {
+            int digit = value.charAt(i) - '0';
+            if (digit < 0 || digit > 9) {
+                throw new IllegalArgumentException("Content-Length header " + values + " is not a length");
+            }
+            if (tooLong || length > (Long.MAX_VALUE - digit) / 10) {
+                tooLong = true;
+            } else {
+                length = length * 10 + digit;
+            }
+        }
+        if (tooLong) {
+            throw new IllegalArgumentException("Content-Length header " + values + " is longer than AHC supports");
+        }
+        return length;
     }
 
     public static ByteBuffer urlEncodeFormParams(List<Param> params, Charset charset) {
