@@ -82,7 +82,7 @@ public class ConnectSuccessInterceptor {
         // the origin's credentials. Nothing else may set this — see NettyRequestSender#isConnectAlreadyDone.
         future.setTunnelEstablished(true);
 
-        Request targetRequest = future.getTargetRequest().toBuilder().build();
+        Request targetRequest = PrototypeRequestBuilder.copyOf(future.getTargetRequest()).build();
         if (whenHandshaked == null) {
             requestSender.drainChannelAndExecuteNextRequest(channel, future, targetRequest);
         } else {
