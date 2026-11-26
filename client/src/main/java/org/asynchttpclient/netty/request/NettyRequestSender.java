@@ -1930,7 +1930,16 @@ public final class NettyRequestSender {
                 channel.read();
             }
         }
-        sendNextRequest(newRequest, future);
+        try {
+            sendNextRequest(newRequest, future);
+        } catch (Exception e) {
+            // Building the replayed request can throw, for example when its body file is gone. For a replay that an
+            // IOExceptionFilter asked for from a handler's catch block, the exception would go on to exceptionCaught,
+            // which finds no future on an HTTP/2 stream channel discarded above: the request would wait for its
+            // request timeout. As in the failures above, the previous channel is closed with it, so that its permit
+            // is back before the caller learns of the failure.
+            abort(channel, future, e);
+        }
     }
 
     /**
