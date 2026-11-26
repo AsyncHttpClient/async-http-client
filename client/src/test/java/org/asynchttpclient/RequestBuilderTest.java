@@ -97,6 +97,17 @@ public class RequestBuilderTest {
     }
 
     @Test
+    public void testAddsQueryParamToExistingQueryWithUrlEncodingDisabled() {
+        Request request = new RequestBuilder("GET", true).setUrl("http://localhost/path?a=1").addQueryParam("b", "2").build();
+
+        assertEquals(request.getUrl(), "http://localhost/path?a=1&b=2");
+        List<Param> params = request.getQueryParams();
+        assertEquals(params.size(), 2);
+        assertEquals(params.get(0), new Param("a", "1"));
+        assertEquals(params.get(1), new Param("b", "2"));
+    }
+
+    @Test
     public void testUserProvidedRequestMethod() {
         Request req = new RequestBuilder("ABC").setUrl("http://foo.com").build();
         assertEquals(req.getMethod(), "ABC");

@@ -19,6 +19,7 @@ import org.asynchttpclient.Param;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,5 +72,22 @@ public class UriEncoderTest {
         Uri encoded = FIXING.encode(uri, null);
         assertNotSame(uri, encoded, "a path needing escaping must produce a new Uri");
         assertEquals("/a%20b", encoded.getPath());
+    }
+
+    @Test
+    public void rawSeparatesExistingQueryFromAddedParams() {
+        Uri uri = Uri.create("http://www.example.com/path?a={x}");
+        List<Param> params = Arrays.asList(new Param("b", "|"), new Param("c", "3"));
+        assertEquals("a={x}&b=|&c=3", RAW.encode(uri, params).getQuery());
+    }
+
+    @Test
+    public void rawJoinsQueryAndParamsLikeFixing() {
+        List<Param> params = Arrays.asList(new Param("b", "2"), new Param("c", null), new Param("", "3"));
+        for (String url : Arrays.asList("http://www.example.com/path?a=1", "http://www.example.com/path?a=1&",
+                "http://www.example.com/path?a", "http://www.example.com/path?", "http://www.example.com/path")) {
+            Uri uri = Uri.create(url);
+            assertEquals(FIXING.encode(uri, params).getQuery(), RAW.encode(uri, params).getQuery(), url);
+        }
     }
 }
