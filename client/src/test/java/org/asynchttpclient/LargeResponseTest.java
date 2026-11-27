@@ -27,7 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
@@ -38,6 +40,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @ExtendWith(NettyLeakDetectorExtension.class)
@@ -94,7 +98,9 @@ public class LargeResponseTest {
     @Test
     void handleLargeResponse() throws Throwable {
         AtomicInteger status = new AtomicInteger(-1);
-        AtomicInteger throwableCount = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicBoolean headersReceived = new AtomicBoolean();
+        AtomicBoolean completed = new AtomicBoolean();
         AtomicLong bytesReceived = new AtomicLong();
         AtomicLong bodyPartCount = new AtomicLong();
 
@@ -113,6 +119,7 @@ public class LargeResponseTest {
                     @Override
                     public State onHeadersReceived(HttpHeaders headers)
                         throws Exception {
+                        headersReceived.set(true);
                         return State.CONTINUE;
                     }
 
@@ -122,24 +129,18 @@ public class LargeResponseTest {
                         bodyPartCount.incrementAndGet();
                         bytesReceived.addAndGet(bodyPart.length());
 
-                        /*
-                        LOG.info("onBodyPartReceived: "
-                            + "bodyPartCount=" + bodyPartCount.get()
-                            + " bodyPartLength: "
-                            + FileUtils.byteCountToDisplaySize(bodyPart.length()));
-                         */
-
                         return State.CONTINUE;
                     }
 
                     @Override
                     public void onThrowable(Throwable t) {
-                        throwableCount.incrementAndGet();
+                        failure.compareAndSet(null, t);
                     }
 
                     @Override
                     public @Nullable Object onCompleted()
                         throws Exception {
+                        completed.set(true);
                         return null;
                     }
                 });
@@ -147,7 +148,10 @@ public class LargeResponseTest {
                 future.get(1, TimeUnit.MINUTES);
 
                 assertEquals(200, status.get());
-                assertEquals(0, throwableCount.get());
+                assertNull(failure.get(), "unexpected failure: " + failure.get());
+                assertTrue(headersReceived.get(), "headers were not received");
+                assertTrue(completed.get(), "onCompleted was not called");
+                assertTrue(bodyPartCount.get() > 0, "no body parts received");
                 assertEquals(responseSize, bytesReceived.get());
 
                 LOG.info("Body part count: " + bodyPartCount);
