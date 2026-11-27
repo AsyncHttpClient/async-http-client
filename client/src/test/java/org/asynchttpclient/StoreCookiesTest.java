@@ -17,19 +17,24 @@ package org.asynchttpclient;
 
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.uri.Uri;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,6 +105,53 @@ public class StoreCookiesTest {
         assertEquals(60, stored.maxAge());
         assertTrue(stored.isSecure());
         assertTrue(stored.isHttpOnly());
+    }
+
+    @Test
+    public void aMarkedCookieIsADefaultCookieWithTheStoresSameSiteAndPartitioned() {
+        DefaultCookie stored = (DefaultCookie) decode("SID=v; Path=/; Secure; SameSite=Strict; Partitioned");
+        DefaultCookie marked = assertInstanceOf(DefaultCookie.class, StoreCookies.mark(stored));
+
+        assertEquals(SameSite.Strict, marked.sameSite());
+        assertTrue(marked.isPartitioned());
+
+        marked.setSameSite(SameSite.Lax);
+        marked.setPartitioned(false);
+
+        assertEquals(SameSite.Lax, stored.sameSite());
+        assertFalse(stored.isPartitioned());
+    }
+
+    @Test
+    public void aMarkOfACookieOfAnotherTypeHoldsSameSiteAndPartitionedItself() {
+        DefaultCookie target = new DefaultCookie("SID", "v");
+        AtomicInteger valueWrites = new AtomicInteger();
+        Cookie stored = (Cookie) Proxy.newProxyInstance(Cookie.class.getClassLoader(), new Class<?>[]{Cookie.class},
+                (proxy, method, args) -> {
+                    if ("setValue".equals(method.getName())) {
+                        valueWrites.incrementAndGet();
+                    }
+                    return method.invoke(target, args);
+                });
+        DefaultCookie marked = assertInstanceOf(DefaultCookie.class, StoreCookies.mark(stored));
+
+        assertEquals("v", marked.value());
+        assertEquals(0, valueWrites.get(), "marking wrote the value back");
+        assertNull(marked.sameSite());
+        assertFalse(marked.isPartitioned());
+
+        marked.setSameSite(SameSite.Lax);
+        marked.setPartitioned(true);
+        marked.setValue("w");
+        marked.setSecure(true);
+
+        assertEquals(SameSite.Lax, marked.sameSite());
+        assertTrue(marked.isPartitioned());
+        assertNull(target.sameSite());
+        assertFalse(target.isPartitioned());
+        assertEquals("w", target.value());
+        assertEquals(1, valueWrites.get());
+        assertTrue(target.isSecure());
     }
 
     @Test

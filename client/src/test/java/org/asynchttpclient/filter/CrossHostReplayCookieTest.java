@@ -20,6 +20,7 @@ import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -66,8 +67,10 @@ import static org.asynchttpclient.Dsl.proxyServer;
 import static org.asynchttpclient.test.TestUtils.addHttpConnector;
 import static org.asynchttpclient.test.TestUtils.addHttpsConnector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The cookies the client takes from its store for a request were selected for that request's URI. A request a
@@ -582,6 +585,28 @@ public class CrossHostReplayCookieTest extends AbstractBasicTest {
                 new RequestBuilder().setUrl(a("/p/sink")));
 
         assertEquals(Set.of("A_SESSION=alice"), cookiesReceived(response, "127.0.0.1"));
+    }
+
+    @Test
+    public void aRequestFilterReadsTheStoresCookiesAsDefaultCookiesWithTheirAttributes() throws Exception {
+        add(store, secureA("/"), "S_SESSION=top; Path=/; Secure; SameSite=Strict; Partitioned");
+        AtomicReference<List<Cookie>> seen = new AtomicReference<>();
+        RequestFilter inspect = new RequestFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                seen.set(ctx.getRequest().getCookies());
+                return ctx;
+            }
+        };
+
+        Response response = get(config().setCookieStore(store).setUseInsecureTrustManager(true)
+                        .addRequestFilter(inspect),
+                new RequestBuilder().setUrl(secureA("/sink")));
+
+        assertEquals(Set.of("S_SESSION=top"), cookiesReceived(response, "127.0.0.1"));
+        DefaultCookie cookie = assertInstanceOf(DefaultCookie.class, seen.get().get(0));
+        assertEquals(SameSite.Strict, cookie.sameSite());
+        assertTrue(cookie.isPartitioned());
     }
 
     @Test
