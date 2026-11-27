@@ -51,7 +51,6 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.LoadBalance;
 import org.asynchttpclient.StoreCookies;
@@ -260,10 +259,7 @@ public final class NettyRequestSender {
         if (!headers.contains(HttpHeaderNames.PROXY_AUTHORIZATION)) {
             return request;
         }
-        // Exact class only: a subclass or another Request implementation may override what toBuilder() copies.
-        RequestBuilderBase<?> builder = request.getClass() == DefaultRequest.class
-                ? new PrototypeRequestBuilder(request) : request.toBuilder();
-        Request withoutProxyAuthorization = builder
+        Request withoutProxyAuthorization = PrototypeRequestBuilder.copyOf(request)
                 .setHeaders(headers.copy().remove(HttpHeaderNames.PROXY_AUTHORIZATION))
                 .build();
         future.setTargetRequest(withoutProxyAuthorization);
@@ -1962,8 +1958,8 @@ public final class NettyRequestSender {
         if (replayed == connectRetry) {
             return target;
         }
-        RequestBuilder builder = replayed.toBuilder()
-                .setHeader(PROXY_AUTHORIZATION, target.getHeaders().getAll(PROXY_AUTHORIZATION))
+        RequestBuilderBase<?> builder = PrototypeRequestBuilder.copyOf(replayed);
+        builder.setHeader(PROXY_AUTHORIZATION, target.getHeaders().getAll(PROXY_AUTHORIZATION))
                 .setHeader(COOKIE, target.getHeaders().getAll(COOKIE))
                 .setCookies(target.getCookies());
         if (CONNECT.equals(replayed.getMethod())) {
@@ -2026,6 +2022,11 @@ public final class NettyRequestSender {
 
         private PrototypeRequestBuilder(Request prototype) {
             super(prototype, true, false);
+        }
+
+        // Exact class only: a subclass or another Request implementation may override what toBuilder() copies.
+        static RequestBuilderBase<?> copyOf(Request request) {
+            return request.getClass() == DefaultRequest.class ? new PrototypeRequestBuilder(request) : request.toBuilder();
         }
     }
 }
