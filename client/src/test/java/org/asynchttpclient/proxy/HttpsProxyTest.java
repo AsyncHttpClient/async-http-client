@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.asynchttpclient.AbstractBasicTest;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultRequest;
 import org.asynchttpclient.RequestBuilder;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.proxy.ProxyServer.Builder;
@@ -44,6 +45,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
@@ -294,6 +297,68 @@ public class HttpsProxyTest extends AbstractBasicTest {
             assertThrowsExactly(ExecutionException.class, () -> asyncHttpClient.executeRequest(rb.build()).get());
             assertThrowsExactly(ExecutionException.class, () -> asyncHttpClient.executeRequest(rb.build()).get());
             assertThrowsExactly(ExecutionException.class, () -> asyncHttpClient.executeRequest(rb.build()).get());
+        }
+    }
+
+    @Test
+    public void testTunnelledRequestKeepsAUriBuiltWithoutEncoding() throws Exception {
+        assertTunnelledRequestTarget(true, "/a|b?q={x}");
+    }
+
+    @Test
+    public void testTunnelledRequestKeepsAnEncodedUri() throws Exception {
+        assertTunnelledRequestTarget(false, "/a%7Cb?q=%7Bx%7D");
+    }
+
+    // The origin records the request target as it arrived, before any decoding.
+    private void assertTunnelledRequestTarget(boolean disableUrlEncoding, String expected) throws Exception {
+        AtomicReference<String> target = new AtomicReference<>();
+        int originPort = startServer(new AbstractHandler() {
+            @Override
+            public void handle(String s, Request r, HttpServletRequest request, HttpServletResponse response) {
+                target.set(request.getRequestURI() + '?' + request.getQueryString());
+                r.setHandled(true);
+            }
+        }, true);
+
+        try (AsyncHttpClient client = asyncHttpClient(config()
+                .setUseInsecureTrustManager(true)
+                .setDisableUrlEncodingForBoundRequests(disableUrlEncoding))) {
+            Response response = client.prepareGet("https://localhost:" + originPort + "/a|b?q={x}")
+                    .setProxyServer(proxyServer("localhost", proxyPort))
+                    .execute()
+                    .get(30, TimeUnit.SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+            assertEquals(expected, target.get());
+        }
+    }
+
+    @Test
+    public void testTunnelledRequestGoesThroughToBuilderForRequestSubclass() throws Exception {
+        org.asynchttpclient.Request built = get(getTargetUrl2())
+                .setProxyServer(proxyServer("localhost", proxyPort))
+                .build();
+        AtomicInteger toBuilderCalls = new AtomicInteger();
+        org.asynchttpclient.Request request = new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(),
+                built.getLocalAddress(), built.getHeaders(), built.getCookies(), built.getByteData(),
+                built.getCompositeByteData(), built.getStringData(), built.getByteBufferData(), built.getByteBufData(),
+                built.getStreamData(), built.getBodyGenerator(), built.getFormParams(), built.getBodyParts(),
+                built.getVirtualHost(), built.getProxyServer(), built.getRealm(), built.getFile(),
+                built.getFollowRedirect(), built.getRequestTimeout(), built.getReadTimeout(), built.getRangeOffset(),
+                built.getCharset(), built.getChannelPoolPartitioning(), built.getNameResolver()) {
+            @Override
+            public RequestBuilder toBuilder() {
+                toBuilderCalls.incrementAndGet();
+                return super.toBuilder();
+            }
+        };
+
+        try (AsyncHttpClient client = asyncHttpClient(config().setUseInsecureTrustManager(true))) {
+            Response response = client.executeRequest(request).get(30, TimeUnit.SECONDS);
+
+            assertEquals(200, response.getStatusCode());
+            assertEquals(1, toBuilderCalls.get());
         }
     }
 

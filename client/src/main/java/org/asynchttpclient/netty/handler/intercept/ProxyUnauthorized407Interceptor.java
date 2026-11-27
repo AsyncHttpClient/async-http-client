@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Realm.AuthScheme;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.netty.NettyResponseFuture;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.ChannelState;
@@ -172,7 +172,8 @@ public class ProxyUnauthorized407Interceptor {
             future.setChannelState(ChannelState.NEW);
             HttpHeaders requestHeaders = new DefaultHttpHeaders().add(request.getHeaders());
 
-            RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+            RequestBuilderBase<?> nextRequestBuilder = PrototypeRequestBuilder.copyOf(future.getCurrentRequest())
+                .setHeaders(requestHeaders);
             refreshCookies(nextRequestBuilder, request, response);
             if (future.getCurrentRequest().getUri().isSecured()) {
                 nextRequestBuilder.setMethod(CONNECT);
@@ -325,7 +326,8 @@ public class ProxyUnauthorized407Interceptor {
                 throw new IllegalStateException("Invalid Authentication scheme " + proxyRealm.getScheme());
         }
 
-        RequestBuilder nextRequestBuilder = future.getCurrentRequest().toBuilder().setHeaders(requestHeaders);
+        RequestBuilderBase<?> nextRequestBuilder = PrototypeRequestBuilder.copyOf(future.getCurrentRequest())
+                .setHeaders(requestHeaders);
         refreshCookies(nextRequestBuilder, request, response);
         if (future.getCurrentRequest().getUri().isSecured()) {
             nextRequestBuilder.setMethod(CONNECT);
@@ -382,7 +384,7 @@ public class ProxyUnauthorized407Interceptor {
         }
     }
     // The challenge may have set cookies, and the retry has to carry those, not the values it went out with.
-    private void refreshCookies(RequestBuilder retry, Request request, HttpResponse response) {
+    private void refreshCookies(RequestBuilderBase<?> retry, Request request, HttpResponse response) {
         CookieStore cookieStore = config.getCookieStore();
         if (cookieStore != null) {
             CallerCookies.refresh(retry, request, response, cookieStore, cookieDecoder);

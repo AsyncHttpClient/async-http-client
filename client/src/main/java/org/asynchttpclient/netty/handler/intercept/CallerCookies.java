@@ -19,7 +19,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.StoreCookies;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.uri.Uri;
@@ -101,12 +101,12 @@ final class CallerCookies {
     /**
      * For a retry of the same request: the caller's cookies, then the store's current ones.
      */
-    static void refresh(RequestBuilder retry, Request request, HttpResponse response, CookieStore cookieStore,
+    static void refresh(RequestBuilderBase<?> retry, Request request, HttpResponse response, CookieStore cookieStore,
                         ClientCookieDecoder cookieDecoder) {
         refresh(retry, request, response, cookieStore, request.getUri(), cookieDecoder);
     }
 
-    static void refresh(RequestBuilder retry, Request request, HttpResponse response, CookieStore cookieStore,
+    static void refresh(RequestBuilderBase<?> retry, Request request, HttpResponse response, CookieStore cookieStore,
                         Uri next, ClientCookieDecoder cookieDecoder) {
         List<Cookie> nextCookies = cookieStore.get(next);
         Set<String> setByResponse = replacedNames(response, nextCookies, request.getUri(), next, cookieDecoder);
