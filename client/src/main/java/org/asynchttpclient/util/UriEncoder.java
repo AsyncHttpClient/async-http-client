@@ -99,7 +99,7 @@ public enum UriEncoder {
         protected String withQueryWithParams(final String query, final List<Param> queryParams) {
             // concatenate raw query + raw query params
             StringBuilder sb = StringBuilderPool.DEFAULT.stringBuilder();
-            sb.append(query);
+            sb.append(query).append('&');
             appendRawQueryParams(sb, queryParams);
             sb.setLength(sb.length() - 1);
             return sb.toString();
