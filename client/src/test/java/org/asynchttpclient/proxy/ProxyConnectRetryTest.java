@@ -19,9 +19,12 @@ import io.github.nettyplus.leakdetector.junit.NettyLeakDetectorExtension;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.DefaultRequest;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Realm;
 import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.RequestBuilderBase;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.IOExceptionFilter;
@@ -177,6 +180,72 @@ public class ProxyConnectRetryTest {
             String cookies = request.headers.get("cookie");
             assertTrue(cookies != null && cookies.contains("sid=caller") && cookies.contains("pref=1"), cookies);
             assertEquals(filterEdits ? "yes" : null, request.headers.get("x-replayed"));
+        }
+    }
+
+    // The filter's own copy keeps the URI as it is, so only AHC's copy of the replay could encode it again.
+    @ParameterizedTest(name = "disableUrlEncoding={0}")
+    @ValueSource(booleans = {true, false})
+    public void replayingTheProxyAnswerKeepsTheRequestTarget(boolean disableUrlEncoding) throws Exception {
+        AtomicInteger authenticatedConnects = new AtomicInteger();
+        try (Peer origin = new Peer(serverTls()).answer(ProxyConnectRetryTest::originAnswer);
+             Peer proxy = new Peer().answer(s -> !LOGIN.equals(s.proxyAuthorization()) ? challenge("Basic realm=\"p\"", false)
+                     : authenticatedConnects.incrementAndGet() == 1 ? status(503) : TUNNEL);
+             AsyncHttpClient client = asyncHttpClient(client(proxy)
+                     .setDisableUrlEncodingForBoundRequests(disableUrlEncoding)
+                     .addResponseFilter(replayOn503(ProxyConnectRetryTest::rawCopyMarkedAsReplayed)))) {
+
+            Response response = response(outcome(client.prepareGet(rawTarget(origin)).execute()));
+
+            assertReachedOnceAsReplayed(origin, disableUrlEncoding);
+            assertEquals(200, response.getStatusCode());
+        }
+    }
+
+    // The same copy, for an IOException filter replaying a CONNECT whose connection was lost mid-handshake.
+    @ParameterizedTest(name = "disableUrlEncoding={0}")
+    @ValueSource(booleans = {true, false})
+    public void replayingAConnectThatLostItsConnectionKeepsTheRequestTarget(boolean disableUrlEncoding) throws Exception {
+        AtomicInteger type1Seen = new AtomicInteger();
+        try (Peer origin = new Peer(serverTls()).answer(ProxyConnectRetryTest::originAnswer);
+             Peer proxy = new Peer().answer(s -> {
+                 String auth = s.proxyAuthorization();
+                 if (auth == null) {
+                     return challenge("NTLM", false);
+                 }
+                 if (auth.startsWith("NTLM TlRMTVNTUAAB")) {
+                     return type1Seen.getAndIncrement() == 0 ? DROP : challenge(NTLM_TYPE_2, false);
+                 }
+                 return auth.startsWith("NTLM TlRMTVNTUAAD") ? TUNNEL : status(403);
+             });
+             AsyncHttpClient client = asyncHttpClient(client(proxy, ntlm())
+                     .setMaxRequestRetry(1)
+                     .setDisableUrlEncodingForBoundRequests(disableUrlEncoding)
+                     .addIOExceptionFilter(replayOnIOException(ProxyConnectRetryTest::rawCopyMarkedAsReplayed)))) {
+
+            Response response = response(outcome(client.prepareGet(rawTarget(origin)).execute()));
+
+            assertReachedOnceAsReplayed(origin, disableUrlEncoding);
+            assertEquals(200, response.getStatusCode());
+            assertEquals(2, type1Seen.get(), () -> "proxy saw " + proxy.seen);
+        }
+    }
+
+    @Test
+    public void replayingTheProxyAnswerCopiesARequestSubclassThroughItsToBuilder() throws Exception {
+        AtomicInteger authenticatedConnects = new AtomicInteger();
+        AtomicInteger toBuilderCalls = new AtomicInteger();
+        try (Peer origin = new Peer(serverTls()).answer(ProxyConnectRetryTest::originAnswer);
+             Peer proxy = new Peer().answer(s -> !LOGIN.equals(s.proxyAuthorization()) ? challenge("Basic realm=\"p\"", false)
+                     : authenticatedConnects.incrementAndGet() == 1 ? status(503) : TUNNEL);
+             AsyncHttpClient client = asyncHttpClient(client(proxy)
+                     .addResponseFilter(replayOn503(request -> countingToBuilder(request, toBuilderCalls))))) {
+
+            Response response = response(outcome(client.prepareGet(origin.url()).execute()));
+
+            assertEquals(200, response.getStatusCode(), () -> "origin saw " + origin.seen);
+            assertNothingButTheRequestReached(origin);
+            assertEquals(1, toBuilderCalls.get());
         }
     }
 
@@ -447,6 +516,20 @@ public class ProxyConnectRetryTest {
                 () -> "origin saw " + origin.seen);
     }
 
+    private static String rawTarget(Peer origin) {
+        return "https://127.0.0.1:" + origin.port() + "/a|b?q={x}";
+    }
+
+    private static Request rawCopyMarkedAsReplayed(Request request) {
+        return new RawCopy(request).setHeader("X-Replayed", "yes").build();
+    }
+
+    private static void assertReachedOnceAsReplayed(Peer origin, boolean disableUrlEncoding) {
+        assertOnlyReached(origin, true, disableUrlEncoding ? "GET /a|b?q={x} HTTP/1.1" : "GET /a%7Cb?q=%7Bx%7D HTTP/1.1");
+        assertEquals(1, origin.seen.size(), () -> "origin saw " + origin.seen);
+        assertEquals("yes", origin.seen.get(0).headers.get("x-replayed"), () -> "the filter's request was not sent: " + origin.seen);
+    }
+
     private static String originAnswer(Seen request) {
         return request.connect() ? status(405) : ok("over-tls");
     }
@@ -553,6 +636,54 @@ public class ProxyConnectRetryTest {
             }
             return ctx;
         }
+    }
+
+    /** Replays a 503 with the request the given function makes of the one the filter is shown. */
+    private static ResponseFilter replayOn503(Function<Request, Request> replay) {
+        return new ResponseFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                if (ctx.getResponseStatus() == null || ctx.getResponseStatus().getStatusCode() != 503) {
+                    return ctx;
+                }
+                return new FilterContext.FilterContextBuilder<>(ctx).request(replay.apply(ctx.getRequest()))
+                        .replayRequest(true).build();
+            }
+        };
+    }
+
+    /** Replays an IOException with the request the given function makes of the one the filter is shown. */
+    private static IOExceptionFilter replayOnIOException(Function<Request, Request> replay) {
+        return new IOExceptionFilter() {
+            @Override
+            public <T> FilterContext<T> filter(FilterContext<T> ctx) {
+                return new FilterContext.FilterContextBuilder<>(ctx).request(replay.apply(ctx.getRequest()))
+                        .replayRequest(true).build();
+            }
+        };
+    }
+
+    /** Copies a request with its URI as it is, as a filter that keeps a URI built without encoding has to. */
+    private static final class RawCopy extends RequestBuilderBase<RawCopy> {
+        RawCopy(Request prototype) {
+            super(prototype, true, false);
+        }
+    }
+
+    private static Request countingToBuilder(Request built, AtomicInteger toBuilderCalls) {
+        return new DefaultRequest(built.getMethod(), built.getUri(), built.getAddress(), built.getLocalAddress(),
+                built.getHeaders(), built.getCookies(), built.getByteData(), built.getCompositeByteData(),
+                built.getStringData(), built.getByteBufferData(), built.getByteBufData(), built.getStreamData(),
+                built.getBodyGenerator(), built.getFormParams(), built.getBodyParts(), built.getVirtualHost(),
+                built.getProxyServer(), built.getRealm(), built.getFile(), built.getFollowRedirect(),
+                built.getRequestTimeout(), built.getReadTimeout(), built.getRangeOffset(), built.getCharset(),
+                built.getChannelPoolPartitioning(), built.getNameResolver()) {
+            @Override
+            public RequestBuilder toBuilder() {
+                toBuilderCalls.incrementAndGet();
+                return super.toBuilder();
+            }
+        };
     }
 
     private static final class ReplayOnIOException implements IOExceptionFilter {
